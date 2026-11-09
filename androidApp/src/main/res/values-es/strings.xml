@@ -742,6 +742,99 @@
     <string name="rshare_region">Frecuencia, ancho de banda, SF, CR, ancho del hash y región #%1$s. No la potencia: ese es el límite legal de quien escanea.</string>
     <string name="rshare_no_region">Frecuencia, ancho de banda, SF, CR y ancho del hash; sin región. No la potencia: ese es el límite legal de quien escanea.</string>
     <string name="copy_link">Copiar enlace</string>
+    <string name="rs_no_status">Sin respuesta de estado. ¿Has iniciado sesión y estás en alcance?</string>
+    <string name="rs_refresh">Actualizar estado</string>
+    <string name="rs_fetch_tele">Pedir telemetría</string>
+    <string name="rs_waiting">Esperando al nodo…</string>
+    <string name="rs_status">Estado</string>
+    <string name="rs_battery">Batería</string>
+    <string name="rs_uptime">Tiempo encendido</string>
+    <string name="rs_queue">Longitud de la cola</string>
+    <string name="rs_last_rssi">Último RSSI / SNR</string>
+    <string name="rs_noise">Ruido de fondo</string>
+    <string name="rs_util">Uso del canal</string>
+    <string name="rs_packets">Paquetes</string>
+    <string name="rs_rx_tx">Recibidos / enviados</string>
+    <string name="rs_flood">Inundación tx / rx</string>
+    <string name="rs_direct">Directos tx / rx</string>
+    <string name="rs_dups">Duplicados (directo/inundación)</string>
+    <string name="rs_airtime">Tiempo en el aire tx / rx</string>
+    <string name="rs_errors">Errores</string>
+    <string name="rs_telemetry">Telemetría</string>
+    <string name="rs_no_answer_yet">El nodo aún no ha respondido.</string>
+    <string name="rs_acl">Lista de acceso</string>
+    <string name="rs_acl_no_reply">Sin respuesta. El nodo solo responde a esto en una sesión de administración; una de solo lectura no basta.</string>
+    <string name="rs_acl_fetch">Pedir lista de acceso</string>
+    <string name="rs_asking">Preguntando al nodo…</string>
+    <string name="rs_acl_empty">El nodo respondió sin entradas en la lista de acceso.</string>
+    <string name="rs_acl_prefixes">Son prefijos, no claves completas: un prefijo identifica un nodo solo hasta donde llega. La lista se edita desde la consola del propio nodo.</string>
+    <string name="rs_stop_watch">Dejar de vigilar</string>
+    <string name="rs_watch">Vigilar ruido de fondo</string>
+    <string name="rs_watch_hint">Pregunta al nodo cada %1$d s mientras está activo.</string>
+    <string name="rs_noise_now">Ahora %1$d dBm · mín. %2$d · máx. %3$d (%4$d muestras)</string>
+    <string name="rs_no_reply">Sin respuesta. ¿En alcance y con sesión iniciada?</string>
+    <string name="rs_nb_rejected">El nodo dice conocer %1$d vecinos pero devolvió una página vacía. Es una petición rechazada, no una tabla paginada, y reintentar no lo cambiará.</string>
+    <string name="rs_neighbours">Vecinos</string>
+    <string name="rs_nb_fetch">Pedir vecinos</string>
+    <string name="rs_probe_refused">El nodo no aceptó el sondeo.</string>
+    <string name="rs_probe">Sondear</string>
+    <string name="rs_fetch_more">Pedir más</string>
+    <string name="rs_probing">Pidiendo respuesta a los repetidores cercanos…</string>
+    <string name="rs_probing_hint">Responden por radio; tarda alrededor de un minuto.</string>
+    <string name="rs_nb_none_admin">El nodo no informó de vecinos. Nada mantiene esta lista al día, así que prueba Sondear antes de creerlo.</string>
+    <string name="rs_nb_none">El nodo no informó de vecinos, pero nada mantiene esta lista al día.</string>
+    <string name="rs_nb_partial">Mostrando %1$d de los %2$d que conoce el nodo.</string>
+    <string name="rs_nb_hint">Otros repetidores oídos directamente, y solo tan recientes como su último anuncio.</string>
+    <string name="rs_nb_d1">El nodo solo registra un vecino a partir del anuncio propio de un repetidor que llegó con cero saltos. Nunca aparecen compañeros, salas ni sensores.</string>
+    <string name="rs_nb_d2">Nada pregunta y nada caduca, así que esto es quién se anunció desde que arrancó el nodo, no quién está en alcance. Sondear hace que respondan ahora.</string>
+    <string name="rs_nb_d3">Un prefijo identifica un nodo solo hasta donde llega, así que una fila puede coincidir con más de un contacto.</string>
+    <string name="rs_nb_d4">La lista es lo que este repetidor dice oír, transmitido por él, y la antigüedad va según su reloj.</string>
+    <string name="id_admin_only">Inicia sesión como administrador para gestionar la clave de identidad de este nodo.</string>
+    <string name="id_talking">Hablando con el nodo…</string>
+    <string name="id_title">Clave de identidad</string>
+    <string name="id_intro">La clave privada Ed25519 de este nodo. La clave ES el nodo.</string>
+    <string name="id_named_by">En el aire se le nombra por sus primeros %1$s.</string>
+    <string name="id_named_d1">Una ruta solo lleva esos bytes iniciales, así que dos repetidores que los compartan son el mismo nodo para una ruta guardada.</string>
+    <string name="id_named_d2">Eso es lo que se evita al elegir una clave nueva. El ancho es un ajuste del propio nodo, y todos los nodos de la malla deben coincidir.</string>
+    <string name="id_read">Leer clave…</string>
+    <string name="id_searching">Buscando una identidad que no use nadie más…</string>
+    <string name="id_keygen_failed">Este dispositivo no pudo generar un par de claves.</string>
+    <string name="id_generate">Generar una nueva</string>
+    <string name="id_write_down">Apúntala en un lugar seguro. Esta app no la guarda y no se puede recuperar de la malla si se pierde el nodo.</string>
+    <string name="id_hide">Ocultar</string>
+    <string name="id_replace_title">Sustituir la clave</string>
+    <string name="id_new_key">Nueva clave privada (128 caracteres hex)</string>
+    <string name="id_key_hint">Un nodo guarda 64 bytes, es decir, 128 caracteres hex. También se acepta una semilla Ed25519 de 64 caracteres, que se expande aquí antes de enviarla.</string>
+    <string name="id_key_bad">Una clave son 128 caracteres hex (64 bytes), o la semilla de 64 caracteres de la que sale. Nada intermedio es una clave.</string>
+    <string name="id_key_degenerate">Esa clave es un solo byte repetido. Es válida en forma y no vale nada criptográficamente: cualquiera puede reproducirla.</string>
+    <string name="id_key_refused">El nodo rechazará esa clave: su clave pública empieza por %1$s, y MeshCore rechaza 00 y ff directamente.</string>
+    <string name="id_would_become">Este nodo pasaría a ser %1$s</string>
+    <string name="id_prefix_taken">Esos bytes iniciales ya los usa %1$s. Una ruta no puede distinguir este nodo de ese.</string>
+    <string name="id_will_report">El nodo informará de su nueva clave pública al aplicar el cambio.</string>
+    <string name="id_replace_btn">Sustituir clave de identidad…</string>
+    <string name="id_read_q">¿Leer la clave de identidad?</string>
+    <string name="id_reveal_caveat">Leer la clave la devuelve por la malla, a través de cada repetidor de la ruta, y sin cifrar si el enlace es TCP. Quien la capture puede suplantar a este nodo para siempre.</string>
+    <string name="id_serial_only">Un nodo solo responde a esto por su consola serie USB, nunca a una sesión remota. Por la malla se negará, por bueno que sea el enlace.</string>
+    <string name="id_no_key">No llegó ninguna clave. Un nodo solo responde a esto por serie USB, así que por la malla es la respuesta esperada.</string>
+    <string name="id_read_it">Leerla</string>
+    <string name="id_free_full">En el aire respondería a %1$s (%2$s, lo que tiene configurado este nodo). Ningún nodo conocido por este teléfono usa esos bytes, ni con ese ancho ni como hash de destino.</string>
+    <string name="id_free">En el aire respondería a %1$s (%2$s, lo que tiene configurado este nodo). Ningún nodo conocido por este teléfono usa esos bytes.</string>
+    <string name="id_first_byte">Su primer byte lo comparte con %1$s.</string>
+    <string name="id_first_byte_d1">Los paquetes directos se dirigen por ese byte, así que llegan a ambos nodos y el equivocado los descarta.</string>
+    <string name="id_first_byte_d2">Una molestia, no un fallo de ruta. No quedaba ningún primer byte libre, así que la búsqueda eligió el nodo más lejano para compartirlo.</string>
+    <string name="id_clash">No queda ninguna identidad libre con %1$s. Esta clave comparte %2$s con %3$s: un conflicto de ruta real.</string>
+    <string name="id_clash_hint">Es la mejor disponible, y aun así hay conflicto.</string>
+    <string name="id_clash_d1">%1$s de los %2$s nombres posibles con este ancho ya están en uso.</string>
+    <string name="id_clash_d2">La búsqueda eligió el nodo más lejano que encontró para coincidir. Ampliar el hash de ruta es la solución real.</string>
+    <string name="id_seed">Apunta la semilla de 64 caracteres antes de aplicarlo; es la forma corta de la misma clave: %1$s</string>
+    <string name="id_replace_q">¿Sustituir la identidad de este nodo?</string>
+    <string name="id_restart_now">Reiniciar el nodo ahora para aplicarla</string>
+    <string name="id_reboot_silent">Un nodo nunca responde a un reinicio: el firmware se reinicia antes de poder contestar y no envía confirmación. Aquí, el silencio es el éxito.</string>
+    <string name="id_not_announced">Un nodo reiniciado solo se anuncia a las radios en alcance directo, y su siguiente anuncio por inundación puede tardar hasta 47 horas. Por eso la nueva identidad se escribe aquí en lugar de esperarla.</string>
+    <string name="id_confirm_word">SUSTITUIR</string>
+    <string name="id_type_to_confirm">Escribe %1$s para confirmar</string>
+    <string name="id_replace_restart">Sustituir y reiniciar</string>
+    <string name="id_replace">Sustituir</string>
     <string name="chats_search_hint">Buscar conversaciones</string>
     <string name="chats_advert_zero_hop">Enviar anuncio (0 saltos)</string>
     <string name="chats_advert_flood">Enviar anuncio (inundación)</string>
@@ -850,6 +943,11 @@
     <string name="about_this_licence">Licencia de MeshConnect</string>
     <string name="about_licences">Licencias de código abierto</string>
     <string name="about_endorsement">MeshConnect es un proyecto independiente. No está afiliado ni respaldado por el proyecto MeshCore ni por el autor de MeshCore Hardened.</string>
+    <plurals name="bytes_per_hop">
+        <item quantity="one">%1$d byte por salto</item>
+        <item quantity="many">%1$d bytes por salto</item>
+        <item quantity="other">%1$d bytes por salto</item>
+    </plurals>
     <plurals name="route_reversed">
         <item quantity="one">Su último mensaje llegó por %1$d repetidor, invertido aquí en el orden en que viajaría una respuesta.</item>
         <item quantity="many">Su último mensaje llegó por %1$d repetidores, invertidos aquí en el orden en que viajaría una respuesta.</item>
@@ -935,4 +1033,12 @@
         <item quantity="many">¿Descartar %1$d nodos?</item>
         <item quantity="other">¿Descartar %1$d nodos?</item>
     </plurals>
+    <string-array name="id_consequences">
+        <item>La identidad de este nodo es su clave. Si la cambias, para los demás este nodo desaparece y aparece uno nuevo con su nombre.</item>
+        <item>Cada contacto que lo tenga guardado debe añadirlo de nuevo. No se avisa a nadie.</item>
+        <item>Las rutas guardadas hacia este nodo dejan de tener sentido.</item>
+        <item>Los anuncios firmados antiguos de este nodo no volverán a verificarse.</item>
+        <item>El nodo sigue usando la clave antigua hasta que se reinicie.</item>
+        <item>No hay revocación ni vuelta atrás. Si no tienes la clave actual apuntada en un lugar seguro, se pierde en cuanto se aplique esto.</item>
+    </string-array>
 </resources>

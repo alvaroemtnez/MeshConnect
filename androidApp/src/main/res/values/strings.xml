@@ -744,6 +744,99 @@
     <string name="rshare_region">Frequency, bandwidth, SF, CR, hop-hash width and region #%1$s. Not TX power: that\'s the scanner\'s legal limit.</string>
     <string name="rshare_no_region">Frequency, bandwidth, SF, CR and hop-hash width; no region. Not TX power: that\'s the scanner\'s legal limit.</string>
     <string name="copy_link">Copy link</string>
+    <string name="rs_no_status">No status reply. Are you signed in and in range?</string>
+    <string name="rs_refresh">Refresh status</string>
+    <string name="rs_fetch_tele">Fetch telemetry</string>
+    <string name="rs_waiting">Waiting for the node…</string>
+    <string name="rs_status">Status</string>
+    <string name="rs_battery">Battery</string>
+    <string name="rs_uptime">Uptime</string>
+    <string name="rs_queue">Queue length</string>
+    <string name="rs_last_rssi">Last RSSI / SNR</string>
+    <string name="rs_noise">Noise floor</string>
+    <string name="rs_util">Channel utilisation</string>
+    <string name="rs_packets">Packets</string>
+    <string name="rs_rx_tx">Received / sent</string>
+    <string name="rs_flood">Flood tx / rx</string>
+    <string name="rs_direct">Direct tx / rx</string>
+    <string name="rs_dups">Duplicates (direct/flood)</string>
+    <string name="rs_airtime">Airtime tx / rx</string>
+    <string name="rs_errors">Error events</string>
+    <string name="rs_telemetry">Telemetry</string>
+    <string name="rs_no_answer_yet">The node hasn\'t answered yet.</string>
+    <string name="rs_acl">Access list</string>
+    <string name="rs_acl_no_reply">No reply. The node only answers this to an admin session; a read-only sign-in isn\'t enough.</string>
+    <string name="rs_acl_fetch">Fetch access list</string>
+    <string name="rs_asking">Asking the node…</string>
+    <string name="rs_acl_empty">The node answered and reported no access-list entries.</string>
+    <string name="rs_acl_prefixes">These are prefixes, not full keys: a prefix identifies a node only as far as it goes. The list is edited from the node\'s own console.</string>
+    <string name="rs_stop_watch">Stop watching</string>
+    <string name="rs_watch">Watch noise floor</string>
+    <string name="rs_watch_hint">Asks the node every %1$d s while this is on.</string>
+    <string name="rs_noise_now">Now %1$d dBm · min %2$d · max %3$d (%4$d samples)</string>
+    <string name="rs_no_reply">No reply. In range and signed in?</string>
+    <string name="rs_nb_rejected">The node says it knows %1$d neighbours but returned an empty page. That\'s a rejected request, not a paged table, and retrying won\'t change it.</string>
+    <string name="rs_neighbours">Neighbours</string>
+    <string name="rs_nb_fetch">Fetch neighbours</string>
+    <string name="rs_probe_refused">The node didn\'t accept the probe.</string>
+    <string name="rs_probe">Probe</string>
+    <string name="rs_fetch_more">Fetch more</string>
+    <string name="rs_probing">Asking nearby repeaters to answer…</string>
+    <string name="rs_probing_hint">They answer over the air; this takes about a minute.</string>
+    <string name="rs_nb_none_admin">The node reported no neighbours. Nothing keeps this list current, so try Probe before believing it.</string>
+    <string name="rs_nb_none">The node reported no neighbours, but nothing keeps this list current.</string>
+    <string name="rs_nb_partial">Showing %1$d of the %2$d the node knows.</string>
+    <string name="rs_nb_hint">Other repeaters heard directly, and only as fresh as their last advert.</string>
+    <string name="rs_nb_d1">The node records a neighbour only from a repeater\'s own advert that arrived with zero hops. Companions, rooms and sensors never appear.</string>
+    <string name="rs_nb_d2">Nothing polls and nothing expires, so this is who advertised since the node booted, not who\'s in range. Probe makes them answer now.</string>
+    <string name="rs_nb_d3">A prefix names a node only as far as it goes, so a row can match more than one contact.</string>
+    <string name="rs_nb_d4">The list is what this repeater says it hears, relayed by that repeater, and heard-ago is by its clock.</string>
+    <string name="id_admin_only">Sign in as admin to manage this node\'s identity key.</string>
+    <string name="id_talking">Talking to the node…</string>
+    <string name="id_title">Identity key</string>
+    <string name="id_intro">This node\'s Ed25519 private key. The key IS the node.</string>
+    <string name="id_named_by">On air it\'s named by its first %1$s.</string>
+    <string name="id_named_d1">A routed path carries only those leading bytes, so two repeaters that share them are one node as far as a stored route is concerned.</string>
+    <string name="id_named_d2">That\'s what a new key is chosen to avoid. The width is the node\'s own setting, and every node on the mesh has to agree on it.</string>
+    <string name="id_read">Read key…</string>
+    <string name="id_searching">Searching for an identity nobody else answers to…</string>
+    <string name="id_keygen_failed">This device couldn\'t generate a key pair.</string>
+    <string name="id_generate">Generate a new one</string>
+    <string name="id_write_down">Write this down somewhere safe. This app doesn\'t store it, and it can\'t be recovered from the mesh if the node is lost.</string>
+    <string name="id_hide">Hide</string>
+    <string name="id_replace_title">Replace the key</string>
+    <string name="id_new_key">New private key (128 hex characters)</string>
+    <string name="id_key_hint">A node stores 64 bytes, which is 128 hex characters. A 64-character Ed25519 seed is accepted too, and expanded here before it\'s sent.</string>
+    <string name="id_key_bad">A key is 128 hex characters (64 bytes), or the 64-character seed it came from. Nothing in between is a key.</string>
+    <string name="id_key_degenerate">That key is one byte repeated. It\'s structurally valid and cryptographically worthless: anyone can reproduce it.</string>
+    <string name="id_key_refused">The node will refuse that key: its public key starts with %1$s, and MeshCore rejects 00 and ff outright.</string>
+    <string name="id_would_become">This node would become %1$s</string>
+    <string name="id_prefix_taken">Those leading bytes are already used by %1$s. A route can\'t tell this node apart from that.</string>
+    <string name="id_will_report">The node will report its new public key when it applies the change.</string>
+    <string name="id_replace_btn">Replace identity key…</string>
+    <string name="id_read_q">Read the identity key?</string>
+    <string name="id_reveal_caveat">Reading the key sends it back over the mesh, through every repeater on the path, and in the clear if this link is TCP. Anyone who captures it can impersonate this node permanently.</string>
+    <string name="id_serial_only">A node only answers this over its USB serial console, never to a remote admin session. Over the mesh it will refuse, however good the link.</string>
+    <string name="id_no_key">No key came back. A node only answers this over USB serial, so over the mesh this is the expected answer.</string>
+    <string name="id_read_it">Read it</string>
+    <string name="id_free_full">On air it would answer to %1$s (%2$s, which is what this node is set to). No node this phone knows uses those bytes, at that width or as a destination hash.</string>
+    <string name="id_free">On air it would answer to %1$s (%2$s, which is what this node is set to). No node this phone knows uses those bytes.</string>
+    <string name="id_first_byte">Its first byte is shared with %1$s.</string>
+    <string name="id_first_byte_d1">Direct packets are addressed by that byte, so they reach both nodes and the wrong one discards them.</string>
+    <string name="id_first_byte_d2">A nuisance, not a routing fault. No first byte was left free, so the search chose the most distant node to share one with.</string>
+    <string name="id_clash">No free identity left at %1$s. This key shares %2$s with %3$s: a real routing clash.</string>
+    <string name="id_clash_hint">It\'s the best available, and still a clash.</string>
+    <string name="id_clash_d1">%1$s of the %2$s possible names at this width are already in use.</string>
+    <string name="id_clash_d2">The search chose the furthest node it could find to collide with. Widening the path hash is the real fix.</string>
+    <string name="id_seed">Write down the 64-character seed before you apply this; it\'s the short form of the same key: %1$s</string>
+    <string name="id_replace_q">Replace this node\'s identity?</string>
+    <string name="id_restart_now">Restart the node now to apply it</string>
+    <string name="id_reboot_silent">A node never answers a reboot: the firmware restarts before it can reply, and sends no acknowledgement. Silence here is what success looks like.</string>
+    <string name="id_not_announced">A rebooted node announces itself only to radios in direct range, and its next flooded advert can be up to 47 hours away. That\'s why the new identity is written here rather than waited for.</string>
+    <string name="id_confirm_word">REPLACE</string>
+    <string name="id_type_to_confirm">Type %1$s to confirm</string>
+    <string name="id_replace_restart">Replace and restart</string>
+    <string name="id_replace">Replace</string>
     <string name="chats_search_hint">Search conversations</string>
     <string name="chats_advert_zero_hop">Send advert (0-hop)</string>
     <string name="chats_advert_flood">Send advert (flood)</string>
@@ -852,6 +945,10 @@
     <string name="about_this_licence">MeshConnect\'s licence</string>
     <string name="about_licences">Open-source licences</string>
     <string name="about_endorsement">MeshConnect is an independent project. It is not affiliated with or endorsed by the MeshCore project or the MeshCore Hardened author.</string>
+    <plurals name="bytes_per_hop">
+        <item quantity="one">%1$d byte per hop</item>
+        <item quantity="other">%1$d bytes per hop</item>
+    </plurals>
     <plurals name="route_reversed">
         <item quantity="one">Their last message arrived over %1$d repeater, reversed here into the order a reply would travel.</item>
         <item quantity="other">Their last message arrived over %1$d repeaters, reversed here into the order a reply would travel.</item>
@@ -920,4 +1017,12 @@
         <item quantity="one">Dismiss %1$d node?</item>
         <item quantity="other">Dismiss %1$d nodes?</item>
     </plurals>
+    <string-array name="id_consequences">
+        <item>This node\'s identity is its key. Change it and, to everyone else, this node vanishes and a new one appears wearing its name.</item>
+        <item>Every contact that has it saved must add it again. Nobody is notified.</item>
+        <item>Stored paths and routes to this node stop meaning anything.</item>
+        <item>Old signed adverts from this node will never verify again.</item>
+        <item>The node keeps running the old key until it reboots.</item>
+        <item>There\'s no revocation and no undo. If you don\'t have the current key written down somewhere safe, it\'s gone the moment this is applied.</item>
+    </string-array>
 </resources>

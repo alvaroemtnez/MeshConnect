@@ -742,6 +742,99 @@
     <string name="rshare_region">Freqüència, amplada de banda, SF, CR, amplada del hash i regió #%1$s. No la potència: eixe és el límit legal de qui escaneja.</string>
     <string name="rshare_no_region">Freqüència, amplada de banda, SF, CR i amplada del hash; sense regió. No la potència: eixe és el límit legal de qui escaneja.</string>
     <string name="copy_link">Copiar l\'enllaç</string>
+    <string name="rs_no_status">Sense resposta d\'estat. Has iniciat sessió i estàs a l\'abast?</string>
+    <string name="rs_refresh">Actualitzar l\'estat</string>
+    <string name="rs_fetch_tele">Demanar telemetria</string>
+    <string name="rs_waiting">Esperant el node…</string>
+    <string name="rs_status">Estat</string>
+    <string name="rs_battery">Bateria</string>
+    <string name="rs_uptime">Temps encés</string>
+    <string name="rs_queue">Longitud de la cua</string>
+    <string name="rs_last_rssi">Últim RSSI / SNR</string>
+    <string name="rs_noise">Soroll de fons</string>
+    <string name="rs_util">Ús del canal</string>
+    <string name="rs_packets">Paquets</string>
+    <string name="rs_rx_tx">Rebuts / enviats</string>
+    <string name="rs_flood">Inundació tx / rx</string>
+    <string name="rs_direct">Directes tx / rx</string>
+    <string name="rs_dups">Duplicats (directe/inundació)</string>
+    <string name="rs_airtime">Temps en l\'aire tx / rx</string>
+    <string name="rs_errors">Errors</string>
+    <string name="rs_telemetry">Telemetria</string>
+    <string name="rs_no_answer_yet">El node encara no ha respost.</string>
+    <string name="rs_acl">Llista d\'accés</string>
+    <string name="rs_acl_no_reply">Sense resposta. El node només respon a açò en una sessió d\'administració; una de només lectura no és prou.</string>
+    <string name="rs_acl_fetch">Demanar la llista d\'accés</string>
+    <string name="rs_asking">Preguntant al node…</string>
+    <string name="rs_acl_empty">El node va respondre sense entrades en la llista d\'accés.</string>
+    <string name="rs_acl_prefixes">Són prefixos, no claus completes: un prefix identifica un node només fins on arriba. La llista s\'edita des de la consola del mateix node.</string>
+    <string name="rs_stop_watch">Deixar de vigilar</string>
+    <string name="rs_watch">Vigilar el soroll de fons</string>
+    <string name="rs_watch_hint">Pregunta al node cada %1$d s mentre està actiu.</string>
+    <string name="rs_noise_now">Ara %1$d dBm · mín. %2$d · màx. %3$d (%4$d mostres)</string>
+    <string name="rs_no_reply">Sense resposta. A l\'abast i amb sessió iniciada?</string>
+    <string name="rs_nb_rejected">El node diu que coneix %1$d veïns però ha tornat una pàgina buida. És una petició rebutjada, no una taula paginada, i reintentar no ho canviarà.</string>
+    <string name="rs_neighbours">Veïns</string>
+    <string name="rs_nb_fetch">Demanar veïns</string>
+    <string name="rs_probe_refused">El node no ha acceptat el sondeig.</string>
+    <string name="rs_probe">Sondejar</string>
+    <string name="rs_fetch_more">Demanar-ne més</string>
+    <string name="rs_probing">Demanant resposta als repetidors pròxims…</string>
+    <string name="rs_probing_hint">Responen per ràdio; tarda al voltant d\'un minut.</string>
+    <string name="rs_nb_none_admin">El node no ha informat de veïns. Res manté esta llista al dia, així que prova Sondejar abans de creure-ho.</string>
+    <string name="rs_nb_none">El node no ha informat de veïns, però res manté esta llista al dia.</string>
+    <string name="rs_nb_partial">Mostrant %1$d dels %2$d que coneix el node.</string>
+    <string name="rs_nb_hint">Altres repetidors oïts directament, i només tan recents com el seu últim anunci.</string>
+    <string name="rs_nb_d1">El node només registra un veí a partir de l\'anunci propi d\'un repetidor que va arribar amb zero salts. No hi apareixen mai companys, sales ni sensors.</string>
+    <string name="rs_nb_d2">Res pregunta i res caduca, així que açò és qui s\'ha anunciat des que va arrancar el node, no qui està a l\'abast. Sondejar fa que responguen ara.</string>
+    <string name="rs_nb_d3">Un prefix identifica un node només fins on arriba, així que una fila pot coincidir amb més d\'un contacte.</string>
+    <string name="rs_nb_d4">La llista és el que este repetidor diu que sent, transmés per ell, i l\'antiguitat va segons el seu rellotge.</string>
+    <string name="id_admin_only">Inicia sessió com a administrador per a gestionar la clau d\'identitat d\'este node.</string>
+    <string name="id_talking">Parlant amb el node…</string>
+    <string name="id_title">Clau d\'identitat</string>
+    <string name="id_intro">La clau privada Ed25519 d\'este node. La clau ÉS el node.</string>
+    <string name="id_named_by">En l\'aire se l\'anomena pels seus primers %1$s.</string>
+    <string name="id_named_d1">Una ruta només porta eixos bytes inicials, així que dos repetidors que els compartisquen són el mateix node per a una ruta guardada.</string>
+    <string name="id_named_d2">Això és el que s\'evita en triar una clau nova. L\'amplada és un ajust del mateix node, i tots els nodes de la malla han de coincidir.</string>
+    <string name="id_read">Llegir la clau…</string>
+    <string name="id_searching">Cercant una identitat que no use ningú més…</string>
+    <string name="id_keygen_failed">Este dispositiu no ha pogut generar un parell de claus.</string>
+    <string name="id_generate">Generar-ne una nova</string>
+    <string name="id_write_down">Apunta-la en un lloc segur. Esta aplicació no la guarda i no es pot recuperar de la malla si es perd el node.</string>
+    <string name="id_hide">Amagar</string>
+    <string name="id_replace_title">Substituir la clau</string>
+    <string name="id_new_key">Nova clau privada (128 caràcters hex)</string>
+    <string name="id_key_hint">Un node guarda 64 bytes, és a dir, 128 caràcters hex. També s\'accepta una llavor Ed25519 de 64 caràcters, que s\'expandix ací abans d\'enviar-la.</string>
+    <string name="id_key_bad">Una clau són 128 caràcters hex (64 bytes), o la llavor de 64 caràcters de què ix. Res intermedi és una clau.</string>
+    <string name="id_key_degenerate">Eixa clau és un sol byte repetit. És vàlida en forma i no val res criptogràficament: qualsevol pot reproduir-la.</string>
+    <string name="id_key_refused">El node rebutjarà eixa clau: la seua clau pública comença per %1$s, i MeshCore rebutja 00 i ff directament.</string>
+    <string name="id_would_become">Este node passaria a ser %1$s</string>
+    <string name="id_prefix_taken">Eixos bytes inicials ja els usa %1$s. Una ruta no pot distingir este node d\'eixe.</string>
+    <string name="id_will_report">El node informarà de la seua nova clau pública en aplicar el canvi.</string>
+    <string name="id_replace_btn">Substituir la clau d\'identitat…</string>
+    <string name="id_read_q">Llegir la clau d\'identitat?</string>
+    <string name="id_reveal_caveat">Llegir la clau la torna per la malla, a través de cada repetidor de la ruta, i sense xifrar si l\'enllaç és TCP. Qui la capture pot suplantar este node per a sempre.</string>
+    <string name="id_serial_only">Un node només respon a açò per la seua consola sèrie USB, mai a una sessió remota. Per la malla s\'hi negarà, per bo que siga l\'enllaç.</string>
+    <string name="id_no_key">No ha arribat cap clau. Un node només respon a açò per sèrie USB, així que per la malla és la resposta esperada.</string>
+    <string name="id_read_it">Llegir-la</string>
+    <string name="id_free_full">En l\'aire respondria a %1$s (%2$s, el que té configurat este node). Cap node conegut per este telèfon usa eixos bytes, ni amb eixa amplada ni com a hash de destinació.</string>
+    <string name="id_free">En l\'aire respondria a %1$s (%2$s, el que té configurat este node). Cap node conegut per este telèfon usa eixos bytes.</string>
+    <string name="id_first_byte">El seu primer byte el compartix amb %1$s.</string>
+    <string name="id_first_byte_d1">Els paquets directes s\'adrecen per eixe byte, així que arriben als dos nodes i l\'equivocat els descarta.</string>
+    <string name="id_first_byte_d2">Una molèstia, no una fallada de ruta. No quedava cap primer byte lliure, així que la cerca va triar el node més llunyà per a compartir-lo.</string>
+    <string name="id_clash">No queda cap identitat lliure amb %1$s. Esta clau compartix %2$s amb %3$s: un conflicte de ruta real.</string>
+    <string name="id_clash_hint">És la millor disponible, i tot i això hi ha conflicte.</string>
+    <string name="id_clash_d1">%1$s dels %2$s noms possibles amb esta amplada ja estan en ús.</string>
+    <string name="id_clash_d2">La cerca va triar el node més llunyà que va trobar per a coincidir. Ampliar el hash de ruta és la solució real.</string>
+    <string name="id_seed">Apunta la llavor de 64 caràcters abans d\'aplicar-ho; és la forma curta de la mateixa clau: %1$s</string>
+    <string name="id_replace_q">Substituir la identitat d\'este node?</string>
+    <string name="id_restart_now">Reiniciar el node ara per a aplicar-la</string>
+    <string name="id_reboot_silent">Un node mai respon a un reinici: el firmware es reinicia abans de poder contestar i no envia confirmació. Ací, el silenci és l\'èxit.</string>
+    <string name="id_not_announced">Un node reiniciat només s\'anuncia a les ràdios a l\'abast directe, i el seu pròxim anunci per inundació pot tardar fins a 47 hores. Per això la nova identitat s\'escriu ací en lloc d\'esperar-la.</string>
+    <string name="id_confirm_word">SUBSTITUIR</string>
+    <string name="id_type_to_confirm">Escriu %1$s per a confirmar</string>
+    <string name="id_replace_restart">Substituir i reiniciar</string>
+    <string name="id_replace">Substituir</string>
     <string name="chats_search_hint">Cercar converses</string>
     <string name="chats_advert_zero_hop">Enviar anunci (0 salts)</string>
     <string name="chats_advert_flood">Enviar anunci (inundació)</string>
@@ -850,6 +943,11 @@
     <string name="about_this_licence">Llicència de MeshConnect</string>
     <string name="about_licences">Llicències de codi obert</string>
     <string name="about_endorsement">MeshConnect és un projecte independent. No està afiliat ni avalat pel projecte MeshCore ni per l\'autor de MeshCore Hardened.</string>
+    <plurals name="bytes_per_hop">
+        <item quantity="one">%1$d byte per salt</item>
+        <item quantity="many">%1$d bytes per salt</item>
+        <item quantity="other">%1$d bytes per salt</item>
+    </plurals>
     <plurals name="route_reversed">
         <item quantity="one">El seu últim missatge va arribar per %1$d repetidor, invertit ací en l\'ordre en què viatjaria una resposta.</item>
         <item quantity="many">El seu últim missatge va arribar per %1$d repetidors, invertits ací en l\'ordre en què viatjaria una resposta.</item>
@@ -935,4 +1033,12 @@
         <item quantity="many">Descartar %1$d nodes?</item>
         <item quantity="other">Descartar %1$d nodes?</item>
     </plurals>
+    <string-array name="id_consequences">
+        <item>La identitat d\'este node és la seua clau. Si la canvies, per als altres este node desapareix i n\'apareix un de nou amb el seu nom.</item>
+        <item>Cada contacte que el tinga guardat l\'ha d\'afegir de nou. No s\'avisa ningú.</item>
+        <item>Les rutes guardades cap a este node deixen de tindre sentit.</item>
+        <item>Els anuncis signats antics d\'este node no es tornaran a verificar.</item>
+        <item>El node continua usant la clau antiga fins que es reinicie.</item>
+        <item>No hi ha revocació ni marxa enrere. Si no tens la clau actual apuntada en un lloc segur, es perd en el moment que s\'aplique açò.</item>
+    </string-array>
 </resources>

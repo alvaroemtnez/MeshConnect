@@ -1,5 +1,7 @@
 package io.alvaroedo.meshconnect.ui.screens
 
+import io.alvaroedo.meshconnect.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -43,6 +45,7 @@ import kotlinx.coroutines.launch
  */
 @Composable
 fun RepeaterStatusPanel(vm: MeshCoreViewModel, keyHex: String) {
+    val ctx = androidx.compose.ui.platform.LocalContext.current
     val scope = rememberCoroutineScope()
     var status by remember(keyHex) { mutableStateOf<RepeaterStatus?>(null) }
     var telemetry by remember(keyHex) { mutableStateOf<List<TelemetryReading>>(emptyList()) }
@@ -54,7 +57,7 @@ fun RepeaterStatusPanel(vm: MeshCoreViewModel, keyHex: String) {
         loading = true
         note = null
         status = vm.repeaterStatus(keyHex)
-        if (status == null) note = "No status reply — logged in and in range?"
+        if (status == null) note = ctx.getString(R.string.rs_no_status)
         loading = false
     }
 
@@ -77,7 +80,7 @@ fun RepeaterStatusPanel(vm: MeshCoreViewModel, keyHex: String) {
             TextButton(
                 enabled = !loading,
                 onClick = { scope.launch { fetchStatus() } },
-            ) { Text("Refresh status") }
+            ) { Text(stringResource(R.string.rs_refresh)) }
             TextButton(
                 enabled = !loading,
                 onClick = {
@@ -94,10 +97,10 @@ fun RepeaterStatusPanel(vm: MeshCoreViewModel, keyHex: String) {
                         loading = false
                     }
                 },
-            ) { Text("Fetch telemetry") }
+            ) { Text(stringResource(R.string.rs_fetch_tele)) }
         }
         if (loading) {
-            SectionSpinner("Waiting for the node…")
+            SectionSpinner(stringResource(R.string.rs_waiting))
             RequestProgressHint(vm, keyHex)
         }
         note?.let { HintText(it) }
@@ -113,29 +116,29 @@ fun RepeaterStatusPanel(vm: MeshCoreViewModel, keyHex: String) {
 
         status?.let { s ->
             Spacer(Modifier.height(8.dp))
-            Text("Status", style = MaterialTheme.typography.titleSmall)
-            StatField("Battery", BatteryLevel.label(s.batteryMillivolts))
-            StatField("Uptime", StatusCodec.formatUptime(s.uptimeSeconds))
-            StatField("Queue length", s.queueLength.toString())
-            StatField("Last RSSI / SNR", "${s.lastRssi} dBm / %.1f dB".format(s.lastSnr))
+            Text(stringResource(R.string.rs_status), style = MaterialTheme.typography.titleSmall)
+            StatField(stringResource(R.string.rs_battery), BatteryLevel.label(s.batteryMillivolts))
+            StatField(stringResource(R.string.rs_uptime), StatusCodec.formatUptime(s.uptimeSeconds))
+            StatField(stringResource(R.string.rs_queue), s.queueLength.toString())
+            StatField(stringResource(R.string.rs_last_rssi), "${s.lastRssi} dBm / %.1f dB".format(s.lastSnr))
             // dBm, not dB: an absolute power, like RSSI beside it. SNR
             // is the ratio and keeps dB. (The firmware's own comment
             // says "dBi", which is antenna gain — wrong a third way.)
-            StatField("Noise floor", "${s.noiseFloor} dBm")
-            StatField("Channel utilisation", "%.1f %%".format(s.channelUtilizationPercent))
+            StatField(stringResource(R.string.rs_noise), "${s.noiseFloor} dBm")
+            StatField(stringResource(R.string.rs_util), "%.1f %%".format(s.channelUtilizationPercent))
             HorizontalDivider(Modifier.padding(vertical = 6.dp))
-            Text("Packets", style = MaterialTheme.typography.titleSmall)
-            StatField("Received / sent", "${s.packetsReceived} / ${s.packetsSent}")
-            StatField("Flood tx / rx", "${s.floodTx} / ${s.floodRx}")
-            StatField("Direct tx / rx", "${s.directTx} / ${s.directRx}")
-            StatField("Duplicates (direct/flood)", "${s.directDuplicates} / ${s.floodDuplicates}")
-            StatField("Airtime tx / rx", "${s.txAirSeconds}s / ${s.rxAirSeconds}s")
-            StatField("Error events", s.errorEvents.toString())
+            Text(stringResource(R.string.rs_packets), style = MaterialTheme.typography.titleSmall)
+            StatField(stringResource(R.string.rs_rx_tx), "${s.packetsReceived} / ${s.packetsSent}")
+            StatField(stringResource(R.string.rs_flood), "${s.floodTx} / ${s.floodRx}")
+            StatField(stringResource(R.string.rs_direct), "${s.directTx} / ${s.directRx}")
+            StatField(stringResource(R.string.rs_dups), "${s.directDuplicates} / ${s.floodDuplicates}")
+            StatField(stringResource(R.string.rs_airtime), "${s.txAirSeconds}s / ${s.rxAirSeconds}s")
+            StatField(stringResource(R.string.rs_errors), s.errorEvents.toString())
         }
 
         if (telemetry.isNotEmpty()) {
             HorizontalDivider(Modifier.padding(vertical = 6.dp))
-            Text("Telemetry", style = MaterialTheme.typography.titleSmall)
+            Text(stringResource(R.string.rs_telemetry), style = MaterialTheme.typography.titleSmall)
             for (t in telemetry) {
                 // Converted for display only; the reading keeps the
                 // unit the sensor encoded.
@@ -152,7 +155,7 @@ fun RepeaterStatusPanel(vm: MeshCoreViewModel, keyHex: String) {
         }
 
         if (status == null && telemetry.isEmpty() && !loading) {
-            HintText("The node has not answered yet.")
+            HintText(stringResource(R.string.rs_no_answer_yet))
         }
         Spacer(Modifier.height(24.dp))
     }
@@ -181,6 +184,7 @@ private fun StatField(label: String, value: String) {
  */
 @Composable
 private fun AccessListSection(vm: MeshCoreViewModel, keyHex: String) {
+    val ctx = androidx.compose.ui.platform.LocalContext.current
     val scope = rememberCoroutineScope()
     var entries by remember(keyHex) {
         mutableStateOf<List<io.github.thatsfguy.meshcore.protocol.AccessList.BinEntry>?>(null)
@@ -189,7 +193,7 @@ private fun AccessListSection(vm: MeshCoreViewModel, keyHex: String) {
     var note by remember { mutableStateOf<String?>(null) }
 
     Spacer(Modifier.height(12.dp))
-    Text("Access list", style = MaterialTheme.typography.titleSmall)
+    Text(stringResource(R.string.rs_acl), style = MaterialTheme.typography.titleSmall)
     ButtonFlowRow {
         TextButton(
             enabled = !loading,
@@ -204,22 +208,21 @@ private fun AccessListSection(vm: MeshCoreViewModel, keyHex: String) {
                     // question it could never have answered.
                     entries = vm.repeaterAccessList(keyHex)
                     if (entries == null) {
-                        note = "No reply. The node only answers this to an admin session — " +
-                            "a read-only login is not enough."
+                        note = ctx.getString(R.string.rs_acl_no_reply)
                     }
                     loading = false
                 }
             },
-        ) { Text("Fetch access list") }
+        ) { Text(stringResource(R.string.rs_acl_fetch)) }
     }
     if (loading) {
-        SectionSpinner("Asking the node…")
+        SectionSpinner(stringResource(R.string.rs_asking))
         RequestProgressHint(vm, keyHex)
     }
     note?.let { HintText(it) }
     entries?.let { list ->
         if (list.isEmpty()) {
-            HintText("The node answered and reported no access-list entries.")
+            HintText(stringResource(R.string.rs_acl_empty))
         }
         for (entry in list) {
             Row(Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
@@ -244,8 +247,7 @@ private fun AccessListSection(vm: MeshCoreViewModel, keyHex: String) {
         }
         if (list.isNotEmpty()) {
             HintText(
-                "Prefixes, not full keys — a prefix identifies a node only as far as it " +
-                    "goes. Editing the list is done from the node's own console.",
+                stringResource(R.string.rs_acl_prefixes),
             )
         }
     }
@@ -274,23 +276,22 @@ private fun NoiseFloorSection(vm: MeshCoreViewModel, keyHex: String) {
     }
 
     Spacer(Modifier.height(12.dp))
-    Text("Noise floor", style = MaterialTheme.typography.titleSmall)
+    Text(stringResource(R.string.rs_noise), style = MaterialTheme.typography.titleSmall)
     ButtonFlowRow {
         TextButton(onClick = { watching = !watching }) {
-            Text(if (watching) "Stop watching" else "Watch noise floor")
+            Text(stringResource(if (watching) R.string.rs_stop_watch else R.string.rs_watch))
         }
         if (samples.isNotEmpty()) {
-            TextButton(onClick = { samples = emptyList() }) { Text("Clear") }
+            TextButton(onClick = { samples = emptyList() }) { Text(stringResource(R.string.clear)) }
         }
     }
     if (samples.isEmpty()) {
-        HintText("Polls the node every ${WATCH_INTERVAL_MS / 1000}s while this is on.")
+        HintText(stringResource(R.string.rs_watch_hint, (WATCH_INTERVAL_MS / 1000).toInt()))
     } else {
         // The unit once, on the leading value — the run below is a
         // shape, and repeating "dBm" on every figure buries it.
         Text(
-            "Now ${samples.last()} dBm · min ${samples.min()} · max ${samples.max()} " +
-                "(${samples.size} samples)",
+            stringResource(R.string.rs_noise_now, samples.last(), samples.min(), samples.max(), samples.size),
             style = MaterialTheme.typography.bodySmall,
         )
         Text(
@@ -327,6 +328,7 @@ private const val WATCH_SAMPLES = 24
  */
 @Composable
 private fun NeighboursSection(vm: MeshCoreViewModel, keyHex: String) {
+    val ctx = androidx.compose.ui.platform.LocalContext.current
     // Only repeater firmware keeps a neighbour table — room servers and
     // sensors have no `0x06` handler at all, so the button could only
     // ever time out into "no reply, are you in range?", which blames the
@@ -361,26 +363,24 @@ private fun NeighboursSection(vm: MeshCoreViewModel, keyHex: String) {
         val t = vm.repeaterNeighbours(keyHex, offset = offset)
         table = t
         when {
-            t == null -> note = "No reply — in range and logged in?"
+            t == null -> note = ctx.getString(R.string.rs_no_reply)
             // A correct request cannot produce this: the node is
             // claiming rows and returning an empty first page. Say it is
             // wrong rather than inviting a retry that cannot help.
             t.isEmptyButNotEmpty ->
-                note = "The node says it knows ${t.total} neighbour(s) but returned an " +
-                    "empty page. That is a rejected request, not a paged table — retrying " +
-                    "will not change it."
+                note = ctx.getString(R.string.rs_nb_rejected, t.total)
             else -> rows = if (offset == 0) t.entries else rows + t.entries
         }
         loading = false
     }
 
     Spacer(Modifier.height(12.dp))
-    Text("Neighbours", style = MaterialTheme.typography.titleSmall)
+    Text(stringResource(R.string.rs_neighbours), style = MaterialTheme.typography.titleSmall)
     ButtonFlowRow {
         TextButton(
             enabled = !loading && !probing,
             onClick = { scope.launch { rows = emptyList(); fetch(0) } },
-        ) { Text("Fetch neighbours") }
+        ) { Text(stringResource(R.string.rs_nb_fetch)) }
         if (isAdmin) {
             TextButton(
                 enabled = !loading && !probing,
@@ -389,7 +389,7 @@ private fun NeighboursSection(vm: MeshCoreViewModel, keyHex: String) {
                         probing = true
                         note = null
                         if (!vm.probeNeighbours(keyHex)) {
-                            note = "The node did not take the probe."
+                            note = ctx.getString(R.string.rs_probe_refused)
                         } else {
                             // Replies arrive over the air, one per
                             // repeater that hears it. Measured against a
@@ -404,25 +404,25 @@ private fun NeighboursSection(vm: MeshCoreViewModel, keyHex: String) {
                         probing = false
                     }
                 },
-            ) { Text("Probe") }
+            ) { Text(stringResource(R.string.rs_probe)) }
         }
         table?.let { t ->
             if (t.isPartial && rows.isNotEmpty()) {
                 TextButton(
                     enabled = !loading && !probing,
                     onClick = { scope.launch { fetch(rows.size) } },
-                ) { Text("Fetch more") }
+                ) { Text(stringResource(R.string.rs_fetch_more)) }
             }
         }
     }
     if (probing) {
-        SectionSpinner("Asking nearby repeaters to answer…")
+        SectionSpinner(stringResource(R.string.rs_probing))
         // Without this the spinner sits for the better part of a minute
         // with nothing to say why.
-        HintText("They answer over the air; this takes about a minute.")
+        HintText(stringResource(R.string.rs_probing_hint))
     }
     if (loading && !probing) {
-        SectionSpinner("Asking the node…")
+        SectionSpinner(stringResource(R.string.rs_asking))
         RequestProgressHint(vm, keyHex)
     }
     note?.let { HintText(it) }
@@ -435,10 +435,9 @@ private fun NeighboursSection(vm: MeshCoreViewModel, keyHex: String) {
             // as a finding.
             HintText(
                 if (isAdmin) {
-                    "The node reported no neighbours. Nothing keeps this list current, so " +
-                        "try Probe before believing it."
+                    stringResource(R.string.rs_nb_none_admin)
                 } else {
-                    "The node reported no neighbours — but nothing keeps this list current."
+                    stringResource(R.string.rs_nb_none)
                 },
             )
         }
@@ -462,28 +461,24 @@ private fun NeighboursSection(vm: MeshCoreViewModel, keyHex: String) {
         }
         if (rows.isNotEmpty()) {
             if (t.isPartial) {
-                HintText("Showing ${rows.size} of ${t.total} the node knows.")
+                HintText(stringResource(R.string.rs_nb_partial, rows.size, t.total))
             }
             // Lead with what the table actually contains. "Neighbours"
             // reads as "everyone this node hears", and the firmware
             // records something much narrower — so a short list looks
             // like a bug until you know that.
-            ExpandableHint("Other repeaters heard directly — and only as fresh as their last advert.") {
+            ExpandableHint(stringResource(R.string.rs_nb_hint)) {
                 HintText(
-                    "The node records a neighbour only from a repeater's own advert that " +
-                        "arrived at zero hops. Companions, rooms and sensors never appear.",
+                    stringResource(R.string.rs_nb_d1),
                 )
                 HintText(
-                    "Nothing polls and nothing expires, so this is who advertised since the " +
-                        "node booted, not who is in range. Probe makes them answer now.",
+                    stringResource(R.string.rs_nb_d2),
                 )
                 HintText(
-                    "A prefix names a node only as far as it goes, so a row can match " +
-                        "more than one contact.",
+                    stringResource(R.string.rs_nb_d3),
                 )
                 HintText(
-                    "The list is what this repeater says it hears, relayed by that " +
-                        "repeater, and heard-ago is on its clock.",
+                    stringResource(R.string.rs_nb_d4),
                 )
             }
         }
