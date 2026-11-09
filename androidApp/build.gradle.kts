@@ -27,13 +27,13 @@ fun gitDerivedVersion(): Pair<String, Int>? {
 }
 
 android {
-    namespace = "io.github.thatsfguy.meshcore.android"
+    namespace = "io.alvaroedo.meshconnect"
     compileSdk = 34
     // build.sh installs the SDK packages named here and by compileSdk.
     buildToolsVersion = "34.0.0"
 
     defaultConfig {
-        applicationId = "io.github.thatsfguy.meshcore.native"
+        applicationId = "io.alvaroedo.meshconnect"
         minSdk = 26
         targetSdk = 34
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -51,6 +51,10 @@ android {
         // only: arm64 for every current device, armeabi-v7a for old 32-bit
         // ones. (Consequence: no x86_64 emulator/Chromebook builds. The
         // project has no instrumented tests, so CI is unaffected.)
+        // English (default), Spanish, Valencian; drops the translations
+        // libraries bring for every other language.
+        resourceConfigurations += listOf("en", "es", "ca")
+
         ndk {
             abiFilters += listOf("arm64-v8a", "armeabi-v7a")
         }
@@ -87,6 +91,9 @@ android {
         // Distinct applicationId so a debug build installs side-by-side
         // with a release install.
         debug {
+            // x86_64 too, so the debug build runs on the headless AOSP
+            // emulator (README → Emulator). Release stays ARM-only.
+            ndk { abiFilters += "x86_64" }
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-debug"
         }

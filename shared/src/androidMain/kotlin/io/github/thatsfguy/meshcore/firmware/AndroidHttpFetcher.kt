@@ -31,7 +31,7 @@ class AndroidHttpFetcher : HttpFetcher {
                 connectTimeout = 15_000
                 readTimeout = 30_000
                 setRequestProperty("Accept", "application/vnd.github+json, application/octet-stream")
-                setRequestProperty("User-Agent", "MeshCoreHardened")
+                setRequestProperty("User-Agent", "MeshConnect")
             }
             try {
                 val status = connection.responseCode

@@ -1,0 +1,1791 @@
+# Changelog
+
+Release notes for MeshCore Hardened, newest first.
+
+This file is the source the GitHub release notes are built from — the release workflow
+extracts the section matching the tag. The app carries its own copy of the same text in
+`AboutSection.kt` (a changelog behind a link is one you can't read in the field), and a test
+holds the two to the same set of versions so neither can quietly drift.
+
+Every entry describes what is in **that tagged build**. A feature that landed after a tag
+belongs in the next section, not this one — 0.3.0 was once credited with four features that
+shipped after it, which misled nobody so much as the author, three months later.
+
+## 0.10.15
+
+**Telemetry asks first and no longer signs in up front.** 0.10.14 signed in to a repeater, room or
+sensor before asking for its telemetry, which sent the saved password over the air every time.
+That wasn't needed. A node answers any radio it has ever let sign in, and it remembers that
+radio indefinitely, whatever the app says. What signing in had really fixed was a stale route.
+
+- **The request goes out as it is.** A node that knows your radio answers straight away, with
+  no sign-in, as it does in other apps.
+- **If it doesn't answer, the app repairs the route and asks again.** It resets the path and
+  sends a blank-password probe first, which refreshes the route without sending a password.
+  The saved password is tried only if that fails.
+- **If nothing works, the app says so.** It suggests signing in once from the node's admin
+  screen, in case the node has never seen this radio.
+
+## 0.10.14
+
+**Telemetry shows the battery again.** Every telemetry reply was read one byte off, which hid the
+node's battery voltage, always the first reading, and turned it into a "Digital out" with a
+nonsense value. The zero padding at the end of a reply also showed as a phantom "Digital in 0".
+Both are fixed, on the repeater Status screen and in a contact's Telemetry dialog.
+
+**Telemetry signs in first when the node needs it.** Repeaters, rooms and sensors only answer
+someone signed in, so asking one you hadn't signed into got silence that looked like no
+telemetry. The fetch now signs in the way the map's neighbour fetch does: with the saved password,
+or a blank one, without saving anything. A node that won't have you says so. A chat node is
+asked directly, as before.
+
+**Battery readings show an estimated percentage**, like `3.92 V · ~76%`.
+
+- **It's the figure the radio draws on its own screen**: a straight line from 3.0 V (0%) to
+  4.2 V (100%). No MeshCore node sends a percentage, so the `~` marks it as an estimate.
+- **It assumes one lithium cell.** Outside 2.5–4.5 V, which means no battery sense, USB power, a
+  two-cell pack or solar, the app shows the voltage alone rather than a wrong percentage.
+- **Only the node's own battery gets one.** Other voltages a sensor reports stay plain volts.
+- **It appears on** telemetry, the repeater Status block and the radio's battery line in
+  Settings.
+
+**Soil-moisture sensor telemetry is no longer cut off.** The app didn't know the percentage
+reading these sensors send, and stopped at it, dropping everything after.
+
+**Search boxes have an ✕ to clear them**: Chats, Nodes, Command help and the radio presets.
+
+## 0.10.13
+
+**A room server opens as a room.** A room is something you sign in to and then read and post
+in. Tapping one used to open its admin screen. Its conversation was a separate button that
+skipped signing in, so posts went nowhere and nothing new arrived: a room only accepts posts
+from, and sends new posts to, people who have signed in.
+
+- **Tapping a room in Nodes signs you in, then opens the room.** If you're already signed in it
+  goes straight there.
+- **The sign-in dialog mentions the usual room password.** Stock room firmware ships with
+  "hello", and many rooms keep it. The dialog says so but doesn't fill it in, since some owners
+  change it or use none.
+- **A room opened without signing in says so**, above the message box, with a Sign in button.
+  The same applies to a read-only sign-in, whose posts the room drops.
+- **An admin finds the room's tools inside the room** (menu → Manage room…). Long-pressing a
+  room still offers both Open room and Administer this node.
+
+**Signing in with the room password no longer reports "read-only".** The room grants the right
+to post, and the app now reads that from its reply. The grant shows as MEMBER; read-only guests
+are still GUEST.
+
+**Rooms and sensors can be configured as repeaters too.** Both forward packets unless `repeat`
+is off, and both keep their own regions, but the app treated forwarding and regions as
+repeater-only. Their admin screens now have Regions, Settings has Packet forwarding, and Command
+help lists `repeat`, `flood.max` and the `region` commands. Neighbours, loop detection and the
+serial bridge stay repeater-only, because only repeater firmware uses them.
+
+## 0.10.12
+
+**Channels show what kind they are, and only hashtag channels get a `#`.** Every channel used to
+show a `#`, which made private channels look like ones anyone can join.
+
+- **The kind is read from the channel's key, not its name.** A globe marks Public, `#` marks a
+  hashtag channel, and a lock marks a private channel.
+- **A channel named "#something" with a private key shows as private.** A `#` in the name
+  doesn't make a channel public; only a key made from that name does.
+- **Names are shown exactly as saved**, with nothing added in front: in the list, the
+  conversation title and notifications.
+- **The line under a conversation's title says who can read it**: "Public · anyone can read
+  it", "Hashtag · anyone can read it" or "Private · not secure".
+
+**Adding a channel explains the choice.** The add sheet starts by saying that a channel is its
+secret key: everyone with the same key is in the same channel, whatever each of them calls it.
+Then it offers the four choices the MeshCore app does, each with its own short form:
+
+- **Join the Public Channel.**
+- **Create a Private Channel**, with a new random key. Share it from the channel's settings.
+- **Join a Private Channel**, with a key someone gave you. The name can be anything, because
+  only the key must match.
+- **Join a Hashtag Channel.** The name is lowercased and limited to a–z, 0–9 and hyphens,
+  because the key is made from the exact name.
+- **Scanning a channel or community QR** is still there.
+
+A private channel's name can't start with `#` any more. Before, naming one "#x" silently made it
+the public #x channel instead. An all-zeros key is refused. Adding a channel you already have
+says so and doesn't use a second slot.
+
+## 0.10.11
+
+**The app-wide region is saved on the radio itself.** Settings → Mesh policies → Global flood
+scope now sets the radio's saved default region, on firmware that has one. Before, the app set
+a temporary region that the radio forgets on every reboot, and sent it again each time it
+connected.
+
+- **Clear now really means no region.** Before, clearing only removed the app's temporary
+  setting. A radio with a saved default region (set by another app, or built into its
+  firmware) kept tagging messages with it while the screen said "global".
+- **The screen shows the radio's saved region**, read from the radio on every connect, including
+  one set by another app or built into the firmware.
+- **Your radio's own flooded adverts now carry the region too.** The radio always sends those
+  with its saved default and ignores the temporary setting, so a region set in the app before
+  never reached them.
+- **A region you set in an earlier version is saved to the radio once**, if the radio has none.
+  If the radio already has one, the radio's is kept.
+- **A channel with its own region still uses it for that send**, then goes back to the saved
+  default.
+- **Older firmware** that can't save a default keeps the old behaviour.
+
+**The channel region picker no longer claims "None" floods the whole mesh.** It uses the
+app-wide region, which may be set.
+
+## 0.10.10
+
+**A repeater's hub no longer offers a guest screens the repeater won't answer.** A repeater runs
+text commands only for an admin, and that includes reads. Every value on Settings and Regions
+is read that way, so as a guest they stayed empty.
+
+- **As a guest you now see Status**, which a repeater does answer for guests, **and a card of
+  things you can ask for**. Settings, Regions and Command help are admin-only, like the Console
+  they belong with.
+- **Owner:** the repeater's owner text and firmware version.
+- **Regions:** which regions the repeater floods, and whether it floods traffic with no region.
+  That is all a guest can learn: a region it doesn't flood isn't reported, and the full setup
+  needs an admin.
+- **Nothing is sent until you tap Ask the node.** Opening a repeater puts nothing on the air.
+- **The regions request needs a stored direct route.** A repeater ignores it otherwise, so with
+  no route the card says so instead of waiting. A repeater also answers only 4 of these every
+  3 minutes.
+- **Command help shows every command to an admin**, marking the ones that change the node.
+  It used to show guests a "read-only" subset they couldn't actually run.
+
+**A blank password signs you in with whatever the repeater already has on file for your
+radio.** If you have ever signed in as admin, that is admin, and "Sign out" in the app doesn't
+change it: the repeater has no sign-out. To see the guest view, an admin must remove your radio
+from the repeater's access list.
+
+## 0.10.9
+
+**New nodes can be muted on the Nodes list.** On a busy mesh, every node the radio hears but
+doesn't add shows up on its tab with a count badge.
+
+- **"Hide nodes not added"** is in the list menu beside the search box. It hides them and their
+  tab badges, and is remembered across restarts.
+- **The list keeps saying so** ("Hiding 12 nodes not added"), with a **Show** button that brings
+  them back. Turn off auto-add under Settings → Auto-add contacts too, so they don't become
+  contacts either.
+- **A node heard but not added opens a sheet like a contact's**, on tap or long-press: its key
+  (with Copy), position and distance, when it was first and last heard, its hops, and why it may
+  be worth adding. Messaging, administration, routes and the rest need it in your radio's
+  contacts, so the sheet says that and offers **Add to contacts**, which then opens the full
+  contact sheet. **Forget this node** removes it from the list.
+
+**Settings → Mesh policies → Regions lists region names without a `#`.** The `#` read as part of
+the name, and a repeater lists the same region as a bare `mi`, so the two looked like different
+regions.
+
+- **Regions are shown with a bullet** (`• mi`), and sentences say "region mi".
+- **Nothing about the region itself changed.** The radio still gets the same key, and existing
+  scopes keep working.
+
+## 0.10.8
+
+**A mesh-settings code can carry an area's region tree and a default.** Regions are organised
+from wide to local, such as `midwest › mi › west › grr`, and an area picks which one phones use.
+
+- **Scanning a code with a tree offers every level**, with the code's default preselected, and
+  sets the one you pick as this phone's region. As before, it is behind its own checkbox, and the
+  radio settings apply either way.
+- **Scanning a code from a repeater's own settings shows the tree and default, and can write
+  them to the repeater.** It first reads what the repeater holds and lists only what would
+  change: regions added, regions moved, the default. Scanning the same code again sends nothing,
+  and radio values the repeater already runs aren't sent again or followed by a reboot prompt. A
+  region the operator set to refuse flood traffic stays that way. The firmware's `region def` and
+  `region default` re-allow flood on every region they name, so the app denies it again before
+  saving. Regions the code doesn't name are left alone. The write starts unticked.
+- **A tree that isn't valid is refused whole and shown**: a repeated name, one that isn't
+  lowercase letters, digits and dashes, more than 8 names, or a tree that leaves out its own
+  default. The default region still applies.
+- **Older versions of the app still scan these codes** and use the default region.
+- **The web generator has a region builder**: a row per region, each indented under the one
+  above, with buttons to add, reorder and remove, and the default picked from the regions below.
+  Pasting a list such as `midwest; mi; west; grr` fills in the rows. Nothing about an area is
+  built in, so any area can make its own.
+- **The generator's USB writer can put the tree on a repeater**, behind a checkbox that starts
+  unticked: `region def` builds the tree, `region default` sets the default and `region save`
+  keeps it. It needs repeater firmware 1.16 or newer and keeps regions already on the node. A
+  repeater relays traffic for a region only if it holds that exact region, so every repeater in
+  the area needs the whole tree.
+
+## 0.10.7
+
+**A repeater's Regions screen no longer shows "Relay all" when it didn't hear the answer.** A
+node set to relay only nearby untagged traffic showed "Relay all" whenever one of the screen's
+four questions went unanswered, and saving could report the wrong thing for the same reason.
+
+- **A question the repeater doesn't answer is asked again**, after 10 seconds of silence, up to
+  three times. Only commands that read something are repeated; a command that changes a setting is
+  still sent once.
+- **An answer is matched to its question by its shape as well as its order.** The repeater's
+  answers carry nothing linking them to the command, so a late answer used to become the answer to
+  the next question: a late version string, read as the hop limit, meant "no limit". Answers in
+  another command's shape, and the second answer to a question asked twice, are now skipped.
+- **Admin commands go out one at a time**, including the repeater settings switches, which used to
+  send without waiting for each other.
+- **A hop limit that couldn't be read says so** and asks you to fetch again, instead of showing a
+  mode.
+
+## 0.10.6
+
+**A repeater's Regions screen reads the regions it actually has.** It said the node's answer
+"wasn't in a form we recognise" for every repeater with regions set up. The app was reading a
+reply format no firmware has ever sent, and its tests only checked that guess. It now reads the
+region tree the firmware prints.
+
+- **Regions are shown as a tree**, each indented under its parent, with the home region marked.
+- **The default scope is read correctly.** It used to show as unknown on every node.
+- **"Untagged traffic (*)" shows whether the repeater relays traffic that carries no region**,
+  which is what a neighbouring mesh that doesn't use regions sends. An admin can refuse it,
+  after a confirmation that names the gentler `flood.max.unscoped` option. The old note said
+  this stopped all flood traffic; it only stops untagged traffic.
+- **A list too long for the node's 160-byte reply says it was cut off**, rather than showing a
+  half-received name as a region.
+- **A region name the app can't match, such as "MI", is shown but can't be acted on**: its tag
+  differs from "mi", so a command for it would address a different region.
+
+**Regions are managed by tapping them, and untagged traffic is one control.**
+
+- **Tap a region** to make it the default or home region, add a region under it, allow or deny
+  its flood, or remove it. Remove is offered only for a region with no regions under it, since the
+  firmware refuses otherwise. The default and home regions are labelled on their rows.
+- **Adding a region picks its parent from the tree**, instead of typing the parent's name.
+- **Untagged traffic: relay all, relay only nearby, or refuse.** "Only nearby" sets the
+  repeater's untagged hop limit, `flood.max.unscoped`, with 3 suggested, and says what the number
+  means ("come through 2 repeaters or fewer"). It is offered only on repeater firmware 1.16 or
+  newer. Older firmware answers a read of that setting with its overall hop limit, a plausible
+  number that means something else, so the app checks the version instead.
+- **The screen reads the node again after every change**, so it shows what the node holds.
+- **The unsaved-changes warning follows the firmware:** setting the default region and the hop
+  limit save themselves, and setting the default also saves any region edits made before it.
+
+**A mesh-settings QR code can set your region too.**
+
+- **Scanning a code that names a region offers to set it**, with a checkbox ("Also set this
+  phone's region to #mi") that starts ticked, and one line saying what it means: your messages
+  then travel only through repeaters that carry that region.
+- **A region that isn't a clean lowercase name is refused and shown, not rewritten.** "MI" and
+  "mi" are different regions on the air. The radio values in the code still apply.
+- **Settings → Radio → "Share these settings…"** shows this radio's settings as a code:
+  frequency, bandwidth, SF, CR, hop-hash width and your region. Not TX power, which is the
+  scanner's legal limit. It's built from the radio, not the edit fields, and it refuses to
+  make a code if the radio hasn't reported its hop-hash width, rather than guessing it.
+- **Your region now survives an app restart.** It lived only in the running app, so an app
+  restart followed by a radio reboot quietly dropped it. It's saved and set again on every
+  connect.
+- **The web generator** ([settings-qr](https://thatsfguy.github.io/meshcore-mobile-app/settings-qr/))
+  lowercases the region as you type and refuses one the app would refuse.
+
+## 0.10.5
+
+**Heard nodes show how far away they are, not a misleading signal.** Rows under "Heard, not
+added" on Contacts, Repeaters and Rooms now say "direct", "1 hop" or "N hops": the fewest hops
+any of the node's adverts took to reach you. The signal figure is gone except beside "direct".
+For a relayed advert it measured the last repeater that passed it on, not the node, so a
+far-off node could look strong.
+
+- **The count is the nearest the node has been.** One relayed copy does not undo having heard it
+  direct.
+- **The direct signal is measured on a direct copy**, and kept when later copies arrive relayed.
+- **A node not heard since updating shows no count** until its next advert, rather than a guess.
+
+## 0.10.4
+
+**Contacts, favourites included, could vanish from the app while the radio still had them.**
+Adding several nodes in a row could make the app take a partial read of the radio's contact list
+for the whole list, and forget every contact that read didn't include. Nothing was removed from
+the radio — the next full read brought them all back — but until then they were gone from Nodes,
+the map and the favourites. The app now trusts a read as the whole list only when it delivered as
+many contacts as the radio says it holds; anything short of that can add and update contacts but
+never removes one.
+
+- **Nodes added in quick succession all appear.** After an Add the app asked the radio what had
+  changed since the newest contact it knew of, in whole seconds, so a node added in the same
+  second as the one before was skipped — on the test phone, four of six quick adds reached the
+  radio but not the app. The app now reads back exactly the node it added, and its periodic
+  "what changed" reads start one second earlier.
+
+**Heard repeaters say why they might be worth adding, and the app can add the useful ones.**
+With the radio's own auto-add for repeaters off, the Repeaters tab fills with ones it heard but
+did not add, and nothing said which of them matter.
+
+- **Each heard repeater now shows its signals:** "relayed N messages you received" — its route
+  hash appeared in the routes of at least 3 messages in the last week — and "heard direct" when
+  one of its adverts reached your radio without passing through another repeater. Those are
+  listed first.
+- **A repeater that shares its short route hash with another node you know is not credited**,
+  since the relays could be the other node's. The row says so instead.
+- **Two new switches in Auto-add contacts, shown only while the radio isn't adding repeaters:**
+  add the ones that relayed messages you received, and/or the ones heard directly. They are off
+  by default. The app stops when the radio's contact list is full and does not retry a node that
+  failed.
+- **Relay counts cover the whole route**, so a repeater on a busy long-distance flood path can
+  qualify even when it is far away. Heard-direct is the stricter signal for neighbours.
+
+**A name that starts with an emoji shows its initial in the avatar.** "🐄Donk-N8FWG" showed "�"
+in its circle: an emoji is two characters, and the circle took the first half of it. It now shows
+the first letter or digit ("D"); a name that is only emoji shows the emoji whole.
+
+**A search on Nodes or Chats survives opening a result.** Searching for a node, opening it and
+coming back cleared the search box, so finding the next one meant typing it again. The term now
+stays until you clear it.
+
+## 0.10.3
+
+**A phone put away on a conversation no longer stays silent for it.** The app does not notify
+for the conversation you are reading — you are looking at it — but it decided "reading" by
+whether the conversation screen was the last one shown, and turning the screen off does not
+change that. So the conversation left open when the phone went into a pocket was treated as
+being read for as long as it stayed there: its messages made no sound, raised no notification
+and did not count as unread. Now a conversation counts as open only while the app is on screen.
+
+- **While you are looking at it, it still stays quiet**, as before.
+- **Coming back to it clears its notification** and its unread count.
+- **The diagnostics log now records each notification decision**: which conversation, whether
+  it counted as open, and why a message did not notify if it did not. Never the message text.
+
+## 0.10.2
+
+**The app icon no longer carries a badge all the time.** While the app is connected it keeps an
+ongoing "Connection status" notification — Android requires one for a service that holds a radio
+link — and that notification counted toward the launcher badge. Since the app is connected
+whenever it is useful, the badge never went away and said nothing. The connection notification no
+longer badges the icon; message notifications still do, so a badge now means there is something
+to read.
+
+- **Message notifications still badge the icon**, and clear it when read, as before.
+- **The old notification channel is removed**, so Settings → Apps → Notifications shows one
+  "Connection status" entry, with badges off.
+
+## 0.10.1
+
+**Text is the size you set on your phone.** The app's type scale was a compacted copy carried over
+from its Reticulum sibling — message and list text at 14 sp where every other Android app uses 16,
+titles at 18 instead of 22. It did follow the system font-size setting, but from a smaller starting
+point, so at any setting it read smaller than everything else on the phone (issue #2). It now uses
+Android's standard sizes, and checked at the default size and at 130%, long names shorten with an
+ellipsis rather than clipping.
+
+- **A message shown while the app was in the background is no longer lost.** It appears when you
+  come back, instead of being displayed to nobody. (PR #4, from Verlintas.)
+
+## 0.10.0
+
+Firmware updates and the Nodes screen, both reworked after a day of driving them on real
+hardware. This builds on 0.9.8, released the same morning, which taught firmware updates to
+tell the standard and OTAFIX bootloaders apart.
+
+**A repeater that doesn't answer is asked again.** A command sent to a repeater has no
+delivery receipt, so an answer lost on the air looked exactly like a command that never got
+there, and the app waited two minutes before giving up. A `ver` that went unanswered could
+stall a firmware update until you retried by hand.
+
+- **`board` and `ver` are asked again after 10 seconds of silence**, up to three times, and an
+  answer to any of them counts. Asking again is safe: the companion radio stamps every command
+  with its own always-increasing clock, so the repeater treats a resend as a new command rather
+  than a duplicate.
+- **`start ota` is resent once, and only once.** A second `start ota` to a node whose first one
+  worked answers "Error", because its Bluetooth is already on. After a resend the app now reads
+  "Error" that way and points you to "It is already in update mode", instead of reporting a
+  refusal.
+- **A late answer to a resent `ver` is no longer mistaken for the answer to `start ota`**, which
+  would have been reported as an ESP32 raising a Wi-Fi hotspot.
+
+**The "New" tab is gone; newly heard nodes sit on the tab for their own kind.** It was the last
+tab in a row that scrolled, so on a narrow phone it was off the edge of the screen — and for
+anyone with auto-add on it was always empty. A node the radio heard but did not add now appears
+at the top of Contacts, Repeaters, Rooms or Sensors, under "Heard, not added", with Add and
+dismiss beside it.
+
+- **Each tab shows a count** of what is waiting on it, so you can see from any tab that something
+  is.
+- **The section only exists when there is something in it.** With auto-add on it never appears,
+  and it grows only on the tabs for the kinds you chose not to add automatically.
+- **It folds away,** and stays folded. "Dismiss all" and the full-radio warning moved into it.
+- **The search box finds heard nodes too.** The favourite, unread and last-24-hours filters are
+  about contacts, so the section is hidden while one is on.
+
+## 0.9.8
+
+**Firmware updates now know which bootloader they are talking to, and act on it.** An nRF52
+node has one of two bootloaders, and they fail in opposite ways. Once an update has begun,
+the node's old firmware is gone. Restart a node with the standard Adafruit bootloader in that
+state and it comes back as a USB drive, no longer answering over Bluetooth. Restart one with
+the OTAFIX bootloader and it comes back in Bluetooth update mode, ready to be flashed again.
+The app used to handle both the same way, and on the standard bootloader that meant sending
+nodes to a USB cable. It now tells them apart by the name the bootloader advertises
+(`AdaDFU`, or a board name such as `4631_DFU`).
+
+- **A standard-bootloader node is never restarted once its firmware is erased.** The app
+  used to do exactly that to clear an interrupted update, and to retry automatically — and a
+  bootloader left part-way through an update refuses any new one until it restarts, so those
+  retries could never succeed. It now stops, and says the node needs a USB cable.
+- **An OTAFIX node recovers by itself.** A transfer that fails part-way is restarted and
+  tried again, up to twice, including the case where the first restart went down a
+  connection that had already died. Proven on a RAK4631 with Bluetooth switched off in the
+  middle of an update: it finished without a tap.
+- **"Try again" appears only where it can work**, and "Retry more slowly" is gone: it was
+  offered at the one moment a standard bootloader refuses any retry.
+- **Every message about a failed update says what is actually true** for that node, and the
+  confirmation, weak-signal and "Restart it" texts describe both bootloaders.
+
+**Fixed along the way, all found by driving a real update:**
+
+- **An update could hang for ever at "Asking the radio to restart in update mode".** The app
+  checked the node over one connection and then reconnected for the next step before the
+  phone had finished closing the first. It now keeps the one connection, and no step of
+  connecting can wait without a limit.
+- **An unanswered `start ota` from an earlier visit blocked the next one** for two minutes,
+  and then blamed a command that had never been sent.
+- **`start ota` never recorded a node's Bluetooth address, and often reported a node that was
+  advertising as "not advertising".** Since 0.8.1 the console has stored replies with Bluetooth
+  addresses masked — the same masking the diagnostics log uses — and the node's `OK - mac: …`
+  answer is read back out of that stored reply. Only secrets are masked there now. The node's
+  address is recorded again, so the next update finds it straight away instead of scanning
+  for 30 seconds by name, and a genuinely unreadable address no longer stops the update
+  either.
+- **OTAFIX bootloaders are recognised by name**, so a node already waiting in update mode is
+  found even with no address on record.
+- **A scan started while the phone's Bluetooth was still switching on** gave up at once; it
+  now waits for Bluetooth to come back.
+- **The transfer rate in the diagnostics log** is measured from when data starts to move. It
+  used to include the scan, which halved the figure.
+
+**Smaller things:**
+
+- **A finished update no longer greets the next one.** Coming back to the firmware screen
+  opened on the last "Update complete", and a tap meant for the version list landed on it.
+- **The version shown for a node is what it runs now.** After a flash the record kept the old
+  version, so the list went on marking it "Installed now". The flashed version is recorded,
+  and the console no longer lets one unanswered command take the replies to later ones.
+
+## 0.9.7
+
+**The contact list now stays in step with the radio.** The radio holds a fixed number of
+contacts and drops the oldest to make room when it is set to. This app never heard about it:
+a dropped node stayed in the Nodes list and on the map for good — listed, but impossible to
+message, because the radio no longer had its key.
+
+- **The radio says when it drops a contact, and the app now listens.** The node leaves the
+  list, and its neighbour lines leave the map.
+- **Drops made while no phone was connected are caught on the next connect.** The radio only
+  announces a drop to a connected phone, so after each complete read of its contact list the
+  app forgets any node the radio no longer holds. A read that is cut short never removes
+  anything.
+- **A node you have started a firmware update on is kept even so.** Its recorded Bluetooth
+  address is how a node stuck in its bootloader is found again, and a stuck node stops
+  advertising — which is exactly how it gets dropped. Removing a node yourself still removes
+  everything.
+- **Conversations are kept.** Message history does not depend on the contact row.
+
+**Adding a node from the New tab works.** It never did: the button replayed a copy of the
+node's advert that the radio could not read — reported as "bad signature?", which was never
+the reason — and even the right bytes would have gone back through the same auto-add rule
+that sent the node to New in the first place. Add now checks the advert's signature on the
+phone and writes the contact to the radio directly.
+
+- **A full radio is said so**, on the New tab and when Add is refused, instead of failing
+  silently.
+- **Nodes the radio declined no longer become contacts behind its back.** Since firmware 1.12
+  the radio announces a node it chose NOT to add in the same shape as a contact record, and
+  this app took it for one. Every declined node became an app-only contact — and vanished from
+  New at the same moment, which is why the tab looked empty. The app now asks the radio
+  whether it holds the node, which is right on old firmware and new.
+
+**"Sync contacts" is gone** from the Nodes and Map menus. It re-read the radio but never removed
+anything you could see; everything it was for now happens by itself.
+
+**Auto-add settings say that favourites are never overwritten.** The radio has always kept
+them when it makes room; the screen now says so.
+
+## 0.9.6
+
+**Conversations now say what day a message was sent.** Reported by a user: a bubble shows a
+time and nothing else, so a thread read cold gave no way to tell this morning's message from
+one three weeks back. Days are now separated by a heading, the way every other chat app does
+it — "Today", "Yesterday", a weekday name inside the last week, and a spelled-out date beyond
+that.
+
+- **The heading uses the sender's timestamp**, because that is what the bubble underneath
+  prints and what the thread is sorted by. Dating by arrival time instead would put a message
+  under "Today" while the bubble beneath it read 11:58 PM.
+- **The weekday window stops at six days, not seven.** Seven days ago shares its name with
+  today, so "Monday" on a Monday would be ambiguous; that one gets a date instead.
+- **The oldest message on screen always gets a heading**, because the top of the scrollback is
+  exactly where you least know what you are looking at, and "Load older" does not say when.
+- **A message stamped in the future** — a sender whose clock runs ahead — gets a spelled-out
+  date rather than "Tomorrow" or a bare weekday, so the oddity is visible instead of disguised
+  as something familiar.
+- The wording comes from the phone, so dates read the way your region writes them.
+
+**Also: sending the same datagram bytes twice does nothing, and that is now written down.** A
+channel datagram carries no timestamp and no nonce, and the channel cipher is deterministic, so
+an identical type and payload make a byte-identical packet that the mesh drops as one it has
+already seen. The sender is still told "Sent", because the radio really did transmit it. This
+cost a full round of testing before it was understood; an application built on datagrams must
+vary its own payload.
+
+## 0.9.5
+
+**MeshCore publishes protocol specs, and this app had never read them.** The firmware repo
+carries `companion_protocol.md`, `packet_format.md`, `payloads.md` and four more — some
+since May 2025, all of them before most of this app's reverse-engineering. A systematic
+cross-check found no disagreement on any code value, and three things worth fixing.
+
+- **Node names could have been corrupted by an advert this app has never seen.** An advert's
+  app_data has two optional 2-byte "feature" fields sitting between the coordinates and the
+  name. Both are reserved for future use, so nothing sets them, so skipping straight to the
+  name was correct — right up until the day firmware starts using them, at which point every
+  name from such a node gains two or four bytes of binary at the front and it looks like a
+  broken mesh rather than a broken client. They are now skipped properly, with the same
+  guard the coordinates already had.
+- **A flags byte that never existed.** The V3 channel frame's bytes 2-3 are reserved and the
+  firmware writes literal zeros into them; this app read the first as flags whose bit 0 meant
+  "an encoded path follows", and consumed path bytes accordingly. It worked only because that
+  byte is always zero. No path is ever forwarded to a client on any receive frame — only a
+  hop count — so the reading is gone, along with the field it filled that nothing ever read.
+- **Channel data datagrams now work, in both directions.** `CMD_SEND_CHANNEL_DATA` out,
+  `RESP_CODE_CHANNEL_DATA_RECV` in — binary payloads addressed to a channel and tagged with a
+  16-bit type that names the sending *application*. Frames this radio would refuse are refused
+  here first, and a declared payload length is clamped to the frame in both directions so a
+  short frame cannot over-read and a long one cannot smuggle trailing bytes.
+- **Inbound datagrams are logged, never rendered.** They appear in the diagnostics log as hex
+  with their type and hop count. The payload belongs to another application and its bytes are
+  chosen by whoever sent them; drawing them as text is the mistake the channel-sender-name
+  rule already exists to prevent. Settings → Appearance and alerts has a developer control for
+  sending one.
+
+## 0.9.4
+
+**Distances, temperatures and altitudes can now be shown in miles, feet and °F.** Settings →
+Appearance and alerts → Units, with three choices: System, Metric, Imperial.
+
+- **"System" means the phone's region, answered every time it is read.** The preference stores
+  the word, not the answer, so a user who travels or changes their device locale gets the new
+  units without touching this. The United States, Liberia and Myanmar get imperial; everywhere
+  else gets metric; anything unrecognised follows the device rather than picking a side.
+- **What converts:** the "Distance away" row on a node, the distance in the identity-generator's
+  node list, and the temperature and altitude in both telemetry panels.
+- **What deliberately does not:** pressure stays in hPa, and every radio figure stays put —
+  frequency in MHz, signal in dB and dBm. None of those has a US customary form a mesh operator
+  would rather read, and inHg would make a pressure reading harder to compare against the node
+  next to it than easier.
+- **Nothing is stored converted.** A reading is kept in the units the node actually sent — a
+  Cayenne temperature is tenths of a degree Celsius because the sensor encoding says so — and the
+  conversion happens as it is drawn. Switching back and forth loses nothing, and a stored record
+  never carries a preference that was true on the day it was written.
+
+## 0.9.3
+
+**A message sent to you once no longer arrives nine times.** Reported from the field: a contact
+4–11 hops away delivered the same direct message nine times, some copies showing different hop
+counts. Every copy was a real, separate transmission — and the reason is a chain of three
+firmware facts, none of which this app was reading correctly.
+
+- **The retries were not the sender's fault, and not a bug at their end.** A direct message is
+  retried when its ACK does not get back in time, and each attempt deliberately carries its own
+  attempt number *inside the encrypted payload* — so it hashes differently, the mesh's seen-table
+  passes it, and the receiving radio queues every copy with no duplicate check anywhere. That is
+  by design: without a distinct attempt, a retry's ACK would be identical to the first one's and
+  get swallowed. The attempt byte is then stripped before the app ever sees the frame.
+- **Which leaves de-duplication entirely to the client, and this app only did it for channels.**
+  Direct messages were stored with no dedup key at all. They now key on the sender, the sender's
+  own timestamp and the text — the three things every copy of one message shares — and the extra
+  copies are counted instead of discarded. The thread shows one message; its info sheet says
+  "Delivered 9 times" and why. A message you deliberately send twice is still two messages.
+- **A retry no longer buzzes the phone again**, and a re-sent reaction no longer counts its emoji
+  once per attempt.
+- **"Flood" and a hop count were printed the wrong way round.** On an arriving message the
+  firmware writes `0xFF` when the packet was *not* flooded — a routed packet consumes its path as
+  it travels, so it has no hop count to report — and writes a real count when it *was*. This app
+  read that byte the way it reads a contact record, where `0xFF` means the opposite. So every
+  routed message was labelled "flood", and every flooded one was reported as though it had been
+  routed. The label now says "routed" or "Flooded — 4 hops", and the two readings of that byte
+  live side by side with the firmware citation between them.
+- **This app waits longer for an ACK before retrying a distant node.** The radio's flood timeout
+  is a flat 16 airtimes no matter how far away the recipient is — about eight hops of round trip
+  with no contention — so past that distance a flooded send times out *while its ACK is still in
+  flight*, and the sender retries a message that already arrived. Sends now spend the firmware's
+  own per-hop budget on the distance we know, which is what stops this app doing to other people
+  what was done to it.
+- The ACK itself was never ours to change: the radio composes it on receipt, with no involvement
+  from the phone, so no setting here could have stopped those retries.
+
+## 0.9.2
+
+**A node's position and "last heard" now update when it advertises, instead of waiting for the
+next reconnection.** Reported from the field: a repeater showed a position 31 days old — and
+wrong; its owner had set a real one — while the node had been advertising the whole time.
+
+- **The advert was reaching the app and being thrown away.** Every advert this app hears is
+  Ed25519-verified before anything is done with it, and for a node the radio already holds the
+  handler simply returned: the node was not a *discovery*, so nothing happened at all. The
+  verified name, position and arrival time went on the floor.
+- **The radio's own record was never the problem.** The firmware rewrites a contact's name,
+  position and last-heard clock on every advert it hears. The app just re-read that list only
+  when it connected — and a foreground service that holds the link up for weeks means it may
+  never re-read it. The cache aged while its source stayed current.
+- **Only what the advert carries is written.** A name and a position are both optional in an
+  advert, and an advert without one is not a claim that the node has no name or has moved to
+  nowhere — so an absent field leaves the stored value alone. Locally learned facts that the
+  radio cannot supply, like the update-mode address that makes a bricked node recoverable, are
+  untouched.
+- **And the contact list is now re-read while connected, not only when connecting.** Adverts cover
+  nodes this radio can hear; this covers everything else. It asks only for records the radio has
+  touched since we last looked — `CMD_GET_CONTACTS` takes an optional `since`, which the app had
+  never used — so the usual answer is an empty sweep, and nothing goes on the air either way. Every
+  15 minutes while the link is up.
+- Being a favourite had nothing to do with it, beyond keeping the row alive to be noticed.
+
+## 0.9.1
+
+**A node with no position no longer appears in the Gulf of Guinea.** Opening a node's info could
+show `Position 0.00000, 0.00000` — the Atlantic, off West Africa — with `Distance away: Unknown`
+directly underneath it, the two rows contradicting each other in the same sheet. Reported from the
+Public channel.
+
+- **Coordinates cross the wire as int32 microdegrees, so "unset" is not always exactly zero.** A
+  partial or garbage fix arrives as a handful of raw units — a few metres from Null Island, and
+  just as fictional. Those passed the exact-zero check, were stored as a real position, and then
+  printed as `0.00000, 0.00000`. Anything within about 111 m of 0, 0 is now treated as unset, at
+  the point the frame is parsed, so it never becomes a position at all.
+- **The rule now lives in one place.** "Is this a real position" had been written inline eight
+  times — as `!= null`, as `!= 0.0`, as `abs() > 1e-6` — and the weakest copy was the one behind
+  the contact sheet. That is why the map, which used a stronger copy, correctly left the same node
+  off while the sheet put it on the equator. Every caller now uses the shared check: the contact
+  sheet, the repeater hub's identity card, the map and its own-node marker, route plotting and
+  sketching, advert parsing, the contact record and GPX export.
+- **The equator is still a real place.** A node genuinely at latitude 0, or on the prime meridian,
+  has one axis at zero and is not unset — only being near zero on *both* is. Pinned by tests in
+  both directions, including the raw microdegree values that caused this.
+
+## 0.9.0
+
+**You can tag somebody in a message.** Typing `@` in a conversation offers the names it knows,
+and picking one writes `@[Name]` — the same form the official MeshCore app uses, so a tag sent
+from here reads as a tag over there. A message that tags *you* is tinted and outlined in the
+thread, so it stands out from the scrollback without a notification.
+
+- **A mention is a convention, not a protocol feature.** MeshCore has no mention field; this is
+  plain text in an ordinary message body that clients agree to render specially. Same standing
+  as reactions (MESHCORE_PROTOCOL §14), and worth knowing because it means a tag carries a
+  *name* and no key: it addresses nobody in particular, and anyone can be tagged as anyone.
+  That is why mentions are tinted but not tappable — "open that node" would mean guessing which
+  contact answers to a string, and the app does not guess about identity.
+- **Tagging is offered where it means something.** In a channel `@` offers the names seen
+  posting there; in a direct message it offers the one person who will read it, rather than a
+  contact list full of people who will not.
+- **"Mention" is its own action**, separate from Reply. Reply quotes the text being answered
+  and costs those bytes out of a ~150-byte frame; a mention costs the name. The official app
+  folds them together by seeding a mention on reply, which here would silently double the cost
+  of the commonest action on the tightest budget in the app.
+- Being tagged is signalled by a fill **and** an outline. Colour alone is not a reading anyone
+  can take on a colour-blind screen — the same rule the neighbour links learned on hardware.
+
+**0, 0 is a node with no fix, not a place in the Gulf of Guinea.** Most of the app already knew
+this. Three places did not, and all three stated a position the radio had never had.
+
+- **Picking a position no longer starts in the Atlantic.** With no fix and no remembered map
+  view, the picker opened at 0, 0 zoomed out to the whole world. It now starts from the middle
+  of the nodes it *can* place: the radio has no position, but it is on a mesh whose repeaters
+  do, and a LoRa mesh is tens of kilometres across, not six thousand. Verified on the mesh — a
+  radio with its position cleared opens on the local cluster instead of on ocean.
+- **Settings → Identity leaves the coordinates blank when the radio has none.** It printed
+  `0.0` and `0.0`, which in a text field is indistinguishable from something you typed, and
+  said nothing about why. It now says the radio has no position set.
+- **A repeater's GPS sensor no longer reports a fix it does not have.** A GPS channel with no
+  lock reports 0, 0, and the status page rendered that as `Latitude 0.0000 °` — a measurement,
+  on the one screen where somebody would believe it. The reading is withheld; altitude is a
+  separate number and is kept.
+
+## 0.8.10
+
+**A repeater far away is given the time the radio says it needs.** Fetching status, the access
+list or the neighbour table used to wait a flat 30 seconds regardless of how far the node was —
+while signing in to the same node already used the radio's own estimate, clamped to 45 s. That is
+why a distant repeater would let you log in and then fail every fetch.
+
+- **The wait now comes from the radio.** `RESP_CODE_SENT` carries a `timeout_ms` computed from the
+  real airtime and hop count of the path just used. The app was receiving that number on this path
+  and discarding it. It is now doubled — the firmware's figure covers getting a packet *there*, and
+  a fetch has to come back too — then floored at 20 s and capped at 90 s. Measured at 62.5 kHz /
+  SF7: a 5-hop path estimates about 17 s one way, so its round trip never fitted in 30 s.
+- **The wait says what is actually known.** Instead of a spinner that reads the same at second 1
+  and second 60: "Sent over the stored path · reply expected within 34s", counting down, and once
+  that estimate passes, "past the radio's estimate, still listening". There is no partly-arrived
+  LoRa response to draw a progress bar from, so this reports the three things the radio really
+  told us and nothing more.
+- **No extra retry was added, deliberately.** A signed-in node's request is already wrapped in path
+  recovery: try, reset the route and try again, re-authenticate and try a third time — which stops
+  as soon as a repair works and is smarter than a blind resend. Adding a second retry underneath
+  would have made six trips to a node that is probably out of range. Each of those three attempts
+  now gets the proper budget, which was the actual defect.
+- Telemetry and region queries still use a fixed wait; they correlate their replies differently and
+  are a separate change.
+
+## 0.8.9
+
+**"Last heard" now means when your radio heard the node, not what the node claims.** A repeater
+heard this morning was showing as **"20688 days ago · Jan 1, 1970"** in the node list, and others
+as 830 days. Those nodes are on the air; their clocks are wrong. An advert carries the sending
+node's own clock reading, and MeshCore's firmware keeps it to reject replayed adverts — not as a
+record of when anything was heard. Your own radio stamps its own clock every time it hears a node,
+and that is what every screen reads now.
+
+- **Sort by "Last heard" and the "Heard in last 24 h" filter were the ones that mattered.** They
+  are the controls for finding out who is actually alive, and they were answering with what each
+  node says about itself: a node with a stopped clock could never appear as recently heard however
+  recently it was heard, and one claiming a date in the future sorted to the top for ever. The
+  advert timestamp is attacker-controlled, so that was a sort key anyone could drive.
+- **The node list, the contact sheet and the map popup** showed the same wrong age; the contact
+  sheet's row is now "Last heard".
+- **A node whose clock is wrong is now told about rather than quietly corrected**: the contact
+  sheet adds "Its own clock says …", but only when the node's claim disagrees with what we
+  observed by more than a day. Its owner would otherwise be chasing that as a bug in every client
+  they try.
+- The stale-node sweep added in 0.8.8 already used the right clock; this brings the rest of the
+  app in line with it, through one shared definition instead of five copies.
+
+## 0.8.8
+
+**The map draws a repeater's neighbours, with the signal it heard them at.** Tapping a pin used
+to do nothing at all. It now opens the node, and for a repeater it offers its neighbour table:
+lines from that repeater to every neighbour the app can place, coloured and weighted by signal —
+green for a strong link through to red at the edge of what LoRa recovers — with the quality
+written on the line itself ("Strong · 12.0 dB"), so there is no colour key to look away and
+decode.
+
+Driven against a live repeater on 2026-08-24: signed in with a blank password, read six
+neighbours, and drew three of them — the other three name nodes with no position, or none this
+app knows.
+
+**Remove stale nodes.** A slider from 3 to 30 days on the Nodes menu, in the shape Meshtastic
+offers it: everything nothing has been heard from for longer than that goes from the radio's
+contact list. **Favourites are never removed**, whatever the slider says, and neither is a node
+that has never been heard from at all — which is what a contact just added from a QR code looks
+like. The list is shown before the button is pressed, oldest first, with a count that moves as
+the slider does.
+
+- **"Last heard" means what OUR radio heard**, not what the node claims. The advert timestamp is
+  the sending node's own clock, which the firmware keeps only for replay detection — on this mesh
+  it reported live, currently-transmitting nodes as last heard 830 days ago, and one as 20 688
+  days ago, because their clocks are wrong. Sweeping on that would have deleted them as
+  punishment for a bad RTC. The radio stamps its own clock every time it hears a node, and that
+  is what the sweep reads. Its own eviction, when contact storage fills, ranks the same way and
+  also spares favourites.
+- **A node you were talking to yesterday is never stale**, even if it advertises rarely.
+- Removal goes through the radio one node at a time, as removing a single contact does, so what
+  the sweep says happened is what the contact list will still say after the next sync. A refusal
+  is counted and reported rather than folded into the total.
+
+- **A neighbour table is now kept, stamped with the moment it was read.** This matters more than
+  it sounds: the radio reports *how long ago* it heard each node, an elapsed time on its own
+  clock, so a stored reading with no collection time would go on claiming "heard 4 minutes ago"
+  a week later. Stored beside the local clock that took it, it ages honestly instead — and the
+  popup says how old the whole reading is. Confirmed on the phone: a reading taken and then
+  re-read after a restart said "Collected 15 min ago", not "just now".
+- **Every neighbour fetch is recorded, from whichever screen asked.** A table costs a login and a
+  round trip over the air, so one read on the repeater's Status screen now also fills the map.
+- **Fetching from the map signs itself in.** It uses the session you already have, then the
+  password saved for that node, and otherwise a blank one — which is the ordinary read-only way
+  in where the operator never set a guest password. The popup says which of the three it is about
+  to use before it spends it, and a blank password is never saved.
+- **A repeater that turns a password down says nothing at all**, so the app no longer reports a
+  silence as a refusal. "No answer to a blank password" now adds that it may want a guest
+  password — or simply be out of reach — because on the wire those are the same event.
+- **A line is only drawn where the app is sure who it points at.** A neighbour is identified by
+  the first six bytes of its public key, so a row that matches two known nodes, or none, or one
+  that has never advertised a position, is listed with the reason instead of being drawn at a
+  guess. A line to the wrong roof is worse than no line.
+- **What the lines do and do not mean is stated once, behind a tap.** A repeater records a
+  neighbour only from another repeater's advert that arrived directly, nothing expires it, and
+  the whole table is what that repeater says it hears. Removing a node, or purging local data,
+  takes its stored readings with it.
+
+## 0.8.7
+
+**A long conversation opens at its newest message, not at its oldest.** Reported on a thread of
+about 150 messages: a force-stop and a fresh open landed correctly, but leaving the chat and going
+back in put you at the very top, above "Load older (99 more)", with the whole thread to scroll
+back down.
+
+- **The "Load older" row is no longer rendered when no messages are showing yet.** The message
+  count and the messages themselves are two separate database queries, and counting is faster than
+  fetching fifty rows — so for a moment after re-entering a chat the list contained exactly one
+  item, that row. A list remembers its position by which item was in view, so it held on to that
+  row; when the messages then arrived in front of it, it kept faithfully showing the row, which had
+  become the top of the thread. Offering to load older messages when none are shown was meaningless
+  anyway.
+- **A conversation now lands on its newest message once its contents arrive**, whatever the list
+  did while it was still empty. The previous fixes all relied on the list's own bottom-anchoring
+  surviving every way a thread can be filled in, and this bug found another way. Stating the rule
+  outright ends that class of failure rather than the latest instance of it. It happens once per
+  conversation, so loading older messages still keeps your place — and so does scrolling back to
+  read while new messages arrive.
+
+**The message list is now tested where it actually lives.** This bug has been reported five
+times across this app and its sibling, and every fix was guarded by a test that reads the source
+code and checks it still *says* the right thing. Those tests cannot see layout, so every version
+of the bug passed them — including the one that shipped in 0.8.6. The list is now a separate
+component that a real Compose test can drive on a real phone, and the suite asserts what actually
+matters: that the newest message is on screen after opening a short thread, after opening a long
+one, after one arrives, and — the case that caused this — after the rows turn up a moment later
+than the count of them. Run against the code that shipped in 0.8.6, three of those six tests fail,
+including that one. Run against this build, all six pass.
+
+**The reaction format this app sends is now written down in the README**, along with the reason:
+a survey of the local mesh came back about 6:1 in favour of MeshCore Open's convention, so that is
+what goes on the air even though MeshCore One's hash is the better design. If the balance shifts,
+the app switches. Both are read either way.
+
+## 0.8.6
+
+**Reactions from MeshCore One now land on the message they were meant for.** They were
+arriving as ordinary messages reading `😂@[Somebody]` followed by eight random-looking
+characters, which is what a reaction looks like to a client that does not know the format.
+
+MeshCore has no reaction field, and the firmware has none either — the proposal for one is
+still open — so every client that offers reactions invents a text format and hopes others
+read it. Two are live on this mesh: MeshCore Open's `r:HHHH:II`, which this app sends and
+has always understood, and MeshCore One's, which it now understands as well. That app
+publishes the format as an interoperability guide, and this implementation was checked
+against a reaction that actually arrived on the air rather than against the document alone.
+
+- **We still send the format we always did**, so nothing that works today stops working.
+  Only reading is new.
+- **A reaction whose target can't be found is never shown as wire text.** Whichever format
+  it arrived in, it renders as "😄 reacted to an earlier message" — in the thread, in the
+  conversation list and in notifications.
+- **A message that merely mentions somebody is still a message.** `@[Name]` is the
+  ecosystem's tagging syntax and turns up in ordinary sentences, so the reaction shape is
+  matched strictly: eight valid characters of hash, an emoji with no letters or digits in
+  it, and nothing after. Getting that wrong would hide what somebody typed.
+- **An ambiguous target is left alone.** If two messages in the window hash the same, or a
+  channel reaction names an author who did not write the message it points at, the reaction
+  attaches to nothing rather than to a guess.
+
+## 0.8.5
+
+**Chats open at the newest message again.** Two faults, both of which made a conversation
+look like it had lost its place.
+
+- **The bottom anchor had been switched off by four decorative pixels.** A reversed message
+  list packs its content against the composer — that is what keeps the newest bubble visible
+  when you enter a thread, when one arrives, and when the keyboard opens. Naming any
+  arrangement replaces that default, and the 4dp gap between bubbles was doing exactly that:
+  short threads floated at the top of the screen with a hole above the composer, and opening
+  the keyboard pushed the newest messages out of the shrunken view instead of keeping them
+  pinned to it.
+- **A thread reopened wherever you last left it**, which for a chat means opening at a
+  message from days ago and scrolling down through everything since. A conversation now
+  opens at its newest message, every time.
+
+**A route step that could be more than one node now names them.** A hop in a path is a
+truncated hash of a public key — two bytes in the usual case — so more than one node can
+answer to it, and the app has always refused to guess which. It said "(2 matches)", which is
+true and no use to someone reading a route to work out who carried a message. It now names
+every candidate — "b389 SpartaMI or Impostor" — which asserts no identity and is what the
+reader came for. **The nearest node is listed first**, measured from this radio where both
+ends have advertised a position, since the one you can see from here is the likelier carrier.
+A node whose position is unknown is listed after every node whose position is known: unknown
+is not near.
+
+## 0.8.4
+
+**The admin command box no longer autocorrects what you type.** It was an ordinary text
+field, so Android capitalised the first letter and "corrected" the rest — on a screen whose
+entire purpose is sending strings a node compares byte for byte. `set prv.key <128 hex>` is
+exactly the shape a keyboard rewrites, and a node answers a mangled command with an error
+that names nothing, so the app looks broken and the field looks right. The region name and
+parent boxes are fixed the same way: a capitalised region fails as "unknown region", which
+reads as the region not existing.
+
+**Replacing a repeater's identity key can restart the node and no longer leaves you
+waiting for it.** A new key does nothing until the node reboots, and a rebooted node is
+hard to find again: its boot advert is zero-hop, so only radios in direct range hear it,
+and the next advert that travels the mesh can be up to 47 hours away. So the node would
+quietly become a stranger, and the app would sit there with the old entry.
+
+- **The confirmation dialog has a "Restart the node now" tick box**, on by default,
+  because a stored key that has not been applied is the state that confuses everyone — the
+  node reports one identity and answers to another.
+- **The new identity is written into your radio's contact list immediately.** The node
+  reports its new public key when it accepts the change, which is the only copy anyone
+  gets before that flood advert. The new entry carries the old one's name, its favourite
+  mark, its Bluetooth address, its nickname and its saved password — the password is a
+  setting on the node, not part of its key, so it still works.
+- **The old entry is left alone**, because until the node actually restarts it is still
+  the live one. Delete it once the new identity answers.
+- **A key the node reports that doesn't match the key that was sent stops everything.**
+  Nothing is written and nothing is restarted: something answered that is not the node the
+  key was generated for.
+- **The restart is reported honestly.** A node never acknowledges a reboot — the firmware
+  restarts before it can reply, and sends no acknowledgement either — so the app says the
+  command was sent, waits for the node to come back, and then tries to sign in to the new
+  identity. A granted session is the only real proof it restarted, and that is the only
+  case that says so. Silence says it is not yet confirmed, and says plainly that this is
+  not yet a failure.
+
+**The Chats tab carries an unread count.** Each conversation already showed its own badge
+inside the list, which is no use from the Nodes, Map or Settings tab — a message that
+arrived while you were somewhere else stayed invisible until you happened to look.
+
+- **The total sits on the tab itself**, so it is readable from anywhere in the app.
+- **It stops at "99+"**, because past that the exact number has stopped meaning anything.
+- **There is no badge at all at zero**, rather than a "0" that reads as an unread marker
+  stuck on.
+
+## 0.8.3
+
+**Generating a repeater identity key produced a key no node would accept.** MeshCore stores
+a 64-byte private key and `set prv.key` reads exactly 128 hex characters; the app was
+sending the 32-byte Ed25519 seed as 64, which the firmware rejects on length alone with
+"Error, bad key". The same mistake made "Read key…" useless in the other direction — a
+node's reply is 128 characters, and the app only recognised 64, so a successful read was
+reported as a refusal. Both directions now speak the length the firmware reads, and the box
+accepts either form: paste the 64-character seed you wrote down and it is expanded before it
+is sent.
+
+**"Generate a new one" now generates a key whose leading bytes are this node's alone.** That
+is the reason to rekey a repeater in the first place. A node is never named on air by its
+whole public key — a routed path carries one to three leading bytes of it, and two repeaters
+sharing those bytes are one node as far as a stored route is concerned. The generator asks
+the node how wide its path hash is, checks candidates against every node this phone knows
+about, and says what it found: which bytes the node would answer to, and whether it also
+managed to keep clear of everyone's single-byte destination hash. On a mesh with no room
+left it says so, with the count, because a wider path hash is then the only real fix.
+
+- **When there is no clean key left, the clash is chosen rather than accepted.** At one byte
+  per hop there are only 254 usable names and a busy mesh does run out. The search scores
+  every candidate by the worst node it would collide with and keeps the best it saw: a
+  repeater 90 km away that has never been in one of your paths, not the one on the next hill.
+  Distance comes from the contact database — great-circle metres where both ends have
+  advertised a position, hops from the stored route otherwise — and a node with neither is
+  ranked as if it were next door, because a node that cannot be placed is not one that can be
+  called distant. An ordinary chat node always beats a repeater, since only repeaters put
+  themselves into a path at all. Whatever it settles for is named on screen, with how far away
+  it is.
+- **Keys the node would refuse are never offered.** MeshCore rejects any private key whose
+  public key begins `00` or `ff`, which is about one key in 128 — enough that a rekey would
+  occasionally fail at the confirmation dialog for no visible reason.
+- **A key typed by hand is checked the same way**, and named if its leading bytes are already
+  in use.
+- **Reading a key says why a remote read cannot work.** A node answers `get prv.key` over its
+  USB serial console only, never from an admin session over the mesh, so the failure was
+  indistinguishable from a bad link.
+- **The consequences list now mentions the reboot.** The node keeps its old identity until it
+  restarts, which is not obvious and changes what you do next.
+
+## 0.8.2
+
+**The node list can be ordered and narrowed.** A mesh accumulates nodes — every repeater
+whose advert reaches the radio becomes a row — and the list had exactly one order and no way
+to hide anything. There is now a menu beside the search box.
+
+- **Sort by recent activity, last heard, name, or fewest hops.** "Fewest hops" is a
+  reachability order rather than a distance one: it answers which nodes can be reached
+  cheaply right now, which is the question worth asking before sending anything large.
+  Flood-routed nodes come last, because that is what having no path means.
+- **Show only favourites, only nodes with unread messages, or only nodes heard in the last
+  24 hours.** They stack. The last one is the answer to a list full of nodes that were heard
+  once, months ago, and never again.
+- **The order and the filters are remembered**, like the selected tab already was. A list you
+  had to arrange once should not need arranging again.
+- **An active filter says so.** The icon changes colour, the filters are named under the
+  search box, and a list emptied by a filter says which filter emptied it and where to turn
+  it off — an empty list is otherwise indistinguishable from the app having lost your
+  contacts.
+
+**A node's row says "14 min ago" instead of a date.** A date makes the reader do the
+subtraction, and every node heard today rendered as the same date, which told you nothing at
+all. The detail sheet still carries the exact timestamp alongside the age, for when the
+precise moment is what you want. Ages also read "1 hour ago" rather than "1 hours ago", which
+was the wording for the whole first hour after every advert.
+
+## 0.8.1
+
+**A radio that goes out of range now comes back on its own.** Walk out of Bluetooth range and
+back, and the app reconnected only by luck. Three things were wrong at once, and each of them
+alone was enough to leave a radio sitting on the table, in range, disconnected.
+
+- **A connect attempt could hang for ever.** The sequence parked on Android callbacks that a
+  dropped link never delivers — the MTU exchange and the notification subscription each waited
+  on a success that was no longer coming — so an attempt begun while the radio was walking
+  away never finished and never failed, and the reconnect loop sat behind it indefinitely.
+  Every step of the connection is now registered in one place and released together when the
+  link drops, so no step can be forgotten, and the attempt has an outright deadline behind
+  that.
+- **Every retry was a *direct* connect**, which only samples the instant it happens to fire —
+  so reconnecting meant one of those attempts landing in the same second the radio came back.
+  After the first try the app now hands the waiting to the Bluetooth controller, which
+  completes the link by itself the moment the radio advertises again, minutes or hours later.
+- **The backoff measured from when an attempt started, not from when the link came up**, so
+  forty seconds of failing to connect counted as forty seconds of a healthy connection. The
+  interval kept resetting and the app hammered an absent radio at full speed instead of
+  easing off.
+
+The Bluetooth handle is now always released as well. Android hands out a limited number of
+them, and a transport rebuilt on every retry could exhaust them over an afternoon of a radio
+coming and going — after which nothing would connect until Bluetooth was switched off and on.
+The link also writes to the diagnostics log now, with radio addresses trimmed to their last
+two octets so a log stays shareable and two radios stay apart.
+
+## 0.8.0
+
+**Your channels can no longer be emptied by an unrelated error.** A refusal from the radio —
+one belonging to some other request entirely, seen in the field right after a flood advert —
+could arrive while the app was reading the channel slots, and was taken to mean "this radio
+has no channels". Every channel vanished until the app was restarted; threads that had
+messages showed as "Channel 0" and "Channel 1", and the rest were simply not there. Nothing
+was actually lost, but the next slot the app would have handed a new channel was slot 0 —
+the one holding Public, whose key the radio cannot give back. The radio cannot mean that: it
+answers for every slot it has, configured or not, and only refuses an index past the end. So
+a refusal where the radio has no such answer to give now keeps the list the app already had.
+
+**Firmware updates over Bluetooth.** An nRF52 radio can be updated from inside the app —
+pick a build, confirm the board, watch it flash — instead of running `start ota` here and
+finishing the job in Nordic's DFU app with the right packet-receipt settings.
+
+- **Update the connected radio.** Settings → Firmware. The app asks the radio to reboot
+  into its bootloader, finds it again under its update-mode name, and sends the image. Needs
+  an nRF52 board on companion firmware v1.15 or newer — that is when MeshCore started
+  exposing the DFU service — and the screen says so plainly when the radio does not have it,
+  rather than leading you into a flow that can only end in "not supported".
+- **Update a repeater or room server.** The repeater hub gets a Firmware tile (admin only).
+  `start ota` goes over the mesh; the firmware itself does not, and cannot — you have to be
+  within Bluetooth range of the node to finish. That is stated before the button, not after.
+  The command is also gentler than it sounds: the node switches its Bluetooth on and carries
+  on repeating, and only reboots into its bootloader when something connects and starts the
+  transfer. The address it reports back is used to pick it out from anything else nearby
+  that is also advertising for an update.
+- **The radio now reports what it is running.** Board name, firmware version and build date
+  were always in the `DEVICE_INFO` frame and were being skipped. They are on the connection
+  screen and drive the Firmware row's subtitle.
+- **Firmware can be fetched in the app or opened from storage.** "Check for firmware" reads
+  the MeshCore release list from GitHub — the second outbound request this app makes, after
+  map tiles, and only when you ask for it. Downloads are checked against the SHA-256 the
+  release published and refused outright on a mismatch; a package opened from storage is
+  hashed and shown as unverified, because it is.
+- **The board is confirmed by name before anything is written.** A DFU package cannot tell
+  you which board it is for — every nRF52 board declares the same device type — so the
+  filename is the only evidence and a human reads it. Where a board ships more than one
+  build (T114 with and without a display), both are offered and neither is chosen.
+- **ESP32 boards are told the truth.** Their over-the-air path is a WiFi hotspot and a
+  browser upload. This app does not use WiFi and does not pretend to offer it.
+- **You choose the version, not just "the latest".** MeshCore releases often and a release
+  is sometimes withdrawn or quickly followed by a fix, so the version worth putting on a node
+  you have to climb to is usually one already running somewhere you can reach. Every
+  published version is listed, the installed one is marked, and going backwards is allowed —
+  the bootloader does not check that a version is newer.
+- **A node that is stuck can be recovered from the node list.** Long-press it: the address it
+  announced when it entered update mode is remembered, so it can be told to restart (DFU
+  system reset, which boots the firmware it still has) or flashed again — neither of which
+  needs the mesh, which is exactly what a node in update mode has left.
+- **A transfer is refused over a link too weak to finish it.** The node erases its firmware
+  before writing the replacement, so a transfer that stops half way costs a visit. Below
+  −95 dBm the app says so and offers to try anyway rather than starting and hoping. The
+  floor is deliberately close to the noise floor: nodes on masts cannot be approached, and a
+  guard that refuses every attempt on the ones that most need updating is not a safety
+  feature.
+- **A node left part-way through an update is now unstuck automatically.** The bootloader
+  keeps the state of an interrupted transfer until it restarts — a disconnection does not
+  clear it — so one attempt that got as far as the start step made every attempt afterwards
+  fail with "invalid state", including the "retry more slowly" this app itself recommends.
+  Worse, it was reported as the node refusing the package, which sends you off to re-check a
+  file that was never the problem. Every abandoned transfer now resets the node on its way
+  out, and a node found already stuck is reset, waited for, and flashed.
+- **"Restart it" no longer reports a successful restart as a failure.** The node reboots
+  while handling the write, so the write can never be acknowledged; that was being read as
+  a refusal, exactly as the reboot-into-bootloader write once was.
+- **A node's update-mode address is only recorded when it is the node's own.** A bootloader
+  advertises on that address plus one, so recording *its* address made every later search
+  look one address too high — and made the app offer the reboot request to a node already
+  in its bootloader, which reads it as a malformed start command.
+- **Update mode is now a flag of its own, not a guess made from a node's Bluetooth address.**
+  A node's BLE address, board and firmware version are properties of the hardware: the app
+  learns them when it can and keeps them, because the moment they are needed — choosing a
+  build for a node sitting in its bootloader — is the moment the node can no longer be asked.
+  "Is in update mode" is not that kind of thing, and it was being read off whether an address
+  had ever been recorded. Nothing cleared the address, because nothing should, so a node that
+  entered update mode once was described as being in it for ever: after a reboot, after a
+  finished update, and after being reflashed over USB and put back into service. The screen
+  then hid "Send `start ota`", which was the button that would have helped. There is now a
+  stored flag with named transitions — set when the node answers `start ota`, cleared when a
+  transfer to it finishes and when it accepts a restart out of its bootloader — and a
+  node reflashed over USB, which nothing on this side can see, can be corrected with one tap.
+  The address is untouched by all of it.
+- **The update link now asks for the fastest connection interval it can get.** Android's
+  default is 30–50 ms, and at that spacing the Bluetooth stack packs several packets into
+  each connection event — so the bootloader receives a whole receipt window in two or three
+  bursts, faster than it can move them into flash, and answers "operation failed" a few
+  hundred bytes in. Nordic's own updater requests the short interval and so does
+  Meshtastic's; this app did not, and a live ProMicro managed 200 bytes in 17 seconds before
+  failing.
+- **A node that cannot keep up is retried more slowly by itself.** "Operation failed" during
+  the image step is the one failure with a documented remedy — send fewer packets between
+  acknowledgements — so the app now does that rather than printing advice. Each attempt
+  still hands the node back able to start another, and it is tried once, not forever.
+- **A finished update is no longer reported as a failure on its last write.** The node
+  reboots while handling activate-and-reset, so that write can never be acknowledged — the
+  third time this codebase has read a node obeying as a node refusing, after the jump into
+  the bootloader and "restart it". All three are now one rule in one place.
+- **Packets are sized from the link instead of being fixed at 20 bytes.** The size comes
+  from the negotiated MTU, capped at 244 and floored to a whole word (the bootloader rejects
+  anything else) — twelve times the throughput on the same link. The Adafruit bootloader
+  negotiates properly and rounds its own reply to a whole word, so 20 bytes a packet is not
+  what a stock one gives you; it is what a link whose MTU exchange did not happen gives you,
+  and the log now says which of the two is in front of you.
+- **"Retry more slowly" was a dead button.** It was offered on the failure screen and did
+  nothing at all: the retry read the package out of the state it had just been replaced by.
+  Nothing appeared in the log, because nothing ran — at the one moment the node is sitting
+  with its firmware already erased.
+- **A node is asked for its version before it is asked to enter update mode.** `start ota`
+  is not a question — the node switches its Bluetooth on and there is no taking it back
+  without walking to it — so sending it to a node that has stopped listening does not fail,
+  it just leaves the app believing something it has no evidence for. `ver` goes first
+  instead: a round trip that costs nothing if it goes unanswered, whose reply proves the
+  firmware is running, and which records the version at the last moment anything can still
+  ask for it. Only on that answer is `start ota` sent, and only the node's own
+  `OK - mac: …` reply puts it into update mode. If it never answers, nothing was sent and
+  the screen says so.
+- **Signing in to a node takes it out of update mode.** A node in its bootloader has no LoRa
+  stack at all, so any reply to a login — including a rejected password — proves the
+  firmware is running. It was the cheapest evidence available and the app was ignoring it,
+  which is how a node reflashed over USB and signed straight back into was still being
+  described as advertising for an update.
+- **A node's own `start ota` reply is read once, not for ever.** The admin console is
+  stored, so `OK - mac: …` is a row that never goes away and was being re-read as a
+  present-tense fact on every visit — the same mistake as the address, one table along, and
+  just as immune to correction. Each reply is now consumed once, against a watermark, and a
+  correction cannot be undone by history.
+- **A node's firmware version is no longer filled in by an unrelated reply.** `OK - mac: …`
+  was refused as a board name and accepted as a version — only half the guard was there — so
+  a repeater read as "ProMicro DIY · OK - mac: FF:5C:EF:28:2A:92", and that string was stored
+  against the contact and compared against release tags. It is reachable from the app's own
+  update sequence rather than anything unusual: `ver` is sent, then `start ota`, and if the
+  first goes unanswered the second's reply satisfies it.
+- **A node's board and firmware version are no longer swapped.** The Firmware screen asked
+  a node `board` and `ver` at the same moment, as two separate jobs, and their console rows
+  could be written in the opposite order to the sends — so each answer was filed under the
+  other command. A live repeater read as "v1.15.0-dee3e26 (Build: 19-Apr-2026) · ProMicro
+  DIY", and the version was stored against the contact as its board name, which is what the
+  firmware picker narrows on and what the search for a node in update mode matches names
+  against. The two commands now go one at a time, an answer of the wrong shape is refused,
+  and board names already stored as versions are cleared so they get asked again.
+- **The board name reaches the flash step for a node in update mode.** It was passed as
+  nothing on that one path, which is the path where it matters most: the node is off the
+  mesh and cannot be asked, so the scanner had no name to match on and the version picker
+  offered every board's build instead of the one.
+- **Packet flow control follows the MeshCore FAQ's own per-board figures.** Eight packets
+  between receipt notifications on a T114, ten elsewhere — the setting §7.1 tells you to
+  change by hand in Nordic's DFU app before every flash, applied here from the board the
+  node reported. Where the FAQ names a board that has an OTAFIX bootloader, the screen
+  names it too, with the link, since it can only be installed over USB and so is only
+  useful advice before the node goes up.
+- **The answer to the start step can no longer be missed.** The radio replies while the app
+  is still sending the writes that provoked it, and the reply was being dropped when it
+  arrived a moment early — which showed up as the node going silent part-way through.
+- **The packets are paced, and that is what made an over-the-air update finish.** The
+  bootloader takes each packet into a small buffer and flushes it to flash in the background;
+  when that buffer fills it answers "operation failed" and the transfer is over. Its receipt
+  notifications cannot prevent it, because one says a packet was *received*, not that it
+  reached flash — so the backlog grows across batches however small the batch is. This app
+  sent as fast as the Bluetooth stack would take it, about 150 packets a second, and a live
+  ProMicro refused the image step at 5 KB, 15 KB and 15 KB again; halving the receipt
+  interval, which is what the reference implementation does on a retry, changed nothing
+  because it does not change the rate. A 20 ms pause between packets does, and the pause is
+  derived from the link rather than a board name: a peer still at the default 23-byte MTU is
+  a stock bootloader with small buffers, one that negotiated to 244 is not and gets no pause.
+  **A 404 KB image now transfers in about eight minutes and boots** — first proven end to
+  end on 2026-08-14, flashing v1.16.0 onto a repeater running v1.17.0 and reading the new
+  version back from the node.
+- **A node whose firmware has already been erased is never restarted.** Abandoning a
+  transfer used to send the node a system reset, so the bootloader would forget the
+  half-finished session and accept a new one. That is right up until the moment the start
+  step is accepted — because that is when the node erases its application, and a bootloader
+  restarted with no application to boot comes back in **USB mass-storage mode and stops
+  advertising over Bluetooth altogether**. The reset written to rescue the node is what put
+  it out of reach: on hardware, a transfer that failed around 15 KB was followed by a reset,
+  and the node then appeared in no scan at all and had to be recovered over a cable. It is
+  now left alone once its bank is gone — still advertising, still retryable from the phone —
+  and reset only while it still has firmware to go back to.
+- **Packet writes no longer wait for a confirmation that may never come.** Android reports a
+  no-response write as complete when it frees the buffer, and that report is a courtesy, not
+  a guarantee. Waiting on it deadlocked the transfer: on a live ProMicro every control-point
+  write completed instantly while the very first packet write after them never did. Packets
+  now pause briefly for the buffer and carry on — flow control for the image is the node's
+  own receipt notification, which is a fact about what the node received rather than about a
+  local buffer — and the number of unconfirmed writes is logged. This is what got the first
+  bytes of an over-the-air image onto a node.
+- **A transfer can no longer hang inside a single packet.** Every step had a time limit
+  except the one that actually sends data: each write waits for the Bluetooth stack to
+  confirm it, and nothing bounded that wait. A confirmation that never arrived left the
+  transfer suspended behind a progress bar frozen at its last byte count — no error, no
+  disconnect, nothing to do but kill the app, which is precisely what a live ProMicro looked
+  like at 14,800 of 372,044 bytes. Writes are now bounded too, and a lost one is reported as
+  what it is: a link that is up but not moving data.
+- **The short connection interval is asked for again as the transfer runs.** It is an
+  advisory request that stacks are known to let lapse, there is no way to read the interval
+  back, and a 400 KB image takes minutes — so asking once at the start was a bet on the part
+  of the transfer that was never in doubt.
+- **A node that announced its update address is now found by it.** `start ota` answers with
+  the node's own address, and the search applied the bootloader's +1 to it — an address
+  nothing was using yet. The node was still found, but by its `_OTA` NAME, which every other
+  node in update mode also wears: with two of them nearby neither could be told from the
+  other and the one whose address we had been given was reported as not advertising. An
+  announced address now means that node in either state, its own or its bootloader's.
+- **The radio in your pocket is let go of before another node is flashed.** It was kept
+  connected throughout, so a sustained 400 KB transfer ran alongside a second live Bluetooth
+  link carrying mesh traffic, sharing one controller — while the transfer was asking for the
+  fastest connection interval it could get. It is not part of the transfer and is now
+  released before it starts, and reconnected afterwards as before.
+- **A node's board, firmware version and update address survive reconnecting to the radio.**
+  The radio owns the contact list and the app re-reads it on every connection, keeping only
+  the unread count and the last message time — so everything the app had learned about a node
+  and the radio had not was wiped each time. That is the opposite of what those fields are
+  for: they exist because the moment they are needed is the moment the node can no longer be
+  asked. The failure it produced was as bad as it sounds — a repeater announced its update
+  address, the app stored it and showed it, the transfer failed, the radio reconnected, and
+  the recovery dialog for a node now sitting in its bootloader said no address had ever been
+  recorded.
+- **The update log no longer erases itself.** Progress was written down on every
+  acknowledgement — about 1,860 lines for one image, against a 500-line buffer — so by the
+  time a flash failed, its log held nothing but the progress bar. Everything a failure has
+  to be read against, including the failure's own context, had been pushed out by it.
+  Progress is now sampled and carries the transfer rate, which is the number that separates
+  a link that slowed down from a node that stopped dead.
+- Failures say what state the node is left in. A node that loses the transfer part-way is
+  waiting in update mode, not bricked — which is the difference between a retry and a trip
+  up a mast. The OTAFIX bootloader is recommended where it matters.
+
+## 0.7.16
+
+An audit release. One feature landed (channel codes now carry their region), and the rest
+is nineteen defects found by reading the code against the MeshCore firmware rather than
+against our own assumptions. Several were silent in the direction that matters — they made
+something look like it had worked.
+
+- **A shared channel code carries its flood scope, end to end.** `region_scope` is
+  documented and the mainstream app has emitted it since v1.47.0; this app parsed the key
+  and the name and dropped the scope, so joining flooded every message across the whole
+  mesh while its owner believed it was contained. The scope is now shown **before** you
+  join, applied to the slot afterwards, and included on the codes you share.
+- **A code whose region this app can't use says so.** Previously identical to a code with
+  no region at all: same dialog, same "Channel added". You now get told, in the join
+  dialog, that the channel will flood the whole mesh.
+- **Re-sharing a scoped code to someone who already has the channel now applies the
+  scope.** This is how a community rolls a region out, and every existing member used to
+  get "Already in this channel" and carry on flooding globally.
+- **Deleting a channel forgets its region.** The radio hands the freed slot straight to
+  the next join, which inherited the scope of a channel you had deleted.
+- **Favouriting a contact, or pinning its route, no longer stops its adverts.** The
+  firmware treats that field as the contact's last advert timestamp and drops anything
+  older as a replay, so writing the phone's clock into it silently froze the contact's
+  name, location and route until the node's own clock caught up. Radios without GPS lose
+  their clock, so this was not a rare case.
+- **A contact scanned from a QR starts with no advert timestamp**, so the node's very
+  first advert is accepted rather than discarded.
+- **A channel can no longer be overwritten by a failed channel read.** One unanswered slot
+  read used to erase the rest of the list, after which the next join was handed a slot
+  that was actually in use — and a channel's key cannot be recovered from the radio.
+- **Direct contacts stop reporting a pinned route they never had.** On a mesh with 2-byte
+  hop hashes — the common case — a zero-hop path read as "Manual" routing.
+- **Inbound messages are no longer dropped in the first moment after connecting.**
+- **A `meshcore://` link pasted with a sentence after it works.** Previously "Malformed
+  contact code", which blamed whoever sent it.
+- **A link with anything after a `#` works** — every other client's parser cuts there too.
+- **On a device whose keystore refuses to store secrets, the app says so** instead of
+  silently not saving a password, and a channel whose key can't be cached stays in your
+  chat list rather than disappearing from it.
+- **Node names ending in an emoji are no longer cut in half** when written to the radio.
+- Region names are capped at the firmware's 29 bytes rather than 30 — one over was a scope
+  that looked set on the phone and routed nothing on the air.
+
+## 0.7.15
+
+- **The QR scanner can read inverted codes — for the first time.** MeshCore apps in dark
+  mode render white codes on near-black, and this app could not see them at all: it would
+  sit on a live viewfinder indefinitely while every other scanner on the phone read the
+  same code instantly. 0.7.11 claimed to have fixed this and did not. The hints were being
+  set on a decoder the scanning library replaced a moment later, during the same startup,
+  so they never reached a single frame. The scan type is now passed the way the library
+  reads it.
+- **Channel QR codes from other MeshCore apps work.** The channel key is called `secret`;
+  this app asked for `channel_secret`, a name it had invented and also emitted — so its own
+  codes were readable only by itself, and every channel share from anywhere else came back
+  "Malformed contact code". Codes this app produced earlier still scan.
+- **Spaces in a scanned name stay spaces.** A channel shared as `West+Michigan+GMRS`
+  arrived under that name, plus signs and all.
+- **Paste a code** — Nodes → ⋮. Other clients share contacts by copying a `meshcore://`
+  link rather than showing a QR, and until now there was no way to give one to this app.
+  It finds the link inside a pasted message, and everything after that is the ordinary
+  scan flow, confirmations included.
+- **Joining a channel you are already in no longer adds a second copy of it.** It matches
+  on the key rather than the name, because the key is what a channel *is*. Duplicates cost
+  one of the radio's eight slots and put inbound messages in an ambiguous thread.
+
+## 0.7.14
+
+- **Contact QR codes from other MeshCore clients import.** The `meshcore://<hex>` form —
+  a shared raw advert, as Liam Cottle's client exports — was rejected every time with
+  "Import failed (bad signature?)". The blob a radio exports is a whole packet, and this
+  app was checking the signature as though it were the advert alone, so it read the
+  packet's header byte as the first byte of the public key. It could never have matched.
+  Reported as a regression; it was not one. That code has never imported, because nothing
+  this app *emits* takes that form, so the only codes reaching the path came from
+  elsewhere.
+- **Spaces in a scanned name are no longer turned into `+`.** A contact shared as
+  `name=Example+Contact` — the encoding in MeshCore's own QR documentation — arrived
+  called "Example+Contact". A literal plus still survives if the sharing app escapes it,
+  which conforming ones do.
+
+## 0.7.13
+
+- **Blocking a repeater no longer breaks its console.** It never could block a repeater —
+  traffic through one carries the *original* sender's key, so there is nothing on the
+  repeater's key to block, and that is a property of the mesh rather than something an app
+  can change. What it did do was swallow the node's CLI replies before they were written
+  down, silently, so the Console went quiet while the Settings form carried on working.
+  Same node, same command, two screens, two answers. A block now never applies to a reply
+  you asked for by name.
+- **The Block action is gone from repeaters and sensors**, which send no messages of their
+  own and so had nothing to block. Rooms keep it: a room's chat really does arrive as
+  direct messages from the server, so hiding one has a real effect. It also stays visible
+  on anything currently blocked, so a repeater blocked by an older build can still be
+  unblocked.
+
+## 0.7.12
+
+- **A repeater that goes quiet now repairs itself.** When a node you are signed into stops
+  answering, the app clears the route and re-establishes it, then retries — the thing you
+  were doing by hand with Sign out / Sign in. It tells you while it works, and it does the
+  free repair first: the probe is a login carrying **no password**, which is enough for a
+  node that already knows you, so your credential does not go back on the air unless that
+  fails. There is no session to expire on a repeater — a login is permanent and survives a
+  reboot — so what re-signing-in ever fixed was the *route*, and only when it happened to
+  go out as a flood. This does it deliberately.
+- **Except when you pinned the route yourself**, where it says so instead. A pinned route
+  cannot be repaired this way — the node only forgets a dead return path for a login that
+  floods, and a pinned contact never floods — so it now fails in a third of the time and
+  names the pin rather than spending ninety seconds and your password proving it.
+- **The settings-QR generator estimates sensitivity and path loss.** A new tab gives
+  receiver sensitivity and the loss a link can absorb across every spreading factor and
+  bandwidth, with airtime beside it, and the summary line on the code page now says what a
+  receiver on those settings can hear. There is deliberately no distance: turning path loss
+  into range needs terrain, and a confident wrong number is worse than none.
+- Internal: the access-list and neighbour replies are now matched to the request that asked
+  for them, as the region lookup always was. Three of the four agreed and one did not.
+
+## 0.7.11
+
+- **"Scan settings QR…" is on both radio screens**, beside "Use a regional preset…" —
+  Settings → Radio for the radio in your hand, and a repeater's own Radio panel for a node
+  across the mesh. It existed before but only behind the contact-import buttons on other
+  tabs, which is not where anyone goes looking to apply a settings code.
+- **Scanning from the Chats button now does something.** The confirmation dialogs were
+  drawn only by the Nodes screen, so a code scanned anywhere else set everything up
+  correctly and then showed you nothing at all. That affected contact cards and channel
+  shares as much as settings codes.
+- **The scanner opens the right way up**, and — less visibly but worse — can now read
+  dark-mode QR codes from every button. One launcher had been built by hand and missed the
+  configuration that carries both, so it silently could not decode the roughly half of
+  codes in circulation that are rendered light-on-dark. A scanner that reads nothing looks
+  exactly like a code that is bad.
+- Internal: the scanner options, and the hex helpers behind them, are each defined once
+  now. Four copies of "is this hex" had already drifted apart without anyone noticing,
+  which is how the scanner bug happened in the first place.
+
+## 0.7.10
+
+- **The access list works.** It never had. "Fetch access list" asked over the air for
+  something only the node's own serial console can answer, so the node replied `??: acl` —
+  which reads like firmware too old for the feature rather than a question it could never
+  have answered. It now uses the request the firmware provides for this, and shows who has
+  Admin, Read-write, Read-only or Guest on a repeater.
+- **…and it no longer invents an entry.** The first working version showed a fourth row,
+  `000000000000  Guest` — an account with access to your repeater that does not exist. The
+  reply is encrypted and therefore padded, and the padding happened to be exactly the size
+  of one more entry. Inventing a row in an access list is worse than dropping one.
+- **Unused channel slots are out of the Chats list again.** Empty slots were reappearing as
+  "Channel 2", "Channel 3", "Channel 4" — conversations that do not exist. Two parts of the
+  app disagreed about what counts as a channel, and opening Settings → Channels (which
+  reads every slot the radio has) put the blank ones back. There is now one rule, which
+  also handles a channel you have just cleared: it leaves the list instead of lingering as
+  a nameless row.
+- Settings → Channels lists your real channels and an **Add channel** button, rather than
+  every empty slot the radio happens to have.
+
+## 0.7.9
+
+- **Join a mesh by scanning a QR.** A code can now carry an area's radio settings —
+  frequency, bandwidth, spreading factor, coding rate, path-hash width and an optional
+  flood region. Scanning shows every value and asks before applying: nothing in a QR is
+  signed, and these are the settings that decide whether your radio is on the mesh at all.
+  Generate codes at
+  <https://thatsfguy.github.io/meshcore-mobile-app/settings-qr/> — it runs entirely in your
+  browser and the image carries the settings as readable text, so a printed code still says
+  what it does.
+- The code deliberately carries **no transmit power and no channel keys**. Power is the
+  legal limit where *you* are standing, not a property of the mesh; a channel key would make
+  the code a secret rather than something safe to pin to a noticeboard.
+- **Applying radio settings to a repeater now offers to reboot it.** The node saves them and
+  keeps running on the old ones until it restarts — the firmware says so, answering
+  "OK - reboot to apply" — so without the prompt a preset looked like it had done nothing.
+  This affects remote nodes only; your own radio applies immediately.
+- The dropped **USA Rural / USA Suburban** presets are gone from the app and live on the
+  generator page instead, alongside MeshCore's USA/Canada default. Hardcoded frequencies go
+  stale silently and need a release to fix; a page you can edit does not.
+
+## 0.7.8
+
+- **New preset: USA Rural** — 906.375 MHz, 250 kHz, SF9, CR4/5, 22 dBm. Wide bandwidth at
+  a higher spreading factor, for sparse coverage where hops are long and few. It is a
+  local addition, not from the reference table the other 47 came from, and the file says
+  which entries are which.
+- **Presets can now be applied to a repeater or room, not just the radio in your hand.**
+  "Use a regional preset…" is in the remote Radio panel, and the confirmation names the
+  node it is about to retune. It also warns what that means: the node changes the instant
+  the command lands, and this radio can no longer reach it to undo the mistake — you would
+  have to match the settings here, or go to the node.
+- Applying a preset remotely sends TX power **before** the retune, because everything
+  after the retune goes out on parameters the node has already left.
+
+## 0.7.7
+
+- **Frequency is MHz and bandwidth is kHz everywhere.** The two screens disagreed because
+  the two transports do: the companion API takes whole kHz and Hz, the text CLI takes MHz
+  and kHz, and each screen showed its own transport's units. The same radio read `910525` /
+  `62500` in Settings and `910.5250244` / `62.5` on a repeater one tap away. Both screens
+  now read and accept MHz and kHz; the wire is unchanged and conversion happens at the edge.
+- **The frequency no longer reads `910.5250244`.** That was not a bug so much as an honest
+  rendering of an ugly truth: the node stores frequency as a 32-bit float, `910.525` cannot
+  be represented exactly in one, and the CLI prints the nearest value at full precision.
+  The app now shortens it — but only when the shorter form is the *same number* to the
+  radio, so a frequency genuinely finer than a kHz is still shown exactly as reported.
+
+## 0.7.6
+
+- **A delivered message can no longer be reported as a failure.** The retry loop opened a
+  fresh listener for each attempt, and the engine's event stream has no replay — so an ACK
+  that arrived when nothing happened to be listening was simply lost. Three ways that
+  happened, all of them a message that *did* arrive: during the backoff between attempts;
+  for an earlier attempt, since each is sent under its own ACK hash and only the current
+  one was watched; and just after the last attempt gave up. One listener now runs for the
+  whole send and records what it sees, so asking "did any of mine land?" re-checks what is
+  already known instead of racing.
+- **A late ACK now corrects the message.** After the last attempt the message still goes
+  to Failed — that is the honest report of what is known then — but the app keeps
+  listening for 30 seconds, and a reply that arrives late flips it to Delivered. A timeout
+  is an estimate, not a deadline the mesh agreed to, and showing a delivered message as
+  failed invites you to send it again over a link that worked.
+
+## 0.7.5
+
+- **The "4 B" path-hash option never worked and is gone.** Mode 3 is reserved, and the
+  firmware refuses it at every layer — the companion handler answers `ERR_CODE_ILLEGAL_ARG`,
+  the CLI answers "Error, must be 0,1, or 2", and the node clamps it to 2 on load. Tapping
+  it did nothing and said nothing. The real range is 1–3 bytes, and the in-app command help
+  said "0–3" too; both now come from one place that a test holds to the firmware's range.
+- **You can set the path hash width on a repeater from the app.** It was the one radio
+  parameter that still needed the console. It sits under Settings → Radio on the node you
+  are administering, reads the node's current width when you open the section, and applies
+  on tap rather than on Save — a chip showing a value the node has not been told about
+  would be a lie. Every node on a mesh must match, so it is deliberately next to the
+  frequency and bandwidth it has to agree with.
+- Noise floor reads **dBm**, not dB — an absolute power, like the RSSI beside it. SNR is
+  the ratio and correctly keeps dB. The noise-floor watch had no unit at all.
+
+## 0.7.4
+
+- **A contact's route is drawn where you edit it.** "Show route on map" set a flag the Map
+  tab read, then left you in the routing sheet: it did not navigate, its confirmation was
+  swallowed by the sheet, and the summary it drew over on the Map tab was painted over by
+  the map itself. Tapping it did nothing you could see. The route now renders inline in
+  the routing sheet, on the same component the message info sheet already uses — one
+  implementation of "draw a route", and it is the one that was already proven.
+- The Map tab is the node map and nothing else again; the route flag is gone.
+- A stored route whose last hop **is** the destination — routing to a repeater, the
+  ordinary case — no longer stacks two pins on one spot. A hop we cannot identify never
+  stands in for the destination, however well its hash matches, but one we know the
+  identity of and not the position still does.
+
+## 0.7.3
+
+- **Fetch neighbours works.** It never had. The request carried one byte — the request
+  type — where the firmware reads eleven, so the node took the "how many to return" count
+  from whatever followed our payload, read zero, and answered with a table header and no
+  rows. The app reported that as *"knows 2 neighbour(s) but returned none — try again, the
+  table may be paged"*, which was wrong twice: it was not paging, and no amount of
+  retrying could have helped. The request now carries count, offset, sort order, prefix
+  length and a nonce, and pages properly when a node knows more than one reply can hold.
+- Neighbours ask for a **6-byte key prefix** instead of 4. 32 bits is cheap to collide on
+  purpose, and a colliding prefix puts a name on the wrong node.
+- Each neighbour shows **how long ago it was heard**. That field was being read as an
+  epoch timestamp; the firmware sends elapsed seconds, on the node's own clock.
+- The section now says **what a neighbour table actually is**: other repeaters, heard
+  directly at zero hops. Companions, rooms and sensors never appear, and a relayed advert
+  never counts — which is why a healthy repeater reports two or three and not a cap.
+  Nodes that keep no such table no longer offer the button at all.
+- **New: Probe.** The table is filled only by adverts that happen to arrive — nothing
+  polls it and nothing expires — so it lists who advertised since the node booted, not
+  who is in range. Probe broadcasts `discover.neighbors` and makes them answer. On a live
+  repeater this turned up a neighbour at a perfectly usable 3.5 dB that had been absent
+  for hours. It costs airtime, so it is a deliberate button and not something the plain
+  fetch does behind your back; admin only, since it goes through the node's CLI.
+- **The admin console shows console traffic only.** It had been rendering the whole
+  message thread with the node, so on a room server the room's own chat — "hey", "hi",
+  "check" — appeared among the CLI replies, and **"Clear console" deleted those messages
+  along with the command history**. Clearing now takes the console and nothing else.
+- **The console is ordered by when things arrived here**, not by the timestamp the node
+  claims. Repeaters and room servers have no GPS and usually no correct clock, so a reply
+  could sort hours away from the command that caused it.
+
+## 0.7.2
+
+- **Direct-message repeats actually work now.** 0.7.1 shipped them looking correct and
+  doing nothing: a repeat was credited only when exactly one message to that contact
+  existed in a two-minute window, so sending two or three messages to one person — what
+  trying the feature looks like — discarded every result. Correlation is now on echo
+  timing, which is what genuinely separates two messages to the same recipient.
+- **Confirmed on a live mesh**, not just in tests: a direct message re-broadcast by two
+  nodes, both copies heard, both credited to the right message. Those exact bytes are
+  pinned in the test suite.
+- A message can now read `✗ (try 3) · ↻ 2` — **failed, but two nodes carried it**. That
+  distinguishes "the mesh moved it and nobody answered" from "it never left the radio",
+  which the delivery tick alone cannot.
+- The bubble badge is the glyph and the count, nothing else. The footer already carries a
+  time, a tick and sometimes an attempt count; the word was using more of that line than
+  the number. The info sheet still names every node in full.
+- Debug builds tee the engine log to Logcat, and the repeat log — which names contact key
+  prefixes — is now confined to them. Contact keys belong in the encrypted database and
+  the Keystore, not in a release build's system log.
+
+## 0.7.1
+
+- **Repeats now show on the sent message itself** — a badge under the bubble,
+  which is where you're looking when the question occurs to you. The standing
+  "Who repeats me" screen stays; it answers the coverage question this one can't.
+- **The info sheet names them.** Long-press a sent message → *Message details* → **Repeated
+  by** lists each node, resolved to a contact name where exactly one matches and left as a
+  hash where more than one does.
+- Channel posts are **exact** — the app decrypts the echo and matches it to the row in its
+  own outbox. Direct messages are **correlated**: a rebroadcast DM is encrypted to its
+  recipient and exposes one byte of it, so a repeat is credited only when exactly one sent
+  message fits, and refuses when two do.
+- No repeats heard shows **nothing**, never "0". A node that carried your message onward
+  without a copy coming back can't be heard here, so silence is unmeasured, not zero.
+- Wording corrected throughout: **node**, not repeater. The first live measurement was
+  relayed by a room server, and companions with client-repeat relay too.
+
+## 0.7.0
+
+- **New: "Who repeats me"** (Nodes → ⋮). Which repeaters are actually carrying your
+  traffic — the mirror of a message's "Arrived via", and the one you can *run*: tap **Send
+  a flood advert** and watch which repeaters send a copy back.
+- Each row separates the two things people conflate. A repeater that **heard you** pulled
+  your transmission out of the air; a repeater that **you heard** is the one whose
+  transmission reached your radio. Only the second has a measured SNR, and only that one
+  shows a number. One repeater doing both is flagged **Two-way**.
+- Nobody else can put a repeater on your list. Every row comes from a copy of your own
+  **Ed25519-signed advert**, so forging one would need your private key.
+- The screen says what it cannot see: a repeater that carried your traffic onward without
+  a copy coming back cannot appear, so the list is a floor, not a coverage map. An
+  ambiguous hop stays `(2 matches)` rather than being credited to one repeater.
+- Under the hood this was thought impossible here for five days — our own notes said the
+  route data "isn't answerable from the RX log alone". Reading the firmware settled it: the
+  radio hands the app every packet it demodulates *before* discarding duplicates, and a
+  repeater bouncing your own packet back is exactly such a duplicate.
+
+## 0.6.7
+
+- **The app's "Forget" is now "Remove", because it was being confused with Android's.**
+  Removing a saved node drops this app's list entry; it does *not* touch the Bluetooth
+  pairing. Only Android's own "Forget device" does that, and until you use it the phone
+  reconnects on the old pairing — so a changed PIN looks like it did nothing.
+- After changing the PIN and rebooting, the app now says this plainly and offers to open
+  Bluetooth settings, which is where the pairing actually lives.
+
+## 0.6.6
+
+- **Forget now actually forgets.** It removed a radio from Saved nodes but left it in the
+  auto-reconnect memory, so the node came straight back on the next connect — and because
+  that path never re-added it to the list, you ended up connected to a radio the app no
+  longer listed. Forget clears both, and disconnects if it is the one you are attached to.
+- Any successful connection now appears in Saved nodes, including automatic reconnects. The
+  list was only written when you picked a radio by hand.
+
+## 0.6.5
+
+- **Fixes the PIN screen shipped in 0.6.4**, which got three things wrong. It accepted PINs
+  the radio refuses (anything starting with 0 — the firmware takes 100000–999999, or 0), it
+  claimed the current PIN could not be read when the node reports it in every DEVICE_INFO
+  frame, and it never mentioned that **the change only takes effect after a reboot**.
+- The screen now shows the configured PIN, refuses what the radio would refuse, explains that
+  `000000` clears the PIN rather than setting one, and offers to reboot straight after.
+
+## 0.6.4
+
+- **Change the radio's Bluetooth pairing PIN** — Settings → Radio link → Bluetooth PIN. Nodes
+  without a screen ship with 123456, which is public and the same on every one of them, so
+  until you change it anyone in Bluetooth range can pair and read the radio's contacts,
+  messages and settings.
+- The current PIN is never shown, because the firmware provides no way to read it back. The
+  screen can only set a new one.
+- Changing it invalidates the pairing your phone already has, so it says so before you commit
+  and tells you to write the PIN down — nothing can recover it.
+
+## 0.6.3
+
+- **Restoring a backup now actually restores contacts.** The restore dialog offered a contacts
+  option, counted them, and then never wrote them — admitting it in a sentence at the end of a
+  long status line. Restoring onto a new radio left you with no contacts and no obvious reason.
+- **Any MeshCore QR can be scanned from either scanner.** Scanning a repeater's contact code
+  from the Chats + button used to answer "Invalid community code", because that button was
+  wired only to the community parser. Contact, channel, advert and community codes are now
+  recognised wherever you scan them — from Chats, from Nodes, and from the Add channel sheet.
+
+## 0.6.2
+
+- The route map painted over the rows around it — "Hops travelled" and the Route heading were
+  hidden behind it, and pinch-zooming threw the route lines across the whole sheet. A map view
+  draws across everything it is given and does not clip itself; now it does.
+- Message info scrolls. The map added about 250dp to a sheet that could not scroll, so on a
+  long route the hop list underneath was simply unreachable.
+- osmdroid is now configured when the app starts rather than by whichever map happens to be
+  built first, so no screen can be the one that forgets.
+
+## 0.6.1
+
+- The route map drew no tiles unless you had opened the Map tab earlier in the same session.
+  osmdroid's configuration is process-wide and only the Map tab was setting it; without it
+  OpenStreetMap rejects the request and the map shows an empty grid that looks exactly like
+  "map tiles are switched off". Both maps now configure it.
+- A short route also zoomed past the deepest zoom level that has tiles, producing the same
+  empty grid from a different cause. Clamped.
+
+## 0.6.0
+
+- **Message info now draws the route on a map.** Long-press a received message → Info, and the
+  path it took is drawn above the hop list.
+- Nodes that have never advertised a position are placed *approximately* so the shape of the
+  route is visible — a hollow pin with a `?` on a dotted line, never a solid pin. A companion
+  node with no GPS is offset away from the first repeater rather than stacked on it; an
+  unplaceable repeater mid-route sits between its two neighbours.
+- A hop that could not be **identified** — no contact matches its hash, or several do — is
+  never placed at any confidence. The line across it is dashed, which is what dashed already
+  means on the main map: no route is being claimed here.
+- The hop list underneath still names every node, so nothing is lost when the map cannot draw
+  one.
+
+## 0.5.7
+
+- Tapping a message notification now opens **that conversation**, instead of just opening the
+  app and leaving you to find it. Back from there lands on Chats, wherever you were before.
+
+## 0.5.6
+
+- Reply notifications showed the quote and the answer run together — a reply of "good" to
+  "yeah" arrived as ">yeah good". The one line Android shows before you expand is now the
+  **reply**; expanding shows the quoted message above it, marked with ↩.
+
+## 0.5.5
+
+- The conversation list showed the message being *replied to* instead of the reply. A reply
+  is sent as the quoted text followed by what you actually said, and the preview was taking
+  the first 80 characters — so the list read as though everyone were repeating each other.
+- Reactions now notify. A thumbs-up is often the whole reply, and it used to arrive in
+  complete silence. Only for reactions to **your own** messages — a reaction to someone
+  else's message in a busy channel is somebody else's conversation.
+- Opening a conversation clears its notification. Previously the notification only
+  disappeared if you tapped it, so reading in the app left the phone still insisting there
+  was something to read.
+- **Send advert (0-hop)** and **Send advert (flood)** are on the Chats menu. Announcing
+  yourself is situational — "nobody can see me, say hello again" — and it had ended up three
+  taps deep behind a settings page.
+
+## 0.5.4
+
+- Signing in to a repeater now retries if nothing comes back, and waits as long as *the
+  radio* says to instead of a flat 20 seconds. The last attempt clears a dead path and
+  floods, the same as a message — the firmware routes a login over the stored path exactly
+  like a text message, so it fails the same way.
+- A **rejected** password is never retried. It won't start working, and the password is on
+  the air in cleartext each time.
+- "The node rejected that password" and "No answer from the node" are now different
+  messages, because they need different fixes.
+
+## 0.5.3
+
+- A direct message that fails twice is now retried as a flood, once — and the dead path is
+  cleared first, so your radio can learn a live one from the reply. Before this, all three
+  attempts went down the same broken route.
+- This is MeshCore's documented default, and like the stock app it can be turned off:
+  **Settings → Mesh policies → Flood on the last message retry**.
+
+## 0.5.2
+
+- Command help said "1 commands" when a search matched exactly one.
+
+## 0.5.1
+
+- Tapping a repeater, room or sensor now goes straight to signing in, and signing in leads
+  straight to its tools. Checking a repeater's status went from five taps and a scroll to
+  three.
+- The Status screen asks the node for status when you open it, instead of showing five
+  "Fetch" buttons and waiting to be told.
+- There is no longer a signed-out version of the admin screen to get stuck on: you sign in,
+  or you go back.
+- Appearance, notifications, privacy and the diagnostics log are one screen again. Splitting
+  them gave four pages holding one switch each.
+- Settings rows that need a radio are no longer greyed out — six of the first ten rows looked
+  broken before you had done anything.
+- Long-press a node for its details (key, position, routing, rename, QR).
+
+## 0.5.0
+
+- Repeater, room and sensor administration is now a hub: one screen per tool (Status,
+  Settings, Regions, Identity, Console, Command help) instead of six tabs sharing one screen.
+- Signing in to a node is a dialog, and the node's answer — ADMIN or GUEST — is shown on the
+  hub. Nothing about the session is guessed from what you typed.
+- Settings is a list of pages instead of eleven expandable sections. Each row shows its
+  current value, so which transports are on, what frequency the radio is using and whether
+  map tiles are being fetched are all answered without opening anything.
+- Long explanations are one line with a "More" tap rather than three sentences on every row.
+- This release changes how the app is laid out. It has not yet been run against a radio.
+
+## 0.4.0
+
+- "Arrived via": the route a received message actually travelled, hop by hop. Shown only when
+  it is known — a flooded message says so instead of guessing.
+- Manual routing is now pick-and-order: tap a repeater to add it, arrows to reorder. No more
+  typing hex.
+- Config backup and restore, with secrets encrypted under a passphrase or left out.
+- Message retention and a single purge-local-data action.
+- Blocked contacts (by public key) and hidden channel names (by name — a filter, not a block).
+- Regional radio presets, and a first-run setup flow.
+- Contact permissions, active node discovery, and per-conversation notification levels.
+- Repeater neighbour tables and identity-key management.
+- Sensor nodes as a first-class type; routes drawn on the map, with gaps where a hop can't be
+  placed rather than a guessed line.
+- Fixes: unconfigured channels appearing in Chats; path trace sending a request no node would
+  answer; "Apply path" silently doing nothing; hop counts that were really byte counts.
+
+## 0.3.0
+
+- Regions: named flood scopes, per-channel scoping, discovery from nearby repeaters.
+- Repeater region administration.
+
+## 0.2.x
+
+- Repeater admin: access list, command help, noise floor, clock drift, position picker.
+- Messaging: links, quote-replies, reactions, drafts, pinning, nicknames.
+- Per-contact telemetry, channel QR sharing, room post authorship.
+
+## 0.1.0
+
+- First release: BLE/USB/TCP transports, direct messages and channels, node map.

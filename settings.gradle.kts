@@ -13,6 +13,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "MeshCoreMobile"
+rootProject.name = "MeshConnect"
 include(":shared")
 include(":androidApp")
