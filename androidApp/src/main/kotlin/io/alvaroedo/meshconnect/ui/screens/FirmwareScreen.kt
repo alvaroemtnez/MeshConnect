@@ -1,5 +1,7 @@
 package io.alvaroedo.meshconnect.ui.screens
 
+import io.alvaroedo.meshconnect.R
+import androidx.compose.ui.res.stringResource
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
@@ -161,7 +163,7 @@ fun FirmwareScreen(
     }
 
     Scaffold(
-        topBar = { AppTopBar(title = "Firmware", vm = vm, nav = nav, menuActions = emptyList()) },
+        topBar = { AppTopBar(title = stringResource(R.string.hub_firmware), vm = vm, nav = nav, menuActions = emptyList()) },
     ) { padding ->
         Column(
             Modifier
@@ -194,7 +196,7 @@ fun FirmwareScreen(
                     onFlashOtherNode = { nav.navigate("firmware/node") },
                 )
 
-                FirmwareUi.Checking -> SectionSpinner("Reading the MeshCore release list…")
+                FirmwareUi.Checking -> SectionSpinner(stringResource(R.string.fw_reading_list))
 
                 is FirmwareUi.ChoosingVersion -> VersionPanel(
                     state = current.copy(boardName = board ?: current.boardName),
@@ -217,7 +219,7 @@ fun FirmwareScreen(
                     onPickFile = { openFile.launch(arrayOf("application/zip", "*/*")) },
                 )
 
-                is FirmwareUi.Downloading -> SectionSpinner("Downloading ${current.name}…")
+                is FirmwareUi.Downloading -> SectionSpinner(stringResource(R.string.fw_downloading, current.name))
 
                 is FirmwareUi.Confirm -> ConfirmPanel(
                     state = current,
@@ -252,56 +254,40 @@ fun FirmwareScreen(
                             }
                         }
                     }
-                    Text("Update complete", style = MaterialTheme.typography.titleMedium)
+                    Text(stringResource(R.string.fw_complete), style = MaterialTheme.typography.titleMedium)
                     HintText(
-                        "The node is rebooting into " +
-                            (current.version?.let { "$it." } ?: "the new firmware.") +
-                            " Reconnecting automatically.",
+                        current.version?.let { stringResource(R.string.fw_rebooting_into, it) } ?: stringResource(R.string.fw_rebooting),
                     )
                     Spacer(Modifier.height(8.dp))
-                    OutlinedButton(onClick = { vm.firmware.reset() }) { Text("Done") }
+                    OutlinedButton(onClick = { vm.firmware.reset() }) { Text(stringResource(R.string.setup_done)) }
                 }
 
                 is FirmwareUi.WeakSignal -> {
-                    Text("Too far away to risk it", style = MaterialTheme.typography.titleMedium)
+                    Text(stringResource(R.string.fw_too_far), style = MaterialTheme.typography.titleMedium)
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        "${current.peer} is reachable at ${current.rssi} dBm — near the " +
-                            "floor of what a ${current.pkg.imageSize / 1024} KB transfer " +
-                            "can be expected to survive.\n\nThat matters because of the " +
-                            "order the node does things in: it erases its firmware before " +
-                            "writing the new copy, so a transfer that stops half way leaves " +
-                            "it with nothing to run until someone reaches it.\n\nNothing " +
-                            "has been written. If you can get closer, do — and if you " +
-                            "cannot, it is still worth trying.",
+                        stringResource(R.string.fw_too_far_body, current.peer.toString(), current.rssi, current.pkg.imageSize / 1024),
                         style = MaterialTheme.typography.bodyMedium,
                     )
                     Spacer(Modifier.height(12.dp))
                     ButtonFlowRow {
-                        Button(onClick = { vm.firmware.flash() }) { Text("Try again") }
-                        OutlinedButton(onClick = { vm.firmware.reset() }) { Text("Stop") }
+                        Button(onClick = { vm.firmware.flash() }) { Text(stringResource(R.string.ota_try_again)) }
+                        OutlinedButton(onClick = { vm.firmware.reset() }) { Text(stringResource(R.string.fw_stop)) }
                     }
                     Spacer(Modifier.height(8.dp))
-                    ExpandableHint("Go ahead anyway") {
+                    ExpandableHint(stringResource(R.string.fw_anyway_hint)) {
                         DetailText(
-                            "Nodes on masts and roofs cannot be approached, and this is the " +
-                                "signal they have. A weak link often carries a whole image " +
-                                "regardless — the transfer is slow rather than doomed.\n\n" +
-                                "What it costs when it does not finish depends on the " +
-                                "bootloader. Its old firmware is erased as the transfer " +
-                                "begins. The OTAFIX bootloader then waits in update mode " +
-                                "for another attempt; the standard one will not start " +
-                                "another over Bluetooth, and finishing needs a USB cable.",
+                            stringResource(R.string.fw_anyway_detail),
                         )
                         Spacer(Modifier.height(8.dp))
                         OutlinedButton(onClick = { vm.firmware.retryOverWeakSignal() }) {
-                            Text("Transfer anyway")
+                            Text(stringResource(R.string.fw_transfer_anyway))
                         }
                     }
                 }
 
                 is FirmwareUi.Failed -> {
-                    Text("Update failed", style = MaterialTheme.typography.titleMedium)
+                    Text(stringResource(R.string.fw_failed), style = MaterialTheme.typography.titleMedium)
                     Text(current.message, color = MaterialTheme.colorScheme.error)
                     current.recovery?.let {
                         Spacer(Modifier.height(8.dp))
@@ -314,9 +300,9 @@ fun FirmwareScreen(
                     // latched session, so the button would be a lie.
                     ButtonFlowRow {
                         if (current.retry != null) {
-                            Button(onClick = { vm.firmware.flash() }) { Text("Try again") }
+                            Button(onClick = { vm.firmware.flash() }) { Text(stringResource(R.string.ota_try_again)) }
                         }
-                        OutlinedButton(onClick = { vm.firmware.reset() }) { Text("Back") }
+                        OutlinedButton(onClick = { vm.firmware.reset() }) { Text(stringResource(R.string.back)) }
                     }
                 }
             }
@@ -349,60 +335,41 @@ private fun IdlePanel(
 
     if (target == FirmwareTargetKind.ConnectedRadio && !capable) {
         Text(
-            "This radio cannot be updated over the air.",
+            stringResource(R.string.fw_no_ota),
             style = MaterialTheme.typography.titleSmall,
         )
-        HintText("It offers no firmware-update service over this link.")
+        HintText(stringResource(R.string.fw_no_ota_hint))
         Spacer(Modifier.height(8.dp))
         // Not a dead end. The radio in your hand having no DFU service
         // says nothing about the node you are standing next to, and
         // reaching that node needs no mesh, no admin session and no
         // contact record — only Bluetooth range.
         OutlinedButton(onClick = onFlashOtherNode) {
-            Text("Flash a node that is in update mode")
+            Text(stringResource(R.string.fw_flash_other))
         }
         Spacer(Modifier.height(8.dp))
-        ExpandableHint("What can be updated over the air") {
+        ExpandableHint(stringResource(R.string.fw_what_ota)) {
             DetailText(
-                "Over-the-air updates need an nRF52 board running companion firmware " +
-                    "v1.15 or newer, connected over Bluetooth — that is where the update " +
-                    "service lives.\n\n" +
-                    "ESP32 boards (Heltec V3 and similar) update over USB, or over their " +
-                    "own WiFi hotspot after `start ota`: connect to \"MeshCore OTA\" and " +
-                    "open http://192.168.4.1/update in a browser. That path is deliberately " +
-                    "not built into this app — a browser does it properly, and this app " +
-                    "does not use WiFi.",
+                stringResource(R.string.fw_what_ota_detail),
             )
         }
         return
     }
 
     if (target == FirmwareTargetKind.NodeInUpdateMode) {
-        HintText("You have to be within Bluetooth range — this does not go over the mesh.")
+        HintText(stringResource(R.string.fw_bt_range))
         Spacer(Modifier.height(8.dp))
-        ExpandableHint("What happens to the node") {
+        ExpandableHint(stringResource(R.string.fw_what_happens)) {
             DetailText(
-                "A node that has taken `start ota` is still running its own firmware and " +
-                    "still repeating — it has simply switched its Bluetooth on and is " +
-                    "advertising for an update.\n\n" +
-                    "It reboots into its bootloader at the moment this app connects and " +
-                    "starts the transfer, not before. Up to that point nothing has been " +
-                    "committed and walking away costs nothing.",
+                stringResource(R.string.fw_what_happens_detail),
             )
         }
         Spacer(Modifier.height(8.dp))
     }
 
-    ExpandableHint("Before updating a node you cannot easily reach") {
+    ExpandableHint(stringResource(R.string.fw_unreachable)) {
         DetailText(
-            "A failed transfer leaves the node in update mode, waiting — not bricked. It " +
-                "can be flashed again from close by. What it cannot do is go back to " +
-                "running MeshCore on its own.\n\n" +
-                "The stock bootloader on most boards erases flash before it starts, so a " +
-                "node interrupted mid-update has no application to fall back on. The " +
-                "OTAFIX bootloader (github.com/oltaco/Adafruit_nRF52_Bootloader_OTAFIX) " +
-                "returns to update mode by itself when that happens, and is strongly " +
-                "recommended before updating anything on a mast.",
+            stringResource(R.string.fw_unreachable_detail),
         )
     }
 
@@ -414,10 +381,10 @@ private fun IdlePanel(
                 role = role,
                 currentVersion = currentVersion,
             )
-        }) { Text("Check for firmware") }
-        OutlinedButton(onClick = onPickFile) { Text("Open a .zip…") }
+        }) { Text(stringResource(R.string.fw_check)) }
+        OutlinedButton(onClick = onPickFile) { Text(stringResource(R.string.fw_open_zip)) }
     }
-    HintText("Checking fetches the MeshCore release list from GitHub, only when you ask.")
+    HintText(stringResource(R.string.fw_check_hint))
     if (target == FirmwareTargetKind.ConnectedRadio) {
         Spacer(Modifier.height(8.dp))
         // A node already in update mode is off the mesh, so there is no
@@ -426,7 +393,7 @@ private fun IdlePanel(
         // that — so this must not be reachable only from the node's own
         // hub, which is precisely where it cannot be reached.
         TextButton(onClick = onFlashOtherNode) {
-            Text("Another node is already in update mode…")
+            Text(stringResource(R.string.fw_another))
         }
     }
 }
@@ -444,10 +411,9 @@ private fun VersionPanel(
     state: FirmwareUi.ChoosingVersion,
     onChoose: (FirmwareVersion) -> Unit,
 ) {
-    Text("Choose a version", style = MaterialTheme.typography.titleMedium)
+    Text(stringResource(R.string.fw_choose_version), style = MaterialTheme.typography.titleMedium)
     HintText(
-        state.boardName?.let { "For $it." }
-            ?: "The board could not be read, so every build will be listed.",
+        state.boardName?.let { stringResource(R.string.fw_for_board, it) } ?: stringResource(R.string.fw_board_unknown),
     )
     Spacer(Modifier.height(8.dp))
     for (version in state.versions) {
@@ -460,24 +426,19 @@ private fun VersionPanel(
         SettingsTileRow(
             title = version.version,
             subtitle = when {
-                isCurrent && isNewest -> "Installed now · newest"
-                isCurrent -> "Installed now"
-                isNewest -> "Newest"
-                else -> "Older"
+                isCurrent && isNewest -> stringResource(R.string.fw_installed_newest)
+                isCurrent -> stringResource(R.string.fw_installed)
+                isNewest -> stringResource(R.string.fw_newest)
+                else -> stringResource(R.string.fw_older)
             },
             dimmed = false,
             onClick = { onChoose(version) },
         )
     }
     Spacer(Modifier.height(8.dp))
-    ExpandableHint("Which version should I install?") {
+    ExpandableHint(stringResource(R.string.fw_which)) {
         DetailText(
-            "Newest is not automatically best. MeshCore releases often and a release is " +
-                "sometimes withdrawn or followed quickly by a fix, so the version worth " +
-                "installing on a node you cannot easily reach is usually one that has " +
-                "already been running somewhere you can.\n\n" +
-                "Going backwards is allowed: the bootloader does not check that a version " +
-                "is newer than the one installed.",
+            stringResource(R.string.fw_which_detail),
         )
     }
 }
@@ -489,28 +450,22 @@ private fun ChoosePanel(
     onPickFile: () -> Unit,
 ) {
     if (state.suggested.isEmpty()) {
-        Text("Pick the build for this board", style = MaterialTheme.typography.titleMedium)
+        Text(stringResource(R.string.fw_pick_build), style = MaterialTheme.typography.titleMedium)
         HintText(
-            "Pick the one for this node — it will be remembered for next time.",
+            stringResource(R.string.fw_pick_build_hint),
         )
-        ExpandableHint("Why is it asking?") {
+        ExpandableHint(stringResource(R.string.fw_why_asking)) {
             DetailText(
-                "This node did not tell the app what board it is. A repeater only answers " +
-                    "that over the mesh, and a node in update mode has left the mesh — so " +
-                    "the one time it matters most is the one time it cannot be asked.\n\n" +
-                    "Choose from the list and it is stored against the node, so this is a " +
-                    "one-off. Check it against flasher.meshcore.io if you are unsure: the " +
-                    "package cannot tell you which board it is for, because every nRF52 " +
-                    "board declares the same device type.",
+                stringResource(R.string.fw_why_asking_detail),
             )
         }
     } else {
         Text("${state.boardName} · ${state.version}", style = MaterialTheme.typography.titleMedium)
         HintText(
             if (state.suggested.size > 1) {
-                "This board ships more than one build, so check the name."
+                stringResource(R.string.fw_multi_build)
             } else {
-                "The build for this board in ${state.version}."
+                stringResource(R.string.fw_build_in, state.version)
             },
         )
     }
@@ -520,14 +475,14 @@ private fun ChoosePanel(
     }
     if (state.others.isNotEmpty()) {
         Spacer(Modifier.height(8.dp))
-        ExpandableHint("Show every board in this release (${state.others.size})") {
+        ExpandableHint(stringResource(R.string.fw_every_board, state.others.size)) {
             Column {
                 for (asset in state.others) AssetRow(asset, onChoose)
             }
         }
     }
     Spacer(Modifier.height(8.dp))
-    OutlinedButton(onClick = onPickFile) { Text("Open a .zip instead…") }
+    OutlinedButton(onClick = onPickFile) { Text(stringResource(R.string.fw_open_zip_instead)) }
 }
 
 @Composable
@@ -535,7 +490,7 @@ private fun AssetRow(asset: FirmwareAsset, onChoose: (FirmwareAsset) -> Unit) {
     SettingsTileRow(
         title = asset.boardPrefix,
         subtitle = "${asset.version} · ${asset.sizeBytes / 1024} KB" +
-            if (asset.sha256 == null) " · no published checksum" else "",
+            if (asset.sha256 == null) " · " + stringResource(R.string.fw_no_checksum_short) else "",
         dimmed = false,
         onClick = { onChoose(asset) },
     )
@@ -550,10 +505,10 @@ private fun ConfirmPanel(
 ) {
     var confirming by remember { mutableStateOf(false) }
 
-    Text("Ready to flash", style = MaterialTheme.typography.titleMedium)
+    Text(stringResource(R.string.fw_ready), style = MaterialTheme.typography.titleMedium)
     Spacer(Modifier.height(8.dp))
     Text(state.source.sourceDescription, style = MaterialTheme.typography.bodyLarge)
-    HintText("${state.pkg.imageSize / 1024} KB image")
+    HintText(stringResource(R.string.fw_image_kb, state.pkg.imageSize / 1024))
     Spacer(Modifier.height(8.dp))
 
     Text("SHA-256", style = MaterialTheme.typography.labelMedium)
@@ -564,10 +519,9 @@ private fun ConfirmPanel(
     )
     HintText(
         if (state.source.verifiedAgainstRelease) {
-            "Matches the checksum published with the release."
+            stringResource(R.string.fw_checksum_ok)
         } else {
-            "No checksum was published for this file, so this is what arrived — not proof " +
-                "of what it should be. Compare it against flasher.meshcore.io if it matters."
+            stringResource(R.string.fw_checksum_none)
         },
     )
 
@@ -575,41 +529,32 @@ private fun ConfirmPanel(
     HorizontalDivider()
     Spacer(Modifier.height(8.dp))
     Text(
-        "The package cannot tell you which board it is for: every nRF52 board declares the " +
-            "same device type, so the filename is the only thing that says. Flashing a " +
-            "build for a different board leaves the node reachable only over USB.",
+        stringResource(R.string.fw_board_warning),
         style = MaterialTheme.typography.bodySmall,
     )
     Spacer(Modifier.height(12.dp))
     ButtonFlowRow {
-        Button(onClick = { confirming = true }) { Text("Flash this to the node") }
-        OutlinedButton(onClick = onCancel) { Text("Cancel") }
+        Button(onClick = { confirming = true }) { Text(stringResource(R.string.fw_flash_this)) }
+        OutlinedButton(onClick = onCancel) { Text(stringResource(R.string.cancel)) }
     }
 
     if (confirming) {
         AlertDialog(
             onDismissRequest = { confirming = false },
-            title = { Text("Flash ${boardName ?: "this node"}?") },
+            title = { Text(boardName?.let { stringResource(R.string.fw_flash_q, it) } ?: stringResource(R.string.fw_flash_q_node)) },
             text = {
                 Text(
-                    "This writes ${state.source.sourceDescription} to " +
-                        (boardName?.let { "a node reporting itself as \"$it\"" }
-                            ?: "the node") +
-                        ".\n\nKeep the phone next to it and this screen open until it " +
-                        "finishes. Its old firmware is erased as the transfer begins. If " +
-                        "it is interrupted, a node with the OTAFIX bootloader waits in " +
-                        "update mode to be flashed again; one with the standard " +
-                        "bootloader needs a USB cable to finish.",
+                    (boardName?.let { stringResource(R.string.fw_writes_board, state.source.sourceDescription, it) } ?: stringResource(R.string.fw_writes, state.source.sourceDescription)) + "\n\n" + stringResource(R.string.fw_keep_close),
                 )
             },
             confirmButton = {
                 TextButton(onClick = {
                     confirming = false
                     onFlash()
-                }) { Text("Flash") }
+                }) { Text(stringResource(R.string.fw_flash)) }
             },
             dismissButton = {
-                TextButton(onClick = { confirming = false }) { Text("Cancel") }
+                TextButton(onClick = { confirming = false }) { Text(stringResource(R.string.cancel)) }
             },
         )
     }
@@ -619,18 +564,18 @@ private fun ConfirmPanel(
 private fun RunningPanel(progress: DfuProgress) {
     KeepScreenOn()
     val label = when (progress) {
-        DfuProgress.Preparing -> "Preparing…"
-        DfuProgress.EnteringBootloader -> "Asking the radio to restart in update mode…"
-        DfuProgress.FindingNode -> "Looking for the node in update mode…"
-        is DfuProgress.Connecting -> "Connecting to ${progress.peer.name ?: progress.peer.address}…"
-        is DfuProgress.Transferring -> "Sending firmware…"
-        DfuProgress.Verifying -> "Verifying the image on the node…"
-        DfuProgress.Finished -> "Done"
-        is DfuProgress.SignalTooWeak -> "Too far away"
+        DfuProgress.Preparing -> stringResource(R.string.dfu_preparing)
+        DfuProgress.EnteringBootloader -> stringResource(R.string.dfu_entering)
+        DfuProgress.FindingNode -> stringResource(R.string.dfu_finding)
+        is DfuProgress.Connecting -> stringResource(R.string.dfu_connecting, progress.peer.name ?: progress.peer.address)
+        is DfuProgress.Transferring -> stringResource(R.string.dfu_sending)
+        DfuProgress.Verifying -> stringResource(R.string.dfu_verifying)
+        DfuProgress.Finished -> stringResource(R.string.setup_done)
+        is DfuProgress.SignalTooWeak -> stringResource(R.string.dfu_too_far)
         // Said out loud rather than hidden behind a progress bar that
         // silently starts again.
         is DfuProgress.Retrying ->
-            "${progress.reason} The node has been told to restart; trying again…"
+            progress.reason + " " + stringResource(R.string.dfu_retrying)
 
         is DfuProgress.Failed -> progress.message
     }
@@ -642,13 +587,12 @@ private fun RunningPanel(progress: DfuProgress) {
             modifier = Modifier.fillMaxWidth(),
         )
         Spacer(Modifier.height(4.dp))
-        HintText("${progress.bytesSent / 1024} of ${progress.totalBytes / 1024} KB")
+        HintText(stringResource(R.string.dfu_progress, progress.bytesSent / 1024, progress.totalBytes / 1024))
     } else {
         LinearProgressIndicator(Modifier.fillMaxWidth())
     }
     Spacer(Modifier.height(12.dp))
     HintText(
-        "Stay next to the node and leave this screen open. The screen is being kept awake " +
-            "for the transfer.",
+        stringResource(R.string.dfu_stay),
     )
 }
