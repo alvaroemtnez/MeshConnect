@@ -11,8 +11,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
-import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -22,7 +20,10 @@ import io.alvaroedo.meshconnect.ui.model.SharedText
 import androidx.compose.ui.platform.LocalContext
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -277,29 +278,39 @@ fun NodesScreen(vm: MeshCoreViewModel, nav: NavController) {
                 onShowHeard = { hideHeard = false; vm.prefs.nodesHideHeard = false },
             )
 
-            // Revealed by pulling the list down; kept across navigation so
-            // opening a node and coming back doesn't fold it away again.
+            // The heard section is the list's "-1" row: a fold-out header that sits just
+            // above the top when the list opens, so it is there when you scroll up and out
+            // of the way otherwise. It was a pull-to-refresh, whose spinner promised a
+            // refresh that never happened. Kept across navigation, so opening a node and
+            // coming back doesn't fold it away again.
             var heardRevealed by rememberSaveable { mutableStateOf(false) }
             var confirmDismiss by remember { mutableStateOf<List<String>?>(null) }
             val radioFull by vm.contactsFull.collectAsState()
-            val pullState = rememberPullToRefreshState()
+            val listState = rememberLazyListState(initialFirstVisibleItemIndex = if (heard.isNotEmpty()) 1 else 0)
+            val hasHeard = heard.isNotEmpty()
+            // Heard nodes can arrive after the list is first drawn; tuck the row away then too.
+            LaunchedEffect(hasHeard) {
+                if (hasHeard && !heardRevealed && listState.firstVisibleItemIndex == 0 &&
+                    listState.firstVisibleItemScrollOffset == 0
+                ) {
+                    listState.scrollToItem(1)
+                }
+            }
 
-            PullToRefreshBox(
-                isRefreshing = false,
-                onRefresh = { if (heard.isNotEmpty()) heardRevealed = true },
-                state = pullState,
-                modifier = Modifier.fillMaxSize(),
-            ) {
-                LazyColumn(Modifier.fillMaxSize()) {
-                    if (heard.isNotEmpty() && heardRevealed) {
+            Box(Modifier.fillMaxSize()) {
+                LazyColumn(Modifier.fillMaxSize(), state = listState) {
+                    if (hasHeard) {
                         item(key = "heard_header") {
                             HeardHeader(
                                 count = heard.size,
+                                expanded = heardRevealed,
                                 radioFull = radioFull,
-                                onHide = { heardRevealed = false },
+                                onToggle = { heardRevealed = !heardRevealed },
                                 onDismissAll = { confirmDismiss = heard.map { it.keyHex } },
                             )
                         }
+                    }
+                    if (hasHeard && heardRevealed) {
                         items(heard, key = { "heard_${it.keyHex}" }) { d ->
                             DiscoveredRow(
                                 node = d,
@@ -310,15 +321,6 @@ fun NodesScreen(vm: MeshCoreViewModel, nav: NavController) {
                             )
                         }
                         item(key = "heard_divider") { HorizontalDivider() }
-                    } else if (heard.isNotEmpty()) {
-                        item(key = "heard_hint") {
-                            Text(
-                                stringResource(R.string.heard_pull_hint),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
-                            )
-                        }
                     }
                     if (listed.isEmpty() && (heard.isEmpty() || heardRevealed)) {
                         item(key = "empty") {
@@ -714,27 +716,39 @@ internal fun singleKindLabel(type: Int): Int = when (type) {
 @Composable
 private fun HeardHeader(
     count: Int,
+    expanded: Boolean,
     radioFull: Boolean,
-    onHide: () -> Unit,
+    onToggle: () -> Unit,
     onDismissAll: () -> Unit,
 ) {
-    Column(Modifier.fillMaxWidth()) {
+    Column(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp)) {
         Row(
-            Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
+            Modifier
+                .fillMaxWidth()
+                .background(MaterialTheme.colorScheme.surfaceContainer, FieldShape)
+                .clip(FieldShape)
+                .clickable(onClick = onToggle)
+                .padding(start = 16.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            Icon(painterResource(R.drawable.ic_radar), null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+            Spacer(Modifier.size(12.dp))
             Text(
                 stringResource(R.string.heard_header, count),
                 style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.weight(1f),
             )
-            TextButton(onClick = onDismissAll) { Text(stringResource(R.string.dismiss_all)) }
-            IconButton(onClick = onHide) {
-                Icon(painterResource(R.drawable.ic_expand_less), stringResource(R.string.heard_hide))
+            if (expanded) {
+                TextButton(onClick = onDismissAll) { Text(stringResource(R.string.dismiss_all)) }
+            }
+            Box(Modifier.size(48.dp), contentAlignment = Alignment.Center) {
+                Icon(
+                    painterResource(if (expanded) R.drawable.ic_expand_less else R.drawable.ic_expand_more),
+                    stringResource(if (expanded) R.string.heard_hide else R.string.show),
+                )
             }
         }
-        if (radioFull) {
+        if (radioFull && expanded) {
             Text(
                 stringResource(R.string.radio_full),
                 style = MaterialTheme.typography.bodySmall,

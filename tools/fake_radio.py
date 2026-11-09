@@ -59,6 +59,12 @@ NODES = [
     ("Weather Sensor", ADV_SENSOR, 39.4600, -0.4000),
 ]
 
+HEARD = [
+    ("Joan EA5XYZ", ADV_CHAT, 39.4900, -0.3900),
+    ("Serra Rpt", ADV_REPEATER, 39.6800, -0.4400),
+    ("Xativa Rpt", ADV_REPEATER, 38.9900, -0.5200),
+]
+
 PUBLIC_PSK = bytes.fromhex("8b3387e9c5cdea6ac9e5edbaa115cd72")
 CHANNELS = [
     (0, "Public", PUBLIC_PSK),
@@ -128,6 +134,29 @@ def rx_log(repeater: str, snr_db: float, rssi: int) -> bytes:
     return bytes([PUSH_LOG_RX, int(snr_db * 4) & 0xFF, rssi & 0xFF]) + pkt
 
 
+def signed_advert(name: str, typ: int, lat, lon):
+    """A flooded, Ed25519-signed ADVERT (payload 0x04) from a node not in the contact
+    list, so the Nodes tab's "heard, not added" section fills. Layout and signature per
+    MESHCORE_PROTOCOL.md "ADVERT payload": pub_key | ts | sig | app_data, signed over
+    pub_key || ts || app_data. Needs the `cryptography` package; returns None without it,
+    so the fake radio itself stays dependency-free."""
+    try:
+        from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+        from cryptography.hazmat.primitives import serialization
+    except ImportError:
+        return None
+    sk = Ed25519PrivateKey.from_private_bytes(hashlib.sha256(b"heard:" + name.encode()).digest())
+    pub = sk.public_key().public_bytes(serialization.Encoding.Raw, serialization.PublicFormat.Raw)
+    ts = struct.pack("<I", int(time.time()))
+    flags = typ | 0x80 | (0x10 if lat is not None else 0)
+    app = bytes([flags]) + (struct.pack("<ii", int(lat * 1e6), int(lon * 1e6)) if lat is not None else b"") + name.encode()
+    sig = sk.sign(pub + ts + app)
+    relay = key("Hilltop Rpt")[:HASH_WIDTH]
+    header = (4 << 2) | 1  # payload ADVERT, route FLOOD
+    pkt = bytes([header, ((HASH_WIDTH - 1) << 6) | 1]) + relay + pub + ts + sig + app
+    return bytes([PUSH_LOG_RX, int(5.5 * 4) & 0xFF, (-90) & 0xFF]) + pkt
+
+
 class Session:
     def __init__(self, conn):
         self.conn = conn
@@ -153,6 +182,12 @@ class Session:
             contact_msg("Marta", "39.46990,-0.37630"),
         ]
         self.send(bytes([PUSH_MSG_WAITING]))
+        # Signed adverts from nodes not in the contact list, so the Nodes tab's "heard, not
+        # added" section has something in it (only with the `cryptography` package).
+        for n in HEARD:
+            adv = signed_advert(*n)
+            if adv:
+                self.send(adv)
 
     def handle(self, frame: bytes):
         cmd = frame[0]
