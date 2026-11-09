@@ -37,6 +37,9 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -443,8 +446,70 @@ object AttachmentText {
 }
 
 
-/** The map behind a location card. */
+/**
+ * The map behind a location card: a static MapLibre snapshot with the pin
+ * on top, or the plain pin when map tiles are off.
+ */
 @Composable
-fun LocationPreview(@Suppress("UNUSED_PARAMETER") loc: RichMessage.Location) {
-    PinPreview()
+fun LocationPreview(loc: RichMessage.Location, tilesEnabled: Boolean) {
+    if (!tilesEnabled) {
+        PinPreview()
+        return
+    }
+    val context = LocalContext.current
+    val dark = MaterialTheme.colorScheme.background.luminance() < 0.5f
+    val density = context.resources.displayMetrics.density
+    val key = "${loc.lat},${loc.lon},$dark"
+    var bitmap by remember(key) { mutableStateOf(SnapshotCache.get(key)) }
+    DisposableEffect(key) {
+        var snapshotter: org.maplibre.android.snapshotter.MapSnapshotter? = null
+        if (bitmap == null) {
+            io.alvaroedo.meshconnect.ui.map.MapStyles.init(context)
+            val options = org.maplibre.android.snapshotter.MapSnapshotter.Options((280 * density).toInt(), (140 * density).toInt())
+                .withStyleBuilder(
+                    org.maplibre.android.maps.Style.Builder().fromUri(
+                        if (dark) io.alvaroedo.meshconnect.ui.map.MapStyles.DARK else io.alvaroedo.meshconnect.ui.map.MapStyles.LIGHT,
+                    ),
+                )
+                .withCameraPosition(
+                    org.maplibre.android.camera.CameraPosition.Builder()
+                        .target(org.maplibre.android.geometry.LatLng(loc.lat, loc.lon)).zoom(14.0).build(),
+                )
+                .withLogo(false)
+            snapshotter = org.maplibre.android.snapshotter.MapSnapshotter(context, options).also {
+                it.start({ snap ->
+                    SnapshotCache.put(key, snap.bitmap)
+                    bitmap = snap.bitmap
+                }, { /* offline or refused: the pin placeholder stays */ })
+            }
+        }
+        onDispose { snapshotter?.cancel() }
+    }
+    Box(Modifier.fillMaxWidth().height(140.dp), contentAlignment = Alignment.Center) {
+        val b = bitmap
+        if (b == null) {
+            PinPreview()
+        } else {
+            androidx.compose.foundation.Image(
+                b.asImageBitmap(),
+                contentDescription = null,
+                contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                modifier = Modifier.fillMaxWidth().height(140.dp),
+            )
+            // The pin's tip on the point.
+            Icon(
+                painterResource(R.drawable.ic_location_on),
+                null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(44.dp).padding(bottom = 22.dp),
+            )
+        }
+    }
+}
+
+/** Recent snapshots, so scrolling back up a thread doesn't render them again. */
+private object SnapshotCache {
+    private val cache = android.util.LruCache<String, android.graphics.Bitmap>(24)
+    fun get(key: String): android.graphics.Bitmap? = cache.get(key)
+    fun put(key: String, b: android.graphics.Bitmap) { cache.put(key, b) }
 }

@@ -64,7 +64,8 @@ private val LIBRARIES = listOf(
     "SQLCipher for Android" to "BSD-3-Clause",
     "Bouncy Castle" to "MIT",
     "ZXing, ZXing Android Embedded" to "Apache-2.0",
-    "osmdroid" to "Apache-2.0",
+    "MapLibre Native" to "BSD-2-Clause",
+    "Map tiles: OpenFreeMap, OpenMapTiles" to "MIT / BSD-3-Clause, CC-BY 4.0",
     "Map data © OpenStreetMap contributors" to "ODbL",
     "Material Symbols" to "Apache-2.0",
 )

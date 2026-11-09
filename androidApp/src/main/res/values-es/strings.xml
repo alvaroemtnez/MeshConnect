@@ -42,6 +42,14 @@
     <string name="card_location">Ubicación</string>
     <string name="card_open_in_maps">Abrir en mapas</string>
     <string name="card_no_map_app">No hay ninguna app de mapas instalada.</string>
+    <string name="map_my_node">Mi nodo</string>
+    <string name="map_fit_all">Ver toda la red</string>
+    <string name="map_zoom_in">Acercar</string>
+    <string name="map_zoom_out">Alejar</string>
+    <string name="picker_title">Elige un lugar</string>
+    <string name="picker_use">Usar este</string>
+    <string name="picker_advert_warning">Esta posición se difunde a toda la malla en tus anuncios: cualquiera al alcance de radio, y a quien se lo retransmitan, puede verla.</string>
+    <string name="picker_tiles_off">Los mapas están desactivados y el fondo queda en blanco. Las coordenadas siguen al marcador.</string>
     <string name="chats_search_hint">Buscar conversaciones</string>
     <string name="chats_advert_zero_hop">Enviar anuncio (0 saltos)</string>
     <string name="chats_advert_flood">Enviar anuncio (inundación)</string>

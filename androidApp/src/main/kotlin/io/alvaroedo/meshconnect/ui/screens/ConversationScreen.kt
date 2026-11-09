@@ -321,6 +321,7 @@ fun ConversationScreen(
                         RichContentCard(
                             content = content,
                             selfKey = vm.selfInfo.value?.publicKeyHex,
+                            tilesEnabled = vm.prefs.mapTilesEnabled,
                             contacts = contacts,
                             channels = channels,
                             onOpenContact = { c ->
@@ -516,6 +517,7 @@ fun ConversationScreen(
                 sendAttachment(RichMessage.locationText(lat, lon))
             },
             onDismiss = { pickOnMap = false },
+            forAdvert = false,
         )
     }
 
@@ -1470,6 +1472,7 @@ private suspend fun shareMyLocation(
 private fun RichContentCard(
     content: RichMessage.Content,
     selfKey: String?,
+    tilesEnabled: Boolean,
     contacts: List<io.alvaroedo.meshconnect.storage.ContactEntity>,
     channels: List<io.alvaroedo.meshconnect.storage.ChannelEntity>,
     onOpenContact: (io.alvaroedo.meshconnect.storage.ContactEntity) -> Unit,
@@ -1499,6 +1502,6 @@ private fun RichContentCard(
                 onOpen = { joined?.let { onOpenChannel(it.idx) } },
             )
         }
-        is RichMessage.Location -> LocationCard(content) { LocationPreview(content) }
+        is RichMessage.Location -> LocationCard(content) { LocationPreview(content, tilesEnabled) }
     }
 }

@@ -132,10 +132,11 @@ dependencies {
     implementation("com.journeyapps:zxing-android-embedded:4.3.0")
     implementation("com.google.zxing:core:3.5.3")
 
-    // Node map (SCOPE.md): osmdroid renders OSM tiles without Google Play
-    // Services. The only outbound-HTTP feature in the app — tiles are
-    // lazy-loaded and cached on disk by osmdroid itself.
-    implementation("org.osmdroid:osmdroid-android:6.1.18")
+    // Maps: MapLibre renders vector tiles (OpenFreeMap, no API key) with
+    // no Google Play Services and no telemetry. 11.x is the last line built
+    // against Kotlin 2.0 (12+ needs Kotlin 2.2). Tiles are the map's only
+    // network use and are cached by MapLibre's ambient cache.
+    implementation("org.maplibre.gl:android-sdk:11.13.5")
 
     // SQLCipher — the Room DB is encrypted at rest with a key sealed in
     // the Android Keystore (2026-07-31 security review, accepted-risk

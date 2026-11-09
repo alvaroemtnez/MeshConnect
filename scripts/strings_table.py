@@ -60,6 +60,24 @@ S = {
 "card_open_in_maps": ("Open in maps", "Abrir en mapas", "Obrir en mapes"),
 "card_no_map_app": ("No map app installed.", "No hay ninguna app de mapas instalada.", "No hi ha cap aplicació de mapes instal·lada."),
 
+# Maps
+"map_my_node": ("My node", "Mi nodo", "El meu node"),
+"map_fit_all": ("Show the whole network", "Ver toda la red", "Veure tota la xarxa"),
+"map_zoom_in": ("Zoom in", "Acercar", "Apropar"),
+"map_zoom_out": ("Zoom out", "Alejar", "Allunyar"),
+"picker_title": ("Pick a place", "Elige un lugar", "Tria un lloc"),
+"picker_use": ("Use this", "Usar este", "Usar este"),
+"picker_advert_warning": (
+    "This position is broadcast to the whole mesh in your adverts: anyone in radio range, and anyone they relay to, can see it.",
+    "Esta posición se difunde a toda la malla en tus anuncios: cualquiera al alcance de radio, y a quien se lo retransmitan, puede verla.",
+    "Esta posició es difon a tota la malla en els teus anuncis: qualsevol a l'abast de ràdio, i a qui li ho retransmeten, la pot veure.",
+),
+"picker_tiles_off": (
+    "Map tiles are off, so the map stays blank. The coordinates still follow the pin.",
+    "Los mapas están desactivados y el fondo queda en blanco. Las coordenadas siguen al marcador.",
+    "Els mapes estan desactivats i el fons queda en blanc. Les coordenades seguixen el marcador.",
+),
+
 # Chats
 "chats_search_hint": ("Search conversations", "Buscar conversaciones", "Cercar converses"),
 "chats_advert_zero_hop": ("Send advert (0-hop)", "Enviar anuncio (0 saltos)", "Enviar anunci (0 salts)"),

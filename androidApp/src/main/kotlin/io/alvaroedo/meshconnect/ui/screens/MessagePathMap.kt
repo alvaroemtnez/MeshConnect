@@ -1,10 +1,6 @@
 package io.alvaroedo.meshconnect.ui.screens
 
-import android.graphics.Color as AndroidColor
-import android.graphics.DashPathEffect
-import android.graphics.Paint
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -17,19 +13,19 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.viewinterop.AndroidView
 import io.alvaroedo.meshconnect.storage.MessageEntity
 import io.alvaroedo.meshconnect.ui.MeshCoreViewModel
 import io.github.thatsfguy.meshcore.protocol.PathSketch
-import org.osmdroid.tileprovider.tilesource.TileSourceFactory
-import org.osmdroid.util.GeoPoint
-import org.osmdroid.views.MapView
-import org.osmdroid.views.overlay.Marker
-import org.osmdroid.views.overlay.Polyline
+import androidx.compose.ui.graphics.toArgb
+import androidx.core.graphics.drawable.toBitmap
+import io.alvaroedo.meshconnect.ui.map.CameraRequest
+import io.alvaroedo.meshconnect.ui.map.LineStyle
+import io.alvaroedo.meshconnect.ui.map.MapLine
+import io.alvaroedo.meshconnect.ui.map.MapMarker
+import io.alvaroedo.meshconnect.ui.map.MeshMap
 
 /**
  * The route a received message took, on a map.
@@ -90,7 +86,7 @@ fun StoredRoutePathMap(
 }
 
 /**
- * The shared body: draw a [PathSketch.Sketch] on an osmdroid map.
+ * The shared body: draw a [PathSketch.Sketch] on a [MeshMap].
  *
  * Skipped entirely when nothing can be placed — an empty grey rectangle
  * communicates less than the sentence that replaces it.
@@ -107,18 +103,6 @@ private fun PathSketchMap(
 
     val context = LocalContext.current
     val tilesEnabled = vm.prefs.mapTilesEnabled
-    val mapView = remember {
-        // Without this the tiles never arrive — see OsmdroidSetup.
-        OsmdroidSetup.apply(context)
-        MapView(context).apply {
-            setTileSource(TileSourceFactory.MAPNIK)
-            setMultiTouchControls(true)
-            setUseDataConnection(tilesEnabled)
-            zoomController.setVisibility(
-                org.osmdroid.views.CustomZoomButtonsController.Visibility.NEVER,
-            )
-        }
-    }
 
     Spacer(Modifier.height(12.dp))
     Text(heading, style = MaterialTheme.typography.titleSmall)
@@ -128,98 +112,44 @@ private fun PathSketchMap(
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
     Spacer(Modifier.height(6.dp))
-    // clipToBounds is load-bearing. A MapView draws its tiles AND its
-    // overlays across the whole canvas it is given and does not clip
-    // itself, so without this the route lines and pins paint straight
-    // over the rows above and below — and a pinch-zoom sends them all
-    // over the sheet.
-    Box(
-        Modifier
-            .fillMaxWidth()
-            .height(200.dp)
-            .clip(RoundedCornerShape(10.dp))
-            .clipToBounds(),
-    ) {
-        AndroidView(
-            factory = { mapView },
-            modifier = Modifier.fillMaxWidth().height(200.dp),
-            update = { map ->
-                map.setUseDataConnection(tilesEnabled)
-                map.overlays.removeAll { it is Marker || it is Polyline }
 
-                for (segment in sketch.segments) {
-                    map.overlays.add(
-                        Polyline(map).apply {
-                            setPoints(
-                                listOf(
-                                    GeoPoint(segment.from.latitude, segment.from.longitude),
-                                    GeoPoint(segment.to.latitude, segment.to.longitude),
-                                ),
-                            )
-                            outlinePaint.strokeWidth = 7f
-                            outlinePaint.color = when (segment.style) {
-                                PathSketch.Style.Solid -> AndroidColor.argb(220, 0x4F, 0xC3, 0xF7)
-                                // Fainter for anything not fully vouched for.
-                                else -> AndroidColor.argb(140, 0x4F, 0xC3, 0xF7)
-                            }
-                            outlinePaint.style = Paint.Style.STROKE
-                            outlinePaint.pathEffect = when (segment.style) {
-                                PathSketch.Style.Solid -> null
-                                // Dotted = "placed approximately".
-                                PathSketch.Style.Dotted ->
-                                    DashPathEffect(floatArrayOf(3f, 9f), 0f)
-                                // Dashed = "no route claimed" — the
-                                // meaning the main map already gives it.
-                                PathSketch.Style.Dashed ->
-                                    DashPathEffect(floatArrayOf(18f, 12f), 0f)
-                            }
-                        },
-                    )
-                }
-
-                for (node in sketch.nodes) {
-                    val point = node.point ?: continue
-                    map.overlays.add(
-                        Marker(map).apply {
-                            position = GeoPoint(point.latitude, point.longitude)
-                            setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
-                            title = when (node.certainty) {
-                                PathSketch.Certainty.Inferred ->
-                                    "${node.label} — approximate (position unknown)"
-                                else -> node.label
-                            }
-                            icon = PathPins.forNode(
-                                context,
-                                inferred = node.certainty == PathSketch.Certainty.Inferred,
-                                isEndpoint = node.isEndpoint,
-                            )
-                        },
-                    )
-                }
-
-                val points = sketch.nodes.mapNotNull { it.point }
-                    .map { GeoPoint(it.latitude, it.longitude) }
-                if (points.size == 1) {
-                    map.controller.setZoom(13.0)
-                    map.controller.setCenter(points.first())
-                } else if (points.size > 1) {
-                    val box = org.osmdroid.util.BoundingBox.fromGeoPointsSafe(points)
-                    map.post {
-                        runCatching { map.zoomToBoundingBox(box, false, 96) }
-                        // Two nodes a few hundred metres apart fit at a
-                        // zoom past MAPNIK's last level, where there are
-                        // no tiles to draw and osmdroid shows its empty
-                        // placeholder grid — which looks exactly like
-                        // "tiles are off".
-                        if (map.zoomLevelDouble > MAX_ROUTE_ZOOM) {
-                            map.controller.setZoom(MAX_ROUTE_ZOOM)
-                        }
-                    }
-                }
-                map.invalidate()
+    val routeColor = MaterialTheme.colorScheme.primary.toArgb()
+    val lines = sketch.segments.map { segment ->
+        MapLine(
+            points = listOf(
+                segment.from.latitude to segment.from.longitude,
+                segment.to.latitude to segment.to.longitude,
+            ),
+            // Fainter for anything not fully vouched for.
+            argb = if (segment.style == PathSketch.Style.Solid) routeColor else (routeColor and 0x00FFFFFF) or (0x8C shl 24),
+            widthDp = 3.5f,
+            style = when (segment.style) {
+                PathSketch.Style.Solid -> LineStyle.Solid
+                // Dotted = "placed approximately".
+                PathSketch.Style.Dotted -> LineStyle.Dotted
+                // Dashed = "no route claimed", as on the main map.
+                PathSketch.Style.Dashed -> LineStyle.Dashed
             },
         )
     }
+    val markers = sketch.nodes.mapIndexedNotNull { i, node ->
+        val point = node.point ?: return@mapIndexedNotNull null
+        val inferred = node.certainty == PathSketch.Certainty.Inferred
+        MapMarker(
+            id = "n$i", lat = point.latitude, lon = point.longitude,
+            imageKey = "path|$inferred|${node.isEndpoint}",
+            bitmap = { PathPins.forNode(context, inferred = inferred, isEndpoint = node.isEndpoint).toBitmap() },
+            tappable = false,
+        )
+    }
+    val points = sketch.nodes.mapNotNull { it.point }.map { it.latitude to it.longitude }
+    MeshMap(
+        modifier = Modifier.fillMaxWidth().height(200.dp).clip(RoundedCornerShape(10.dp)),
+        markers = markers,
+        lines = lines,
+        tilesEnabled = tilesEnabled,
+        camera = remember(points) { CameraRequest(1, fit = points, zoom = 13.0, animate = false) },
+    )
     if (sketch.inferred > 0 || sketch.unplaced > 0) {
         Spacer(Modifier.height(4.dp))
         Text(
@@ -231,5 +161,3 @@ private fun PathSketchMap(
     }
 }
 
-/** MAPNIK's deepest usable level; past it the map is a blank grid. */
-private const val MAX_ROUTE_ZOOM = 17.0

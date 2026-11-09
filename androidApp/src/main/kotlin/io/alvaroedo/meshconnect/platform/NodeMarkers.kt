@@ -32,6 +32,18 @@ object NodeMarkers {
         else -> 0xFF1E88E5.toInt()                            // blue — companion/chat
     }
 
+    /** The pin tip's height fraction for a pin with this [label], without drawing it. */
+    fun anchorV(context: Context, label: String?): Float {
+        // Same geometry as build(): the label's height depends only on the
+        // text size, never on the text, so nothing needs drawing.
+        val density = context.resources.displayMetrics.density
+        val pinBottom = (34 * density).toInt() + (7 * density).toInt()
+        if (label == null) return 1f
+        val textSize = 11 * density
+        val labelH = (textSize + 4 * density * 1.4f).toInt()
+        return pinBottom.toFloat() / (pinBottom + (2 * density).toInt() + labelH)
+    }
+
     fun build(
         context: Context,
         type: Int,

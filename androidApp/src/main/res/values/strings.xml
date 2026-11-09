@@ -44,6 +44,14 @@
     <string name="card_location">Location</string>
     <string name="card_open_in_maps">Open in maps</string>
     <string name="card_no_map_app">No map app installed.</string>
+    <string name="map_my_node">My node</string>
+    <string name="map_fit_all">Show the whole network</string>
+    <string name="map_zoom_in">Zoom in</string>
+    <string name="map_zoom_out">Zoom out</string>
+    <string name="picker_title">Pick a place</string>
+    <string name="picker_use">Use this</string>
+    <string name="picker_advert_warning">This position is broadcast to the whole mesh in your adverts: anyone in radio range, and anyone they relay to, can see it.</string>
+    <string name="picker_tiles_off">Map tiles are off, so the map stays blank. The coordinates still follow the pin.</string>
     <string name="chats_search_hint">Search conversations</string>
     <string name="chats_advert_zero_hop">Send advert (0-hop)</string>
     <string name="chats_advert_flood">Send advert (flood)</string>

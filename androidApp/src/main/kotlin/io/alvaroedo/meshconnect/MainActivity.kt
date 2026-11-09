@@ -56,7 +56,6 @@ import io.alvaroedo.meshconnect.ui.screens.conversationRoute
 import io.alvaroedo.meshconnect.ui.screens.ConversationScreen
 import io.alvaroedo.meshconnect.ui.screens.MapScreen
 import io.alvaroedo.meshconnect.ui.screens.NodesScreen
-import io.alvaroedo.meshconnect.ui.screens.OsmdroidSetup
 import io.alvaroedo.meshconnect.ui.screens.RepeaterConsoleScreen
 import io.alvaroedo.meshconnect.ui.screens.ScanConfirmations
 import io.alvaroedo.meshconnect.ui.screens.RepeaterFirmwareScreen
@@ -108,14 +107,8 @@ class MainActivity : ComponentActivity() {
         if (!BlePermissions.allGranted(this)) {
             permissionLauncher.launch(BlePermissions.required())
         }
-        // osmdroid's configuration is a process-wide singleton, and a
-        // MapView built before it is set never receives a tile — it
-        // shows an empty grid indistinguishable from "tiles are off".
-        // Doing it here means no screen can be the one that forgot;
-        // relying on each map to configure itself is what left the
-        // message-route map blank unless the Map tab had been opened
-        // first.
-        OsmdroidSetup.apply(this)
+        // MapLibre needs its singleton before any MapView exists.
+        io.alvaroedo.meshconnect.ui.map.MapStyles.init(this)
         openThread.value = threadFrom(intent)
         setContent {
             val vm: MeshCoreViewModel = viewModel()

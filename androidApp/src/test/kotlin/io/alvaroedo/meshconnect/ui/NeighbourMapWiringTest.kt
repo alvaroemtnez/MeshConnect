@@ -23,6 +23,8 @@ class NeighbourMapWiringTest {
         read("src/main/kotlin/io/alvaroedo/meshconnect/ui/MeshCoreViewModel.kt")
     private val map =
         read("src/main/kotlin/io/alvaroedo/meshconnect/ui/screens/MapScreen.kt")
+    private val meshMap =
+        read("src/main/kotlin/io/alvaroedo/meshconnect/ui/map/MeshMap.kt")
     private val sheet =
         read("src/main/kotlin/io/alvaroedo/meshconnect/ui/screens/MapNodeSheet.kt")
     private val repository =
@@ -135,18 +137,18 @@ class NeighbourMapWiringTest {
 
     @Test
     fun `lines go under the pins and their readings go over everything`() {
-        val lines = map.indexOf("map.overlays.add(linkLine(")
-        val pins = map.indexOf("for (c in located)")
-        val chips = map.indexOf("map.overlays.addAll(chips)")
-        assertTrue("no neighbour lines are drawn at all", lines > 0)
-        assertTrue(
-            "lines are drawn over the markers, hiding the nodes they are about",
-            lines < pins,
-        )
+        // MapLibre draws layers in the order they are added (MeshMap.addLayers).
+        val layers = meshMap.substringAfter("private fun addLayers(")
+        val lines = layers.indexOf("LineLayer(")
+        val pins = layers.indexOf("SymbolLayer(LAYER_PINS")
+        val chips = layers.indexOf("SymbolLayer(LAYER_CHIPS")
+        assertTrue("no neighbour lines are drawn at all", map.contains("MapLine(") && lines > 0)
+        assertTrue("lines are drawn over the markers, hiding the nodes they are about", lines < pins)
         // Seen on hardware: a chip added with its line sat under a
         // neighbouring node's always-on name label, which hides the one
         // number the line exists to report.
         assertTrue("the reading chips are drawn under the pin labels", chips > pins)
+        assertTrue("the readings are not on the chip layer", map.contains("centred = true, tappable = false"))
     }
 
     @Test
@@ -156,7 +158,7 @@ class NeighbourMapWiringTest {
         // their head and look away from the line they are reading.
         assertTrue(
             "the chip on the line carries only the number",
-            map.contains("NodeMarkers.buildChip(map.context, link.mapLabel"),
+            map.contains("NodeMarkers.buildChip(context, link.mapLabel"),
         )
         assertTrue("a colour key is back on the map", !map.contains("LinkLegend"))
     }
@@ -165,8 +167,8 @@ class NeighbourMapWiringTest {
     fun `a tap on a pin opens the node popup`() {
         assertTrue(
             "the marker tap does not open the sheet",
-            map.contains("onTap = { selectedKey = c.keyHex }") &&
-                map.contains("setOnMarkerClickListener"),
+            map.contains("onMarkerTap = { selectedKey = it }") &&
+                meshMap.contains("queryRenderedFeatures(pt, LAYER_PINS)"),
         )
         assertTrue("the map never shows the popup", map.contains("MapNodeSheet("))
     }

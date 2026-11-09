@@ -10,25 +10,25 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clipToBounds
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.viewinterop.AndroidView
 import io.alvaroedo.meshconnect.ui.MeshCoreViewModel
 import io.github.thatsfguy.meshcore.util.isPlausiblePosition
 import io.github.thatsfguy.meshcore.util.meshCentre
-import org.osmdroid.config.Configuration
-import org.osmdroid.tileprovider.tilesource.TileSourceFactory
-import org.osmdroid.util.GeoPoint
-import org.osmdroid.views.MapView
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Icon
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import io.alvaroedo.meshconnect.R
+import io.alvaroedo.meshconnect.ui.map.MeshMap
+import org.maplibre.android.camera.CameraPosition
+import org.maplibre.android.geometry.LatLng
 
 /**
  * Pick a position by moving the map under a fixed crosshair.
@@ -48,21 +48,15 @@ fun PositionPickerDialog(
     initialLon: Double,
     onPick: (Double, Double) -> Unit,
     onDismiss: () -> Unit,
+    /** True when the point becomes the radio's advertised position. */
+    forAdvert: Boolean = true,
 ) {
-    val context = LocalContext.current
     val tilesEnabled = vm.prefs.mapTilesEnabled
 
-    // A radio with no fix reports 0,0, and starting the map there drops
-    // the user in the Gulf of Guinea — six thousand kilometres from the
-    // only place the answer can be. It is not that we know nothing about
-    // where this radio is: it is on a mesh whose repeaters we CAN place,
-    // and a LoRa mesh is tens of kilometres across. So fall back to the
-    // last camera, then to the middle of the nodes we know, and only
-    // then to the world view — which is what "we truly have no idea"
-    // actually looks like.
-    //
-    // Read once, not collected: the camera this dialog opens with must
-    // not jump because a contact sync landed while it was open.
+    // A radio with no fix reports 0,0, and starting the map there drops the
+    // user in the Gulf of Guinea. Fall back to the last camera, then to the
+    // middle of the nodes we know, and only then to the world view. Read
+    // once, so the camera doesn't jump when a contact sync lands.
     val start = remember {
         when {
             isPlausiblePosition(initialLat, initialLon) -> Triple(initialLat, initialLon, 13.0)
@@ -70,66 +64,33 @@ fun PositionPickerDialog(
                 ?: meshCentre(
                     vm.dbContacts.value.map { (it.latitude ?: 0.0) to (it.longitude ?: 0.0) },
                 )
-                    // Zoom 10 is roughly a 30 km view on a phone: wide
-                    // enough to hold a local mesh, tight enough that the
-                    // crosshair starts on streets rather than on ocean.
+                    // Zoom 10 is roughly a 30 km view on a phone.
                     ?.let { Triple(it.first, it.second, 10.0) }
                 ?: Triple(0.0, 0.0, 2.0)
         }
     }
-
     var centre by remember { mutableStateOf(start.first to start.second) }
-
-    val mapView = remember {
-        Configuration.getInstance().apply {
-            userAgentValue = context.packageName
-            osmdroidBasePath = java.io.File(context.filesDir, "osmdroid")
-            osmdroidTileCache = java.io.File(context.cacheDir, "osmdroid-tiles")
-        }
-        MapView(context).apply {
-            setTileSource(TileSourceFactory.MAPNIK)
-            setUseDataConnection(tilesEnabled)
-            setMultiTouchControls(true)
-            controller.setZoom(start.third)
-            controller.setCenter(GeoPoint(start.first, start.second))
-        }
-    }
-
-    DisposableEffect(Unit) { onDispose { mapView.onDetach() } }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Pick a position") },
+        title = { Text(stringResource(R.string.picker_title)) },
         text = {
             Column {
-                Box(
-                    Modifier
-                        .fillMaxWidth()
-                        .height(280.dp)
-                        .clipToBounds(),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    AndroidView(
-                        factory = { mapView },
-                        modifier = Modifier.fillMaxWidth().height(280.dp),
-                        update = { map ->
-                            map.setUseDataConnection(tilesEnabled)
-                            map.addMapListener(
-                                object : org.osmdroid.events.MapListener {
-                                    override fun onScroll(e: org.osmdroid.events.ScrollEvent?): Boolean {
-                                        centre = map.mapCenter.latitude to map.mapCenter.longitude
-                                        return false
-                                    }
-
-                                    override fun onZoom(e: org.osmdroid.events.ZoomEvent?): Boolean {
-                                        centre = map.mapCenter.latitude to map.mapCenter.longitude
-                                        return false
-                                    }
-                                },
-                            )
-                        },
+                Box(Modifier.fillMaxWidth().height(300.dp), contentAlignment = Alignment.Center) {
+                    MeshMap(
+                        modifier = Modifier.fillMaxWidth().height(300.dp),
+                        tilesEnabled = tilesEnabled,
+                        initial = CameraPosition.Builder()
+                            .target(LatLng(start.first, start.second)).zoom(start.third).build(),
+                        onCameraIdle = { cam -> cam.target?.let { centre = it.latitude to it.longitude } },
                     )
-                    Text("✛", style = MaterialTheme.typography.headlineMedium)
+                    // The pin's tip marks the centre of the map.
+                    Icon(
+                        painterResource(R.drawable.ic_location_on),
+                        null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(40.dp).padding(bottom = 20.dp),
+                    )
                 }
                 Text(
                     "%.5f, %.5f".format(centre.first, centre.second),
@@ -137,16 +98,16 @@ fun PositionPickerDialog(
                     fontFamily = FontFamily.Monospace,
                     modifier = Modifier.padding(top = 8.dp),
                 )
-                Text(
-                    "This position is broadcast to the whole mesh in your adverts — " +
-                        "anyone in radio range, and anyone they relay to, can see it.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.error,
-                )
+                if (forAdvert) {
+                    Text(
+                        stringResource(R.string.picker_advert_warning),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
                 if (!tilesEnabled) {
                     Text(
-                        "Map tiles are off, so the canvas stays blank — the coordinates " +
-                            "above still track the crosshair.",
+                        stringResource(R.string.picker_tiles_off),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -154,8 +115,10 @@ fun PositionPickerDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = { onPick(centre.first, centre.second) }) { Text("Use this") }
+            TextButton(onClick = { onPick(centre.first, centre.second) }) {
+                Text(stringResource(if (forAdvert) R.string.picker_use else R.string.send))
+            }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
     )
 }
