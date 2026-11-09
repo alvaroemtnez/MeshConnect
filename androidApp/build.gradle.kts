@@ -1,7 +1,6 @@
 plugins {
     id("com.android.application")
     kotlin("android")
-    id("org.jetbrains.compose")
     id("org.jetbrains.kotlin.plugin.compose")
     id("com.google.devtools.ksp")
 }
@@ -28,9 +27,9 @@ fun gitDerivedVersion(): Pair<String, Int>? {
 
 android {
     namespace = "io.alvaroedo.meshconnect"
-    compileSdk = 34
+    compileSdk = 36
     // build.sh installs the SDK packages named here and by compileSdk.
-    buildToolsVersion = "34.0.0"
+    buildToolsVersion = "36.0.0"
 
     defaultConfig {
         applicationId = "io.alvaroedo.meshconnect"
@@ -63,9 +62,6 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
-    }
-    kotlinOptions {
-        jvmTarget = "17"
     }
 
     val releaseKeystore = System.getenv("RELEASE_KEYSTORE")
@@ -117,25 +113,25 @@ android {
 
 dependencies {
     implementation(project(":shared"))
-    implementation("androidx.activity:activity-compose:1.9.3")
-    implementation("androidx.compose.ui:ui:1.7.6")
-    implementation("androidx.compose.material3:material3:1.3.1")
-    implementation("androidx.compose.ui:ui-tooling-preview:1.7.6")
-    implementation("androidx.navigation:navigation-compose:2.8.5")
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
-    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.7")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
-    implementation("androidx.core:core-ktx:1.13.1")
+    implementation("androidx.activity:activity-compose:1.11.0")
+    implementation("androidx.compose.ui:ui:1.10.6")
+    implementation("androidx.compose.material3:material3:1.4.0")
+    implementation("androidx.compose.ui:ui-tooling-preview:1.10.6")
+    implementation("androidx.navigation:navigation-compose:2.9.8")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.9.4")
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.9.4")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.9.4")
+    implementation("androidx.core:core-ktx:1.17.0")
 
     // QR code generation + scanner Activity (contact/channel/community QR).
     implementation("com.journeyapps:zxing-android-embedded:4.3.0")
     implementation("com.google.zxing:core:3.5.3")
 
     // Maps: MapLibre renders vector tiles (OpenFreeMap, no API key) with
-    // no Google Play Services and no telemetry. 11.x is the last line built
-    // against Kotlin 2.0 (12+ needs Kotlin 2.2). Tiles are the map's only
+    // no Google Play Services and no telemetry. 13.x needs Kotlin 2.2+
+    // (we are on 2.3). Tiles are the map's only
     // network use and are cached by MapLibre's ambient cache.
-    implementation("org.maplibre.gl:android-sdk:11.13.5")
+    implementation("org.maplibre.gl:android-sdk:13.7.1")
 
     // Home-screen widget (Glance), with Material You colours.
     implementation("androidx.glance:glance-appwidget:1.1.1")
@@ -147,12 +143,12 @@ dependencies {
     // message history, contacts and GPS were previously cleartext SQLite
     // protected only by file-based encryption.
     implementation("net.zetetic:sqlcipher-android:4.6.1")
-    implementation("androidx.sqlite:sqlite-ktx:2.4.0")
+    implementation("androidx.sqlite:sqlite-ktx:2.6.2")
 
     // Room
-    implementation("androidx.room:room-runtime:2.6.1")
-    implementation("androidx.room:room-ktx:2.6.1")
-    ksp("androidx.room:room-compiler:2.6.1")
+    implementation("androidx.room:room-runtime:2.8.5")
+    implementation("androidx.room:room-ktx:2.8.5")
+    ksp("androidx.room:room-compiler:2.8.5")
 
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
     // Already inside the APK via :shared, which declares it as an
@@ -162,20 +158,20 @@ dependencies {
     // compile classpath without adding an artifact.
     implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.1")
 
-    debugImplementation("androidx.compose.ui:ui-tooling:1.7.6")
+    debugImplementation("androidx.compose.ui:ui-tooling:1.10.6")
 
     // On-device Compose tests. The conversation list's rules live in
     // layout, and layout is the one thing a local unit test cannot see:
     // every source pin guarding it passed through five separate reports
     // of a thread opening in the wrong place. See ThreadListScrollTest.
-    androidTestImplementation("androidx.compose.ui:ui-test-junit4:1.7.6")
+    androidTestImplementation("androidx.compose.ui:ui-test-junit4:1.10.6")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
-    debugImplementation("androidx.compose.ui:ui-test-manifest:1.7.6")
+    debugImplementation("androidx.compose.ui:ui-test-manifest:1.10.6")
 
     testImplementation(kotlin("test"))
     testImplementation(kotlin("test-junit"))
     testImplementation("junit:junit:4.13.2")
-    testImplementation("androidx.room:room-testing:2.6.1")
+    testImplementation("androidx.room:room-testing:2.8.5")
     testImplementation("org.robolectric:robolectric:4.13")
     testImplementation("androidx.test:core:1.6.1")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1")
@@ -186,5 +182,11 @@ dependencies {
 tasks.withType<Test>().configureEach {
     System.getenv("MESHCONNECT_ROBOLECTRIC_DIR")?.let { dir ->
         systemProperty("user.home", dir)
+    }
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
     }
 }
