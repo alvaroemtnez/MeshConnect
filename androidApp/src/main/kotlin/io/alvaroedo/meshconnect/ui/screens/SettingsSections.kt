@@ -346,7 +346,7 @@ internal fun RadioSection(vm: MeshCoreViewModel) {
         )
         TextButton(onClick = {
             tx.toIntOrNull()?.takeIf { it in 1..info.maxTxPowerDbm }?.let { vm.setTxPower(it) }
-        }) { Text("Set") }
+        }) { Text(stringResource(R.string.set)) }
     }
 }
 
@@ -497,7 +497,7 @@ internal fun PoliciesSection(vm: MeshCoreViewModel) {
         TextButton(
             onClick = { vm.setFloodScope(region.trim()) },
             enabled = Regions.isValid(region),
-        ) { Text("Set") }
+        ) { Text(stringResource(R.string.set)) }
         TextButton(onClick = {
             region = ""
             vm.setFloodScope(null)
@@ -611,7 +611,7 @@ internal fun CustomVarsSection(vm: MeshCoreViewModel) {
                 key = ""; value = ""
             },
             enabled = key.isNotBlank(),
-        ) { Text("Set") }
+        ) { Text(stringResource(R.string.set)) }
     }
 }
 
@@ -805,20 +805,12 @@ private fun ChannelDatagramTool(vm: MeshCoreViewModel) {
     var note by remember { mutableStateOf<String?>(null) }
     var busy by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
+    val ctx = androidx.compose.ui.platform.LocalContext.current
 
-    Text("Channel datagram (developer)", style = MaterialTheme.typography.labelLarge)
-    ExpandableHint("Sends raw bytes to a channel. Nothing in this app reads them.") {
+    Text(stringResource(R.string.dg_title), style = MaterialTheme.typography.labelLarge)
+    ExpandableHint(stringResource(R.string.dg_hint)) {
         Text(
-            "A datagram names an application by its 16-bit data type, not a person — see " +
-                "the firmware's docs/number_allocations.md. FF00-FFFF needs no registration " +
-                "and is the range to test with. Received datagrams appear in the " +
-                "diagnostics log above with their type and payload in hex; they are never " +
-                "shown as text, because the bytes belong to another application and are " +
-                "chosen by whoever sent them.\n\n" +
-                "Change the payload every time. A datagram carries no timestamp, so the " +
-                "same type and payload make an identical packet, and the mesh drops it as " +
-                "one it has already seen. It still says \"Sent\" — the radio did transmit " +
-                "it — but nothing receives it.",
+            stringResource(R.string.dg_detail),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -827,7 +819,7 @@ private fun ChannelDatagramTool(vm: MeshCoreViewModel) {
         OutlinedTextField(
             value = channelIdx,
             onValueChange = { channelIdx = it.filter(Char::isDigit).take(1) },
-            label = { Text("Channel") },
+            label = { Text(stringResource(R.string.dg_channel)) },
             singleLine = true,
             modifier = Modifier.weight(1f),
         )
@@ -835,7 +827,7 @@ private fun ChannelDatagramTool(vm: MeshCoreViewModel) {
         OutlinedTextField(
             value = dataType,
             onValueChange = { dataType = it.filter { c -> c.isDigit() || c in "abcdefABCDEF" }.take(4) },
-            label = { Text("Type (hex)") },
+            label = { Text(stringResource(R.string.dg_type)) },
             singleLine = true,
             modifier = Modifier.weight(1.4f),
         )
@@ -843,7 +835,7 @@ private fun ChannelDatagramTool(vm: MeshCoreViewModel) {
     OutlinedTextField(
         value = payloadHex,
         onValueChange = { payloadHex = it.filter { c -> c.isDigit() || c in "abcdefABCDEF" } },
-        label = { Text("Payload (hex)") },
+        label = { Text(stringResource(R.string.dg_payload)) },
         singleLine = true,
         modifier = Modifier.fillMaxWidth(),
     )
@@ -858,14 +850,13 @@ private fun ChannelDatagramTool(vm: MeshCoreViewModel) {
                 scope.launch {
                     val bytes = io.github.thatsfguy.meshcore.util.hexToBytesOrNull(payloadHex)
                     note = when {
-                        bytes == null -> "Payload must be an even number of hex digits."
+                        bytes == null -> ctx.getString(R.string.dg_odd)
                         else -> {
                             val ok = vm.sendChannelDatagram(idx ?: -1, type ?: 0, bytes)
                             if (ok) {
-                                "Sent ${bytes.size} bytes to channel $idx."
+                                ctx.getString(R.string.dg_sent, bytes.size, idx ?: -1)
                             } else {
-                                "Refused. Check the channel exists, the type is not 0000, " +
-                                    "and the payload is 1-163 bytes."
+                                ctx.getString(R.string.dg_refused)
                             }
                         }
                     }
@@ -874,7 +865,7 @@ private fun ChannelDatagramTool(vm: MeshCoreViewModel) {
             },
             enabled = !busy && connected == EngineState.Ready &&
                 idx != null && type != null && payloadHex.isNotBlank(),
-        ) { Text(if (busy) "Sending…" else "Send datagram") }
+        ) { Text(stringResource(if (busy) R.string.dg_sending else R.string.dg_send)) }
         if (named != null) {
             Spacer(Modifier.width(8.dp))
             Text("→ $named", style = MaterialTheme.typography.bodySmall)
@@ -1123,40 +1114,37 @@ private fun RadioShareDialog(uri: String?, region: String?, onDismiss: () -> Uni
     val clipboard = androidx.compose.ui.platform.LocalClipboardManager.current
     androidx.compose.material3.AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Share radio settings") },
+        title = { Text(stringResource(R.string.rshare_title)) },
         text = {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 if (qr == null) {
                     Text(
-                        "The radio hasn't reported its hop-hash width, so a code can't say it " +
-                            "yet. Reconnect and try again.",
+                        stringResource(R.string.rshare_no_width),
                         style = MaterialTheme.typography.bodySmall,
                     )
                 } else {
                     androidx.compose.foundation.Image(
                         qr.asImageBitmap(),
-                        contentDescription = "Radio settings QR",
+                        contentDescription = stringResource(R.string.rshare_title),
                         modifier = Modifier.size(280.dp),
                     )
                     Text(
                         if (region != null) {
-                            "Frequency, bandwidth, SF, CR, hop-hash width and region #$region. " +
-                                "Not TX power — that is the scanner's legal limit."
+                            stringResource(R.string.rshare_region, region)
                         } else {
-                            "Frequency, bandwidth, SF, CR and hop-hash width; no region. " +
-                                "Not TX power — that is the scanner's legal limit."
+                            stringResource(R.string.rshare_no_region)
                         },
                         style = MaterialTheme.typography.bodySmall,
                     )
                 }
             }
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("Done") } },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.setup_done)) } },
         dismissButton = {
             if (uri != null) {
                 TextButton(onClick = {
                     clipboard.setText(androidx.compose.ui.text.AnnotatedString(uri))
-                }) { Text("Copy link") }
+                }) { Text(stringResource(R.string.copy_link)) }
             }
         },
     )
