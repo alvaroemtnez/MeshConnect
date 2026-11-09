@@ -1,5 +1,7 @@
 package io.alvaroedo.meshconnect.ui.screens
 
+import io.alvaroedo.meshconnect.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 
@@ -76,7 +78,7 @@ fun NodeAvatar(
             if (channelKind == io.github.thatsfguy.meshcore.protocol.ChannelKind.Private) {
                 androidx.compose.material3.Icon(
                     androidx.compose.ui.res.painterResource(io.alvaroedo.meshconnect.R.drawable.ic_lock),
-                    contentDescription = "Private channel",
+                    contentDescription = stringResource(R.string.cd_private_channel),
                     tint = ink,
                     modifier = Modifier.size(size * 0.5f),
                 )
@@ -117,7 +119,8 @@ fun NodeAvatar(
  */
 @Composable
 private fun GlobeGlyph(color: Color, modifier: Modifier) {
-    androidx.compose.foundation.Canvas(modifier.semantics { contentDescription = "Public channel" }) {
+    val publicLabel = stringResource(R.string.cd_public_channel)
+    androidx.compose.foundation.Canvas(modifier.semantics { contentDescription = publicLabel }) {
         val stroke = androidx.compose.ui.graphics.drawscope.Stroke(width = size.minDimension * 0.09f)
         val r = size.minDimension / 2f - stroke.width / 2f
         drawCircle(color, radius = r, style = stroke)

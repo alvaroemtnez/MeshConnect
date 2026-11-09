@@ -1,5 +1,7 @@
 package io.alvaroedo.meshconnect.ui.screens
 
+import io.alvaroedo.meshconnect.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -164,7 +166,7 @@ fun SearchField(
         trailingIcon = if (query.isNotEmpty()) {
             {
                 IconButton(onClick = { onQueryChange("") }) {
-                    Icon(androidx.compose.ui.res.painterResource(io.alvaroedo.meshconnect.R.drawable.ic_close), contentDescription = "Clear search")
+                    Icon(androidx.compose.ui.res.painterResource(io.alvaroedo.meshconnect.R.drawable.ic_close), contentDescription = stringResource(R.string.clear))
                 }
             }
         } else {
@@ -223,7 +225,7 @@ fun ExpandableHint(summary: String, detail: @Composable () -> Unit) {
                 modifier = Modifier.defaultMinSize(minWidth = 64.dp, minHeight = 48.dp),
             ) {
                 Text(
-                    if (expanded) "Less" else "More",
+                    stringResource(if (expanded) R.string.hint_less else R.string.hint_more),
                     style = MaterialTheme.typography.labelSmall,
                 )
             }

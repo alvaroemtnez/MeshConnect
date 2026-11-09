@@ -1110,6 +1110,10 @@
     <string name="vm_restored_need_radio">(conecta una radio para restaurar los contactos)</string>
     <string name="vm_restored_skipped">Omitido: %1$s</string>
     <string name="vm_hash_mode_set">Modo de hash de ruta: %1$d (%2$d B/salto)</string>
+    <string name="cd_private_channel">Canal privado</string>
+    <string name="cd_public_channel">Canal público</string>
+    <string name="hint_more">Más</string>
+    <string name="hint_less">Menos</string>
     <string name="chats_search_hint">Buscar conversaciones</string>
     <string name="chats_advert_zero_hop">Enviar anuncio (0 saltos)</string>
     <string name="chats_advert_flood">Enviar anuncio (inundación)</string>

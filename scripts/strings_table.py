@@ -1247,6 +1247,13 @@ S = {
 "vm_restored_skipped": ('Skipped: %1$s', 'Omitido: %1$s', 'Omés: %1$s'),
 "vm_hash_mode_set": ('Path hash mode set to %1$d (%2$d B/hop)', 'Modo de hash de ruta: %1$d (%2$d B/salto)', 'Mode de hash de ruta: %1$d (%2$d B/salt)'),
 
+"cd_private_channel": ('Private channel', 'Canal privado', 'Canal privat'),
+"cd_public_channel": ('Public channel', 'Canal público', 'Canal públic'),
+
+
+"hint_more": ('More', 'Más', 'Més'),
+"hint_less": ('Less', 'Menos', 'Menys'),
+
 # Chats
 "chats_search_hint": ("Search conversations", "Buscar conversaciones", "Cercar converses"),
 "chats_advert_zero_hop": ("Send advert (0-hop)", "Enviar anuncio (0 saltos)", "Enviar anunci (0 salts)"),

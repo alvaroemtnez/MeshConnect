@@ -1110,6 +1110,10 @@
     <string name="vm_restored_need_radio">(connecta una ràdio per a restaurar els contactes)</string>
     <string name="vm_restored_skipped">Omés: %1$s</string>
     <string name="vm_hash_mode_set">Mode de hash de ruta: %1$d (%2$d B/salt)</string>
+    <string name="cd_private_channel">Canal privat</string>
+    <string name="cd_public_channel">Canal públic</string>
+    <string name="hint_more">Més</string>
+    <string name="hint_less">Menys</string>
     <string name="chats_search_hint">Cercar converses</string>
     <string name="chats_advert_zero_hop">Enviar anunci (0 salts)</string>
     <string name="chats_advert_flood">Enviar anunci (inundació)</string>
