@@ -193,7 +193,8 @@ class HeardRepeatsModelTest {
         val nodes = File(
             "src/main/kotlin/io/alvaroedo/meshconnect/ui/screens/NodesScreen.kt",
         ).readText()
-        assertTrue(nodes.contains("RelativeTime.ago("), "NodesScreen no longer calls RelativeTime")
+        // MeshConnect: the shared formatter is the platform's localized one now.
+        assertTrue(nodes.contains("DateUtils.getRelativeTimeSpanString("), "NodesScreen no longer uses one shared formatter")
         assertFalse(
             nodes.contains("\"${'$'}{seconds / 3600} hours ago\""),
             "NodesScreen still carries its own age wording",

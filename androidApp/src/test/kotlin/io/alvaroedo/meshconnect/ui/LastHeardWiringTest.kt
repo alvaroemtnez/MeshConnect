@@ -79,7 +79,7 @@ class LastHeardWiringTest {
         assertTrue(
             "the contact sheet hides a disagreeing clock",
             nodes.contains("LastHeard.claimDisagrees(contact)") &&
-                nodes.contains("this node's clock is wrong"),
+                nodes.contains("R.string.node_clock_wrong"),
         )
     }
 }

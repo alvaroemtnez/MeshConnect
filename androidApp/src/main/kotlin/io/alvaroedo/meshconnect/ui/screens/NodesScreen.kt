@@ -18,6 +18,8 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import io.alvaroedo.meshconnect.R
 import io.alvaroedo.meshconnect.ui.model.NodeKinds
+import io.alvaroedo.meshconnect.ui.model.SharedText
+import androidx.compose.ui.platform.LocalContext
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -672,7 +674,7 @@ private fun DiscoveredRow(
             Text(
                 listOfNotNull(
                     stringResource(singleKindLabel(node.type)),
-                    io.github.thatsfguy.meshcore.presentation.HeardReach.of(node.minHops, node.directSnr),
+                    SharedText.heardReach(LocalContext.current, node.minHops, node.directSnr),
                     DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(node.lastHeardAt)),
                 ).joinToString(" · "),
                 style = MaterialTheme.typography.bodySmall,
@@ -681,7 +683,7 @@ private fun DiscoveredRow(
             signals?.let {
                 (if (node.type == Codes.ADV_TYPE_REPEATER) it else it.copy(relayed = 0))
                     .copy(heardDirect = false)
-            }?.let { io.github.thatsfguy.meshcore.presentation.RepeaterSignals.describe(it) }?.let {
+            }?.let { SharedText.signals(LocalContext.current, it) }?.let {
                 Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
             }
         }
@@ -779,11 +781,8 @@ private fun ContactRow(
                 overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
             )
             Text(
-                buildString {
-                    append(c.keyHex.take(12))
-                    val info = PathCodec.decodePathLen(c.pathLen)
-                    if (!info.isFlood) append(" · ${info.hops} hop path")
-                    else append(" · flood")
+                c.keyHex.take(12) + " · " + PathCodec.decodePathLen(c.pathLen).let { info ->
+                    if (info.isFlood) stringResource(R.string.flood) else stringResource(R.string.hops_path, info.hops)
                 },
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -868,9 +867,9 @@ private fun HeardDetailSheet(
                 .padding(bottom = 32.dp)
                 .verticalScroll(rememberScrollState()),
         ) {
-            Text(node.name.ifBlank { "Unnamed node" }, style = MaterialTheme.typography.headlineSmall)
+            Text(node.name.ifBlank { stringResource(R.string.node_unnamed) }, style = MaterialTheme.typography.headlineSmall)
             Text(
-                typeLabel(node.type).dropLast(1) + " · heard, not added",
+                stringResource(R.string.node_heard_not_added, SharedText.kind(LocalContext.current, node.type)),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.primary,
             )
@@ -883,7 +882,7 @@ private fun HeardDetailSheet(
                 }
                 TextButton(onClick = {
                     clipboard.setText(androidx.compose.ui.text.AnnotatedString(node.keyHex))
-                }) { Text("Copy") }
+                }) { Text(stringResource(R.string.copy)) }
             }
 
             PositionRows(node.latitude, node.longitude, self?.latitude, self?.longitude, units)
@@ -891,34 +890,33 @@ private fun HeardDetailSheet(
             // Local arrival times — never the advert's own timestamp,
             // which is the node's clock (see LastHeard).
             DetailRow(
-                "Last heard",
+                stringResource(R.string.node_last_heard),
                 relativeAge(node.lastHeardAt / 1000) + " · " + stamp.format(Date(node.lastHeardAt)),
             )
             if (node.firstHeardAt in 1 until node.lastHeardAt) {
-                DetailRow("First heard", stamp.format(Date(node.firstHeardAt)))
+                DetailRow(stringResource(R.string.node_first_heard), stamp.format(Date(node.firstHeardAt)))
             }
             // Hops, and the node's own signal only when heard direct: after
             // a relay the latest SNR is the last repeater's (HeardReach).
-            io.github.thatsfguy.meshcore.presentation.HeardReach.of(node.minHops, node.directSnr)
-                ?.let { DetailRow("Hops away", it) }
+            SharedText.heardReach(LocalContext.current, node.minHops, node.directSnr)
+                ?.let { DetailRow(stringResource(R.string.node_hops_away), it) }
             signals?.let {
                 (if (node.type == Codes.ADV_TYPE_REPEATER) it else it.copy(relayed = 0))
                     .copy(heardDirect = false)
-            }?.let { io.github.thatsfguy.meshcore.presentation.RepeaterSignals.describe(it) }
-                ?.let { DetailRow("Why add it", it) }
+            }?.let { SharedText.signals(LocalContext.current, it) }
+                ?.let { DetailRow(stringResource(R.string.node_why_add), it) }
 
             Spacer(Modifier.height(12.dp))
             Text(
-                "Messaging, " +
-                    (if (node.type == Codes.ADV_TYPE_CHAT) "" else "administering, ") +
-                    "routes, favourites and renaming need it in your radio's contacts. " +
-                    "Add it, and its full sheet opens.",
+                stringResource(
+                    if (node.type == Codes.ADV_TYPE_CHAT) R.string.node_add_why_chat else R.string.node_add_why_admin,
+                ),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            TextButton(onClick = onAdd) { Text("Add to contacts") }
+            TextButton(onClick = onAdd) { Text(stringResource(R.string.node_add_to_contacts)) }
             TextButton(onClick = onForget) {
-                Text("Forget this node", color = MaterialTheme.colorScheme.error)
+                Text(stringResource(R.string.node_forget), color = MaterialTheme.colorScheme.error)
             }
         }
     }
@@ -963,11 +961,11 @@ fun ContactDetailSheet(
                 .verticalScroll(rememberScrollState()),
         ) {
             Text(
-                contact.name.ifBlank { "Unnamed node" },
+                contact.name.ifBlank { stringResource(R.string.node_unnamed) },
                 style = MaterialTheme.typography.headlineSmall,
             )
             Text(
-                typeLabel(contact.type).dropLast(1),
+                SharedText.kind(LocalContext.current, contact.type),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.primary,
             )
@@ -975,7 +973,7 @@ fun ContactDetailSheet(
 
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
-                    Text("Public key", style = MaterialTheme.typography.labelLarge)
+                    Text(stringResource(R.string.add_contact_key), style = MaterialTheme.typography.labelLarge)
                     Text(
                         contact.keyHex,
                         style = MaterialTheme.typography.bodySmall,
@@ -984,7 +982,7 @@ fun ContactDetailSheet(
                 }
                 TextButton(onClick = {
                     clipboard.setText(androidx.compose.ui.text.AnnotatedString(contact.keyHex))
-                }) { Text("Copy") }
+                }) { Text(stringResource(R.string.copy)) }
             }
 
             // `isPlausiblePosition`, not a null check. These two rows
@@ -997,7 +995,7 @@ fun ContactDetailSheet(
 
             if (LastHeard.seconds(contact) > 0) {
                 DetailRow(
-                    "Last heard",
+                    stringResource(R.string.node_last_heard),
                     relativeAge(LastHeard.seconds(contact)) + " · " +
                         DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT)
                             .format(Date(LastHeard.seconds(contact) * 1000)),
@@ -1010,9 +1008,11 @@ fun ContactDetailSheet(
             // every client they try.
             if (LastHeard.claimDisagrees(contact)) {
                 DetailRow(
-                    "Its own clock says",
-                    DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT)
-                        .format(Date(contact.lastSeen * 1000)) + " — this node's clock is wrong",
+                    stringResource(R.string.node_own_clock),
+                    stringResource(
+                        R.string.node_clock_wrong,
+                        DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(Date(contact.lastSeen * 1000)),
+                    ),
                 )
             }
 
@@ -1020,20 +1020,15 @@ fun ContactDetailSheet(
             // contact rather than what we last asked for.
             val pathInfo = PathCodec.decodePathLen(live?.pathLen ?: contact.pathLen)
             DetailRow(
-                "Hops away",
-                when {
-                    pathInfo.isFlood -> "Flood (no stored path)"
-                    pathInfo.hops == 0 -> "Direct (0 hops)"
-                    pathInfo.hops == 1 -> "1 hop"
-                    else -> "${pathInfo.hops} hops"
-                },
+                stringResource(R.string.node_hops_away),
+                SharedText.pathHops(LocalContext.current, pathInfo.isFlood, pathInfo.hops),
             )
             live?.storedPath?.takeIf { it.isNotEmpty() }?.let { bytes ->
                 val known = vm.liveContacts.collectAsState().value
                     .mapValues { (_, c) -> c.name }
                 val hops = PathCodec.resolveHops(bytes, pathInfo.hashWidth, known)
                 Column(Modifier.padding(top = 8.dp)) {
-                    Text("Out path", style = MaterialTheme.typography.labelLarge)
+                    Text(stringResource(R.string.node_out_path), style = MaterialTheme.typography.labelLarge)
                     for ((index, hop) in hops.withIndex()) {
                         Text(
                             "${index + 1}. ${hop.label}",
@@ -1050,7 +1045,7 @@ fun ContactDetailSheet(
                         // asserting one of them is the hop.
                         if (hop.isAmbiguous) {
                             Text(
-                                "   " + hop.candidates.joinToString(" or "),
+                                "   " + hop.candidates.joinToString(" / "),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -1061,21 +1056,21 @@ fun ContactDetailSheet(
             // The contact's own record says how wide ITS hashes are; the
             // device setting only applies to new paths.
             val width = if (pathInfo.isFlood) hashWidth else pathInfo.hashWidth
-            width?.let { DetailRow("Path hash size", "$it-byte${if (it == 1) "" else "s"} per hop") }
+            width?.let { DetailRow(stringResource(R.string.node_hash_size), pluralStringResource(R.plurals.node_hash_bytes, it, it)) }
 
             Spacer(Modifier.height(16.dp))
 
             if (contact.type == Codes.ADV_TYPE_CHAT) {
-                TextButton(onClick = onOpenChat) { Text("Open conversation") }
+                TextButton(onClick = onOpenChat) { Text(stringResource(R.string.node_open_conversation)) }
             }
             // A room is where you read and post, so that comes first —
             // but it is also a node someone configures (and may run as
             // a repeater too), so its owner keeps a direct way in.
             if (contact.type == Codes.ADV_TYPE_ROOM) {
-                TextButton(onClick = onOpenChat) { Text("Open room") }
+                TextButton(onClick = onOpenChat) { Text(stringResource(R.string.node_open_room)) }
             }
             if (isAdminable) {
-                TextButton(onClick = onOpenAdmin) { Text("Administer this node") }
+                TextButton(onClick = onOpenAdmin) { Text(stringResource(R.string.node_administer)) }
             }
             // Recovery lives here, on the node, because this is where
             // someone looks for it — and because everything else that
@@ -1091,31 +1086,31 @@ fun ContactDetailSheet(
                 // a statement about the node's current state; it is the
                 // node's Bluetooth address, learned in update mode and
                 // true whatever the node is doing now.
-                contact.otaAddress?.let { DetailRow("Bluetooth address", it) }
+                contact.otaAddress?.let { DetailRow(stringResource(R.string.node_bt_address), it) }
                 TextButton(onClick = { updateModeOpen = true }) {
-                    Text("Recover / firmware…")
+                    Text(stringResource(R.string.node_recover))
                 }
             }
             val isFav = contact.flags and Codes.CONTACT_FLAG_FAVORITE != 0
             TextButton(onClick = {
                 vm.setFavourite(contact.keyHex, !isFav)
                 onDismiss()
-            }) { Text(if (isFav) "★ Remove favourite" else "☆ Add favourite") }
+            }) { Text(stringResource(if (isFav) R.string.node_unfavourite else R.string.node_favourite)) }
             TextButton(onClick = { permissionsOpen = !permissionsOpen }) {
-                Text(if (permissionsOpen) "Hide permissions" else "Permissions…")
+                Text(stringResource(if (permissionsOpen) R.string.node_hide_permissions else R.string.node_permissions))
             }
             if (permissionsOpen) {
                 ContactPermissions(vm, contact)
             }
-            TextButton(onClick = { shareQrOpen = true }) { Text("Share contact QR…") }
+            TextButton(onClick = { shareQrOpen = true }) { Text(stringResource(R.string.node_share_qr)) }
             onTrace?.let { trace ->
                 TextButton(onClick = trace) {
                     Text(stringResource(if (isAdminable) R.string.trace_ping else R.string.trace_route))
                 }
             }
-            TextButton(onClick = { telemetryOpen = true }) { Text("Telemetry…") }
-            TextButton(onClick = { routingOpen = true }) { Text("Routing / paths…") }
-            TextButton(onClick = { renameOpen = true }) { Text("Rename") }
+            TextButton(onClick = { telemetryOpen = true }) { Text(stringResource(R.string.node_telemetry)) }
+            TextButton(onClick = { routingOpen = true }) { Text(stringResource(R.string.conv_routing)) }
+            TextButton(onClick = { renameOpen = true }) { Text(stringResource(R.string.node_rename)) }
             // Blocking is local and key-based: it drops their direct
             // messages before they are written down. Removing the
             // contact does NOT block them — the radio would happily
@@ -1134,7 +1129,7 @@ fun ContactDetailSheet(
             if (BlockList.isBlockableNodeType(contact.type) || blocked) {
                 TextButton(onClick = { vm.setBlocked(contact.keyHex, !blocked) }) {
                     Text(
-                        if (blocked) "Unblock" else "Block",
+                        stringResource(if (blocked) R.string.node_unblock else R.string.node_block),
                         color = if (blocked) {
                             MaterialTheme.colorScheme.primary
                         } else {
@@ -1144,7 +1139,7 @@ fun ContactDetailSheet(
                 }
             }
             TextButton(onClick = { removeConfirm = true }) {
-                Text("Remove contact", color = MaterialTheme.colorScheme.error)
+                Text(stringResource(R.string.node_remove), color = MaterialTheme.colorScheme.error)
             }
         }
     }
@@ -1227,7 +1222,7 @@ fun ContactDetailSheet(
         var name by remember { mutableStateOf(contact.name) }
         AlertDialog(
             onDismissRequest = { renameOpen = false },
-            title = { Text("Rename contact") },
+            title = { Text(stringResource(R.string.node_rename_title)) },
             text = {
                 OutlinedTextField(value = name, onValueChange = { name = it }, singleLine = true)
             },
@@ -1239,7 +1234,7 @@ fun ContactDetailSheet(
                 }) { Text("Save") }
             },
             dismissButton = {
-                TextButton(onClick = { renameOpen = false }) { Text("Cancel") }
+                TextButton(onClick = { renameOpen = false }) { Text(stringResource(R.string.cancel)) }
             },
         )
     }
@@ -1247,17 +1242,17 @@ fun ContactDetailSheet(
     if (removeConfirm) {
         AlertDialog(
             onDismissRequest = { removeConfirm = false },
-            title = { Text("Remove contact?") },
-            text = { Text("Removes ${contact.name.ifBlank { contact.keyHex.take(12) }} from the radio's contact list.") },
+            title = { Text(stringResource(R.string.node_remove_title)) },
+            text = { Text(stringResource(R.string.node_remove_body, contact.name.ifBlank { contact.keyHex.take(12) })) },
             confirmButton = {
                 TextButton(onClick = {
                     vm.removeContact(contact.keyHex)
                     removeConfirm = false
                     onDismiss()
-                }) { Text("Remove", color = MaterialTheme.colorScheme.error) }
+                }) { Text(stringResource(R.string.node_remove_confirm), color = MaterialTheme.colorScheme.error) }
             },
             dismissButton = {
-                TextButton(onClick = { removeConfirm = false }) { Text("Cancel") }
+                TextButton(onClick = { removeConfirm = false }) { Text(stringResource(R.string.cancel)) }
             },
         )
     }
@@ -1277,8 +1272,13 @@ private fun DetailRow(label: String, value: String, mono: Boolean = false) {
 }
 
 /** "9 hours ago" — wording shared with the heard-repeats list. */
-internal fun relativeAge(epochSeconds: Long): String =
-    RelativeTime.ago(System.currentTimeMillis() / 1000 - epochSeconds)
+/** Localized by the platform ("5 minutes ago", "hace 5 minutos"). */
+internal fun relativeAge(epochSeconds: Long): String {
+    val now = System.currentTimeMillis()
+    return android.text.format.DateUtils.getRelativeTimeSpanString(
+        epochSeconds * 1000, now, android.text.format.DateUtils.SECOND_IN_MILLIS,
+    ).toString()
+}
 
 /**
  * Telemetry published by a node (Cayenne LPP over a binary request).

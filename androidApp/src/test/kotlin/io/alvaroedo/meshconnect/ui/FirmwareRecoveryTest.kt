@@ -30,7 +30,7 @@ class FirmwareRecoveryTest {
         assertTrue("NodesScreen.kt not found", nodes.exists())
         assertTrue(
             "the long-press sheet no longer offers a recovery action",
-            source.contains("Recover / firmware…"),
+            source.contains("R.string.node_recover"),
         )
     }
 
