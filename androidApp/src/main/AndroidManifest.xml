@@ -13,9 +13,12 @@
                      android:maxSdkVersion="30" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN"
                      android:maxSdkVersion="30" />
-    <!-- Pre-12 BLE scanning requires location. -->
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"
-                     android:maxSdkVersion="30" />
+    <!-- Location: pre-12 BLE scanning needs it, and on every version
+         "Share my location" in a conversation asks for it, only when used.
+         The fix comes from the platform LocationManager (GPS first). -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-feature android:name="android.hardware.location.gps" android:required="false" />
 
     <!-- Foreground service holding the BLE/USB/TCP radio link. -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />

@@ -1,5 +1,16 @@
 package io.alvaroedo.meshconnect.ui.screens
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.res.stringResource
+import io.alvaroedo.meshconnect.R
+import io.alvaroedo.meshconnect.platform.PhoneLocator
+import io.alvaroedo.meshconnect.ui.model.RichMessage
+import io.github.thatsfguy.meshcore.protocol.Codes
+import io.github.thatsfguy.meshcore.protocol.ShareUri
+import kotlinx.coroutines.launch
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -166,6 +177,12 @@ fun ConversationScreen(
     var pendingUrl by remember { mutableStateOf<String?>(null) }
     var reactingTo by remember { mutableStateOf<MessageEntity?>(null) }
     var details by remember { mutableStateOf<MessageEntity?>(null) }
+    var attachOpen by remember { mutableStateOf(false) }
+    var pickContact by remember { mutableStateOf(false) }
+    var pickChannel by remember { mutableStateOf(false) }
+    var pickOnMap by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    val context = LocalContext.current
     val selfName = vm.selfInfo.collectAsState().value?.name
     // Who `@` can offer. On a channel that is the names seen posting on
     // it — the same list "Names seen…" shows, and the only names anyone
@@ -250,7 +267,7 @@ fun ConversationScreen(
             )
         },
     ) { padding ->
-        Column(Modifier.fillMaxSize().padding(padding).imePadding()) {
+        Column(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding).imePadding()) {
             // Newest-message visibility is structural, not a scroll
             // effect: reverseLayout anchors index 0 (the newest bubble)
             // to the bottom of the viewport. It therefore stays visible
@@ -300,6 +317,25 @@ fun ConversationScreen(
                     onResend = { vm.resendMessage(m.id) },
                     onHttpLink = { pendingUrl = it },
                     onMeshcoreLink = { vm.importContactUri(it) },
+                    rich = { content ->
+                        RichContentCard(
+                            content = content,
+                            selfKey = vm.selfInfo.value?.publicKeyHex,
+                            contacts = contacts,
+                            channels = channels,
+                            onOpenContact = { c ->
+                                when (c.type) {
+                                    Codes.ADV_TYPE_REPEATER, Codes.ADV_TYPE_SENSOR -> nav.navigate("repeater/${c.keyHex}")
+                                    else -> nav.navigate(conversationRoute(MessageRepository.KIND_DM, c.keyHex))
+                                }
+                            },
+                            onAddContact = { vm.importContactUri(it) },
+                            onJoinChannel = { vm.importScannedCode(it) },
+                            onOpenChannel = { idx ->
+                                nav.navigate(conversationRoute(MessageRepository.KIND_CHANNEL, idx.toString()))
+                            },
+                        )
+                    },
                 )
             }
 
@@ -335,46 +371,31 @@ fun ConversationScreen(
                 }
             }
 
-            Row(
-                Modifier.fillMaxWidth().padding(8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                OutlinedTextField(
-                    value = draft,
-                    onValueChange = {
-                        // Enforce the frame-size limit at input time.
-                        // Caret-only moves must always be accepted, or a
-                        // draft sitting exactly on the limit becomes
-                        // un-navigable.
-                        if (it.text == draft.text ||
-                            it.text.encodeToByteArray().size <= bodyBudget
-                        ) {
-                            draft = it
-                            vm.setDraft(threadKey, it.text)
-                        }
-                    },
-                    modifier = Modifier.weight(1f),
-                    placeholder = { Text(if (isChannel) "Message channel…" else "Message…") },
-                    maxLines = 4,
-                )
-                IconButton(
-                    onClick = {
-                        val text = quotePrefix + draft.text.trim()
-                        if (text.isBlank()) return@IconButton
-                        if (isChannel) {
-                            peerKey.toIntOrNull()?.let { vm.sendChannelMessage(it, text) }
-                        } else {
-                            vm.sendDirectMessage(peerKey, text)
-                        }
+            MessageComposer(
+                draft = draft,
+                onDraft = {
+                    // Enforce the frame-size limit at input time. Caret-only
+                    // moves must always be accepted, or a draft sitting
+                    // exactly on the limit becomes un-navigable.
+                    if (it.text == draft.text || it.text.encodeToByteArray().size <= bodyBudget) {
+                        draft = it
+                        vm.setDraft(threadKey, it.text)
+                    }
+                },
+                placeholder = stringResource(if (isChannel) R.string.compose_hint_channel else R.string.compose_hint),
+                bytesLeft = bodyBudget - draft.text.encodeToByteArray().size,
+                onSend = {
+                    val text = quotePrefix + draft.text.trim()
+                    if (text.isNotBlank()) {
+                        sendText(vm, isChannel, peerKey, text)
                         draft = TextFieldValue("")
                         vm.setDraft(threadKey, "")
                         replyingTo = null
-                    },
-                    enabled = draft.text.isNotBlank(),
-                ) {
-                    Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Send")
-                }
-            }
+                    }
+                },
+                onAttach = { attachOpen = true },
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
     }
 
@@ -415,6 +436,87 @@ fun ConversationScreen(
 
     pendingUrl?.let { url ->
         LeaveTheMeshDialog(url, onDismiss = { pendingUrl = null })
+    }
+
+    // Attachments: each builds the plain-text form other MeshCore clients
+    // can read (RichMessage) and sends it as an ordinary message, without
+    // the reply quote: a quoted card would no longer parse as one.
+    fun sendAttachment(text: String?) {
+        if (text == null) return
+        if (text.encodeToByteArray().size > maxBytes) {
+            vm.transientMessage.value = context.getString(R.string.attach_too_long)
+            return
+        }
+        sendText(vm, isChannel, peerKey, text)
+    }
+    val locationPermission = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions(),
+    ) { granted ->
+        if (granted.values.any { it }) {
+            scope.launch { shareMyLocation(vm, context) { sendAttachment(it) } }
+        } else {
+            vm.transientMessage.value = context.getString(R.string.attach_location_denied)
+        }
+    }
+    if (attachOpen) {
+        AttachSheet(
+            onPick = { a ->
+                attachOpen = false
+                when (a) {
+                    Attachment.MyContact -> {
+                        val me = vm.selfInfo.value
+                        sendAttachment(AttachmentText.myContact(me?.publicKeyHex, me?.name))
+                    }
+                    Attachment.Contact -> pickContact = true
+                    Attachment.Channel -> pickChannel = true
+                    Attachment.MyLocation ->
+                        if (PhoneLocator.granted(context)) {
+                            scope.launch { shareMyLocation(vm, context) { sendAttachment(it) } }
+                        } else {
+                            locationPermission.launch(PhoneLocator.PERMISSIONS)
+                        }
+                    Attachment.MapLocation -> pickOnMap = true
+                }
+            },
+            onDismiss = { attachOpen = false },
+        )
+    }
+    if (pickContact) {
+        ContactPickerSheet(
+            contacts = contacts,
+            onPick = { pickContact = false; sendAttachment(AttachmentText.contact(it)) },
+            onDismiss = { pickContact = false },
+        )
+    }
+    if (pickChannel) {
+        ChannelPickerSheet(
+            channels = channels,
+            onPick = { ch ->
+                pickChannel = false
+                scope.launch {
+                    val psk = vm.channelPskHex(ch)
+                    if (psk == null) {
+                        vm.transientMessage.value = context.getString(R.string.attach_channel_no_key)
+                    } else {
+                        sendAttachment(ShareUri.encodeChannel(ch.name.ifBlank { "#${ch.idx}" }, psk))
+                    }
+                }
+            },
+            onDismiss = { pickChannel = false },
+        )
+    }
+    if (pickOnMap) {
+        val me = vm.selfInfo.value
+        PositionPickerDialog(
+            vm = vm,
+            initialLat = me?.latitude ?: 0.0,
+            initialLon = me?.longitude ?: 0.0,
+            onPick = { lat, lon ->
+                pickOnMap = false
+                sendAttachment(RichMessage.locationText(lat, lon))
+            },
+            onDismiss = { pickOnMap = false },
+        )
     }
 
     if (roomSignIn) {
@@ -623,6 +725,7 @@ private fun MessageBubble(
     onResend: () -> Unit = {},
     onHttpLink: (String) -> Unit = {},
     onMeshcoreLink: (String) -> Unit = {},
+    rich: @Composable (RichMessage.Content) -> Unit = {},
 ) {
     // Long-press opens an inline action bar anchored on the bubble —
     // one tap to react, no dialog to read and dismiss first.
@@ -630,6 +733,9 @@ private fun MessageBubble(
     val clipboard = LocalClipboardManager.current
     val outgoing = m.outgoing
     val (quoted, body) = remember(m.text) { splitQuote(m.text) }
+    // A message that is wholly a shared contact, channel or place is drawn
+    // as a card (RichMessage); quoted ones stay text.
+    val richContent = remember(m.text) { if (quoted == null) RichMessage.parse(body) else null }
     val reactions = remember(m.reactionsJson) { ReactionCounts.decode(m.reactionsJson) }
     // A reaction whose target we couldn't find still has to render as
     // something a human understands, not as "r:1a2b:00" — nor as
@@ -738,6 +844,8 @@ private fun MessageBubble(
                         fontStyle = FontStyle.Italic,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
+                } else if (richContent != null) {
+                    rich(richContent)
                 } else {
                     MessageText(
                         body,
@@ -1325,3 +1433,72 @@ internal fun copiesLabel(copies: Int): String? =
 
 /** Newest-N window; "Load older" grows it. */
 private const val PAGE_SIZE = 50
+
+
+/** Send one message on this thread, channel or direct. */
+private fun sendText(vm: io.alvaroedo.meshconnect.ui.MeshCoreViewModel, isChannel: Boolean, peerKey: String, text: String) {
+    if (isChannel) {
+        peerKey.toIntOrNull()?.let { vm.sendChannelMessage(it, text) }
+    } else {
+        vm.sendDirectMessage(peerKey, text)
+    }
+}
+
+/**
+ * The phone's GPS fix, else the radio's own advertised position; says so
+ * when there is neither rather than sending a made-up place.
+ */
+private suspend fun shareMyLocation(
+    vm: io.alvaroedo.meshconnect.ui.MeshCoreViewModel,
+    context: android.content.Context,
+    send: (String) -> Unit,
+) {
+    vm.transientMessage.value = context.getString(R.string.attach_locating)
+    val fix = PhoneLocator.fix(context)
+        ?: vm.selfInfo.value?.let { me ->
+            (me.latitude to me.longitude).takeIf { me.latitude != 0.0 || me.longitude != 0.0 }
+        }
+    if (fix == null) {
+        vm.transientMessage.value = context.getString(R.string.attach_location_failed)
+    } else {
+        send(RichMessage.locationText(fix.first, fix.second))
+    }
+}
+
+/** Picks the card for a [RichMessage.Content] and what tapping it does. */
+@Composable
+private fun RichContentCard(
+    content: RichMessage.Content,
+    selfKey: String?,
+    contacts: List<io.alvaroedo.meshconnect.storage.ContactEntity>,
+    channels: List<io.alvaroedo.meshconnect.storage.ChannelEntity>,
+    onOpenContact: (io.alvaroedo.meshconnect.storage.ContactEntity) -> Unit,
+    onAddContact: (String) -> Unit,
+    onJoinChannel: (String) -> Unit,
+    onOpenChannel: (Int) -> Unit,
+) {
+    when (content) {
+        is RichMessage.Contact -> {
+            val known = contacts.firstOrNull { it.keyHex.equals(content.publicKeyHex, ignoreCase = true) }
+            ContactCard(
+                c = content,
+                known = known,
+                onOpen = { known?.let(onOpenContact) },
+                onAdd = { onAddContact(ShareUri.encodeContact(content.name, content.publicKeyHex, content.type)) },
+                isSelf = selfKey.equals(content.publicKeyHex, ignoreCase = true),
+            )
+        }
+        is RichMessage.Channel -> {
+            // Joined means a channel of the same name; the join dialog
+            // itself compares keys before changing anything.
+            val joined = channels.firstOrNull { it.name.equals(content.name, ignoreCase = true) }
+            ChannelCard(
+                c = content,
+                joined = joined != null,
+                onJoin = { onJoinChannel(content.uri) },
+                onOpen = { joined?.let { onOpenChannel(it.idx) } },
+            )
+        }
+        is RichMessage.Location -> LocationCard(content) { LocationPreview(content) }
+    }
+}

@@ -873,6 +873,7 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
         // take(80) showed what was being replied to and cut off the
         // reply itself — the list read as though everyone were
         // repeating each other.
+        io.alvaroedo.meshconnect.ui.model.RichPreview.of(getApplication(), m.text)?.let { return it }
         return Quoting.previewBody(m.text).take(80)
     }
 

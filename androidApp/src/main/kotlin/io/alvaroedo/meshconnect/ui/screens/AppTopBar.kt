@@ -139,7 +139,10 @@ fun AppTopBar(
             ),
             title = {
                 Column {
-                    Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    // softWrap off: with wrapping on, a line break was allowed
+                    // right after a leading '#', so a long channel name showed
+                    // as just "#" (MeshCore Hardened issue #8).
+                    Text(title, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
                     subtitle?.let {
                         Text(
                             it,
@@ -159,7 +162,9 @@ fun AppTopBar(
                 }
             },
             actions = {
-                if (info != null) info() else ConnectionStatus(vm)
+                // Sub-screens (with a back arrow) get the icons only, so a long
+                // title keeps its room (MeshCore Hardened issue #8).
+                if (info != null) info() else ConnectionStatus(vm, compact = nav != null)
                 actions()
                 if (search != null) {
                     IconButton(onClick = { search.onActiveChange(true) }) {
@@ -304,7 +309,7 @@ private fun SearchOverlay(search: TopBarSearch, iconEndOffsetDp: Float, modifier
  * a pulsing amber dot. TCP: the plaintext warning, which wins over all.
  */
 @Composable
-fun ConnectionStatus(vm: MeshCoreViewModel) {
+fun ConnectionStatus(vm: MeshCoreViewModel, compact: Boolean = false) {
     val engineState by vm.engineState.collectAsStateWithLifecycle()
     val plaintext by vm.plaintextLink.collectAsStateWithLifecycle()
     var sheet by remember { mutableStateOf(false) }
@@ -321,24 +326,22 @@ fun ConnectionStatus(vm: MeshCoreViewModel) {
         horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         when {
-            engineState == EngineState.Ready && plaintext -> {
-                Icon(
-                    painterResource(R.drawable.ic_warning),
-                    null,
-                    tint = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.size(18.dp),
-                )
-                Text(
-                    stringResource(R.string.status_tcp_plain),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.error,
-                    maxLines = 1,
-                )
+            engineState == EngineState.Ready -> {
+                // TCP is always flagged (upstream's rule): a red warning in
+                // front of the meter, spelled out in the details sheet.
+                if (plaintext) {
+                    Icon(
+                        painterResource(R.drawable.ic_warning),
+                        stringResource(R.string.status_tcp_plain),
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(18.dp),
+                    )
+                }
+                ConnectedCluster(vm, compact)
             }
-            engineState == EngineState.Ready -> ConnectedCluster(vm)
             engineState == EngineState.Handshaking || engineState == EngineState.Connecting -> {
                 PulsingDot(ExtraColors.connecting)
-                Text(
+                if (!compact) Text(
                     stringResource(
                         if (engineState == EngineState.Handshaking) R.string.status_handshake else R.string.status_connecting,
                     ),
@@ -349,7 +352,7 @@ fun ConnectionStatus(vm: MeshCoreViewModel) {
             }
             else -> {
                 Box(Modifier.size(8.dp).background(MaterialTheme.colorScheme.outline, CircleShape))
-                Text(
+                if (!compact) Text(
                     stringResource(R.string.status_offline),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -362,7 +365,7 @@ fun ConnectionStatus(vm: MeshCoreViewModel) {
 }
 
 @Composable
-private fun ConnectedCluster(vm: MeshCoreViewModel) {
+private fun ConnectedCluster(vm: MeshCoreViewModel, compact: Boolean) {
     val repeaters by vm.directRepeaters.collectAsStateWithLifecycle()
     val battery by vm.battery.collectAsStateWithLifecycle()
     val self by vm.selfInfo.collectAsStateWithLifecycle()
@@ -371,7 +374,7 @@ private fun ConnectedCluster(vm: MeshCoreViewModel) {
     val ink = MaterialTheme.colorScheme.onSurfaceVariant
 
     SignalBars(bars = best?.let { LinkMeter.bars(it.snr, self?.sf) } ?: 0, live = best != null)
-    if (best != null) {
+    if (best != null && !compact) {
         Text(
             best.prefixHex.uppercase(),
             style = MaterialTheme.typography.labelSmall,
@@ -384,7 +387,7 @@ private fun ConnectedCluster(vm: MeshCoreViewModel) {
     if (battery != null) {
         Spacer(Modifier.width(2.dp))
         BatteryGlyph(pct)
-        if (pct != null) {
+        if (pct != null && !compact) {
             Text("$pct%", style = MaterialTheme.typography.labelSmall, color = ink, maxLines = 1)
         }
     }
@@ -507,10 +510,21 @@ private fun LinkSheet(vm: MeshCoreViewModel, onDismiss: () -> Unit) {
                 )
                 return@Column
             }
+            val plaintext by vm.plaintextLink.collectAsStateWithLifecycle()
             label?.let {
                 ListItem(
                     headlineContent = { Text(stringResource(R.string.link_connection)) },
-                    supportingContent = { Text(it) },
+                    supportingContent = {
+                        Text(
+                            if (plaintext) it + " · " + stringResource(R.string.status_tcp_plain) else it,
+                            color = if (plaintext) MaterialTheme.colorScheme.error else Color.Unspecified,
+                        )
+                    },
+                    leadingContent = if (plaintext) {
+                        { Icon(painterResource(R.drawable.ic_warning), null, tint = MaterialTheme.colorScheme.error) }
+                    } else {
+                        null
+                    },
                     colors = rows,
                 )
             }

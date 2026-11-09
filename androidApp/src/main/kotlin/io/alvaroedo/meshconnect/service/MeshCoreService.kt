@@ -619,11 +619,13 @@ class MeshCoreService : Service() {
         // gave ">yeah good" — the answer buried behind the question, and
         // the collapsed line showing the wrong half of it.
         val notice = MessageNotice.forMessage(text)
+        // A shared contact, channel or place reads as what it is.
+        val card = io.alvaroedo.meshconnect.ui.model.RichPreview.of(this, text)
         val notification = NotificationCompat.Builder(this, MSG_CHANNEL)
             .setSmallIcon(R.drawable.ic_stat_message)
             .setContentTitle(title)
-            .setContentText(notice.collapsed)
-            .setStyle(NotificationCompat.BigTextStyle().bigText(notice.expanded))
+            .setContentText(card ?: notice.collapsed)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(card ?: notice.expanded))
             .setContentIntent(intent)
             .setAutoCancel(true)
             .setCategory(NotificationCompat.CATEGORY_MESSAGE)
