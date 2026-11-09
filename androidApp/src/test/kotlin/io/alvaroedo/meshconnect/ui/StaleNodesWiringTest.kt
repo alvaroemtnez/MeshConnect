@@ -88,7 +88,7 @@ class StaleNodesWiringTest {
         )
         assertTrue(
             "a long list is shown without saying how much is hidden",
-            dialog.contains("…and \${sweep.count - PREVIEW_ROWS} more"),
+            dialog.contains("stringResource(R.string.stale_more, sweep.count - PREVIEW_ROWS)"),
         )
     }
 

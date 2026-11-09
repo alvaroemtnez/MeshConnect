@@ -1,5 +1,9 @@
 package io.alvaroedo.meshconnect.ui.screens
 
+import io.alvaroedo.meshconnect.R
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -61,25 +65,22 @@ fun StaleNodesDialog(vm: MeshCoreViewModel, onDismiss: () -> Unit) {
 
     AlertDialog(
         onDismissRequest = { if (!busy) onDismiss() },
-        title = { Text("Remove stale nodes") },
+        title = { Text(stringResource(R.string.stale_title)) },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState())) {
                 Text(
-                    "Removes nodes from the radio's contact list when nothing has been heard " +
-                        "from them — no advert and no message — for longer than this.",
+                    stringResource(R.string.stale_intro),
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    "Favourites are never removed, whatever the slider says. Nor is a node " +
-                        "that has never been heard from at all, which is what a contact just " +
-                        "added from a QR code looks like.",
+                    stringResource(R.string.stale_kept),
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Spacer(Modifier.height(16.dp))
 
                 Text(
-                    "Older than $days days",
+                    pluralStringResource(R.plurals.stale_older, days, days),
                     style = MaterialTheme.typography.titleSmall,
                 )
                 Slider(
@@ -96,10 +97,10 @@ fun StaleNodesDialog(vm: MeshCoreViewModel, onDismiss: () -> Unit) {
                 )
 
                 Text(
-                    "${sweep.count} of ${sweep.total} nodes",
+                    stringResource(R.string.stale_count, sweep.count, sweep.total),
                     style = MaterialTheme.typography.titleSmall,
                 )
-                StaleNodes.keptNote(sweep)?.let {
+                io.alvaroedo.meshconnect.ui.model.SharedText.staleKept(LocalContext.current, sweep)?.let {
                     Text(
                         it,
                         style = MaterialTheme.typography.bodySmall,
@@ -115,14 +116,14 @@ fun StaleNodesDialog(vm: MeshCoreViewModel, onDismiss: () -> Unit) {
                         val evidence = StaleNodes.lastEvidenceMillis(node)
                         Text(
                             node.name.ifBlank { node.keyHex.take(12) } + " · " +
-                                RelativeTime.agoMillis(System.currentTimeMillis() - evidence),
+                                android.text.format.DateUtils.getRelativeTimeSpanString(evidence).toString(),
                             style = MaterialTheme.typography.bodySmall,
                             fontFamily = if (node.name.isBlank()) FontFamily.Monospace else null,
                         )
                     }
                     if (sweep.count > PREVIEW_ROWS) {
                         Text(
-                            "…and ${sweep.count - PREVIEW_ROWS} more",
+                            stringResource(R.string.stale_more, sweep.count - PREVIEW_ROWS),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -131,9 +132,7 @@ fun StaleNodesDialog(vm: MeshCoreViewModel, onDismiss: () -> Unit) {
 
                 Spacer(Modifier.height(12.dp))
                 Text(
-                    "Conversations are kept. A thread with a removed node shows its key " +
-                        "instead of its name, and the node comes back on its own if it " +
-                        "advertises again.",
+                    stringResource(R.string.stale_threads_kept),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

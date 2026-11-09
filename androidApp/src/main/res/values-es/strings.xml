@@ -311,6 +311,26 @@
     <string name="signals_ambiguous">su hash de ruta es compartido, así que no se le pueden atribuir retransmisiones</string>
     <string name="path_flood">Inundación (sin ruta guardada)</string>
     <string name="path_direct">Directo (0 saltos)</string>
+    <string name="stale_title">Eliminar nodos inactivos</string>
+    <string name="stale_intro">Elimina nodos de la lista de contactos de la radio cuando no se ha oído nada de ellos (ni anuncios ni mensajes) durante más tiempo que este.</string>
+    <string name="stale_kept">Los favoritos nunca se eliminan, diga lo que diga el control. Tampoco un nodo del que nunca se ha oído nada, que es como se ve un contacto recién añadido desde un QR.</string>
+    <string name="stale_count">%1$d de %2$d nodos</string>
+    <string name="stale_more">…y %1$d más</string>
+    <string name="stale_threads_kept">Las conversaciones se conservan. Una conversación con un nodo eliminado muestra su clave en lugar del nombre, y el nodo vuelve solo si se anuncia de nuevo.</string>
+    <string name="stale_kept_never">%1$d nunca oídos</string>
+    <string name="stale_kept_fresh">%1$d oídos después</string>
+    <string name="stale_keeping">Se conservan: %1$s.</string>
+    <string name="login_title">Iniciar sesión en %1$s</string>
+    <string name="login_room_intro">Introduce la contraseña de la sala para leer y escribir. La sala decide qué concede y lo indica al responder.</string>
+    <string name="login_node_intro">El nodo decide qué desbloquea esta contraseña y lo indica al responder. Muchos nodos aceptan una contraseña vacía para acceso de solo lectura.</string>
+    <string name="login_room_hint">Las salas suelen mantener la contraseña por defecto, «%1$s», salvo que la haya cambiado su dueño.</string>
+    <string name="login_password">Contraseña</string>
+    <string name="login_password_saved">Contraseña (guardada)</string>
+    <string name="login_show">Mostrar contraseña</string>
+    <string name="login_hide">Ocultar contraseña</string>
+    <string name="login_keep">Guardar en el almacén de claves</string>
+    <string name="login_busy">Iniciando sesión…</string>
+    <string name="login_sign_in">Iniciar sesión</string>
     <string name="chats_search_hint">Buscar conversaciones</string>
     <string name="chats_advert_zero_hop">Enviar anuncio (0 saltos)</string>
     <string name="chats_advert_flood">Enviar anuncio (inundación)</string>
@@ -419,6 +439,16 @@
     <string name="about_this_licence">Licencia de MeshConnect</string>
     <string name="about_licences">Licencias de código abierto</string>
     <string name="about_endorsement">MeshConnect es un proyecto independiente. No está afiliado ni respaldado por el proyecto MeshCore ni por el autor de MeshCore Hardened.</string>
+    <plurals name="stale_older">
+        <item quantity="one">Más de %1$d día</item>
+        <item quantity="many">Más de %1$d días</item>
+        <item quantity="other">Más de %1$d días</item>
+    </plurals>
+    <plurals name="stale_kept_fav">
+        <item quantity="one">%1$d favorito</item>
+        <item quantity="many">%1$d favoritos</item>
+        <item quantity="other">%1$d favoritos</item>
+    </plurals>
     <plurals name="info_delivered_times">
         <item quantity="one">Entregado %1$d vez</item>
         <item quantity="many">Entregado %1$d veces</item>

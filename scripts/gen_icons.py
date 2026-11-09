@@ -103,6 +103,8 @@ ICONS = [
     ("ic_done_all", "done_all", False),
     ("ic_schedule", "schedule", False),
     ("ic_error", "error", False),
+    ("ic_visibility", "visibility", False),
+    ("ic_visibility_off", "visibility_off", False),
 ]
 
 URL = "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/{}/default/24px.svg"

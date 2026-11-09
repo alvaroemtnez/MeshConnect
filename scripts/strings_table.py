@@ -411,6 +411,30 @@ S = {
 "path_flood": ("Flood (no stored path)", "Inundación (sin ruta guardada)", "Inundació (sense ruta guardada)"),
 "path_direct": ("Direct (0 hops)", "Directo (0 saltos)", "Directe (0 salts)"),
 
+# Stale nodes
+"stale_title": ("Remove stale nodes", "Eliminar nodos inactivos", "Eliminar nodes inactius"),
+"stale_intro": ("Removes nodes from the radio's contact list when nothing has been heard from them (no advert and no message) for longer than this.", "Elimina nodos de la lista de contactos de la radio cuando no se ha oído nada de ellos (ni anuncios ni mensajes) durante más tiempo que este.", "Elimina nodes de la llista de contactes de la ràdio quan no s'ha sentit res d'ells (ni anuncis ni missatges) durant més temps que este."),
+"stale_kept": ("Favourites are never removed, whatever the slider says. Nor is a node that has never been heard from at all, which is what a contact just added from a QR code looks like.", "Los favoritos nunca se eliminan, diga lo que diga el control. Tampoco un nodo del que nunca se ha oído nada, que es como se ve un contacto recién añadido desde un QR.", "Els preferits no s'eliminen mai, diga el que diga el control. Tampoc un node del qual mai s'ha sentit res, que és com es veu un contacte acabat d'afegir des d'un QR."),
+"stale_count": ("%1$d of %2$d nodes", "%1$d de %2$d nodos", "%1$d de %2$d nodes"),
+"stale_more": ("…and %1$d more", "…y %1$d más", "…i %1$d més"),
+"stale_threads_kept": ("Conversations are kept. A thread with a removed node shows its key instead of its name, and the node comes back on its own if it advertises again.", "Las conversaciones se conservan. Una conversación con un nodo eliminado muestra su clave en lugar del nombre, y el nodo vuelve solo si se anuncia de nuevo.", "Les converses es conserven. Una conversa amb un node eliminat mostra la seua clau en lloc del nom, i el node torna tot sol si s'anuncia de nou."),
+"stale_kept_never": ("%1$d never heard from", "%1$d nunca oídos", "%1$d mai oïts"),
+"stale_kept_fresh": ("%1$d heard since", "%1$d oídos después", "%1$d oïts després"),
+"stale_keeping": ("Keeping %1$s.", "Se conservan: %1$s.", "Es conserven: %1$s."),
+
+# Sign-in
+"login_title": ("Sign in to %1$s", "Iniciar sesión en %1$s", "Iniciar sessió en %1$s"),
+"login_room_intro": ("Enter the room's password to read and post. The room decides what it grants and says so when it replies.", "Introduce la contraseña de la sala para leer y escribir. La sala decide qué concede y lo indica al responder.", "Introduïx la contrasenya de la sala per a llegir i escriure. La sala decidix què concedix i ho indica en respondre."),
+"login_node_intro": ("The node decides what this password unlocks and says so when it replies. Many nodes accept a blank password for read-only access.", "El nodo decide qué desbloquea esta contraseña y lo indica al responder. Muchos nodos aceptan una contraseña vacía para acceso de solo lectura.", "El node decidix què desbloqueja esta contrasenya i ho indica en respondre. Molts nodes accepten una contrasenya buida per a accés de només lectura."),
+"login_room_hint": ("Rooms often keep the default room password, \"%1$s\", unless the owner changed it.", "Las salas suelen mantener la contraseña por defecto, «%1$s», salvo que la haya cambiado su dueño.", "Les sales solen mantindre la contrasenya per defecte, «%1$s», llevat que l'haja canviada el propietari."),
+"login_password": ("Password", "Contraseña", "Contrasenya"),
+"login_password_saved": ("Password (saved)", "Contraseña (guardada)", "Contrasenya (guardada)"),
+"login_show": ("Show password", "Mostrar contraseña", "Mostrar contrasenya"),
+"login_hide": ("Hide password", "Ocultar contraseña", "Amagar contrasenya"),
+"login_keep": ("Keep in the keystore", "Guardar en el almacén de claves", "Guardar en el magatzem de claus"),
+"login_busy": ("Signing in…", "Iniciando sesión…", "Iniciant sessió…"),
+"login_sign_in": ("Sign in", "Iniciar sesión", "Iniciar sessió"),
+
 # Chats
 "chats_search_hint": ("Search conversations", "Buscar conversaciones", "Cercar converses"),
 "chats_advert_zero_hop": ("Send advert (0-hop)", "Enviar anuncio (0 saltos)", "Enviar anunci (0 salts)"),
@@ -606,6 +630,8 @@ S = {
 
 # key -> ((one, other) en, (one, other) es, (one, other) ca)
 P = {
+"stale_older": (("Older than %1$d day", "Older than %1$d days"), ("Más de %1$d día", "Más de %1$d días"), ("Més de %1$d dia", "Més de %1$d dies")),
+"stale_kept_fav": (("%1$d favourite", "%1$d favourites"), ("%1$d favorito", "%1$d favoritos"), ("%1$d preferit", "%1$d preferits")),
 "info_delivered_times": (("Delivered %1$d time", "Delivered %1$d times"), ("Entregado %1$d vez", "Entregado %1$d veces"), ("Entregat %1$d vegada", "Entregat %1$d vegades")),
 "bytes": (("%1$d byte", "%1$d bytes"), ("%1$d byte", "%1$d bytes"), ("%1$d byte", "%1$d bytes")),
 "via_repeaters": (("Arrived via %1$d repeater, listed in the order it travelled.", "Arrived via %1$d repeaters, listed in the order it travelled."), ("Llegó por %1$d repetidor, en el orden en que viajó.", "Llegó por %1$d repetidores, en el orden en que viajó."), ("Va arribar per %1$d repetidor, en l'ordre en què va viatjar.", "Va arribar per %1$d repetidors, en l'ordre en què va viatjar.")),

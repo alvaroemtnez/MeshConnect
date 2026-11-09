@@ -1,5 +1,7 @@
 package io.alvaroedo.meshconnect.ui.screens
 
+import io.alvaroedo.meshconnect.R
+import androidx.compose.ui.res.stringResource
 import io.github.thatsfguy.meshcore.presentation.AdminSession
 import io.github.thatsfguy.meshcore.presentation.roomPasswordHint
 import androidx.compose.foundation.layout.Column
@@ -93,26 +95,23 @@ fun RepeaterLoginDialog(
 
     AlertDialog(
         onDismissRequest = { if (!busy) onDismiss() },
-        title = { Text("Sign in to $nodeName") },
+        title = { Text(stringResource(R.string.login_title, nodeName)) },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState())) {
                 Text(
                     if (isRoom) {
                         // The room password is the one its members share;
                         // an admin password also opens the room's tools.
-                        "Enter the room's password to read and post. The room " +
-                            "decides what it grants and says so when it replies."
+                        stringResource(R.string.login_room_intro)
                     } else {
-                        "The node decides what this password unlocks and says so " +
-                            "when it replies. Many nodes accept a blank password " +
-                            "for read-only access."
+                        stringResource(R.string.login_node_intro)
                     },
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 if (isRoom) {
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        roomPasswordHint(),
+                        stringResource(R.string.login_room_hint, io.github.thatsfguy.meshcore.presentation.ROOM_DEFAULT_PASSWORD),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -125,18 +124,21 @@ fun RepeaterLoginDialog(
                         password = it
                         if (error != null) vm.clearLoginError(keyHex)
                     },
-                    label = { Text(if (prefilled) "Password (saved)" else "Password") },
+                    label = { Text(stringResource(if (prefilled) R.string.login_password_saved else R.string.login_password)) },
                     singleLine = true,
                     enabled = !busy,
                     isError = error != null,
                     leadingIcon = { Icon(androidx.compose.ui.res.painterResource(io.alvaroedo.meshconnect.R.drawable.ic_lock), contentDescription = null) },
-                    // A word, not a glyph: material-icons-core has no
-                    // eye icon and pulling in material-icons-extended
-                    // for one control is the wrong trade
-                    // (REBUILD-PLAYBOOK §0.5, budget per dependency).
+                    // Material Symbols drawables (generated, no extra
+                    // dependency) give the eye icon the old note lacked.
                     trailingIcon = {
-                        TextButton(onClick = { reveal = !reveal }) {
-                            Text(if (reveal) "Hide" else "Show")
+                        androidx.compose.material3.IconButton(onClick = { reveal = !reveal }) {
+                            Icon(
+                                androidx.compose.ui.res.painterResource(
+                                    if (reveal) io.alvaroedo.meshconnect.R.drawable.ic_visibility_off else io.alvaroedo.meshconnect.R.drawable.ic_visibility,
+                                ),
+                                stringResource(if (reveal) R.string.login_hide else R.string.login_show),
+                            )
                         }
                     },
                     visualTransformation = if (reveal) {
@@ -161,7 +163,7 @@ fun RepeaterLoginDialog(
                         enabled = !busy,
                     )
                     Text(
-                        "Keep in the keystore",
+                        stringResource(R.string.login_keep),
                         style = MaterialTheme.typography.bodyMedium,
                     )
                 }
@@ -175,14 +177,14 @@ fun RepeaterLoginDialog(
                         modifier = Modifier.size(16.dp),
                     )
                     Spacer(Modifier.width(8.dp))
-                    Text("Signing in…")
+                    Text(stringResource(R.string.login_busy))
                 } else {
-                    Text("Sign in")
+                    Text(stringResource(R.string.login_sign_in))
                 }
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss, enabled = !busy) { Text("Cancel") }
+            TextButton(onClick = onDismiss, enabled = !busy) { Text(stringResource(R.string.cancel)) }
         },
     )
 }

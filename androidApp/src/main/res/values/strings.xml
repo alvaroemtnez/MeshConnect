@@ -313,6 +313,26 @@
     <string name="signals_ambiguous">its route hash is shared, so relays can\'t be credited</string>
     <string name="path_flood">Flood (no stored path)</string>
     <string name="path_direct">Direct (0 hops)</string>
+    <string name="stale_title">Remove stale nodes</string>
+    <string name="stale_intro">Removes nodes from the radio\'s contact list when nothing has been heard from them (no advert and no message) for longer than this.</string>
+    <string name="stale_kept">Favourites are never removed, whatever the slider says. Nor is a node that has never been heard from at all, which is what a contact just added from a QR code looks like.</string>
+    <string name="stale_count">%1$d of %2$d nodes</string>
+    <string name="stale_more">…and %1$d more</string>
+    <string name="stale_threads_kept">Conversations are kept. A thread with a removed node shows its key instead of its name, and the node comes back on its own if it advertises again.</string>
+    <string name="stale_kept_never">%1$d never heard from</string>
+    <string name="stale_kept_fresh">%1$d heard since</string>
+    <string name="stale_keeping">Keeping %1$s.</string>
+    <string name="login_title">Sign in to %1$s</string>
+    <string name="login_room_intro">Enter the room\'s password to read and post. The room decides what it grants and says so when it replies.</string>
+    <string name="login_node_intro">The node decides what this password unlocks and says so when it replies. Many nodes accept a blank password for read-only access.</string>
+    <string name="login_room_hint">Rooms often keep the default room password, \"%1$s\", unless the owner changed it.</string>
+    <string name="login_password">Password</string>
+    <string name="login_password_saved">Password (saved)</string>
+    <string name="login_show">Show password</string>
+    <string name="login_hide">Hide password</string>
+    <string name="login_keep">Keep in the keystore</string>
+    <string name="login_busy">Signing in…</string>
+    <string name="login_sign_in">Sign in</string>
     <string name="chats_search_hint">Search conversations</string>
     <string name="chats_advert_zero_hop">Send advert (0-hop)</string>
     <string name="chats_advert_flood">Send advert (flood)</string>
@@ -421,6 +441,14 @@
     <string name="about_this_licence">MeshConnect\'s licence</string>
     <string name="about_licences">Open-source licences</string>
     <string name="about_endorsement">MeshConnect is an independent project. It is not affiliated with or endorsed by the MeshCore project or the MeshCore Hardened author.</string>
+    <plurals name="stale_older">
+        <item quantity="one">Older than %1$d day</item>
+        <item quantity="other">Older than %1$d days</item>
+    </plurals>
+    <plurals name="stale_kept_fav">
+        <item quantity="one">%1$d favourite</item>
+        <item quantity="other">%1$d favourites</item>
+    </plurals>
     <plurals name="info_delivered_times">
         <item quantity="one">Delivered %1$d time</item>
         <item quantity="other">Delivered %1$d times</item>

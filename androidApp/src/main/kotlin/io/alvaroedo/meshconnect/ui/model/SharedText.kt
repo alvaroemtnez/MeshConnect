@@ -85,6 +85,19 @@ object SharedText {
         }
     }
 
+    /** StaleNodes.keptNote */
+    fun staleKept(context: Context, sweep: io.github.thatsfguy.meshcore.presentation.StaleNodes.Sweep): String? {
+        val parts = buildList {
+            if (sweep.favouritesKept > 0) add(context.resources.getQuantityString(R.plurals.stale_kept_fav, sweep.favouritesKept, sweep.favouritesKept))
+            if (sweep.neverHeardKept > 0) add(context.getString(R.string.stale_kept_never, sweep.neverHeardKept))
+            if (sweep.freshKept > 0) add(context.getString(R.string.stale_kept_fresh, sweep.freshKept))
+        }
+        if (parts.isEmpty()) return null
+        val and = context.getString(R.string.nodes_and)
+        val joined = if (parts.size == 1) parts[0] else parts.dropLast(1).joinToString(", ") + and + parts.last()
+        return context.getString(R.string.stale_keeping, joined)
+    }
+
     fun kind(context: Context, type: Int): String = context.getString(
         when (type) {
             Codes.ADV_TYPE_REPEATER -> R.string.kind_repeater

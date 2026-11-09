@@ -311,6 +311,26 @@
     <string name="signals_ambiguous">el seu hash de ruta és compartit, així que no se li poden atribuir retransmissions</string>
     <string name="path_flood">Inundació (sense ruta guardada)</string>
     <string name="path_direct">Directe (0 salts)</string>
+    <string name="stale_title">Eliminar nodes inactius</string>
+    <string name="stale_intro">Elimina nodes de la llista de contactes de la ràdio quan no s\'ha sentit res d\'ells (ni anuncis ni missatges) durant més temps que este.</string>
+    <string name="stale_kept">Els preferits no s\'eliminen mai, diga el que diga el control. Tampoc un node del qual mai s\'ha sentit res, que és com es veu un contacte acabat d\'afegir des d\'un QR.</string>
+    <string name="stale_count">%1$d de %2$d nodes</string>
+    <string name="stale_more">…i %1$d més</string>
+    <string name="stale_threads_kept">Les converses es conserven. Una conversa amb un node eliminat mostra la seua clau en lloc del nom, i el node torna tot sol si s\'anuncia de nou.</string>
+    <string name="stale_kept_never">%1$d mai oïts</string>
+    <string name="stale_kept_fresh">%1$d oïts després</string>
+    <string name="stale_keeping">Es conserven: %1$s.</string>
+    <string name="login_title">Iniciar sessió en %1$s</string>
+    <string name="login_room_intro">Introduïx la contrasenya de la sala per a llegir i escriure. La sala decidix què concedix i ho indica en respondre.</string>
+    <string name="login_node_intro">El node decidix què desbloqueja esta contrasenya i ho indica en respondre. Molts nodes accepten una contrasenya buida per a accés de només lectura.</string>
+    <string name="login_room_hint">Les sales solen mantindre la contrasenya per defecte, «%1$s», llevat que l\'haja canviada el propietari.</string>
+    <string name="login_password">Contrasenya</string>
+    <string name="login_password_saved">Contrasenya (guardada)</string>
+    <string name="login_show">Mostrar contrasenya</string>
+    <string name="login_hide">Amagar contrasenya</string>
+    <string name="login_keep">Guardar en el magatzem de claus</string>
+    <string name="login_busy">Iniciant sessió…</string>
+    <string name="login_sign_in">Iniciar sessió</string>
     <string name="chats_search_hint">Cercar converses</string>
     <string name="chats_advert_zero_hop">Enviar anunci (0 salts)</string>
     <string name="chats_advert_flood">Enviar anunci (inundació)</string>
@@ -419,6 +439,16 @@
     <string name="about_this_licence">Llicència de MeshConnect</string>
     <string name="about_licences">Llicències de codi obert</string>
     <string name="about_endorsement">MeshConnect és un projecte independent. No està afiliat ni avalat pel projecte MeshCore ni per l\'autor de MeshCore Hardened.</string>
+    <plurals name="stale_older">
+        <item quantity="one">Més de %1$d dia</item>
+        <item quantity="many">Més de %1$d dies</item>
+        <item quantity="other">Més de %1$d dies</item>
+    </plurals>
+    <plurals name="stale_kept_fav">
+        <item quantity="one">%1$d preferit</item>
+        <item quantity="many">%1$d preferits</item>
+        <item quantity="other">%1$d preferits</item>
+    </plurals>
     <plurals name="info_delivered_times">
         <item quantity="one">Entregat %1$d vegada</item>
         <item quantity="many">Entregat %1$d vegades</item>
