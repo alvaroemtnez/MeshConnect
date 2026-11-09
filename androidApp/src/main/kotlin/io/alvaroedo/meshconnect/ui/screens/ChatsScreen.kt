@@ -111,12 +111,12 @@ fun ChatsScreen(vm: MeshCoreViewModel, nav: NavController) {
             }
         },
     ) { padding ->
-        if (conversations.isEmpty()) {
+        if (conversations.isEmpty() && engineState != EngineState.Ready) {
+            NoRadioState(vm, Modifier.fillMaxSize().padding(padding))
+        } else if (conversations.isEmpty()) {
             EmptyHint(
                 modifier = Modifier.padding(padding),
-                text = stringResource(
-                    if (engineState == EngineState.Ready) R.string.chats_empty else R.string.chats_empty_offline,
-                ),
+                text = stringResource(R.string.chats_empty),
             )
         } else {
             val filtered = conversations.filter { row ->

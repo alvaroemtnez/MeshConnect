@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -144,12 +146,22 @@ fun SettingRow(
     enabled: Boolean = true,
     onChange: (Boolean) -> Unit,
 ) {
+    // The whole row toggles, not just the switch: tapping the label did nothing.
     Row(
-        Modifier.fillMaxWidth().padding(vertical = 2.dp),
+        Modifier
+            .fillMaxWidth()
+            .clip(FieldShape)
+            .toggleable(
+                value = checked,
+                enabled = enabled,
+                role = androidx.compose.ui.semantics.Role.Switch,
+                onValueChange = onChange,
+            )
+            .padding(vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(label, Modifier.weight(1f))
-        Switch(checked = checked, onCheckedChange = onChange, enabled = enabled)
+        Text(label, Modifier.weight(1f).padding(end = 12.dp))
+        Switch(checked = checked, onCheckedChange = null, enabled = enabled)
     }
 }
 

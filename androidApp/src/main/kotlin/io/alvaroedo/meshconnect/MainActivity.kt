@@ -106,7 +106,9 @@ class MainActivity : ComponentActivity() {
         // Transparent system bars; the app's top bar and bottom navigation
         // draw under them (see MeshCoreTheme).
         enableEdgeToEdge()
-        if (!BlePermissions.allGranted(this)) {
+        // First run asks when the user goes looking for a radio (RadioPicker), with the
+        // reason on screen; asking here, before anything is shown, explains nothing.
+        if (io.alvaroedo.meshconnect.storage.Preferences(this).setupComplete && !BlePermissions.allGranted(this)) {
             permissionLauncher.launch(BlePermissions.required())
         }
         // MapLibre needs its singleton before any MapView exists.

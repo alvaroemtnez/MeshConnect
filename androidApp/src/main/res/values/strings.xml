@@ -3,6 +3,27 @@
 <resources>
     <string name="app_name" translatable="false">MeshConnect</string>
     <string name="app_name_full" translatable="false">MeshConnect</string>
+    <string name="picker_allow_ble">Allow Bluetooth</string>
+    <string name="picker_allow_ble_hint">Android asks before an app can look for nearby radios.</string>
+    <string name="picker_connected">Connected</string>
+    <string name="picker_connecting_to">Connecting to %1$s…</string>
+    <string name="picker_title">Pick a place</string>
+    <string name="picker_more">Add or switch radio</string>
+    <string name="onb_welcome_title">Welcome to MeshConnect</string>
+    <string name="onb_welcome_body">Message people over MeshCore LoRa radios, with no internet, no phone network and no accounts.</string>
+    <string name="onb_start">Connect a radio</string>
+    <string name="onb_later">Not now</string>
+    <string name="onb_connect_title">Find your radio</string>
+    <string name="onb_connect_body">Switch it on and keep it close. Tap it in the list to connect.</string>
+    <string name="onb_setup_title">Almost there</string>
+    <string name="onb_setup_body">Pick the name others will see, and check the radio is on your area\'s settings.</string>
+    <string name="onb_preset_current">Radio settings: %1$s</string>
+    <string name="onb_preset_none">These settings match no known preset. Pick your area\'s, or keep them if your mesh gave them to you.</string>
+    <string name="onb_change_preset">Change</string>
+    <string name="onb_legal_short">Frequency and power are regulated where you are.</string>
+    <string name="onb_finish">Start messaging</string>
+    <string name="empty_no_radio_title">No radio connected</string>
+    <string name="empty_no_radio_body">MeshConnect reaches the mesh through a MeshCore radio.</string>
     <string name="back">Back</string>
     <string name="cancel">Cancel</string>
     <string name="close">Close</string>
@@ -50,7 +71,6 @@
     <string name="map_zoom_in">Zoom in</string>
     <string name="map_attribution" translatable="false">© OpenMapTiles © OpenStreetMap</string>
     <string name="map_zoom_out">Zoom out</string>
-    <string name="picker_title">Pick a place</string>
     <string name="picker_use">Use this</string>
     <string name="picker_advert_warning">This position is broadcast to the whole mesh in your adverts: anyone in radio range, and anyone they relay to, can see it.</string>
     <string name="picker_tiles_off">Map tiles are off, so the map stays blank. The coordinates still follow the pin.</string>

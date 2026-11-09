@@ -12,6 +12,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -496,18 +497,22 @@ private fun LinkSheet(vm: MeshCoreViewModel, onDismiss: () -> Unit) {
     val context = androidx.compose.ui.platform.LocalContext.current
 
     ModalBottomSheet(onDismissRequest = onDismiss) {
-        Column(Modifier.navigationBarsPadding().padding(bottom = 16.dp)) {
+        Column(
+            Modifier
+                .navigationBarsPadding()
+                .verticalScroll(androidx.compose.foundation.rememberScrollState())
+                .padding(bottom = 16.dp),
+        ) {
             Text(
                 self?.name ?: stringResource(R.string.link_title),
                 style = MaterialTheme.typography.titleLarge,
                 modifier = Modifier.padding(horizontal = 24.dp),
             )
             if (engineState != EngineState.Ready) {
-                Text(
-                    stringResource(R.string.link_not_connected),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(24.dp),
-                )
+                // Not connected: the card is where you connect. Saved radios are one tap.
+                Column(Modifier.padding(horizontal = 24.dp, vertical = 8.dp)) {
+                    RadioPicker(vm, onPicked = onDismiss)
+                }
                 return@Column
             }
             val plaintext by vm.plaintextLink.collectAsStateWithLifecycle()
@@ -605,6 +610,26 @@ private fun LinkSheet(vm: MeshCoreViewModel, onDismiss: () -> Unit) {
                     leadingContent = { SignalBars(LinkMeter.bars(r.snr, self?.sf), live = true) },
                     colors = rows,
                 )
+            }
+            // Switch to another saved radio, or a new one, without going through Settings.
+            HorizontalDivider(Modifier.padding(vertical = 4.dp))
+            var switching by remember { mutableStateOf(false) }
+            Column(Modifier.padding(horizontal = 24.dp, vertical = 8.dp)) {
+                if (!switching) {
+                    androidx.compose.foundation.layout.Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        androidx.compose.material3.FilledTonalButton(onClick = { switching = true }) {
+                            Icon(painterResource(R.drawable.ic_swap_horiz), null, Modifier.size(18.dp))
+                            androidx.compose.foundation.layout.Spacer(Modifier.size(8.dp))
+                            Text(stringResource(R.string.picker_more))
+                        }
+                        androidx.compose.material3.TextButton(onClick = {
+                            vm.disconnect()
+                            onDismiss()
+                        }) { Text(stringResource(R.string.set_disconnect)) }
+                    }
+                } else {
+                    RadioPicker(vm, onPicked = onDismiss)
+                }
             }
         }
     }
