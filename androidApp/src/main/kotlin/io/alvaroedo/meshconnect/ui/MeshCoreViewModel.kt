@@ -1,5 +1,6 @@
 package io.alvaroedo.meshconnect.ui
 
+import androidx.compose.ui.res.stringResource
 import io.alvaroedo.meshconnect.R
 import io.github.thatsfguy.meshcore.presentation.TelemetryFetch
 import io.github.thatsfguy.meshcore.presentation.FloodRegionsAsk
@@ -329,9 +330,7 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
                 }
                 if (peer == null) {
                     onResult(
-                        "Nothing in update mode was found nearby. The node has to be within " +
-                            "Bluetooth range, and if two are in update mode at once neither " +
-                            "is picked — power one down and try again.",
+                        str(R.string.vm_ota_none_found),
                     )
                     return@withRadioHandedOver
                 }
@@ -379,20 +378,12 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
                 if (result.isSuccess) setUpdateMode(keyHex, false)
                 onResult(
                     if (result.isSuccess) {
-                        "Told ${peer.name ?: peer.address} (${peer.address}) to restart. If " +
-                            "its firmware is intact it will rejoin the mesh shortly. If it " +
-                            "was already erased, " +
-                            if (peer.bootloaderKind.restartKeepsItReachable) {
-                                "its OTAFIX bootloader brings it back in update mode, ready " +
-                                    "to be flashed."
-                            } else {
-                                "it comes back as a USB drive rather than over Bluetooth, " +
-                                    "and needs flashing over a cable."
-                            }
+                        str(
+                            if (peer.bootloaderKind.restartKeepsItReachable) R.string.vm_ota_restart_otafix else R.string.vm_ota_restart_usb,
+                            peer.name ?: peer.address, peer.address,
+                        )
                     } else {
-                        "Reached ${peer.name ?: peer.address} (${peer.address}) but it " +
-                            "refused the restart: " +
-                            (result.exceptionOrNull()?.message ?: "no reason given") + "."
+                        str(R.string.vm_ota_restart_refused, peer.name ?: peer.address, peer.address, result.exceptionOrNull()?.message ?: str(R.string.vm_no_reason))
                     },
                 )
             }
@@ -2258,7 +2249,7 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
     fun setFloodScope(region: String?) {
         if (!region.isNullOrBlank() && !Regions.isValid(region)) {
             transientMessage.value =
-                "Region names are lowercase letters, digits and hyphens (max ${Regions.MAX_NAME_LENGTH})"
+                str(R.string.vm_region_rule, Regions.MAX_NAME_LENGTH)
             return
         }
         deviceAction(
@@ -2711,21 +2702,20 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
         reboot: Boolean,
         progress: (String) -> Unit = {},
     ): RekeyFlow.Report {
-        progress("Sending the new key…")
+        progress(str(R.string.vm_rekey_sending))
         val command = runCatching {
             io.github.thatsfguy.meshcore.protocol.IdentityKey.setCommand(crypto, newKeyHex)
-        }.getOrElse { return RekeyFlow.Report(refusal = "Refused: ${it.message}") }
+        }.getOrElse { return RekeyFlow.Report(refusal = str(R.string.vm_rekey_refused_local, it.message ?: "")) }
 
         val reply = cliQuery(repeaterKeyHex, command)
         val parsed = io.github.thatsfguy.meshcore.protocol.IdentityKey.parseRekeyReply(reply)
         val newKey = when (parsed) {
             is IdentityKey.RekeyReply.Accepted -> parsed.newPublicKeyHex
             is IdentityKey.RekeyReply.Refused ->
-                return RekeyFlow.Report(refusal = "The node refused the key: ${parsed.text}")
+                return RekeyFlow.Report(refusal = str(R.string.vm_rekey_refused, parsed.text))
             is IdentityKey.RekeyReply.Unrecognised ->
                 return RekeyFlow.Report(
-                    refusal = "The node answered something this app does not recognise, so " +
-                        "nothing has been assumed: ${parsed.text}",
+                    refusal = str(R.string.vm_rekey_unrecognised, parsed.text),
                 )
             IdentityKey.RekeyReply.NoAnswer -> return RekeyFlow.Report()
         }
@@ -2740,13 +2730,13 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
             return RekeyFlow.Report(newPublicKeyHex = newKey, mismatchedWith = expected)
         }
 
-        progress("Adding the new identity to this radio…")
+        progress(str(R.string.vm_rekey_adopting))
         val adopted = adoptNewIdentity(repeaterKeyHex, newKey)
         if (!reboot) {
             return RekeyFlow.Report(newPublicKeyHex = newKey, adopted = adopted)
         }
 
-        progress("Restarting the node…")
+        progress(str(R.string.vm_rekey_restarting))
         val sent = rebootRepeater(repeaterKeyHex)
         if (!sent) {
             return RekeyFlow.Report(
@@ -2859,9 +2849,9 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
         // Said out loud because it is half a minute of nothing on a
         // screen that has just done something irreversible, and a
         // spinner that never changes is what makes people press again.
-        progress("Waiting for the node to come back…")
+        progress(str(R.string.vm_rekey_waiting))
         kotlinx.coroutines.delay(REBOOT_SETTLE_MS)
-        progress("Signing in to the new identity…")
+        progress(str(R.string.vm_rekey_signing_in))
         val outcome = runCatching {
             svc.engine.sendLoginWithRetry(
                 key,
@@ -3105,21 +3095,21 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
         regionRevision.value++
 
         return buildString {
-            append("Restored: ${result.settingsRestored} setting(s)")
-            if (result.regionsRestored > 0) append(", ${result.regionsRestored} region(s)")
-            if (result.secretsRestored > 0) append(", ${result.secretsRestored} secret(s)")
+            append(getApplication<Application>().resources.getQuantityString(R.plurals.vm_restored_settings, result.settingsRestored, result.settingsRestored))
+            if (result.regionsRestored > 0) append(", " + getApplication<Application>().resources.getQuantityString(R.plurals.vm_restored_regions, result.regionsRestored, result.regionsRestored))
+            if (result.secretsRestored > 0) append(", " + getApplication<Application>().resources.getQuantityString(R.plurals.vm_restored_secrets, result.secretsRestored, result.secretsRestored))
             if (options.channels) {
                 // Channels without their key can't be written, and saying
                 // "restored 4 channels" when 4 arrived empty would be a lie.
-                append(", $channelsWritten of ${parsed.plain.channels.size} channel(s)")
+                append(", " + str(R.string.vm_restored_channels, channelsWritten, parsed.plain.channels.size))
             }
             if (options.contacts) {
-                append(", $contactsWritten of ${parsed.plain.contacts.size} contact(s)")
+                append(", " + str(R.string.vm_restored_contacts, contactsWritten, parsed.plain.contacts.size))
                 if (svc == null) {
-                    append(" (connect a radio to restore contacts)")
+                    append(" " + str(R.string.vm_restored_need_radio))
                 }
             }
-            for (skip in result.skipped) append(". Skipped: $skip")
+            for (skip in result.skipped) append(". " + str(R.string.vm_restored_skipped, skip))
         }
     }
 
@@ -3145,7 +3135,7 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
     fun addRegion(name: String) {
         val added = prefs.addRegion(name)
         transientMessage.value = if (added == null) {
-            "Region names are lowercase letters, digits and hyphens (max ${Regions.MAX_NAME_LENGTH})"
+            str(R.string.vm_region_rule, Regions.MAX_NAME_LENGTH)
         } else {
             str(R.string.vm_region_added, added)
         }
@@ -3213,7 +3203,7 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun setPathHashMode(mode: Int) =
-        deviceAction("Path hash mode set to $mode (${mode + 1} B/hop)") { it.setPathHashMode(mode) }
+        deviceAction(str(R.string.vm_hash_mode_set, mode, mode + 1)) { it.setPathHashMode(mode) }
 
     fun setCustomVar(key: String, value: String) =
         deviceAction("$key updated") { it.setCustomVar("$key:$value") }

@@ -1093,6 +1093,25 @@
     <string name="fwc_no_service">The radio service isn\'t running.</string>
     <string name="fwc_not_ble">This radio isn\'t connected over Bluetooth.</string>
     <string name="fwc_update_failed">The update failed.</string>
+    <string name="vm_ota_none_found">Nothing in update mode was found nearby. The node has to be within Bluetooth range, and if two are in update mode at once neither is picked, so power one down and try again.</string>
+    <string name="vm_ota_restart_otafix">Told %1$s (%2$s) to restart. If its firmware is intact it will rejoin the mesh shortly. If it was already erased, its OTAFIX bootloader brings it back in update mode, ready to be flashed.</string>
+    <string name="vm_ota_restart_usb">Told %1$s (%2$s) to restart. If its firmware is intact it will rejoin the mesh shortly. If it was already erased, it comes back as a USB drive rather than over Bluetooth, and needs flashing over a cable.</string>
+    <string name="vm_ota_restart_refused">Reached %1$s (%2$s) but it refused the restart: %3$s.</string>
+    <string name="vm_no_reason">no reason given</string>
+    <string name="vm_region_rule">Region names are lowercase letters, digits and hyphens (max %1$d)</string>
+    <string name="vm_rekey_sending">Sending the new key…</string>
+    <string name="vm_rekey_refused_local">Refused: %1$s</string>
+    <string name="vm_rekey_refused">The node refused the key: %1$s</string>
+    <string name="vm_rekey_unrecognised">The node answered something this app doesn\'t recognise, so nothing has been assumed: %1$s</string>
+    <string name="vm_rekey_adopting">Adding the new identity to this radio…</string>
+    <string name="vm_rekey_restarting">Restarting the node…</string>
+    <string name="vm_rekey_waiting">Waiting for the node to come back…</string>
+    <string name="vm_rekey_signing_in">Signing in to the new identity…</string>
+    <string name="vm_restored_channels">%1$d of %2$d channels</string>
+    <string name="vm_restored_contacts">%1$d of %2$d contacts</string>
+    <string name="vm_restored_need_radio">(connect a radio to restore contacts)</string>
+    <string name="vm_restored_skipped">Skipped: %1$s</string>
+    <string name="vm_hash_mode_set">Path hash mode set to %1$d (%2$d B/hop)</string>
     <string name="chats_search_hint">Search conversations</string>
     <string name="chats_advert_zero_hop">Send advert (0-hop)</string>
     <string name="chats_advert_flood">Send advert (flood)</string>
@@ -1201,6 +1220,18 @@
     <string name="about_this_licence">MeshConnect\'s licence</string>
     <string name="about_licences">Open-source licences</string>
     <string name="about_endorsement">MeshConnect is an independent project. It is not affiliated with or endorsed by the MeshCore project or the MeshCore Hardened author.</string>
+    <plurals name="vm_restored_settings">
+        <item quantity="one">Restored: %1$d setting</item>
+        <item quantity="other">Restored: %1$d settings</item>
+    </plurals>
+    <plurals name="vm_restored_regions">
+        <item quantity="one">%1$d region</item>
+        <item quantity="other">%1$d regions</item>
+    </plurals>
+    <plurals name="vm_restored_secrets">
+        <item quantity="one">%1$d secret</item>
+        <item quantity="other">%1$d secrets</item>
+    </plurals>
     <plurals name="drift_days">
         <item quantity="one">%1$d day</item>
         <item quantity="other">%1$d days</item>

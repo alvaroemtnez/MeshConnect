@@ -1227,6 +1227,26 @@ S = {
 "fwc_not_ble": ("This radio isn't connected over Bluetooth.", 'Esta radio no está conectada por Bluetooth.', 'Esta ràdio no està connectada per Bluetooth.'),
 "fwc_update_failed": ('The update failed.', 'La actualización falló.', "L'actualització ha fallat."),
 
+"vm_ota_none_found": ('Nothing in update mode was found nearby. The node has to be within Bluetooth range, and if two are in update mode at once neither is picked, so power one down and try again.', 'No se encontró nada en modo de actualización cerca. El nodo tiene que estar en alcance Bluetooth, y si hay dos en modo de actualización a la vez no se elige ninguno; apaga uno y vuelve a intentarlo.', "No s'ha trobat res en mode d'actualització prop. El node ha d'estar a l'abast Bluetooth, i si n'hi ha dos en mode d'actualització alhora no se'n tria cap; apaga'n un i torna-ho a provar."),
+"vm_ota_restart_otafix": ('Told %1$s (%2$s) to restart. If its firmware is intact it will rejoin the mesh shortly. If it was already erased, its OTAFIX bootloader brings it back in update mode, ready to be flashed.', 'Se pidió a %1$s (%2$s) que se reinicie. Si su firmware está intacto volverá a la malla en breve. Si ya estaba borrado, su gestor OTAFIX lo devuelve al modo de actualización, listo para flashear.', "S'ha demanat a %1$s (%2$s) que es reinicie. Si el seu firmware està intacte tornarà a la malla prompte. Si ja estava esborrat, el seu gestor OTAFIX el torna al mode d'actualització, a punt per a flashejar."),
+"vm_ota_restart_usb": ('Told %1$s (%2$s) to restart. If its firmware is intact it will rejoin the mesh shortly. If it was already erased, it comes back as a USB drive rather than over Bluetooth, and needs flashing over a cable.', 'Se pidió a %1$s (%2$s) que se reinicie. Si su firmware está intacto volverá a la malla en breve. Si ya estaba borrado, vuelve como unidad USB en lugar de por Bluetooth, y hay que flashearlo por cable.', "S'ha demanat a %1$s (%2$s) que es reinicie. Si el seu firmware està intacte tornarà a la malla prompte. Si ja estava esborrat, torna com a unitat USB en lloc de per Bluetooth, i cal flashejar-lo per cable."),
+"vm_ota_restart_refused": ('Reached %1$s (%2$s) but it refused the restart: %3$s.', 'Se alcanzó %1$s (%2$s) pero rechazó el reinicio: %3$s.', "S'ha arribat a %1$s (%2$s) però ha rebutjat el reinici: %3$s."),
+"vm_no_reason": ('no reason given', 'sin motivo', 'sense motiu'),
+"vm_region_rule": ('Region names are lowercase letters, digits and hyphens (max %1$d)', 'Los nombres de región son minúsculas, dígitos y guiones (máx. %1$d)', 'Els noms de regió són minúscules, dígits i guions (màx. %1$d)'),
+"vm_rekey_sending": ('Sending the new key…', 'Enviando la nueva clave…', 'Enviant la nova clau…'),
+"vm_rekey_refused_local": ('Refused: %1$s', 'Rechazado: %1$s', 'Rebutjat: %1$s'),
+"vm_rekey_refused": ('The node refused the key: %1$s', 'El nodo rechazó la clave: %1$s', 'El node ha rebutjat la clau: %1$s'),
+"vm_rekey_unrecognised": ("The node answered something this app doesn't recognise, so nothing has been assumed: %1$s", 'El nodo respondió algo que esta app no reconoce, así que no se ha dado nada por hecho: %1$s', "El node ha respost una cosa que esta aplicació no reconeix, així que no s'ha donat res per fet: %1$s"),
+"vm_rekey_adopting": ('Adding the new identity to this radio…', 'Añadiendo la nueva identidad a esta radio…', 'Afegint la nova identitat a esta ràdio…'),
+"vm_rekey_restarting": ('Restarting the node…', 'Reiniciando el nodo…', 'Reiniciant el node…'),
+"vm_rekey_waiting": ('Waiting for the node to come back…', 'Esperando a que vuelva el nodo…', 'Esperant que torne el node…'),
+"vm_rekey_signing_in": ('Signing in to the new identity…', 'Iniciando sesión en la nueva identidad…', 'Iniciant sessió en la nova identitat…'),
+"vm_restored_channels": ('%1$d of %2$d channels', '%1$d de %2$d canales', '%1$d de %2$d canals'),
+"vm_restored_contacts": ('%1$d of %2$d contacts', '%1$d de %2$d contactos', '%1$d de %2$d contactes'),
+"vm_restored_need_radio": ('(connect a radio to restore contacts)', '(conecta una radio para restaurar los contactos)', '(connecta una ràdio per a restaurar els contactes)'),
+"vm_restored_skipped": ('Skipped: %1$s', 'Omitido: %1$s', 'Omés: %1$s'),
+"vm_hash_mode_set": ('Path hash mode set to %1$d (%2$d B/hop)', 'Modo de hash de ruta: %1$d (%2$d B/salto)', 'Mode de hash de ruta: %1$d (%2$d B/salt)'),
+
 # Chats
 "chats_search_hint": ("Search conversations", "Buscar conversaciones", "Cercar converses"),
 "chats_advert_zero_hop": ("Send advert (0-hop)", "Enviar anuncio (0 saltos)", "Enviar anunci (0 salts)"),
@@ -1422,6 +1442,10 @@ S = {
 
 # key -> ((one, other) en, (one, other) es, (one, other) ca)
 P = {
+"vm_restored_settings": (("Restored: %1$d setting", "Restored: %1$d settings"), ("Restaurado: %1$d ajuste", "Restaurados: %1$d ajustes"), ("Restaurat: %1$d ajust", "Restaurats: %1$d ajustos")),
+"vm_restored_regions": (("%1$d region", "%1$d regions"), ("%1$d región", "%1$d regiones"), ("%1$d regió", "%1$d regions")),
+"vm_restored_secrets": (("%1$d secret", "%1$d secrets"), ("%1$d secreto", "%1$d secretos"), ("%1$d secret", "%1$d secrets")),
+
 "drift_days": (("%1$d day", "%1$d days"), ("%1$d día", "%1$d días"), ("%1$d dia", "%1$d dies")),
 
 

@@ -1091,6 +1091,25 @@
     <string name="fwc_no_service">El servicio de radio no está en marcha.</string>
     <string name="fwc_not_ble">Esta radio no está conectada por Bluetooth.</string>
     <string name="fwc_update_failed">La actualización falló.</string>
+    <string name="vm_ota_none_found">No se encontró nada en modo de actualización cerca. El nodo tiene que estar en alcance Bluetooth, y si hay dos en modo de actualización a la vez no se elige ninguno; apaga uno y vuelve a intentarlo.</string>
+    <string name="vm_ota_restart_otafix">Se pidió a %1$s (%2$s) que se reinicie. Si su firmware está intacto volverá a la malla en breve. Si ya estaba borrado, su gestor OTAFIX lo devuelve al modo de actualización, listo para flashear.</string>
+    <string name="vm_ota_restart_usb">Se pidió a %1$s (%2$s) que se reinicie. Si su firmware está intacto volverá a la malla en breve. Si ya estaba borrado, vuelve como unidad USB en lugar de por Bluetooth, y hay que flashearlo por cable.</string>
+    <string name="vm_ota_restart_refused">Se alcanzó %1$s (%2$s) pero rechazó el reinicio: %3$s.</string>
+    <string name="vm_no_reason">sin motivo</string>
+    <string name="vm_region_rule">Los nombres de región son minúsculas, dígitos y guiones (máx. %1$d)</string>
+    <string name="vm_rekey_sending">Enviando la nueva clave…</string>
+    <string name="vm_rekey_refused_local">Rechazado: %1$s</string>
+    <string name="vm_rekey_refused">El nodo rechazó la clave: %1$s</string>
+    <string name="vm_rekey_unrecognised">El nodo respondió algo que esta app no reconoce, así que no se ha dado nada por hecho: %1$s</string>
+    <string name="vm_rekey_adopting">Añadiendo la nueva identidad a esta radio…</string>
+    <string name="vm_rekey_restarting">Reiniciando el nodo…</string>
+    <string name="vm_rekey_waiting">Esperando a que vuelva el nodo…</string>
+    <string name="vm_rekey_signing_in">Iniciando sesión en la nueva identidad…</string>
+    <string name="vm_restored_channels">%1$d de %2$d canales</string>
+    <string name="vm_restored_contacts">%1$d de %2$d contactos</string>
+    <string name="vm_restored_need_radio">(conecta una radio para restaurar los contactos)</string>
+    <string name="vm_restored_skipped">Omitido: %1$s</string>
+    <string name="vm_hash_mode_set">Modo de hash de ruta: %1$d (%2$d B/salto)</string>
     <string name="chats_search_hint">Buscar conversaciones</string>
     <string name="chats_advert_zero_hop">Enviar anuncio (0 saltos)</string>
     <string name="chats_advert_flood">Enviar anuncio (inundación)</string>
@@ -1199,6 +1218,21 @@
     <string name="about_this_licence">Licencia de MeshConnect</string>
     <string name="about_licences">Licencias de código abierto</string>
     <string name="about_endorsement">MeshConnect es un proyecto independiente. No está afiliado ni respaldado por el proyecto MeshCore ni por el autor de MeshCore Hardened.</string>
+    <plurals name="vm_restored_settings">
+        <item quantity="one">Restaurado: %1$d ajuste</item>
+        <item quantity="many">Restaurados: %1$d ajustes</item>
+        <item quantity="other">Restaurados: %1$d ajustes</item>
+    </plurals>
+    <plurals name="vm_restored_regions">
+        <item quantity="one">%1$d región</item>
+        <item quantity="many">%1$d regiones</item>
+        <item quantity="other">%1$d regiones</item>
+    </plurals>
+    <plurals name="vm_restored_secrets">
+        <item quantity="one">%1$d secreto</item>
+        <item quantity="many">%1$d secretos</item>
+        <item quantity="other">%1$d secretos</item>
+    </plurals>
     <plurals name="drift_days">
         <item quantity="one">%1$d día</item>
         <item quantity="many">%1$d días</item>

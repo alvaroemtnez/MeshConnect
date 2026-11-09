@@ -1091,6 +1091,25 @@
     <string name="fwc_no_service">El servei de ràdio no està en marxa.</string>
     <string name="fwc_not_ble">Esta ràdio no està connectada per Bluetooth.</string>
     <string name="fwc_update_failed">L\'actualització ha fallat.</string>
+    <string name="vm_ota_none_found">No s\'ha trobat res en mode d\'actualització prop. El node ha d\'estar a l\'abast Bluetooth, i si n\'hi ha dos en mode d\'actualització alhora no se\'n tria cap; apaga\'n un i torna-ho a provar.</string>
+    <string name="vm_ota_restart_otafix">S\'ha demanat a %1$s (%2$s) que es reinicie. Si el seu firmware està intacte tornarà a la malla prompte. Si ja estava esborrat, el seu gestor OTAFIX el torna al mode d\'actualització, a punt per a flashejar.</string>
+    <string name="vm_ota_restart_usb">S\'ha demanat a %1$s (%2$s) que es reinicie. Si el seu firmware està intacte tornarà a la malla prompte. Si ja estava esborrat, torna com a unitat USB en lloc de per Bluetooth, i cal flashejar-lo per cable.</string>
+    <string name="vm_ota_restart_refused">S\'ha arribat a %1$s (%2$s) però ha rebutjat el reinici: %3$s.</string>
+    <string name="vm_no_reason">sense motiu</string>
+    <string name="vm_region_rule">Els noms de regió són minúscules, dígits i guions (màx. %1$d)</string>
+    <string name="vm_rekey_sending">Enviant la nova clau…</string>
+    <string name="vm_rekey_refused_local">Rebutjat: %1$s</string>
+    <string name="vm_rekey_refused">El node ha rebutjat la clau: %1$s</string>
+    <string name="vm_rekey_unrecognised">El node ha respost una cosa que esta aplicació no reconeix, així que no s\'ha donat res per fet: %1$s</string>
+    <string name="vm_rekey_adopting">Afegint la nova identitat a esta ràdio…</string>
+    <string name="vm_rekey_restarting">Reiniciant el node…</string>
+    <string name="vm_rekey_waiting">Esperant que torne el node…</string>
+    <string name="vm_rekey_signing_in">Iniciant sessió en la nova identitat…</string>
+    <string name="vm_restored_channels">%1$d de %2$d canals</string>
+    <string name="vm_restored_contacts">%1$d de %2$d contactes</string>
+    <string name="vm_restored_need_radio">(connecta una ràdio per a restaurar els contactes)</string>
+    <string name="vm_restored_skipped">Omés: %1$s</string>
+    <string name="vm_hash_mode_set">Mode de hash de ruta: %1$d (%2$d B/salt)</string>
     <string name="chats_search_hint">Cercar converses</string>
     <string name="chats_advert_zero_hop">Enviar anunci (0 salts)</string>
     <string name="chats_advert_flood">Enviar anunci (inundació)</string>
@@ -1199,6 +1218,21 @@
     <string name="about_this_licence">Llicència de MeshConnect</string>
     <string name="about_licences">Llicències de codi obert</string>
     <string name="about_endorsement">MeshConnect és un projecte independent. No està afiliat ni avalat pel projecte MeshCore ni per l\'autor de MeshCore Hardened.</string>
+    <plurals name="vm_restored_settings">
+        <item quantity="one">Restaurat: %1$d ajust</item>
+        <item quantity="many">Restaurats: %1$d ajustos</item>
+        <item quantity="other">Restaurats: %1$d ajustos</item>
+    </plurals>
+    <plurals name="vm_restored_regions">
+        <item quantity="one">%1$d regió</item>
+        <item quantity="many">%1$d regions</item>
+        <item quantity="other">%1$d regions</item>
+    </plurals>
+    <plurals name="vm_restored_secrets">
+        <item quantity="one">%1$d secret</item>
+        <item quantity="many">%1$d secrets</item>
+        <item quantity="other">%1$d secrets</item>
+    </plurals>
     <plurals name="drift_days">
         <item quantity="one">%1$d dia</item>
         <item quantity="many">%1$d dies</item>
