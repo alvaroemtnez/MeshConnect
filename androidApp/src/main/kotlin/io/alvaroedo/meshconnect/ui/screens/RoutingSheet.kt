@@ -1,5 +1,8 @@
 package io.alvaroedo.meshconnect.ui.screens
 
+import io.alvaroedo.meshconnect.R
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -60,6 +63,7 @@ fun RoutingSheet(
     onDismiss: () -> Unit,
 ) {
     val scope = rememberCoroutineScope()
+    val ctx = androidx.compose.ui.platform.LocalContext.current
     val keyHex = contact.keyHex
     val paths by remember(keyHex) { vm.pathHistory(keyHex) }.collectAsState()
     val liveContacts by vm.liveContacts.collectAsState()
@@ -98,7 +102,7 @@ fun RoutingSheet(
                 .padding(bottom = 32.dp)
                 .verticalScroll(rememberScrollState()),
         ) {
-            Text("Routing", style = MaterialTheme.typography.headlineSmall)
+            Text(stringResource(R.string.route_title), style = MaterialTheme.typography.headlineSmall)
             Text(
                 contact.name.ifBlank { keyHex.take(12) },
                 style = MaterialTheme.typography.bodySmall,
@@ -121,11 +125,11 @@ fun RoutingSheet(
             HintText(
                 when (mode) {
                     RoutingMode.Auto ->
-                        "The radio learns and updates the route itself (resets the stored path)."
+                        stringResource(R.string.route_auto)
                     RoutingMode.Flood ->
-                        "Every packet floods the mesh — slower and noisier, but works when a route is broken."
+                        stringResource(R.string.route_flood)
                     RoutingMode.Manual ->
-                        "Pin an exact hop list. Each hop is the repeater's path-hash prefix."
+                        stringResource(R.string.route_manual)
                 },
             )
 
@@ -133,9 +137,9 @@ fun RoutingSheet(
                 Spacer(Modifier.height(8.dp))
 
                 // --- the route, in order --------------------------------
-                Text("Route", style = MaterialTheme.typography.titleSmall)
+                Text(stringResource(R.string.route_route), style = MaterialTheme.typography.titleSmall)
                 if (hops.isEmpty()) {
-                    HintText("No hops yet. Tap a node below to add it, in the order a packet should travel.")
+                    HintText(stringResource(R.string.route_no_hops))
                 }
                 val unresolved = HopSelection.unresolvedIndices(hops, hopWidth)
                 hops.forEachIndexed { i, hop ->
@@ -156,9 +160,7 @@ fun RoutingSheet(
                     // if we pad or truncate it, not a vaguer version of
                     // the same one.
                     HintText(
-                        "Hop(s) ${unresolved.joinToString(", ") { (it + 1).toString() }} can't be " +
-                            "addressed at this mesh's ${hopWidth * 2}-hex-digit width — " +
-                            "remove them, or re-add from the list below.",
+                        stringResource(R.string.route_unresolved, unresolved.joinToString(", ") { (it + 1).toString() }, hopWidth * 2),
                     )
                 }
 
@@ -172,15 +174,14 @@ fun RoutingSheet(
                 Spacer(Modifier.height(8.dp))
                 if (relays.isEmpty()) {
                     HintText(
-                        "No repeaters known yet — they appear here as they advertise. Until then " +
-                            "use the advanced field below.",
+                        stringResource(R.string.route_no_repeaters),
                     )
                 } else {
                     HintText(
                         if (full) {
-                            "Route is full (${PathCodec.maxHopsFor(hopWidth)} hops max on this mesh)."
+                            stringResource(R.string.route_full, PathCodec.maxHopsFor(hopWidth))
                         } else {
-                            "Tap to add a hop:"
+                            stringResource(R.string.route_tap_add)
                         },
                     )
                     LazyColumn(Modifier.heightIn(max = 180.dp)) {
@@ -228,32 +229,30 @@ fun RoutingSheet(
                     TextButton(
                         enabled = hops.isNotEmpty(),
                         onClick = { hops = emptyList() },
-                    ) { Text("Clear route") }
+                    ) { Text(stringResource(R.string.route_clear)) }
                     TextButton(
                         enabled = hops.isNotEmpty(),
                         onClick = {
                             val hex = HopSelection.toHex(hops, hopWidth)
                             if (hex == null) {
-                                vm.transientMessage.value =
-                                    "Some hops can't be used on this mesh — fix them before applying."
+                                vm.transientMessage.value = ctx.getString(R.string.route_bad_hops)
                             } else {
                                 vm.setRouting(keyHex, RoutingMode.Manual, hex)
                             }
                         },
-                    ) { Text("Apply path") }
+                    ) { Text(stringResource(R.string.route_apply)) }
                 }
 
                 // --- advanced: the old free-text field ------------------
                 TextButton(onClick = {
                     showAdvanced = !showAdvanced
                     if (showAdvanced) manualHops = HopSelection.toTokens(hops, hopWidth)
-                }) { Text(if (showAdvanced) "Hide hex entry" else "Enter hops as hex") }
+                }) { Text(stringResource(if (showAdvanced) R.string.route_hide_hex else R.string.route_hex)) }
                 if (showAdvanced) {
                     HintText(
-                        "For routes copied from elsewhere. Hops are ${hopWidth * 2}-hex-digit " +
-                            "tokens on this mesh, in travel order.",
+                        stringResource(R.string.route_hex_hint, hopWidth * 2),
                     )
-                    SettingsTextField("Hops", manualHops) { manualHops = it }
+                    SettingsTextField(stringResource(R.string.route_hops), manualHops) { manualHops = it }
                     ButtonFlowRow {
                         TextButton(
                             enabled = manualHops.isNotBlank(),
@@ -266,9 +265,7 @@ fun RoutingSheet(
                                 // digit count.
                                 val parsed = HopSelection.fromTokens(manualHops, hopWidth)
                                 if (parsed.isNullOrEmpty()) {
-                                    vm.transientMessage.value =
-                                        "Hops must be ${hopWidth * 2}-hex-digit tokens " +
-                                            "(max ${PathCodec.maxHopsFor(hopWidth)})"
+                                    vm.transientMessage.value = ctx.getString(R.string.route_hex_bad, hopWidth * 2, PathCodec.maxHopsFor(hopWidth))
                                 } else {
                                     // Into the same ordered list, so the hex
                                     // path and the tap path can't disagree
@@ -281,7 +278,7 @@ fun RoutingSheet(
                                     showAdvanced = false
                                 }
                             },
-                        ) { Text("Use these hops") }
+                        ) { Text(stringResource(R.string.route_use_hops)) }
                     }
                 }
             }
@@ -294,13 +291,12 @@ fun RoutingSheet(
             val replyRoute by remember(keyHex) { vm.replyRouteFromArrival(keyHex) }.collectAsState()
             replyRoute?.let { (hex, width) ->
                 Spacer(Modifier.height(12.dp))
-                Text("Reply the way they reached me", style = MaterialTheme.typography.titleSmall)
+                Text(stringResource(R.string.route_reply_way), style = MaterialTheme.typography.titleSmall)
                 val reversedHops = remember(hex, width, contactNames) {
                     HopSelection.fromPath(hexToBytes(hex), width, contactNames)
                 }
                 HintText(
-                    "Their last message arrived over ${reversedHops.size} repeater(s). " +
-                        "Reversed here into the order a reply would travel.",
+                    pluralStringResource(R.plurals.route_reversed, reversedHops.size, reversedHops.size),
                 )
                 Text(
                     reversedHops.joinToString(" → ") { it.label(width) },
@@ -310,13 +306,13 @@ fun RoutingSheet(
                 TextButton(onClick = {
                     hops = reversedHops
                     mode = RoutingMode.Manual
-                }) { Text("Use this route") }
+                }) { Text(stringResource(R.string.route_use_this)) }
             }
 
             Spacer(Modifier.height(12.dp))
-            Text("Known paths", style = MaterialTheme.typography.titleSmall)
+            Text(stringResource(R.string.route_known), style = MaterialTheme.typography.titleSmall)
             if (paths.isEmpty()) {
-                HintText("No paths recorded yet — they appear as the radio learns routes and as messages get delivered.")
+                HintText(stringResource(R.string.route_known_none))
             }
             for (p in paths) {
                 PathRow(
@@ -335,7 +331,7 @@ fun RoutingSheet(
             }
             if (paths.isNotEmpty()) {
                 TextButton(onClick = { vm.clearPathHistory(keyHex) }) {
-                    Text("Clear path history", color = MaterialTheme.colorScheme.error)
+                    Text(stringResource(R.string.route_clear_history), color = MaterialTheme.colorScheme.error)
                 }
             }
 
@@ -351,7 +347,7 @@ fun RoutingSheet(
             }
 
             Spacer(Modifier.height(12.dp))
-            Text("Trace", style = MaterialTheme.typography.titleSmall)
+            Text(stringResource(R.string.trace_route), style = MaterialTheme.typography.titleSmall)
             // Confirmed on hardware: the radio answers a trace with no
             // path with RESP_CODE_ERR. There is genuinely nothing to
             // report for a direct contact, so say that instead of
@@ -360,11 +356,9 @@ fun RoutingSheet(
                 .decodePathLen(contact.pathLen).hops > 0
             HintText(
                 if (hasRoute) {
-                    "Ask the mesh to report the hops (and per-hop SNR) a packet travels."
+                    stringResource(R.string.route_trace_hint)
                 } else {
-                    "Nothing to trace: this contact is reached directly, with no repeater " +
-                        "in between. A trace reports the hops along a route, so it needs a " +
-                        "route with at least one hop."
+                    stringResource(R.string.route_trace_direct)
                 },
             )
             ButtonFlowRow {
@@ -381,28 +375,24 @@ fun RoutingSheet(
                                 // probe in the first place.
                                 vm.transientMessage.value =
                                     if (contact.pathLen == 0xFF || contact.pathLen < 0) {
-                                        "No stored route to trace — this contact is reached " +
-                                            "by flooding. Pin a path first, or trace a " +
-                                            "contact that has one."
+                                        ctx.getString(R.string.route_trace_flood)
                                     } else {
                                         // A trace has to traverse the whole route and come
                                         // back, so one node being down anywhere along it
                                         // looks exactly like a broken feature. Say which
                                         // to check rather than implying a fault.
-                                        "No reply. A trace has to reach every hop on this " +
-                                            "route and return — check the nodes on it have " +
-                                            "been heard recently."
+                                        ctx.getString(R.string.route_trace_no_reply)
                                     }
                             }
                         }
                     },
-                ) { Text(if (tracing) "Tracing…" else "Run trace") }
+                ) { Text(stringResource(if (tracing) R.string.route_tracing else R.string.route_run_trace)) }
             }
-            if (tracing) SectionSpinner("Waiting for trace…")
+            if (tracing) SectionSpinner(stringResource(R.string.trace_waiting))
             trace?.let { t ->
                 Text(
-                    if (t.hopCount == 0) "Direct (no hops)"
-                    else "${t.hopCount} hop(s): ${t.hops.joinToString(" → ")}",
+                    if (t.hopCount == 0) stringResource(R.string.path_direct)
+                    else pluralStringResource(R.plurals.hops, t.hopCount, t.hopCount) + ": " + t.hops.joinToString(" → "),
                     style = MaterialTheme.typography.bodyMedium,
                     fontFamily = FontFamily.Monospace,
                 )
@@ -449,7 +439,7 @@ fun RoutingSheet(
                             contactNames,
                         )
                         mode = RoutingMode.Manual
-                    }) { Text("Use traced path") }
+                    }) { Text(stringResource(R.string.route_use_traced)) }
                 }
             }
         }
@@ -519,7 +509,7 @@ private fun PathRow(
     ) {
         Column(Modifier.weight(1f)) {
             Text(
-                if (isFlood) "flood" else PathCodec.formatHops(hexToBytes(path.pathHex), width),
+                if (isFlood) stringResource(R.string.flood) else PathCodec.formatHops(hexToBytes(path.pathHex), width),
                 fontFamily = FontFamily.Monospace,
                 style = MaterialTheme.typography.bodyMedium,
             )
@@ -531,12 +521,12 @@ private fun PathRow(
                         // width column held a BYTE count here, and this
                         // list is exactly where "2 hops" read as "4".
                         val hops = PathHistoryHygiene.hopCount(path.pathHex.length / 2, width)
-                        append(" · $hops hop(s)")
+                        append(" · " + androidx.compose.ui.platform.LocalContext.current.resources.getQuantityString(R.plurals.hops, hops, hops))
                     }
                     append(" · ${path.successes}✓/${path.failures}✗")
                     if (path.lastWorkedAt > 0) {
                         append(
-                            " · worked " +
+                            " · " + androidx.compose.ui.platform.LocalContext.current.getString(R.string.route_worked) + " " +
                                 DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT)
                                     .format(Date(path.lastWorkedAt)),
                         )
@@ -546,7 +536,7 @@ private fun PathRow(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        if (!isFlood) TextButton(onClick = onUse) { Text("Use") }
+        if (!isFlood) TextButton(onClick = onUse) { Text(stringResource(R.string.route_use)) }
         TextButton(onClick = onDelete) { Text("×", color = MaterialTheme.colorScheme.error) }
     }
 }

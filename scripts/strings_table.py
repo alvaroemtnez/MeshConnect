@@ -655,6 +655,40 @@ S = {
 "pin_open_bt": ('Open Bluetooth settings', 'Abrir ajustes de Bluetooth', 'Obrir la configuració de Bluetooth'),
 "pin_not_now": ('Not now', 'Ahora no', 'Ara no'),
 
+"route_title": ('Routing', 'Rutas', 'Rutes'),
+"route_auto": ('The radio learns and updates the route itself (resets the stored path).', 'La radio aprende y actualiza la ruta sola (reinicia la ruta guardada).', 'La ràdio aprén i actualitza la ruta tota sola (reinicia la ruta guardada).'),
+"route_flood": ('Every packet floods the mesh: slower and noisier, but works when a route is broken.', 'Cada paquete inunda la malla: más lento y ruidoso, pero funciona cuando una ruta está rota.', 'Cada paquet inunda la malla: més lent i sorollós, però funciona quan una ruta està trencada.'),
+"route_manual": ("Pin an exact hop list. Each hop is the repeater's path-hash prefix.", 'Fija una lista exacta de saltos. Cada salto es el prefijo de hash de ruta del repetidor.', 'Fixa una llista exacta de salts. Cada salt és el prefix de hash de ruta del repetidor.'),
+"route_route": ('Route', 'Ruta', 'Ruta'),
+"route_no_hops": ('No hops yet. Tap a node below to add it, in the order a packet should travel.', 'Aún no hay saltos. Toca un nodo abajo para añadirlo, en el orden en que debe viajar el paquete.', "Encara no hi ha salts. Toca un node avall per a afegir-lo, en l'ordre en què ha de viatjar el paquet."),
+"route_unresolved": ("Hops %1$s can't be addressed at this mesh's %2$d-hex-digit width. Remove them, or add them again from the list below.", 'Los saltos %1$s no se pueden expresar con el ancho de %2$d dígitos hexadecimales de esta malla. Quítalos o vuelve a añadirlos de la lista.', "Els salts %1$s no es poden expressar amb l'amplada de %2$d dígits hexadecimals d'esta malla. Lleva'ls o torna a afegir-los de la llista."),
+"route_no_repeaters": ('No repeaters known yet: they appear here as they advertise. Until then, use the advanced field below.', 'Aún no se conoce ningún repetidor: aparecen aquí cuando se anuncian. Mientras tanto, usa el campo avanzado de abajo.', "Encara no es coneix cap repetidor: apareixen ací quan s'anuncien. Mentrestant, usa el camp avançat d'avall."),
+"route_full": ('The route is full (%1$d hops at most on this mesh).', 'La ruta está llena (como mucho %1$d saltos en esta malla).', 'La ruta està plena (com a màxim %1$d salts en esta malla).'),
+"route_tap_add": ('Tap to add a hop:', 'Toca para añadir un salto:', 'Toca per a afegir un salt:'),
+"route_clear": ('Clear route', 'Borrar ruta', 'Esborrar ruta'),
+"route_bad_hops": ("Some hops can't be used on this mesh. Fix them before applying.", 'Algunos saltos no se pueden usar en esta malla. Corrígelos antes de aplicar.', "Alguns salts no es poden usar en esta malla. Corregix-los abans d'aplicar."),
+"route_apply": ('Apply route', 'Aplicar ruta', 'Aplicar ruta'),
+"route_hex": ('Enter hops as hex', 'Introducir saltos en hexadecimal', 'Introduir salts en hexadecimal'),
+"route_hide_hex": ('Hide hex entry', 'Ocultar entrada hexadecimal', 'Amagar entrada hexadecimal'),
+"route_hex_hint": ('For routes copied from elsewhere. Hops are %1$d-hex-digit tokens on this mesh, in travel order.', 'Para rutas copiadas de otro sitio. En esta malla los saltos son grupos de %1$d dígitos hexadecimales, en orden de viaje.', "Per a rutes copiades d'un altre lloc. En esta malla els salts són grups de %1$d dígits hexadecimals, en ordre de viatge."),
+"route_hops": ('Hops', 'Saltos', 'Salts'),
+"route_hex_bad": ('Hops must be %1$d-hex-digit groups (at most %2$d)', 'Los saltos deben ser grupos de %1$d dígitos hexadecimales (como mucho %2$d)', 'Els salts han de ser grups de %1$d dígits hexadecimals (com a màxim %2$d)'),
+"route_use_hops": ('Use these hops', 'Usar estos saltos', 'Usar estos salts'),
+"route_reply_way": ('Reply the way they reached me', 'Responder por donde me llegó', 'Respondre per on em va arribar'),
+"route_use_this": ('Use this route', 'Usar esta ruta', 'Usar esta ruta'),
+"route_known": ('Known routes', 'Rutas conocidas', 'Rutes conegudes'),
+"route_known_none": ('No routes recorded yet: they appear as the radio learns routes and messages get delivered.', 'Aún no hay rutas registradas: aparecen cuando la radio aprende rutas y se entregan mensajes.', "Encara no hi ha rutes registrades: apareixen quan la ràdio aprén rutes i s'entreguen missatges."),
+"route_clear_history": ('Clear route history', 'Borrar historial de rutas', 'Esborrar historial de rutes'),
+"route_trace_hint": ('Ask the mesh to report the hops (and per-hop SNR) a packet travels.', 'Pide a la malla que informe de los saltos (y el SNR de cada uno) que recorre un paquete.', 'Demana a la malla que informe dels salts (i el SNR de cadascun) que recorre un paquet.'),
+"route_trace_direct": ('Nothing to trace: this contact is reached directly, with no repeater in between. A trace reports the hops along a route, so it needs at least one.', 'Nada que trazar: a este contacto se llega directamente, sin repetidores. Una traza informa de los saltos de una ruta, así que necesita al menos uno.', "Res a traçar: a este contacte s'arriba directament, sense repetidors. Una traça informa dels salts d'una ruta, així que en necessita almenys un."),
+"route_trace_flood": ('No stored route to trace: this contact is reached by flooding. Pin a route first, or trace a contact that has one.', 'No hay ruta guardada que trazar: a este contacto se llega por inundación. Fija antes una ruta, o traza un contacto que la tenga.', "No hi ha ruta guardada per a traçar: a este contacte s'arriba per inundació. Fixa abans una ruta, o traça un contacte que en tinga."),
+"route_trace_no_reply": ('No reply. A trace has to reach every hop on the route and come back: check the nodes on it have been heard recently.', 'Sin respuesta. Una traza tiene que llegar a cada salto de la ruta y volver: comprueba que sus nodos se han oído hace poco.', "Sense resposta. Una traça ha d'arribar a cada salt de la ruta i tornar: comprova que els seus nodes s'han sentit fa poc."),
+"route_tracing": ('Tracing…', 'Trazando…', 'Traçant…'),
+"route_run_trace": ('Run trace', 'Trazar', 'Traçar'),
+"route_use_traced": ('Use traced route', 'Usar la ruta trazada', 'Usar la ruta traçada'),
+"route_worked": ('worked', 'funcionó', 'va funcionar'),
+"route_use": ('Use', 'Usar', 'Usar'),
+
 # Chats
 "chats_search_hint": ("Search conversations", "Buscar conversaciones", "Cercar converses"),
 "chats_advert_zero_hop": ("Send advert (0-hop)", "Enviar anuncio (0 saltos)", "Enviar anunci (0 salts)"),
@@ -850,6 +884,8 @@ S = {
 
 # key -> ((one, other) en, (one, other) es, (one, other) ca)
 P = {
+"route_reversed": (("Their last message arrived over %1$d repeater, reversed here into the order a reply would travel.", "Their last message arrived over %1$d repeaters, reversed here into the order a reply would travel."), ("Su último mensaje llegó por %1$d repetidor, invertido aquí en el orden en que viajaría una respuesta.", "Su último mensaje llegó por %1$d repetidores, invertidos aquí en el orden en que viajaría una respuesta."), ("El seu últim missatge va arribar per %1$d repetidor, invertit ací en l'ordre en què viatjaria una resposta.", "El seu últim missatge va arribar per %1$d repetidors, invertits ací en l'ordre en què viatjaria una resposta.")),
+
 "repeats_carried": (("Carried %1$d of your packets", "Carried %1$d of your packets"), ("Llevó %1$d de tus paquetes", "Llevó %1$d de tus paquetes"), ("Va portar %1$d dels teus paquets", "Va portar %1$d dels teus paquets")),
 
 "senders_count": (("%1$d message · last %2$s", "%1$d messages · last %2$s"), ("%1$d mensaje · último %2$s", "%1$d mensajes · último %2$s"), ("%1$d missatge · últim %2$s", "%1$d missatges · últim %2$s")),
