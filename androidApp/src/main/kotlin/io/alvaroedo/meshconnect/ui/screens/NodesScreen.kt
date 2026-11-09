@@ -827,13 +827,13 @@ private fun PositionRows(
 ) {
     if (!isPlausiblePosition(lat, lon)) return
     Spacer(Modifier.height(8.dp))
-    DetailRow("Position", "%.5f, %.5f".format(lat, lon))
+    DetailRow(stringResource(R.string.node_position), "%.5f, %.5f".format(java.util.Locale.ROOT, lat, lon))
     val distance = if (isPlausiblePosition(selfLat, selfLon)) {
         Units.distance(haversineMetres(selfLat!!, selfLon!!, lat!!, lon!!), units)
     } else {
-        "Unknown"
+        stringResource(R.string.node_unknown)
     }
-    DetailRow("Distance away", distance)
+    DetailRow(stringResource(R.string.node_distance), distance)
 }
 
 /**
@@ -1146,31 +1146,20 @@ fun ContactDetailSheet(
 
     if (updateModeOpen) {
         val otaAddress = contact.otaAddress
+        val ctx = LocalContext.current
         AlertDialog(
             onDismissRequest = { if (!updateModeBusy) updateModeOpen = false },
-            title = { Text("Recover ${contact.name.ifBlank { "this node" }}") },
+            title = { Text(stringResource(R.string.recover_title, contact.name.ifBlank { contact.keyHex.take(8) })) },
             text = {
                 Column {
                     Text(
-                        if (otaAddress != null) {
-                            "This node announced $otaAddress when it was told to update, so " +
-                                "it can be identified exactly."
-                        } else {
-                            "No update-mode address was recorded for this node, so it will " +
-                                "be identified by what it advertises — and named before " +
-                                "anything is written to it."
-                        } +
-                            "\n\nA node in update mode is off the mesh and can only be " +
-                            "reached over Bluetooth, from within range of it.\n\n" +
-                            "\"Restart it\" asks its bootloader to boot the firmware it " +
-                            "already has. That works when the transfer never got as far as " +
-                            "erasing anything — the usual case for an update that failed " +
-                            "early. If the firmware was already erased, what happens " +
-                            "depends on the bootloader: OTAFIX comes back in update mode, " +
-                            "ready to be flashed again, but the standard bootloader comes " +
-                            "back as a USB drive and stops answering over Bluetooth. On a " +
-                            "standard bootloader, do not use this on a node whose transfer " +
-                            "had started.",
+                        (
+                            if (otaAddress != null) {
+                                stringResource(R.string.recover_known, otaAddress)
+                            } else {
+                                stringResource(R.string.recover_unknown)
+                            }
+                        ) + "\n\n" + stringResource(R.string.recover_body),
                     )
                     updateModeNote?.let {
                         Spacer(Modifier.height(8.dp))
@@ -1183,13 +1172,13 @@ fun ContactDetailSheet(
                     enabled = !updateModeBusy,
                     onClick = {
                         updateModeBusy = true
-                        updateModeNote = "Looking for the node…"
+                        updateModeNote = ctx.getString(R.string.recover_looking)
                         vm.exitUpdateMode(contact.keyHex) { result ->
                             updateModeNote = result
                             updateModeBusy = false
                         }
                     },
-                ) { Text(if (updateModeBusy) "Working…" else "Restart it") }
+                ) { Text(stringResource(if (updateModeBusy) R.string.recover_working else R.string.recover_restart)) }
             },
             dismissButton = {
                 Row {
@@ -1199,9 +1188,9 @@ fun ContactDetailSheet(
                             updateModeOpen = false
                             onFlashFirmware()
                         },
-                    ) { Text("Flash it…") }
+                    ) { Text(stringResource(R.string.recover_flash)) }
                     TextButton(enabled = !updateModeBusy, onClick = { updateModeOpen = false }) {
-                        Text("Close")
+                        Text(stringResource(R.string.close))
                     }
                 }
             },
@@ -1231,7 +1220,7 @@ fun ContactDetailSheet(
                     vm.renameContact(contact, name.trim())
                     renameOpen = false
                     onDismiss()
-                }) { Text("Save") }
+                }) { Text(stringResource(R.string.save)) }
             },
             dismissButton = {
                 TextButton(onClick = { renameOpen = false }) { Text(stringResource(R.string.cancel)) }
@@ -1310,7 +1299,7 @@ private fun ContactTelemetryDialog(
     }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Telemetry", maxLines = 1) },
+        title = { Text(stringResource(R.string.telemetry_title), maxLines = 1) },
         text = {
             Column {
                 Text(
@@ -1321,13 +1310,13 @@ private fun ContactTelemetryDialog(
                 when {
                     loading -> Column {
                         Text(
-                            "Asking the node…",
+                            stringResource(R.string.mapnode_asking),
                             style = MaterialTheme.typography.bodySmall,
                         )
                         RequestProgressHint(vm, contact.keyHex)
                     }
                     readings.isNullOrEmpty() -> Text(
-                        failure ?: "No reply.",
+                        failure ?: stringResource(R.string.telemetry_no_reply),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -1356,10 +1345,10 @@ private fun ContactTelemetryDialog(
                 }
             }
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("Close") } },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.close)) } },
         dismissButton = if (!loading) {
             {
-                TextButton(onClick = { attempt++ }) { Text("Retry") }
+                TextButton(onClick = { attempt++ }) { Text(stringResource(R.string.retry)) }
             }
         } else {
             null
@@ -1375,8 +1364,8 @@ private fun formatReading(value: Double): String =
 @Composable
 fun SelfQrDialog(vm: MeshCoreViewModel, onDismiss: () -> Unit) =
     ShareQrDialog(
-        title = "Share this node",
-        hint = "Scan with another MeshCore app to add this node as a contact.",
+        title = stringResource(R.string.qr_self_title),
+        hint = stringResource(R.string.qr_hint),
         load = { vm.selfShareUri() },
         onDismiss = onDismiss,
     )
@@ -1385,8 +1374,8 @@ fun SelfQrDialog(vm: MeshCoreViewModel, onDismiss: () -> Unit) =
 @Composable
 fun ContactQrDialog(vm: MeshCoreViewModel, contact: ContactEntity, onDismiss: () -> Unit) =
     ShareQrDialog(
-        title = "Share ${contact.name.ifBlank { "contact" }}",
-        hint = "Scan with any MeshCore app to add this node as a contact.",
+        title = stringResource(R.string.ch_share_named, contact.name.ifBlank { contact.keyHex.take(8) }),
+        hint = stringResource(R.string.qr_hint),
         load = { vm.contactShareUri(contact) },
         onDismiss = onDismiss,
     )
@@ -1420,7 +1409,7 @@ internal fun ContactCardConfirmDialog(
                     color = MaterialTheme.colorScheme.primary,
                 )
                 Spacer(Modifier.height(12.dp))
-                Text("Public key", style = MaterialTheme.typography.labelLarge)
+                Text(stringResource(R.string.add_contact_key), style = MaterialTheme.typography.labelLarge)
                 Text(
                     card.pubKeyHex,
                     style = MaterialTheme.typography.bodySmall,
@@ -1472,21 +1461,21 @@ private fun ShareQrDialog(
                 qr?.let {
                     Image(
                         it.asImageBitmap(),
-                        contentDescription = "Contact QR",
+                        contentDescription = stringResource(R.string.qr_contact),
                         modifier = Modifier.size(280.dp),
                     )
                     Text(hint, style = MaterialTheme.typography.bodySmall)
                 }
-                if (failed) Text("Radio didn't return an export blob — is it connected?")
-                if (qr == null && !failed) Text("Requesting export from radio…")
+                if (failed) Text(stringResource(R.string.qr_failed))
+                if (qr == null && !failed) Text(stringResource(R.string.qr_loading))
             }
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("Done") } },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.setup_done)) } },
         dismissButton = {
             uri?.let { text ->
                 TextButton(onClick = {
                     clipboard.setText(androidx.compose.ui.text.AnnotatedString(text))
-                }) { Text("Copy link") }
+                }) { Text(stringResource(R.string.ch_copy_link)) }
             }
         },
     )
@@ -1512,25 +1501,22 @@ private fun ContactPermissions(
     val live by vm.liveContacts.collectAsState()
     val flags = live[contact.keyHex]?.flags ?: contact.flags
 
-    HintText(
-        "Which of YOUR telemetry this contact may read. Also mute their notifications " +
-            "here — that part is local and never leaves this phone.",
-    )
+    HintText(stringResource(R.string.perm_intro))
     for ((label, flag, shift) in listOf(
-        Triple("Battery", Codes.CONTACT_FLAG_TELE_BASE, 0),
-        Triple("Location", Codes.CONTACT_FLAG_TELE_LOC, 2),
-        Triple("Environment", Codes.CONTACT_FLAG_TELE_ENV, 4),
+        Triple(stringResource(R.string.perm_battery), Codes.CONTACT_FLAG_TELE_BASE, 0),
+        Triple(stringResource(R.string.perm_location), Codes.CONTACT_FLAG_TELE_LOC, 2),
+        Triple(stringResource(R.string.perm_environment), Codes.CONTACT_FLAG_TELE_ENV, 4),
     )) {
         val globalMode = (modes shr shift) and 0x03
-        SettingRow("$label telemetry", flags and flag != 0) {
+        SettingRow(label, flags and flag != 0) {
             vm.setContactTelemetryFlag(contact.keyHex, flag, it)
         }
         // 0 = Deny everyone, 1 = per-contact flags, 2 = allow all.
         HintText(
             when (globalMode) {
-                1 -> "Global policy is Flags — this switch decides."
-                2 -> "Global policy is All: everyone can read this regardless of the switch."
-                else -> "Global policy is Deny: nobody can read this, switch or not."
+                1 -> stringResource(R.string.perm_policy_flags)
+                2 -> stringResource(R.string.perm_policy_all)
+                else -> stringResource(R.string.perm_policy_deny)
             },
         )
     }
@@ -1538,7 +1524,7 @@ private fun ContactPermissions(
     var muted by remember(contact.keyHex) {
         mutableStateOf(vm.prefs.isContactMuted(contact.keyHex))
     }
-    SettingRow("Mute notifications", muted) {
+    SettingRow(stringResource(R.string.conv_mute), muted) {
         muted = it
         vm.prefs.setContactMuted(contact.keyHex, it)
     }
@@ -1564,23 +1550,19 @@ private fun DiscoverNodesDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Nearby repeaters") },
+        title = { Text(stringResource(R.string.discover_title)) },
         text = {
             val list = found
             Column {
                 when {
-                    list == null -> SectionSpinner("Listening for answers…")
+                    list == null -> SectionSpinner(stringResource(R.string.discover_listening))
                     list.isEmpty() -> Text(
-                        "Nothing answered. That can mean none are in range, that they " +
-                            "answered with a key prefix matching no contact you hold, or " +
-                            "that they run firmware without discovery.",
+                        stringResource(R.string.discover_none),
                         style = MaterialTheme.typography.bodySmall,
                     )
                     else -> {
                         Text(
-                            "Answered within range. These are contacts you already hold " +
-                                "whose key matched a responder's prefix — a prefix is not " +
-                                "proof of identity.",
+                            stringResource(R.string.discover_found),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -1597,6 +1579,6 @@ private fun DiscoverNodesDialog(
                 }
             }
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("Close") } },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.close)) } },
     )
 }
