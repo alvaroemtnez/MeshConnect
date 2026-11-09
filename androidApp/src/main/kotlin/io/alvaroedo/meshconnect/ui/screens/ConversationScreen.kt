@@ -139,8 +139,8 @@ fun ConversationScreen(
         val idx = peerKey.toIntOrNull()
         // The name as stored: a hashtag channel's already starts with '#',
         // and prefixing one to every channel made private ones look public.
-        channels.firstOrNull { it.idx == idx }?.name?.ifBlank { "Channel $idx" }
-            ?: "Channel $idx"
+        channels.firstOrNull { it.idx == idx }?.name?.ifBlank { null }
+            ?: stringResource(R.string.ch_numbered, idx ?: 0)
     } else {
         contacts.firstOrNull { it.keyHex == peerKey }?.name?.ifBlank { null }
             ?: peerKey.take(12)
@@ -343,10 +343,10 @@ fun ConversationScreen(
             }
 
             if (isRoom) {
-                roomAccessNotice(roomSession)?.let { notice ->
+                io.alvaroedo.meshconnect.ui.model.SharedText.roomNotice(LocalContext.current, roomSession)?.let { notice ->
                     RoomAccessBanner(
                         text = notice,
-                        action = roomAccessAction(roomSession),
+                        action = io.alvaroedo.meshconnect.ui.model.SharedText.roomAction(LocalContext.current, roomSession),
                         onAction = { roomSignIn = true },
                     )
                 }
@@ -596,10 +596,7 @@ private fun LeaveTheMeshDialog(url: String, onDismiss: () -> Unit) {
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.conv_open_link)) },
         text = {
-            Text(
-                "This opens in your browser and leaves the mesh. The site — chosen by " +
-                    "the sender, not you — will see your real IP address and network.\n\n$url",
-            )
+            Text(stringResource(R.string.conv_link_body, url))
         },
         confirmButton = {
             TextButton(onClick = {
@@ -612,9 +609,9 @@ private fun LeaveTheMeshDialog(url: String, onDismiss: () -> Unit) {
                     )
                 }
                 onDismiss()
-            }) { Text("Open in browser") }
+            }) { Text(stringResource(R.string.conv_open_browser)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
     )
 }
 
@@ -669,7 +666,11 @@ private fun ReplyBanner(target: MessageEntity, onCancel: () -> Unit) {
         Spacer(Modifier.width(8.dp))
         Column(Modifier.weight(1f)) {
             Text(
-                "Replying to ${target.senderName?.takeIf { it.isNotBlank() } ?: if (target.outgoing) "yourself" else "them"}",
+                stringResource(
+                    R.string.conv_replying_to,
+                    target.senderName?.takeIf { it.isNotBlank() }
+                        ?: stringResource(if (target.outgoing) R.string.card_you else R.string.conv_them),
+                ),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.primary,
             )
@@ -990,7 +991,7 @@ private fun MessageActionBar(
                 }
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
-                ActionLabel("Reply", onReply)
+                ActionLabel(stringResource(R.string.conv_reply), onReply)
                 // Separate from Reply on purpose. Reply quotes the text
                 // being answered, which costs those bytes out of a
                 // ~150-byte frame; Mention costs the name and nothing
@@ -999,11 +1000,11 @@ private fun MessageActionBar(
                 // the cost of the commonest action on the tightest
                 // budget in the app, so both are offered and neither is
                 // implied.
-                if (canMention) ActionLabel("Mention", onMention)
-                ActionLabel("Copy", onCopy)
-                ActionLabel("Info", onInfo)
-                if (canResend) ActionLabel("Resend", onResend)
-                ActionLabel("Delete", onDelete, color = MaterialTheme.colorScheme.error)
+                if (canMention) ActionLabel(stringResource(R.string.conv_mention), onMention)
+                ActionLabel(stringResource(R.string.copy), onCopy)
+                ActionLabel(stringResource(R.string.conv_info), onInfo)
+                if (canResend) ActionLabel(stringResource(R.string.conv_resend), onResend)
+                ActionLabel(stringResource(R.string.delete), onDelete, color = MaterialTheme.colorScheme.error)
             }
         }
     }
@@ -1114,7 +1115,7 @@ private fun ReactionChips(counts: Map<String, Int>) {
 private fun ReactionPicker(onPick: (String) -> Unit, onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("React") },
+        title = { Text(stringResource(R.string.conv_react)) },
         text = {
             Column {
                 // Six quick emoji don't fit a dialog's width as buttons
@@ -1145,7 +1146,7 @@ private fun ReactionPicker(onPick: (String) -> Unit, onDismiss: () -> Unit) {
                 }
             }
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
     )
 }
 

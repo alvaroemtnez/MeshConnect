@@ -545,6 +545,21 @@ S = {
 "discover_none": ('Nothing answered. That can mean none are in range, that they answered with a key prefix matching no contact you hold, or that they run firmware without discovery.', 'Nadie ha respondido. Puede que no haya ninguno al alcance, que respondieran con un prefijo que no coincide con tus contactos, o que su firmware no tenga descubrimiento.', "Ningú no ha respost. Pot ser que no n'hi haja cap a l'abast, que respongueren amb un prefix que no coincidix amb els teus contactes, o que el seu firmware no tinga descobriment."),
 "discover_found": ("Answered within range. These are contacts you already hold whose key matched a responder's prefix: a prefix is not proof of identity.", 'Respondieron al alcance. Son contactos que ya tienes cuya clave coincide con el prefijo de quien respondió: un prefijo no prueba la identidad.', "Van respondre a l'abast. Són contactes que ja tens la clau dels quals coincidix amb el prefix de qui va respondre: un prefix no prova la identitat."),
 
+"conv_link_body": ('This opens in your browser and leaves the mesh. The site, chosen by the sender and not by you, will see your real IP address and network.\n\n%1$s', 'Esto se abre en el navegador y sale de la malla. El sitio, elegido por quien lo envió y no por ti, verá tu dirección IP real y tu red.\n\n%1$s', "Açò s'obri en el navegador i ix de la malla. El lloc, triat per qui l'ha enviat i no per tu, vorà la teua adreça IP real i la teua xarxa.\n\n%1$s"),
+"conv_open_browser": ('Open in browser', 'Abrir en el navegador', 'Obrir en el navegador'),
+"conv_replying_to": ('Replying to %1$s', 'Respondiendo a %1$s', 'Responent a %1$s'),
+"conv_them": ('them', 'contacto', 'contacte'),
+"conv_reply": ('Reply', 'Responder', 'Respondre'),
+"conv_mention": ('Mention', 'Mencionar', 'Mencionar'),
+"conv_info": ('Info', 'Info', 'Info'),
+"conv_resend": ('Resend', 'Reenviar', 'Reenviar'),
+"conv_react": ('React', 'Reaccionar', 'Reaccionar'),
+"room_not_signed_in": ('Not signed in. A room only accepts posts from, and sends new posts to, people who have signed in.', 'Sin iniciar sesión. Una sala solo acepta mensajes de, y envía mensajes nuevos a, quien ha iniciado sesión.', 'Sense iniciar sessió. Una sala només accepta missatges de, i envia missatges nous a, qui ha iniciat sessió.'),
+"room_guest": ("Signed in read-only. You'll receive this room's posts, but it won't accept yours.", 'Sesión de solo lectura. Recibirás los mensajes de la sala, pero no aceptará los tuyos.', 'Sessió de només lectura. Rebràs els missatges de la sala, però no acceptarà els teus.'),
+"room_sign_in_again": ('Sign in again', 'Volver a iniciar sesión', 'Tornar a iniciar sessió'),
+"load_older": ('Load older (%1$d more)', 'Cargar anteriores (%1$d más)', 'Carregar anteriors (%1$d més)'),
+
+
 # Chats
 "chats_search_hint": ("Search conversations", "Buscar conversaciones", "Cercar converses"),
 "chats_advert_zero_hop": ("Send advert (0-hop)", "Enviar anuncio (0 saltos)", "Enviar anunci (0 salts)"),

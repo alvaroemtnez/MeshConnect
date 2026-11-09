@@ -1,5 +1,7 @@
 package io.alvaroedo.meshconnect.ui.screens
 
+import io.alvaroedo.meshconnect.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.LazyColumn
@@ -130,7 +132,7 @@ fun ThreadList(
         if (total > messages.size && messages.isNotEmpty()) {
             item(key = "load_older") {
                 TextButton(onClick = onLoadOlder, modifier = Modifier.fillMaxWidth()) {
-                    Text("Load older (${total - messages.size} more)")
+                    Text(stringResource(R.string.load_older, total - messages.size))
                 }
             }
         }

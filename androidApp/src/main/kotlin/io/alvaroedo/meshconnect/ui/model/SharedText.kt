@@ -98,6 +98,20 @@ object SharedText {
         return context.getString(R.string.stale_keeping, joined)
     }
 
+    /** roomAccessNotice (RoomModel.kt) */
+    fun roomNotice(context: Context, session: io.github.thatsfguy.meshcore.presentation.AdminSession): String? = when (session) {
+        io.github.thatsfguy.meshcore.presentation.AdminSession.None -> context.getString(R.string.room_not_signed_in)
+        io.github.thatsfguy.meshcore.presentation.AdminSession.Guest -> context.getString(R.string.room_guest)
+        else -> null
+    }
+
+    /** roomAccessAction (RoomModel.kt) */
+    fun roomAction(context: Context, session: io.github.thatsfguy.meshcore.presentation.AdminSession): String? = when (session) {
+        io.github.thatsfguy.meshcore.presentation.AdminSession.None -> context.getString(R.string.login_sign_in)
+        io.github.thatsfguy.meshcore.presentation.AdminSession.Guest -> context.getString(R.string.room_sign_in_again)
+        else -> null
+    }
+
     fun kind(context: Context, type: Int): String = context.getString(
         when (type) {
             Codes.ADV_TYPE_REPEATER -> R.string.kind_repeater
