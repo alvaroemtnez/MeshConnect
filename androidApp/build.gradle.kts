@@ -8,20 +8,20 @@ plugins {
 
 /**
  * Derive `(versionName, versionCode)` from the git tag when HEAD sits
- * exactly on an `android-v*` tag (same scheme as reticulum-mobile-app):
- * `android-v1.2.3` → ("1.2.3", 10203). CI `-PversionName`/`-PversionCode`
+ * exactly on a `v*` tag (MeshConnect scheme; upstream used `android-v*`):
+ * `v1.2.3` → ("1.2.3", 10203). CI `-PversionName`/`-PversionCode`
  * always win; otherwise a local build gets `0.0.0-dev`.
  */
 fun gitDerivedVersion(): Pair<String, Int>? {
     val tag = runCatching {
         val proc = ProcessBuilder(
-            "git", "describe", "--tags", "--exact-match", "--match", "android-v*",
+            "git", "describe", "--tags", "--exact-match", "--match", "v[0-9]*",
         ).directory(rootDir).redirectErrorStream(true).start()
         val out = proc.inputStream.bufferedReader().readText().trim()
         if (proc.waitFor() == 0) out else null
     }.getOrNull()?.takeIf { it.isNotEmpty() } ?: return null
 
-    val m = Regex("""android-v(\d+)\.(\d+)\.(\d+)""").matchEntire(tag) ?: return null
+    val m = Regex("""v(\d+)\.(\d+)\.(\d+)""").matchEntire(tag) ?: return null
     val (maj, min, pat) = m.destructured
     return "$maj.$min.$pat" to (maj.toInt() * 10_000 + min.toInt() * 100 + pat.toInt())
 }
@@ -29,6 +29,8 @@ fun gitDerivedVersion(): Pair<String, Int>? {
 android {
     namespace = "io.github.thatsfguy.meshcore.android"
     compileSdk = 34
+    // build.sh installs the SDK packages named here and by compileSdk.
+    buildToolsVersion = "34.0.0"
 
     defaultConfig {
         applicationId = "io.github.thatsfguy.meshcore.native"
@@ -166,4 +168,12 @@ dependencies {
     testImplementation("org.robolectric:robolectric:4.13")
     testImplementation("androidx.test:core:1.6.1")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1")
+}
+
+// Robolectric fetches its android-all jars into ${user.home}/.m2; build.sh
+// points the test JVM's home inside .tools/ so nothing lands in ~.
+tasks.withType<Test>().configureEach {
+    System.getenv("MESHCONNECT_ROBOLECTRIC_DIR")?.let { dir ->
+        systemProperty("user.home", dir)
+    }
 }

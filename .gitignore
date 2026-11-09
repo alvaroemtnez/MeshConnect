@@ -24,3 +24,9 @@ Thumbs.db
 
 # Unredacted screenshot originals — never commit these
 docs/screenshots/raw/
+
+# build.sh: downloaded toolchain and outputs
+.tools/
+dist/
+*.apk
+*.aab

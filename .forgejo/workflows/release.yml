@@ -1,0 +1,132 @@
+# Push a tag `vX.Y.Z` to build a signed APK + AAB and publish them as a
+# release on this Forgejo AND on the GitHub push mirror.
+#
+# versionName = X.Y.Z, versionCode = X*10000 + Y*100 + Z. Release notes are
+# the `## X.Y.Z` section of CHANGELOG.md; a tag without one fails the build.
+#
+# Secrets (repo → Settings → Actions → Secrets):
+#   KEYSTORE_BASE64     base64 -w0 of the release .jks
+#   KEYSTORE_PASSWORD   store password
+#   KEY_ALIAS           key alias
+#   KEY_PASSWORD        key password (optional, defaults to the store password)
+#   GH_RELEASE_TOKEN    GitHub fine-grained token, "Contents: read and write" on
+#                       the mirror repo only. Unset = skip the GitHub release.
+# Variables (repo → Settings → Actions → Variables):
+#   GH_REPO             owner/name of the GitHub mirror, e.g. alvaroemtnez/MeshConnect
+name: release
+on:
+  push:
+    tags: ['v*']
+
+jobs:
+  release:
+    runs-on: docker
+    container:
+      image: node:20-bookworm
+    steps:
+      - uses: https://code.forgejo.org/actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Host tools
+        run: apt-get update -q && apt-get install -y -q --no-install-recommends unzip jq
+
+      - name: Cache toolchain
+        uses: https://code.forgejo.org/actions/cache@v4
+        with:
+          path: .tools
+          key: tools-${{ hashFiles('build.sh', 'gradle/wrapper/gradle-wrapper.properties', '**/*.gradle.kts') }}
+          restore-keys: tools-
+
+      - name: Version from tag
+        run: |
+          set -eu
+          TAG="${GITHUB_REF_NAME}"
+          VER="${TAG#v}"
+          IFS='.' read -r MA MI PA <<EOF
+          $VER
+          EOF
+          case "$MA$MI$PA" in ''|*[!0-9]*) echo "Tag $TAG is not vMAJOR.MINOR.PATCH"; exit 1 ;; esac
+          echo "VERSION_NAME=$VER" >> "$GITHUB_ENV"
+          echo "VERSION_CODE=$((MA*10000 + MI*100 + PA))" >> "$GITHUB_ENV"
+
+      - name: Release notes from CHANGELOG.md
+        run: |
+          set -eu
+          awk -v v="## $VERSION_NAME" '
+            $0 == v { found=1; next }
+            found && /^## / { exit }
+            found { print }
+          ' CHANGELOG.md > notes.md
+          if [ -z "$(tr -d '[:space:]' < notes.md)" ]; then
+            echo "CHANGELOG.md has no '## $VERSION_NAME' section. Add one before tagging."
+            exit 1
+          fi
+
+      - name: Unit tests
+        run: ./build.sh test
+
+      - name: Build and sign
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          MESHCONNECT_KEYSTORE_PASS: ${{ secrets.KEYSTORE_PASSWORD }}
+          MESHCONNECT_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          MESHCONNECT_KEY_PASS: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          set -eu
+          [ -n "$KEYSTORE_BASE64" ] || { echo "KEYSTORE_BASE64 secret is not set"; exit 1; }
+          KS="$RUNNER_TEMP/release.jks"
+          echo "$KEYSTORE_BASE64" | base64 -d > "$KS"
+          MESHCONNECT_KEYSTORE="$KS" ./build.sh release
+          rm -f "$KS"
+          ls -la dist/
+          cd dist && sha256sum MeshConnect-*-release.apk MeshConnect-*-release.aab > SHA256SUMS
+
+      - name: Forgejo release
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -eu
+          API="$GITHUB_SERVER_URL/api/v1/repos/$GITHUB_REPOSITORY"
+          BODY=$(jq -n --arg tag "$GITHUB_REF_NAME" --arg name "MeshConnect $VERSION_NAME" \
+            --rawfile body notes.md '{tag_name:$tag, name:$name, body:$body}')
+          ID=$(curl -fsS -X POST -H "Authorization: token $TOKEN" -H 'Content-Type: application/json' \
+            -d "$BODY" "$API/releases" | jq -r .id)
+          for f in dist/MeshConnect-*-release.apk dist/MeshConnect-*-release.aab dist/SHA256SUMS; do
+            curl -fsS -X POST -H "Authorization: token $TOKEN" \
+              -F "attachment=@$f" "$API/releases/$ID/assets?name=$(basename "$f")" > /dev/null
+            echo "uploaded $(basename "$f")"
+          done
+
+      # The push mirror carries the commits and the tag; releases are not git
+      # objects, so they are created here through the GitHub API. The mirror
+      # may not have synced the tag yet: wait for it, so the GitHub release
+      # points at the tag the mirror pushes rather than creating its own.
+      - name: GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GH_RELEASE_TOKEN }}
+          GH_REPO: ${{ vars.GH_REPO }}
+        run: |
+          set -eu
+          if [ -z "$GH_TOKEN" ] || [ -z "$GH_REPO" ]; then
+            echo "GH_RELEASE_TOKEN or GH_REPO not set; skipping the GitHub release."
+            exit 0
+          fi
+          GH="https://api.github.com/repos/$GH_REPO"
+          AUTH="Authorization: Bearer $GH_TOKEN"
+          for i in $(seq 1 30); do
+            if curl -fsS -H "$AUTH" "$GH/git/ref/tags/$GITHUB_REF_NAME" > /dev/null 2>&1; then
+              echo "tag is on GitHub"; break
+            fi
+            echo "waiting for the mirror to push $GITHUB_REF_NAME ($i/30)"; sleep 20
+          done
+          BODY=$(jq -n --arg tag "$GITHUB_REF_NAME" --arg sha "$GITHUB_SHA" --arg name "MeshConnect $VERSION_NAME" \
+            --rawfile body notes.md '{tag_name:$tag, target_commitish:$sha, name:$name, body:$body}')
+          ID=$(curl -fsS -X POST -H "$AUTH" -H 'Accept: application/vnd.github+json' \
+            -d "$BODY" "$GH/releases" | jq -r .id)
+          for f in dist/MeshConnect-*-release.apk dist/MeshConnect-*-release.aab dist/SHA256SUMS; do
+            curl -fsS -X POST -H "$AUTH" -H 'Content-Type: application/octet-stream' \
+              --data-binary "@$f" \
+              "https://uploads.github.com/repos/$GH_REPO/releases/$ID/assets?name=$(basename "$f")" > /dev/null
+            echo "uploaded $(basename "$f") to GitHub"
+          done

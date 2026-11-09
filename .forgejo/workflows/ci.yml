@@ -1,0 +1,51 @@
+# Forgejo Actions. Needs a runner with the `docker` label (the dind runner);
+# the job brings its own image and build.sh brings its own JDK + SDK into
+# .tools/, so nothing depends on what the runner host has installed.
+name: ci
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: docker
+    container:
+      image: node:20-bookworm # node for the JS actions; has git, curl, tar
+    steps:
+      - uses: https://code.forgejo.org/actions/checkout@v4
+        with:
+          fetch-depth: 0 # tags, for the git-derived version
+
+      - name: Host tools
+        run: apt-get update -q && apt-get install -y -q --no-install-recommends unzip
+
+      # JDK, SDK and Gradle caches (~2 GB). A miss only costs download time.
+      - name: Cache toolchain
+        uses: https://code.forgejo.org/actions/cache@v4
+        with:
+          path: .tools
+          key: tools-${{ hashFiles('build.sh', 'gradle/wrapper/gradle-wrapper.properties', '**/*.gradle.kts') }}
+          restore-keys: tools-
+
+      - name: Unit tests
+        run: ./build.sh test
+
+      - name: Debug APK
+        run: ./build.sh debug
+
+      - name: Upload debug APK
+        uses: https://code.forgejo.org/actions/upload-artifact@v4
+        with:
+          name: MeshConnect-debug
+          path: dist/MeshConnect-debug.apk
+          retention-days: 7
+
+      - name: Test reports
+        if: failure()
+        uses: https://code.forgejo.org/actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: |
+            shared/build/reports/tests/
+            androidApp/build/reports/tests/
