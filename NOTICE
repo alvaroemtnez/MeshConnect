@@ -27,7 +27,8 @@ the app (androidApp/src/main/assets/licences/, shown under About →
 Open-source licences):
 
   Apache-2.0    AndroidX, Jetpack Compose, Material 3, Room, Glance, Kotlin,
-                kotlinx libraries, OkHttp, Okio, Gson, Timber, ZXing,
+                kotlinx libraries, OkHttp, Okio, Gson, Guava listenablefuture, Timber,
+                JetBrains annotations, ZXing,
                 ZXing Android Embedded, MapLibre GeoJSON and Turf,
                 Material Symbols
   BSD-2-Clause  MapLibre Native; MapLibre gestures

@@ -68,7 +68,7 @@ private val LIBRARIES = listOf(
     Triple("SQLCipher for Android · © ZETETIC LLC", "BSD-3-Clause", "sqlcipher.txt"),
     Triple("Bouncy Castle · © The Legion of the Bouncy Castle Inc.", "MIT", "bouncycastle.txt"),
     Triple("ZXing, ZXing Android Embedded", "Apache-2.0", "apache-2.0.txt"),
-    Triple("OkHttp, Okio (Square), Gson (Google), Timber (Jake Wharton)", "Apache-2.0", "apache-2.0.txt"),
+    Triple("OkHttp, Okio (Square), Gson, Guava listenablefuture (Google), Timber (Jake Wharton), JetBrains annotations", "Apache-2.0", "apache-2.0.txt"),
     Triple("Material Symbols (Google)", "Apache-2.0", "apache-2.0.txt"),
     Triple("Map tiles: OpenFreeMap, OpenMapTiles · © OpenStreetMap contributors", "ODbL · CC-BY 4.0", null),
 )
