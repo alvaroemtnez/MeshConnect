@@ -357,7 +357,26 @@ class Preferences(context: Context) {
 
     fun setThreadPinned(key: String, pinned: Boolean) {
         pinnedThreads = if (pinned) pinnedThreads + key else pinnedThreads - key
+        threadListRevision.value++
     }
+
+    /**
+     * Conversations archived out of the Chats list, same "kind|peerKey" keys. Local-only.
+     * Archiving unpins (ChatListModel.archive). Both sets go into backups.
+     */
+    var archivedThreads: Set<String>
+        get() = prefs.getStringSet("archived_threads", emptySet())!!
+        set(v) { prefs.edit().putStringSet("archived_threads", v).apply() }
+
+    fun setThreadArchived(key: String, archived: Boolean) {
+        val (p, a) = io.alvaroedo.meshconnect.ui.model.ChatListModel.archive(key, archived, pinnedThreads, archivedThreads)
+        pinnedThreads = p
+        archivedThreads = a
+        threadListRevision.value++
+    }
+
+    /** Bumped whenever pins or archives change, so lists showing them recompose. */
+    val threadListRevision = kotlinx.coroutines.flow.MutableStateFlow(0)
 
     /**
      * Private per-contact nickname, keyed by pubkey hex.
@@ -601,7 +620,11 @@ class Preferences(context: Context) {
         "auto_reconnect", "theme", "units", "diagnostics_enabled",
         "map_tiles_enabled", "notifications_enabled",
         "nodes_tab",
+        "pinned_threads", "archived_threads",
     )
+
+    /** String-set keys, carried in a backup as newline-separated thread keys. */
+    private val SET_KEYS = setOf("pinned_threads", "archived_threads")
 
     /** Boolean-valued keys, so import can put them back with the right type. */
     private val BOOLEAN_KEYS = setOf(
@@ -618,6 +641,7 @@ class Preferences(context: Context) {
         for (key in EXPORTABLE_KEYS) {
             if (!prefs.contains(key)) continue
             val value = when (key) {
+                in SET_KEYS -> io.alvaroedo.meshconnect.ui.model.ChatListModel.encodeKeys(prefs.getStringSet(key, emptySet())!!)
                 in BOOLEAN_KEYS -> prefs.getBoolean(key, false).toString()
                 in INT_KEYS -> prefs.getInt(key, 0).toString()
                 else -> prefs.getString(key, null) ?: continue
@@ -642,6 +666,7 @@ class Preferences(context: Context) {
         for ((key, value) in settings) {
             if (key !in EXPORTABLE_KEYS) continue
             when (key) {
+                in SET_KEYS -> editor.putStringSet(key, io.alvaroedo.meshconnect.ui.model.ChatListModel.parseKeys(value))
                 in BOOLEAN_KEYS -> {
                     val bool = value.toBooleanStrictOrNull() ?: continue
                     if (key == "transport_tcp_enabled" && bool && !tcpWarningAccepted) continue

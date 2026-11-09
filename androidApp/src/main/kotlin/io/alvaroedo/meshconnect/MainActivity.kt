@@ -309,6 +309,7 @@ private fun AppShell(
                 }
             }
             composable("chats") { ChatsScreen(vm, nav) }
+            composable("chats/archived") { ChatsScreen(vm, nav, archivedView = true) }
             composable("nodes") { NodesScreen(vm, nav) }
             // Reached from Nodes ⋮ — it is about the repeaters around
             // this node, which is what that tab is for.

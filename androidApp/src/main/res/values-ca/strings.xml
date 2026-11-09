@@ -1147,6 +1147,10 @@
     <string name="chats_empty_offline">No hi ha cap ràdio connectada.\nConnecta en Configuració → Connexió.</string>
     <string name="chats_pinned">Fixats</string>
     <string name="chats_recent">Recents</string>
+    <string name="chats_archive">Arxivar</string>
+    <string name="chats_unarchive">Desarxivar</string>
+    <string name="chats_archived_title">Arxivats</string>
+    <string name="chats_archived_count">Arxivats · %1$d</string>
     <string name="chats_pin">Fixar a dalt</string>
     <string name="chats_unpin">Desfixar</string>
     <string name="chats_nickname_menu">Sobrenom privat…</string>

@@ -51,7 +51,7 @@ import java.util.Date
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ChatsScreen(vm: MeshCoreViewModel, nav: NavController) {
+fun ChatsScreen(vm: MeshCoreViewModel, nav: NavController, archivedView: Boolean = false) {
     val conversations by vm.conversations.collectAsState()
     val engineState by vm.engineState.collectAsState()
     var showChannelSheet by remember { mutableStateOf(false) }
@@ -62,7 +62,9 @@ fun ChatsScreen(vm: MeshCoreViewModel, nav: NavController) {
     var searching by rememberSaveable { mutableStateOf(false) }
     var showSelfQr by remember { mutableStateOf(false) }
     val scanPrompt = stringResource(R.string.scan_prompt)
-    var pinned by remember { mutableStateOf(vm.prefs.pinnedThreads) }
+    val listRevision by vm.prefs.threadListRevision.collectAsState()
+    val pinned = remember(listRevision) { vm.prefs.pinnedThreads }
+    val archivedKeys = remember(listRevision) { vm.prefs.archivedThreads }
     var nicknameFor by remember { mutableStateOf<ConversationRow?>(null) }
 
     val communityScanLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
@@ -74,8 +76,9 @@ fun ChatsScreen(vm: MeshCoreViewModel, nav: NavController) {
     Scaffold(
         topBar = {
             AppTopBar(
-                title = stringResource(R.string.nav_chats),
+                title = stringResource(if (archivedView) R.string.chats_archived_title else R.string.nav_chats),
                 vm = vm,
+                nav = if (archivedView) nav else null,
                 search = TopBarSearch(
                     query = query,
                     onQueryChange = { query = it },
@@ -124,41 +127,58 @@ fun ChatsScreen(vm: MeshCoreViewModel, nav: NavController) {
                     row.title.contains(query, ignoreCase = true) ||
                     row.subtitle.contains(query, ignoreCase = true)
             }
-            val pinnedRows = filtered.filter { "${it.kind}|${it.key}" in pinned }
+            val split = io.alvaroedo.meshconnect.ui.model.ChatListModel.split(filtered, pinned, archivedKeys)
+            val pinnedRows = if (archivedView) emptyList() else split.pinned
+            val rest = if (archivedView) split.archived else split.recent
             val kinds by vm.channelKinds.collectAsState()
-            val rest = filtered.filter { "${it.kind}|${it.key}" !in pinned }
+
+            @Composable
+            fun rowItem(row: ConversationRow, isPinned: Boolean) {
+                val k = io.alvaroedo.meshconnect.ui.model.ChatListModel.key(row)
+                val isArchived = k in archivedKeys
+                // Right: read/unread. Left: archive/unarchive (Skypost's archive pattern).
+                SwipeRow(
+                    onStartSwipe = {
+                        if (row.unread > 0) vm.markRead(row.kind, row.key) else vm.markUnread(row.kind, row.key)
+                    },
+                    onEndSwipe = { vm.prefs.setThreadArchived(k, !isArchived) },
+                    startIcon = if (row.unread > 0) R.drawable.ic_mark_read else R.drawable.ic_mark_unread,
+                    endIcon = if (isArchived) R.drawable.ic_unarchive else R.drawable.ic_archive,
+                ) {
+                    ConversationRowItem(
+                        row,
+                        channelKind = if (row.isChannel) kinds[row.key.toIntOrNull()] else null,
+                        pinned = isPinned,
+                        archived = isArchived,
+                        onClick = { nav.navigate(conversationRoute(row.kind, row.key)) },
+                        onTogglePin = { vm.prefs.setThreadPinned(k, !isPinned) },
+                        onToggleArchive = { vm.prefs.setThreadArchived(k, !isArchived) },
+                        onNickname = { nicknameFor = row },
+                    )
+                }
+            }
 
             Column(Modifier.fillMaxSize().padding(padding)) {
                 LazyColumn(Modifier.fillMaxSize()) {
                     if (pinnedRows.isNotEmpty()) {
                         item("pinned_header") { SectionHeader(stringResource(R.string.chats_pinned)) }
-                        items(pinnedRows, key = { "p|${it.kind}|${it.key}" }) { row ->
-                            ConversationRowItem(
-                                row,
-                                channelKind = if (row.isChannel) kinds[row.key.toIntOrNull()] else null,
-                                pinned = true,
-                                onClick = { nav.navigate(conversationRoute(row.kind, row.key)) },
-                                onTogglePin = {
-                                    vm.prefs.setThreadPinned("${row.kind}|${row.key}", false)
-                                    pinned = vm.prefs.pinnedThreads
-                                },
-                                onNickname = { nicknameFor = row },
-                            )
-                        }
+                        items(pinnedRows, key = { "p|${it.kind}|${it.key}" }) { row -> rowItem(row, true) }
                         item("recent_header") { SectionHeader(stringResource(R.string.chats_recent)) }
                     }
-                    items(rest, key = { "${it.kind}|${it.key}" }) { row ->
-                        ConversationRowItem(
-                            row,
-                            channelKind = if (row.isChannel) kinds[row.key.toIntOrNull()] else null,
-                            pinned = false,
-                            onClick = { nav.navigate(conversationRoute(row.kind, row.key)) },
-                            onTogglePin = {
-                                vm.prefs.setThreadPinned("${row.kind}|${row.key}", true)
-                                pinned = vm.prefs.pinnedThreads
-                            },
-                            onNickname = { nicknameFor = row },
-                        )
+                    items(rest, key = { "${it.kind}|${it.key}" }) { row -> rowItem(row, false) }
+                    if (!archivedView && split.archived.isNotEmpty()) {
+                        item("archived") {
+                            androidx.compose.material3.ListItem(
+                                modifier = Modifier.clickable { nav.navigate("chats/archived") },
+                                leadingContent = { Icon(painterResource(R.drawable.ic_archive), null) },
+                                headlineContent = { Text(stringResource(R.string.chats_archived_count, split.archived.size)) },
+                                trailingContent = if (split.archivedUnread) {
+                                    { Badge(containerColor = MaterialTheme.colorScheme.primary) {} }
+                                } else {
+                                    null
+                                },
+                            )
+                        }
                     }
                 }
             }
@@ -191,8 +211,10 @@ private fun ConversationRowItem(
     row: ConversationRow,
     channelKind: io.github.thatsfguy.meshcore.protocol.ChannelKind? = null,
     pinned: Boolean = false,
+    archived: Boolean = false,
     onClick: () -> Unit,
     onTogglePin: () -> Unit = {},
+    onToggleArchive: () -> Unit = {},
     onNickname: () -> Unit = {},
 ) {
     var menuOpen by remember { mutableStateOf(false) }
@@ -257,10 +279,17 @@ private fun ConversationRowItem(
             }
         }
         DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+            if (!archived) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(if (pinned) R.string.chats_unpin else R.string.chats_pin)) },
+                    leadingIcon = { Icon(painterResource(if (pinned) R.drawable.ic_keep_off else R.drawable.ic_push_pin), null) },
+                    onClick = { menuOpen = false; onTogglePin() },
+                )
+            }
             DropdownMenuItem(
-                text = { Text(stringResource(if (pinned) R.string.chats_unpin else R.string.chats_pin)) },
-                leadingIcon = { Icon(painterResource(R.drawable.ic_push_pin), null) },
-                onClick = { menuOpen = false; onTogglePin() },
+                text = { Text(stringResource(if (archived) R.string.chats_unarchive else R.string.chats_archive)) },
+                leadingIcon = { Icon(painterResource(if (archived) R.drawable.ic_unarchive else R.drawable.ic_archive), null) },
+                onClick = { menuOpen = false; onToggleArchive() },
             )
             if (!row.isChannel) {
                 DropdownMenuItem(

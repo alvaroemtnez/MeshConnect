@@ -1150,6 +1150,10 @@
     <string name="chats_empty_offline">Not connected to a radio.\nConnect in Settings → Connection.</string>
     <string name="chats_pinned">Pinned</string>
     <string name="chats_recent">Recent</string>
+    <string name="chats_archive">Archive</string>
+    <string name="chats_unarchive">Unarchive</string>
+    <string name="chats_archived_title">Archived</string>
+    <string name="chats_archived_count">Archived · %1$d</string>
     <string name="chats_pin">Pin to top</string>
     <string name="chats_unpin">Unpin</string>
     <string name="chats_nickname_menu">Private nickname…</string>

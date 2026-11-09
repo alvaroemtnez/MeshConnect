@@ -730,6 +730,20 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    /** Clear a thread's unread count from the list (swipe), without opening it. */
+    fun markRead(kind: String, peerKey: String) {
+        _service.value?.clearMessageNotification(kind, peerKey)
+        viewModelScope.launch {
+            val key = selfKey.value
+            if (key.isEmpty()) return@launch
+            if (kind == MessageRepository.KIND_CHANNEL) {
+                peerKey.toIntOrNull()?.let { db.channels().clearUnread(key, it) }
+            } else {
+                db.contacts().clearUnread(key, peerKey)
+            }
+        }
+    }
+
     fun markThreadOpen(kind: String, peerKey: String) {
         val svc = _service.value ?: return
         svc.repository.activeThread = Inbox.threadKey(kind, peerKey)
@@ -2973,6 +2987,7 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
 
         // Local-only preference state that mirrors the same history.
         prefs.pinnedThreads = emptySet()
+        prefs.archivedThreads = emptySet()
         prefs.mutedChannels = emptySet()
         for (region in prefs.regions) prefs.removeRegion(region)
         if (alsoSecrets) prefs.clearAllSealed()

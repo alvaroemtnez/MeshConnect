@@ -1147,6 +1147,10 @@
     <string name="chats_empty_offline">No hay ninguna radio conectada.\nConecta en Ajustes → Conexión.</string>
     <string name="chats_pinned">Fijados</string>
     <string name="chats_recent">Recientes</string>
+    <string name="chats_archive">Archivar</string>
+    <string name="chats_unarchive">Desarchivar</string>
+    <string name="chats_archived_title">Archivados</string>
+    <string name="chats_archived_count">Archivados · %1$d</string>
     <string name="chats_pin">Fijar arriba</string>
     <string name="chats_unpin">Desfijar</string>
     <string name="chats_nickname_menu">Apodo privado…</string>
