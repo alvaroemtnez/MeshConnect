@@ -188,6 +188,12 @@ class Session:
                                                     random.randint(-110, -70), random.randint(-40, 40), 1234, 5678))
         elif cmd == CMD_SEND_TRACE_PATH:
             self.trace(frame)
+        elif cmd == 26:  # CMD_SEND_LOGIN: [26][pubkey 32][password]
+            # SENT, then PUSH_CODE_LOGIN_SUCCESS [0x85][perm][prefix 6][ts u32][acl]:
+            # admin for any password, so the hub can be driven.
+            self.send(bytes([RESP_SENT, 0]) + struct.pack("<II", 0, 4000))
+            prefix = frame[1:7]
+            threading.Timer(0.8, lambda: self.send(bytes([0x85, 1]) + prefix + struct.pack("<I", int(time.time())) + bytes([3]))).start()
         else:
             self.send(bytes([RESP_OK]))
 

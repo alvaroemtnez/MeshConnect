@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -93,11 +94,18 @@ fun RepeaterHubScreen(vm: MeshCoreViewModel, nav: NavController, keyHex: String)
     // dialog and only pushes the hub `onLogin` success, so an
     // unusable hub cannot exist.
     if (!session.signedIn) {
+        // Callers sign in first (rememberAdminOpener), so this is only reached by a route
+        // opened some other way, or a session that ended. Paint a surface behind the dialog
+        // rather than leave the window bare (black in dark theme).
+        androidx.compose.foundation.layout.Box(
+            Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface),
+        )
         RepeaterLoginDialog(
             vm = vm,
             keyHex = keyHex,
             nodeName = name,
-            onDismiss = { nav.popBackStack() },
+            nodeType = contact?.type,
+            onDismiss = { if (!(vm.adminSessions.value[keyHex] ?: AdminSession.None).signedIn) nav.popBackStack() },
         )
         return
     }

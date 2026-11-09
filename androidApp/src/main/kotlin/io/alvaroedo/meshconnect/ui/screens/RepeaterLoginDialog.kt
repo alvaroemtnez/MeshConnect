@@ -4,6 +4,7 @@ import io.alvaroedo.meshconnect.R
 import androidx.compose.ui.res.stringResource
 import io.github.thatsfguy.meshcore.presentation.AdminSession
 import io.github.thatsfguy.meshcore.presentation.roomPasswordHint
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -21,7 +22,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -60,6 +60,8 @@ fun RepeaterLoginDialog(
     keyHex: String,
     nodeName: String,
     isRoom: Boolean = false,
+    /** Node type for the header icon; null falls back to [isRoom]. */
+    nodeType: Int? = null,
     onDismiss: () -> Unit,
 ) {
     var password by remember { mutableStateOf("") }
@@ -95,7 +97,30 @@ fun RepeaterLoginDialog(
 
     AlertDialog(
         onDismissRequest = { if (!busy) onDismiss() },
-        title = { Text(stringResource(R.string.login_title, nodeName)) },
+        icon = {
+            val type = nodeType ?: if (isRoom) io.github.thatsfguy.meshcore.protocol.Codes.ADV_TYPE_ROOM else io.github.thatsfguy.meshcore.protocol.Codes.ADV_TYPE_REPEATER
+            androidx.compose.foundation.layout.Box(
+                Modifier
+                    .size(56.dp)
+                    .background(MaterialTheme.colorScheme.secondaryContainer, androidx.compose.foundation.shape.CircleShape),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    androidx.compose.ui.res.painterResource(io.alvaroedo.meshconnect.platform.NodeMarkers.iconFor(type, isSelf = false)),
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                    modifier = Modifier.size(28.dp),
+                )
+            }
+        },
+        title = {
+            Text(
+                stringResource(R.string.login_title, nodeName),
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                maxLines = 2,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+            )
+        },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState())) {
                 Text(
@@ -118,13 +143,13 @@ fun RepeaterLoginDialog(
                 }
                 Spacer(Modifier.height(16.dp))
 
-                OutlinedTextField(
+                MeshTextField(
                     value = password,
                     onValueChange = {
                         password = it
                         if (error != null) vm.clearLoginError(keyHex)
                     },
-                    label = { Text(stringResource(if (prefilled) R.string.login_password_saved else R.string.login_password)) },
+                    label = stringResource(if (prefilled) R.string.login_password_saved else R.string.login_password),
                     singleLine = true,
                     enabled = !busy,
                     isError = error != null,
@@ -151,7 +176,7 @@ fun RepeaterLoginDialog(
                         imeAction = ImeAction.Go,
                     ),
                     keyboardActions = KeyboardActions(onGo = { submit() }),
-                    supportingText = error?.let { { Text(it) } },
+                    supportingText = error,
                     modifier = Modifier.fillMaxWidth(),
                 )
 
@@ -187,4 +212,42 @@ fun RepeaterLoginDialog(
             TextButton(onClick = onDismiss, enabled = !busy) { Text(stringResource(R.string.cancel)) }
         },
     )
+}
+
+/**
+ * Opens a node's admin hub, signing in first **over the current screen**.
+ *
+ * The hub used to be pushed first and gate itself with this dialog, which put the dialog
+ * over an empty screen (black in dark theme). Now the caller stays visible behind the
+ * dialog, and the hub is pushed only once the node has granted a session; with a live
+ * session it opens straight away. The hub keeps its own gate as a fallback for routes
+ * reached some other way.
+ */
+@Composable
+fun rememberAdminOpener(vm: MeshCoreViewModel, nav: androidx.navigation.NavController): (String) -> Unit {
+    var pending by remember { mutableStateOf<String?>(null) }
+    val contacts by vm.dbContacts.collectAsState()
+    pending?.let { key ->
+        val c = contacts.firstOrNull { it.keyHex == key }
+        RepeaterLoginDialog(
+            vm = vm,
+            keyHex = key,
+            nodeName = c?.name?.ifBlank { null } ?: key.take(12),
+            nodeType = c?.type,
+            onDismiss = {
+                pending = null
+                // Called on success and on cancel alike; only a granted session goes on.
+                if ((vm.adminSessions.value[key] ?: AdminSession.None).signedIn) {
+                    nav.navigate("repeater/$key")
+                }
+            },
+        )
+    }
+    return { key ->
+        if ((vm.adminSessions.value[key] ?: AdminSession.None).signedIn) {
+            nav.navigate("repeater/$key")
+        } else {
+            pending = key
+        }
+    }
 }

@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -118,6 +119,21 @@ fun SectionSpinner(label: String = "Querying radio…") {
         CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
         Spacer(Modifier.width(12.dp))
         HintText(label)
+    }
+}
+
+/**
+ * A spinner in a box already the size of what it is waiting for. A dialog that opens on a
+ * one-line "Asking the radio…" and then grows to a QR code reads as two popups, because a
+ * local load is over in a frame; reserving the final size keeps it one.
+ */
+@Composable
+fun LoadingBox(height: androidx.compose.ui.unit.Dp, modifier: Modifier = Modifier) {
+    androidx.compose.foundation.layout.Box(
+        modifier.fillMaxWidth().height(height),
+        contentAlignment = Alignment.Center,
+    ) {
+        CircularProgressIndicator(Modifier.size(36.dp), strokeWidth = 3.dp)
     }
 }
 

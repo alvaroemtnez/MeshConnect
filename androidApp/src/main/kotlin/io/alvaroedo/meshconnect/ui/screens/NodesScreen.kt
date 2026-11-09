@@ -111,6 +111,7 @@ import java.util.Date
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NodesScreen(vm: MeshCoreViewModel, nav: NavController) {
+    val openAdmin = rememberAdminOpener(vm, nav)
     val contacts by vm.dbContacts.collectAsState()
     var detail by remember { mutableStateOf<ContactEntity?>(null) }
     // A room being signed into on the way to its conversation.
@@ -352,7 +353,7 @@ fun NodesScreen(vm: MeshCoreViewModel, nav: NavController) {
                             onClick = {
                                 when {
                                     c.type == Codes.ADV_TYPE_ROOM -> openRoom(c)
-                                    adminable -> nav.navigate("repeater/${c.keyHex}")
+                                    adminable -> openAdmin(c.keyHex)
                                     else -> detail = c
                                 }
                             },
@@ -444,7 +445,7 @@ fun NodesScreen(vm: MeshCoreViewModel, nav: NavController) {
             },
             onOpenAdmin = {
                 detail = null
-                nav.navigate("repeater/${contact.keyHex}")
+                openAdmin(contact.keyHex)
             },
             onTrace = {
                 detail = null
@@ -1311,10 +1312,7 @@ private fun ContactTelemetryDialog(
                 Spacer(Modifier.height(8.dp))
                 when {
                     loading -> Column {
-                        Text(
-                            stringResource(R.string.mapnode_asking),
-                            style = MaterialTheme.typography.bodySmall,
-                        )
+                        SectionSpinner(stringResource(R.string.mapnode_asking))
                         RequestProgressHint(vm, contact.keyHex)
                     }
                     readings.isNullOrEmpty() -> Text(
@@ -1469,7 +1467,7 @@ private fun ShareQrDialog(
                     Text(hint, style = MaterialTheme.typography.bodySmall)
                 }
                 if (failed) Text(stringResource(R.string.qr_failed))
-                if (qr == null && !failed) Text(stringResource(R.string.qr_loading))
+                if (qr == null && !failed) LoadingBox(280.dp)
             }
         },
         confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.setup_done)) } },

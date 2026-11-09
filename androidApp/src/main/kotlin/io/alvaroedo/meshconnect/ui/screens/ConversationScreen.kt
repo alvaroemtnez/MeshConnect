@@ -113,6 +113,7 @@ fun ConversationScreen(
     peerKey: String,
 ) {
     val isChannel = kind == MessageRepository.KIND_CHANNEL
+    val openAdmin = rememberAdminOpener(vm, nav)
     // Paged scrollback: long threads load newest-first in windows.
     var pageSize by remember(kind, peerKey) { mutableStateOf(PAGE_SIZE) }
     val total by remember(kind, peerKey) { vm.threadCount(kind, peerKey) }.collectAsState()
@@ -328,7 +329,7 @@ fun ConversationScreen(
                             channels = channels,
                             onOpenContact = { c ->
                                 when (c.type) {
-                                    Codes.ADV_TYPE_REPEATER, Codes.ADV_TYPE_SENSOR -> nav.navigate("repeater/${c.keyHex}")
+                                    Codes.ADV_TYPE_REPEATER, Codes.ADV_TYPE_SENSOR -> openAdmin(c.keyHex)
                                     else -> nav.navigate(conversationRoute(MessageRepository.KIND_DM, c.keyHex))
                                 }
                             },
@@ -559,7 +560,7 @@ fun ConversationScreen(
                 onOpenChat = { showContact = false },
                 onOpenAdmin = {
                     showContact = false
-                    nav.navigate("repeater/$peerKey")
+                    openAdmin(peerKey)
                 },
                 onTrace = {
                     showContact = false

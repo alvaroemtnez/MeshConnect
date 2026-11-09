@@ -52,6 +52,7 @@ import org.maplibre.android.geometry.LatLng
  */
 @Composable
 fun MapScreen(vm: MeshCoreViewModel, nav: NavController) {
+    val openAdmin = rememberAdminOpener(vm, nav)
     val context = LocalContext.current
     val contacts by vm.dbContacts.collectAsState()
     val self by vm.selfInfo.collectAsState()
@@ -248,7 +249,7 @@ fun MapScreen(vm: MeshCoreViewModel, nav: NavController) {
                 onToggleLinks = { linksFor = if (linksFor == key) null else key },
                 onOpenNode = {
                     selectedKey = null
-                    nav.navigate("repeater/$key")
+                    openAdmin(key)
                 },
                 onDismiss = { selectedKey = null },
             )

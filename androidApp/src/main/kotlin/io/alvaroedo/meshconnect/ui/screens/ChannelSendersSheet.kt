@@ -76,7 +76,7 @@ fun ChannelSendersSheet(vm: MeshCoreViewModel, channelIndex: Int, onDismiss: () 
 
             val list = senders
             when {
-                list == null -> SectionSpinner(stringResource(R.string.senders_reading))
+                list == null -> LoadingBox(160.dp)
                 list.isEmpty() -> HintText(
                     stringResource(R.string.senders_none),
                 )
