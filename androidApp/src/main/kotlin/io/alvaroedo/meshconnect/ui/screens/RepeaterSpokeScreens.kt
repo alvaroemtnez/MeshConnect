@@ -1,5 +1,7 @@
 package io.alvaroedo.meshconnect.ui.screens
 
+import io.alvaroedo.meshconnect.R
+import androidx.compose.ui.res.stringResource
 import io.github.thatsfguy.meshcore.presentation.AdminSession
 import io.github.thatsfguy.meshcore.presentation.encodePrefill
 import androidx.compose.foundation.layout.Arrangement
@@ -106,12 +108,12 @@ private fun SpokeScaffold(
 fun RepeaterStatusScreen(vm: MeshCoreViewModel, nav: NavController, keyHex: String) {
     val ctx = rememberSpokeContext(vm, keyHex)
     SpokeScaffold(
-        title = "Status",
+        title = stringResource(R.string.rpt_tile_status),
         vm = vm,
         nav = nav,
         nodeName = ctx.name,
         menuActions = listOf(
-            MenuAction("Request status") { vm.requestRepeaterStatus(keyHex) },
+            MenuAction(stringResource(R.string.rpt_request_status)) { vm.requestRepeaterStatus(keyHex) },
         ),
     ) { modifier ->
         Box(modifier) { RepeaterStatusPanel(vm, keyHex) }
@@ -121,7 +123,7 @@ fun RepeaterStatusScreen(vm: MeshCoreViewModel, nav: NavController, keyHex: Stri
 @Composable
 fun RepeaterFirmwareScreen(vm: MeshCoreViewModel, nav: NavController, keyHex: String) {
     val ctx = rememberSpokeContext(vm, keyHex)
-    SpokeScaffold(title = "Firmware", vm = vm, nav = nav, nodeName = ctx.name) { modifier ->
+    SpokeScaffold(title = stringResource(R.string.hub_firmware), vm = vm, nav = nav, nodeName = ctx.name) { modifier ->
         Box(modifier) { RepeaterFirmwarePanel(vm, nav, keyHex, ctx.role) }
     }
 }
@@ -132,7 +134,7 @@ fun RepeaterSettingsScreen(vm: MeshCoreViewModel, nav: NavController, keyHex: St
     val contacts by vm.dbContacts.collectAsState()
     val contact = contacts.firstOrNull { it.keyHex == keyHex }
     SpokeScaffold(
-        title = "Settings",
+        title = stringResource(R.string.rpt_tile_settings),
         vm = vm,
         nav = nav,
         nodeName = ctx.name,
@@ -151,7 +153,7 @@ fun RepeaterSettingsScreen(vm: MeshCoreViewModel, nav: NavController, keyHex: St
 fun RepeaterRegionsScreen(vm: MeshCoreViewModel, nav: NavController, keyHex: String) {
     val ctx = rememberSpokeContext(vm, keyHex)
     SpokeScaffold(
-        title = "Regions",
+        title = stringResource(R.string.backup_regions),
         vm = vm,
         nav = nav,
         nodeName = ctx.name,
@@ -177,8 +179,7 @@ fun RepeaterRegionsScreen(vm: MeshCoreViewModel, nav: NavController, keyHex: Str
 private fun AdminOnlyNotice() {
     Column(Modifier.padding(16.dp)) {
         HintText(
-            "This node only answers settings queries from an admin. " +
-                "Sign in with the admin password to read or change them.",
+            stringResource(R.string.rpt_admin_only),
         )
     }
 }
@@ -187,7 +188,7 @@ private fun AdminOnlyNotice() {
 fun RepeaterIdentityScreen(vm: MeshCoreViewModel, nav: NavController, keyHex: String) {
     val ctx = rememberSpokeContext(vm, keyHex)
     SpokeScaffold(
-        title = "Identity",
+        title = stringResource(R.string.hub_identity),
         vm = vm,
         nav = nav,
         nodeName = ctx.name,
@@ -212,7 +213,7 @@ fun RepeaterIdentityScreen(vm: MeshCoreViewModel, nav: NavController, keyHex: St
 fun RepeaterHelpScreen(vm: MeshCoreViewModel, nav: NavController, keyHex: String) {
     val ctx = rememberSpokeContext(vm, keyHex)
     SpokeScaffold(
-        title = "Command help",
+        title = stringResource(R.string.rpt_tile_help),
         vm = vm,
         nav = nav,
         nodeName = ctx.name,
@@ -239,13 +240,13 @@ fun RepeaterConsoleScreen(
     val messages by remember(keyHex) { vm.cliThread(keyHex) }.collectAsState()
 
     SpokeScaffold(
-        title = "Console",
+        title = stringResource(R.string.rpt_tile_console),
         vm = vm,
         nav = nav,
         nodeName = ctx.name,
         menuActions = listOf(
             MenuAction("Command help") { nav.navigate("repeater/$keyHex/help") },
-            MenuAction("Clear console", destructive = true) { vm.clearCliThread(keyHex) },
+            MenuAction(stringResource(R.string.rpt_clear_console), destructive = true) { vm.clearCliThread(keyHex) },
         ),
     ) { modifier ->
         CliConsole(
@@ -305,7 +306,7 @@ private fun CliConsole(
                 value = cli,
                 onValueChange = { cli = it },
                 modifier = Modifier.weight(1f),
-                placeholder = { Text("CLI command (e.g. get freq)") },
+                placeholder = { Text(stringResource(R.string.rpt_cli_hint)) },
                 singleLine = true,
                 keyboardOptions = VERBATIM_KEYBOARD,
             )
@@ -319,7 +320,7 @@ private fun CliConsole(
                 },
                 enabled = cli.isNotBlank(),
             ) {
-                Icon(androidx.compose.ui.res.painterResource(io.alvaroedo.meshconnect.R.drawable.ic_send), contentDescription = "Send CLI command")
+                Icon(androidx.compose.ui.res.painterResource(io.alvaroedo.meshconnect.R.drawable.ic_send), contentDescription = stringResource(R.string.send))
             }
         }
     }

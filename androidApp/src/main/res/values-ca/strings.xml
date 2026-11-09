@@ -621,6 +621,9 @@
     <string name="rpt_tile_firmware_sub">Actualitzar este node: has d\'estar a l\'abast de Bluetooth</string>
     <string name="rpt_tile_help">Ajuda d\'ordres</string>
     <string name="rpt_tile_help_sub">Què fa cada ordre i què espera</string>
+    <string name="rpt_admin_only">Este node només respon a consultes d\'ajustos d\'un administrador. Inicia sessió amb la contrasenya d\'administrador per a llegir-los o canviar-los.</string>
+    <string name="rpt_clear_console">Buidar consola</string>
+    <string name="rpt_cli_hint">Ordre CLI (p. ex. get freq)</string>
     <string name="chats_search_hint">Cercar converses</string>
     <string name="chats_advert_zero_hop">Enviar anunci (0 salts)</string>
     <string name="chats_advert_flood">Enviar anunci (inundació)</string>

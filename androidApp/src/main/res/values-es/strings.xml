@@ -621,6 +621,9 @@
     <string name="rpt_tile_firmware_sub">Actualizar este nodo: tienes que estar al alcance de Bluetooth</string>
     <string name="rpt_tile_help">Ayuda de comandos</string>
     <string name="rpt_tile_help_sub">Qué hace cada comando y qué espera</string>
+    <string name="rpt_admin_only">Este nodo solo responde a consultas de ajustes de un administrador. Inicia sesión con la contraseña de administrador para leerlos o cambiarlos.</string>
+    <string name="rpt_clear_console">Vaciar consola</string>
+    <string name="rpt_cli_hint">Comando CLI (p. ej. get freq)</string>
     <string name="chats_search_hint">Buscar conversaciones</string>
     <string name="chats_advert_zero_hop">Enviar anuncio (0 saltos)</string>
     <string name="chats_advert_flood">Enviar anuncio (inundación)</string>

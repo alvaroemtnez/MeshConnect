@@ -742,6 +742,10 @@ S = {
 "rpt_tile_help": ('Command help', 'Ayuda de comandos', "Ajuda d'ordres"),
 "rpt_tile_help_sub": ('What each command does, and what it expects', 'Qué hace cada comando y qué espera', 'Què fa cada ordre i què espera'),
 
+"rpt_admin_only": ('This node only answers settings queries from an admin. Sign in with the admin password to read or change them.', 'Este nodo solo responde a consultas de ajustes de un administrador. Inicia sesión con la contraseña de administrador para leerlos o cambiarlos.', "Este node només respon a consultes d'ajustos d'un administrador. Inicia sessió amb la contrasenya d'administrador per a llegir-los o canviar-los."),
+"rpt_clear_console": ('Clear console', 'Vaciar consola', 'Buidar consola'),
+"rpt_cli_hint": ('CLI command (e.g. get freq)', 'Comando CLI (p. ej. get freq)', 'Ordre CLI (p. ex. get freq)'),
+
 # Chats
 "chats_search_hint": ("Search conversations", "Buscar conversaciones", "Cercar converses"),
 "chats_advert_zero_hop": ("Send advert (0-hop)", "Enviar anuncio (0 saltos)", "Enviar anunci (0 salts)"),

@@ -623,6 +623,9 @@
     <string name="rpt_tile_firmware_sub">Update this node: you must be within Bluetooth range</string>
     <string name="rpt_tile_help">Command help</string>
     <string name="rpt_tile_help_sub">What each command does, and what it expects</string>
+    <string name="rpt_admin_only">This node only answers settings queries from an admin. Sign in with the admin password to read or change them.</string>
+    <string name="rpt_clear_console">Clear console</string>
+    <string name="rpt_cli_hint">CLI command (e.g. get freq)</string>
     <string name="chats_search_hint">Search conversations</string>
     <string name="chats_advert_zero_hop">Send advert (0-hop)</string>
     <string name="chats_advert_flood">Send advert (flood)</string>
