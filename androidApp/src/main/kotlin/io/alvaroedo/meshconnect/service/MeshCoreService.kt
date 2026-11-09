@@ -197,6 +197,7 @@ class MeshCoreService : Service() {
                 if (ev is DeviceEvent.LogRxData) {
                     _directRepeaters.value = LinkMeter.record(
                         _directRepeaters.value, ev.packet, ev.snr, ev.rssi, System.currentTimeMillis(),
+                        width = engine.deviceInfo.value?.pathHashByteWidth,
                     )
                 }
             }

@@ -56,9 +56,19 @@ object LinkMeter {
         snr: Double,
         rssi: Int,
         nowMs: Long,
+        /**
+         * Our radio's hop-hash width (DEVICE_INFO.pathHashByteWidth), or null if unknown.
+         * A packet's path width is chosen by whoever sent it, so the same repeater arrives
+         * as 2 bytes from one sender and 3 from another: it showed as `85A7` and `85A709`
+         * and took two rows. Longer hashes are cut to our width; narrower ones are kept as
+         * they are, because a 1-byte hash may belong to several repeaters and must not be
+         * merged into one.
+         */
+        width: Int? = null,
     ): List<DirectRepeater> {
         val packet = RawPacket.parse(rawPacket) ?: return current
-        val prefix = lastHop(packet) ?: return current
+        val full = lastHop(packet) ?: return current
+        val prefix = width?.takeIf { it in 1..4 }?.let { full.take(it * 2) } ?: full
         val old = current.firstOrNull { it.prefixHex == prefix }
         val updated = DirectRepeater(prefix, snr, rssi, nowMs, (old?.packets ?: 0) + 1)
         return (listOf(updated) + current.filter { it.prefixHex != prefix })

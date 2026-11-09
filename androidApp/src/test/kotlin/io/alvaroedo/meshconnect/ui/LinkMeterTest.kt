@@ -124,4 +124,25 @@ class LinkMeterTest {
     fun `unknown spreading factor assumes the common SF10`() {
         assertEquals(LinkMeter.bars(-12.0, 10), LinkMeter.bars(-12.0, null))
     }
+
+    @Test
+    fun `one repeater heard at two widths is one entry, at our radio's width`() {
+        // Same last relay c985a7 sent by a 3-byte sender, then c985 by a 2-byte one.
+        val threeByte = byteArrayOf(header(1), 0x81.toByte()) + hex("c985a7") + hex("00")
+        var s = LinkMeter.record(emptyList(), threeByte, 1.0, -90, 0, width = 2)
+        assertEquals("c985", s.single().prefixHex)
+        s = LinkMeter.record(s, capturedFlood, 2.0, -80, 10, width = 2)
+        assertEquals(1, s.size)
+        assertEquals(2, s[0].packets)
+        // Positive control: without our width the two arrive as distinct hashes.
+        val raw = LinkMeter.record(LinkMeter.record(emptyList(), threeByte, 1.0, -90, 0), capturedFlood, 2.0, -80, 10)
+        assertEquals(setOf("c985a7", "c985"), raw.map { it.prefixHex }.toSet())
+    }
+
+    @Test
+    fun `a narrower hash is never widened or merged`() {
+        val oneByte = byteArrayOf(header(1), 0x04) + hex("b389c985") + hex("00")
+        val s = LinkMeter.record(LinkMeter.record(emptyList(), capturedFlood, 1.0, -90, 0, width = 2), oneByte, 1.0, -90, 5, width = 2)
+        assertEquals(setOf("c985", "85"), s.map { it.prefixHex }.toSet())
+    }
 }
