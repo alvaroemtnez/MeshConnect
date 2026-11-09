@@ -41,6 +41,35 @@ object SharedText {
         else -> context.resources.getQuantityString(R.plurals.hops, hops, hops)
     }
 
+    /** ConversationScreen.hopsLabel (the bubble footer). */
+    fun footerHops(context: Context, hops: Int?): String? = when {
+        hops == null -> null
+        hops < 0 -> context.getString(R.string.footer_routed)
+        hops == 0 -> context.getString(R.string.reach_direct)
+        else -> context.resources.getQuantityString(R.plurals.hops, hops, hops)
+    }
+
+    /** ConversationScreen.arrivalLabel (the info sheet). */
+    fun arrival(context: Context, hops: Int?): String? = when {
+        hops == null -> null
+        hops < 0 -> context.getString(R.string.arrival_routed)
+        hops == 0 -> context.getString(R.string.arrival_direct)
+        else -> context.getString(R.string.arrival_flooded, context.resources.getQuantityString(R.plurals.hops, hops, hops))
+    }
+
+    /** channelSubtitle (ChannelSetup.kt): the line under a channel's title. */
+    fun channelSubtitle(context: Context, kind: io.github.thatsfguy.meshcore.protocol.ChannelKind?, region: String?): String {
+        val head = context.getString(
+            when (kind) {
+                io.github.thatsfguy.meshcore.protocol.ChannelKind.Public -> R.string.chsub_public
+                io.github.thatsfguy.meshcore.protocol.ChannelKind.Hashtag -> R.string.chsub_hashtag
+                io.github.thatsfguy.meshcore.protocol.ChannelKind.Private -> R.string.chsub_private
+                null -> R.string.chsub_unknown
+            },
+        )
+        return if (region != null) "$head · #$region" else head
+    }
+
     fun kind(context: Context, type: Int): String = context.getString(
         when (type) {
             Codes.ADV_TYPE_REPEATER -> R.string.kind_repeater

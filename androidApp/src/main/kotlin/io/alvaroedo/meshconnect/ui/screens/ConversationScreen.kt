@@ -1,5 +1,7 @@
 package io.alvaroedo.meshconnect.ui.screens
 
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.res.painterResource
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.consumeWindowInsets
@@ -254,7 +256,8 @@ fun ConversationScreen(
                 // without diluting the "not secure" part.
                 subtitle = if (isChannel) {
                     val idx = peerKey.toIntOrNull()
-                    io.github.thatsfguy.meshcore.presentation.channelSubtitle(
+                    io.alvaroedo.meshconnect.ui.model.SharedText.channelSubtitle(
+                        LocalContext.current,
                         idx?.let { channelKinds[it] },
                         idx?.let { channelRegions[it] },
                     )
@@ -843,7 +846,7 @@ private fun MessageBubble(
                 quoted?.let { QuoteBlock(it) }
                 if (orphanReaction != null) {
                     Text(
-                        orphanReaction + "  reacted to an earlier message",
+                        stringResource(R.string.conv_orphan_reaction, orphanReaction),
                         style = MaterialTheme.typography.bodyMedium,
                         fontStyle = FontStyle.Italic,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -859,40 +862,7 @@ private fun MessageBubble(
                     )
                 }
                 if (reactions.isNotEmpty()) ReactionChips(reactions)
-                Text(
-                    buildString {
-                        append(
-                            DateFormat.getTimeInstance(DateFormat.SHORT)
-                                .format(Date(m.timestamp * 1000)),
-                        )
-                        if (outgoing) {
-                            append(
-                                when (m.status) {
-                                    MessageStatus.Delivered.ordinal -> "  ✓✓"
-                                    MessageStatus.Sent.ordinal -> "  ✓"
-                                    MessageStatus.Failed.ordinal -> "  ✗"
-                                    else -> "  …"
-                                },
-                            )
-                            // Surface retries so a struggling route is visible.
-                            if (m.attempts > 1) append(" (try ${m.attempts})")
-                            // Who picked this up off the air. Absent when
-                            // nothing was heard — which is NOT "nobody
-                            // carried it", so it renders as nothing at
-                            // all rather than as a zero.
-                            MessageRepeats.badge(m.repeatHopsHex, m.repeatHashWidth)
-                                ?.let { append("  ·  $it") }
-                        }
-                        // Link quality for received traffic: how far it
-                        // came and how strong it landed. Both say more
-                        // about whether the mesh is healthy than the
-                        // delivery tick does.
-                        hopsLabel(m.hops)?.let { append("  ·  $it") }
-                        m.snr?.let { append("  ·  %.1f dB".format(it)) }
-                    },
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                MessageFooter(m)
             }
 
             if (showActions) {
@@ -1505,5 +1475,41 @@ private fun RichContentCard(
             )
         }
         is RichMessage.Location -> LocationCard(content) { LocationPreview(content, tilesEnabled) }
+    }
+}
+
+/**
+ * Time, delivery state as an icon (pending, sent, delivered, failed),
+ * retries, who repeated it, and for received traffic how far it came and
+ * how strong it landed.
+ */
+@Composable
+private fun MessageFooter(m: MessageEntity) {
+    val context = LocalContext.current
+    val ink = MaterialTheme.colorScheme.onSurfaceVariant
+    val style = MaterialTheme.typography.labelSmall
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(m.timestamp * 1000)), style = style, color = ink)
+        if (m.outgoing) {
+            val (icon, label, tint) = when (m.status) {
+                MessageStatus.Delivered.ordinal -> Triple(R.drawable.ic_done_all, R.string.conv_delivered, MaterialTheme.colorScheme.primary)
+                MessageStatus.Sent.ordinal -> Triple(R.drawable.ic_done, R.string.conv_sent, ink)
+                MessageStatus.Failed.ordinal -> Triple(R.drawable.ic_error, R.string.conv_failed, MaterialTheme.colorScheme.error)
+                else -> Triple(R.drawable.ic_schedule, R.string.conv_pending, ink)
+            }
+            Spacer(Modifier.width(4.dp))
+            Icon(painterResource(icon), stringResource(label), tint = tint, modifier = Modifier.size(14.dp))
+        }
+        val extras = buildList {
+            // Retries make a struggling route visible.
+            if (m.outgoing && m.attempts > 1) add(context.getString(R.string.conv_try, m.attempts))
+            // Who picked this up off the air; absent is not "nobody".
+            if (m.outgoing) MessageRepeats.badge(m.repeatHopsHex, m.repeatHashWidth)?.let { add(it) }
+            io.alvaroedo.meshconnect.ui.model.SharedText.footerHops(context, m.hops)?.let { add(it) }
+            m.snr?.let { add(String.format(java.util.Locale.ROOT, "%.1f dB", it)) }
+        }
+        if (extras.isNotEmpty()) {
+            Text("  ·  " + extras.joinToString("  ·  "), style = style, color = ink, maxLines = 1)
+        }
     }
 }

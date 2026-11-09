@@ -98,6 +98,11 @@ ICONS = [
     ("ic_signal_1", "signal_cellular_alt_1_bar", False),
     ("ic_signal_0", "signal_cellular_null", False),
     ("ic_mark_unread", "mark_chat_unread", False),
+    # Message status
+    ("ic_done", "done", False),
+    ("ic_done_all", "done_all", False),
+    ("ic_schedule", "schedule", False),
+    ("ic_error", "error", False),
 ]
 
 URL = "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/{}/default/24px.svg"
