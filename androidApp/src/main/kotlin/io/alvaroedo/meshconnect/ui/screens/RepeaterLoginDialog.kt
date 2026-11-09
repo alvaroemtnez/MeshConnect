@@ -13,8 +13,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
@@ -131,7 +129,7 @@ fun RepeaterLoginDialog(
                     singleLine = true,
                     enabled = !busy,
                     isError = error != null,
-                    leadingIcon = { Icon(Icons.Filled.Lock, contentDescription = null) },
+                    leadingIcon = { Icon(androidx.compose.ui.res.painterResource(io.alvaroedo.meshconnect.R.drawable.ic_lock), contentDescription = null) },
                     // A word, not a glyph: material-icons-core has no
                     // eye icon and pulling in material-icons-extended
                     // for one control is the wrong trade

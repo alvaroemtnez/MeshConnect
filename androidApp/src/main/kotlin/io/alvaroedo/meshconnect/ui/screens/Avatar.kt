@@ -2,7 +2,6 @@ package io.alvaroedo.meshconnect.ui.screens
 
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.material.icons.filled.Lock
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -76,7 +75,7 @@ fun NodeAvatar(
         ) {
             if (channelKind == io.github.thatsfguy.meshcore.protocol.ChannelKind.Private) {
                 androidx.compose.material3.Icon(
-                    androidx.compose.material.icons.Icons.Filled.Lock,
+                    androidx.compose.ui.res.painterResource(io.alvaroedo.meshconnect.R.drawable.ic_lock),
                     contentDescription = "Private channel",
                     tint = ink,
                     modifier = Modifier.size(size * 0.5f),

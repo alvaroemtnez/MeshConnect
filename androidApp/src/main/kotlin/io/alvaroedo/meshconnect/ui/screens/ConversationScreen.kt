@@ -40,9 +40,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Send
-import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -680,7 +677,7 @@ private fun ReplyBanner(target: MessageEntity, onCancel: () -> Unit) {
             )
         }
         IconButton(onClick = onCancel) {
-            Icon(Icons.Filled.Clear, contentDescription = "Cancel reply")
+            Icon(androidx.compose.ui.res.painterResource(io.alvaroedo.meshconnect.R.drawable.ic_close), contentDescription = "Cancel reply")
         }
     }
 }

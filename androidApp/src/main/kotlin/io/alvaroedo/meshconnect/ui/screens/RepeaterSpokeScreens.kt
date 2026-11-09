@@ -17,8 +17,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -321,7 +319,7 @@ private fun CliConsole(
                 },
                 enabled = cli.isNotBlank(),
             ) {
-                Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Send CLI command")
+                Icon(androidx.compose.ui.res.painterResource(io.alvaroedo.meshconnect.R.drawable.ic_send), contentDescription = "Send CLI command")
             }
         }
     }

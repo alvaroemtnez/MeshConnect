@@ -33,7 +33,6 @@ import io.github.thatsfguy.meshcore.protocol.ShareUri
 import io.alvaroedo.meshconnect.ui.MeshCoreViewModel
 import io.github.thatsfguy.meshcore.presentation.ChannelSetup
 import androidx.compose.foundation.clickable
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 
 /** The add sheet's choices, in the order Liam's MeshCore app offers them. */
 private enum class AddChannelChoice { Public, CreatePrivate, JoinPrivate, Hashtag }
@@ -121,7 +120,7 @@ private fun ChoiceRow(title: String, description: String, onClick: () -> Unit) {
             )
         }
         androidx.compose.material3.Icon(
-            androidx.compose.material.icons.Icons.AutoMirrored.Filled.KeyboardArrowRight,
+            androidx.compose.ui.res.painterResource(io.alvaroedo.meshconnect.R.drawable.ic_chevron_right),
             contentDescription = null,
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
         )

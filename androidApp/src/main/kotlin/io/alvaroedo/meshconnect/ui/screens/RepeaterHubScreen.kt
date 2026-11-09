@@ -1,5 +1,6 @@
 package io.alvaroedo.meshconnect.ui.screens
 
+import io.alvaroedo.meshconnect.R
 import io.github.thatsfguy.meshcore.presentation.AdminSession
 import io.github.thatsfguy.meshcore.util.isPlausiblePosition
 import io.github.thatsfguy.meshcore.presentation.HubTile
@@ -22,14 +23,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.automirrored.filled.List
-import androidx.compose.material.icons.automirrored.filled.Send
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -48,7 +41,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -235,7 +227,7 @@ private fun IdentityCard(
                 if (isPlausiblePosition(latitude, longitude)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
-                            Icons.Filled.LocationOn,
+                            androidx.compose.ui.res.painterResource(io.alvaroedo.meshconnect.R.drawable.ic_location_on),
                             contentDescription = null,
                             modifier = Modifier.height(14.dp),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -442,7 +434,7 @@ private fun HubTileRow(tile: HubTile, onClick: () -> Unit) {
         horizontalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Icon(
-            hubTileIcon(tile.route),
+            androidx.compose.ui.res.painterResource(hubTileIcon(tile.route)),
             contentDescription = null,
             tint = MaterialTheme.colorScheme.primary,
         )
@@ -455,18 +447,18 @@ private fun HubTileRow(tile: HubTile, onClick: () -> Unit) {
             )
         }
         Icon(
-            Icons.AutoMirrored.Filled.KeyboardArrowRight,
+            androidx.compose.ui.res.painterResource(io.alvaroedo.meshconnect.R.drawable.ic_chevron_right),
             contentDescription = null,
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
 }
 
-private fun hubTileIcon(route: String): ImageVector = when (route) {
-    "status" -> Icons.Filled.Info
-    "settings" -> Icons.Filled.Settings
-    "regions" -> Icons.Filled.LocationOn
-    "identity" -> Icons.Filled.Lock
-    "console" -> Icons.AutoMirrored.Filled.Send
-    else -> Icons.AutoMirrored.Filled.List
+private fun hubTileIcon(route: String): Int = when (route) {
+    "status" -> R.drawable.ic_info
+    "settings" -> R.drawable.ic_settings
+    "regions" -> R.drawable.ic_location_on
+    "identity" -> R.drawable.ic_lock
+    "console" -> R.drawable.ic_send
+    else -> R.drawable.ic_list
 }
