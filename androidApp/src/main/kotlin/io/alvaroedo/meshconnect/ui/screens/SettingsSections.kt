@@ -1,5 +1,7 @@
 package io.alvaroedo.meshconnect.ui.screens
 
+import io.alvaroedo.meshconnect.R
+import androidx.compose.ui.res.stringResource
 import androidx.activity.compose.rememberLauncherForActivityResult
 import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
@@ -71,22 +73,22 @@ internal fun ConnectionSection(vm: MeshCoreViewModel, onAddNode: () -> Unit) {
 
     Text(
         when (engineState) {
-            EngineState.Ready -> "Connected: ${label ?: "radio"}"
-            EngineState.Handshaking -> "Handshaking with ${label ?: "radio"}…"
-            EngineState.Connecting -> "Connecting…"
-            EngineState.Detached -> "Not connected"
+            EngineState.Ready -> stringResource(R.string.setup_connected_to, label ?: "")
+            EngineState.Handshaking -> stringResource(R.string.status_handshake)
+            EngineState.Connecting -> stringResource(R.string.status_connecting)
+            EngineState.Detached -> stringResource(R.string.hub_not_connected)
         },
         style = MaterialTheme.typography.bodyLarge,
     )
     if (plaintext && engineState == EngineState.Ready) {
         Text(
-            "⚠ This link is UNENCRYPTED (TCP)",
+            stringResource(R.string.set_link_unencrypted),
             color = MaterialTheme.colorScheme.error,
             style = MaterialTheme.typography.bodySmall,
         )
     }
     battery?.let {
-        HintText("Battery: " + BatteryLevel.label(it.batteryMillivolts))
+        HintText(stringResource(R.string.set_battery, BatteryLevel.label(it.batteryMillivolts)))
     }
     deviceIdentityLine(deviceInfo)?.let { HintText(it) }
     lastError?.let {
@@ -94,13 +96,13 @@ internal fun ConnectionSection(vm: MeshCoreViewModel, onAddNode: () -> Unit) {
     }
     Spacer(Modifier.height(4.dp))
     ButtonFlowRow {
-        OutlinedButton(onClick = onAddNode) { Text("Add / connect node") }
+        OutlinedButton(onClick = onAddNode) { Text(stringResource(R.string.set_add_node)) }
         if (engineState != EngineState.Detached) {
-            OutlinedButton(onClick = { vm.disconnect() }) { Text("Disconnect") }
+            OutlinedButton(onClick = { vm.disconnect() }) { Text(stringResource(R.string.set_disconnect)) }
         }
     }
     SavedNodesList(vm)
-    SettingRow("Auto-reconnect on launch", autoReconnect) {
+    SettingRow(stringResource(R.string.set_auto_reconnect), autoReconnect) {
         autoReconnect = it
         vm.prefs.autoReconnect = it
     }
@@ -119,20 +121,19 @@ internal fun TransportsSection(
         bleEnabled = it
         vm.prefs.bleEnabled = it
     }
-    SettingRow("USB serial", usbEnabled) {
+    SettingRow(stringResource(R.string.set_usb), usbEnabled) {
         usbEnabled = it
         vm.prefs.usbEnabled = it
     }
-    SettingRow("TCP (unencrypted)", tcpEnabled, onChange = onTcpToggle)
+    SettingRow(stringResource(R.string.set_tcp), tcpEnabled, onChange = onTcpToggle)
     if (tcpEnabled) {
         Text(
-            "⚠ TCP links are unencrypted and unauthenticated: message text and repeater " +
-                "login passwords cross the network in the clear.",
+            stringResource(R.string.set_tcp_warning),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.error,
         )
     }
-    HintText("A disabled transport is never started — it never scans, connects, or parses bytes.")
+    HintText(stringResource(R.string.set_transport_hint))
 }
 
 @Composable
@@ -140,7 +141,7 @@ internal fun IdentitySection(vm: MeshCoreViewModel, onShowSelfQr: () -> Unit) {
     val self by vm.selfInfo.collectAsState()
     val info = self
     if (info == null) {
-        HintText("Connect to a radio to edit node identity.")
+        HintText(stringResource(R.string.set_identity_connect))
         return
     }
     var name by remember(info.name) { mutableStateOf(info.name) }
@@ -167,14 +168,14 @@ internal fun IdentitySection(vm: MeshCoreViewModel, onShowSelfQr: () -> Unit) {
         OutlinedTextField(
             value = name,
             onValueChange = { name = it },
-            label = { Text("Advertised name") },
+            label = { Text(stringResource(R.string.set_advert_name)) },
             singleLine = true,
             modifier = Modifier.weight(1f),
         )
         TextButton(
             onClick = { vm.setAdvertName(name.trim()) },
             enabled = name.trim() != info.name && name.isNotBlank(),
-        ) { Text("Set") }
+        ) { Text(stringResource(R.string.set_set)) }
     }
     var pickPosition by remember { mutableStateOf(false) }
     if (pickPosition) {
@@ -193,12 +194,12 @@ internal fun IdentitySection(vm: MeshCoreViewModel, onShowSelfQr: () -> Unit) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         OutlinedTextField(
             value = lat, onValueChange = { lat = it },
-            label = { Text("Latitude") }, singleLine = true, modifier = Modifier.weight(1f),
+            label = { Text(stringResource(R.string.set_latitude)) }, singleLine = true, modifier = Modifier.weight(1f),
         )
         Spacer(Modifier.width(8.dp))
         OutlinedTextField(
             value = lon, onValueChange = { lon = it },
-            label = { Text("Longitude") }, singleLine = true, modifier = Modifier.weight(1f),
+            label = { Text(stringResource(R.string.set_longitude)) }, singleLine = true, modifier = Modifier.weight(1f),
         )
         TextButton(onClick = {
             val la = lat.toDoubleOrNull()
@@ -206,19 +207,18 @@ internal fun IdentitySection(vm: MeshCoreViewModel, onShowSelfQr: () -> Unit) {
             if (la != null && lo != null && la in -90.0..90.0 && lo in -180.0..180.0) {
                 vm.setAdvertLocation(la, lo)
             }
-        }) { Text("Set") }
+        }) { Text(stringResource(R.string.set_set)) }
     }
     if (!fixed) {
         HintText(
-            "This radio has no position set. It is still on the mesh — " +
-                "adverts just go out without a location.",
+            stringResource(R.string.set_no_position),
         )
     }
     ButtonFlowRow {
-        OutlinedButton(onClick = { pickPosition = true }) { Text("Pick on map") }
-        OutlinedButton(onClick = { vm.sendSelfAdvert(flood = false) }) { Text("Advert (0-hop)") }
-        OutlinedButton(onClick = { vm.sendSelfAdvert(flood = true) }) { Text("Advert (flood)") }
-        OutlinedButton(onClick = onShowSelfQr) { Text("Share QR") }
+        OutlinedButton(onClick = { pickPosition = true }) { Text(stringResource(R.string.set_pick_on_map)) }
+        OutlinedButton(onClick = { vm.sendSelfAdvert(flood = false) }) { Text(stringResource(R.string.chats_advert_zero_hop)) }
+        OutlinedButton(onClick = { vm.sendSelfAdvert(flood = true) }) { Text(stringResource(R.string.chats_advert_flood)) }
+        OutlinedButton(onClick = onShowSelfQr) { Text(stringResource(R.string.my_qr)) }
     }
 }
 
@@ -642,19 +642,19 @@ internal fun ChannelsSection(vm: MeshCoreViewModel, onEdit: (ChannelEntity) -> U
     var showAdd by remember { mutableStateOf(false) }
 
     if (channels.isEmpty()) {
-        HintText("No channels configured yet.")
+        HintText(stringResource(R.string.hub_channels_none))
     }
     for (ch in channels) {
         Row(
             Modifier.fillMaxWidth().padding(vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text("${ch.idx}: ${ch.name.ifBlank { "(unnamed)" }}", Modifier.weight(1f))
-            TextButton(onClick = { onEdit(ch) }) { Text("Edit") }
+            Text("${ch.idx}: ${ch.name.ifBlank { "–" }}", Modifier.weight(1f))
+            TextButton(onClick = { onEdit(ch) }) { Text(stringResource(R.string.set_edit)) }
         }
     }
     ButtonFlowRow {
-        OutlinedButton(onClick = { showAdd = true }) { Text("Add channel…") }
+        OutlinedButton(onClick = { showAdd = true }) { Text(stringResource(R.string.chats_add_channel)) }
     }
 
     if (showAdd) {
@@ -679,20 +679,30 @@ internal fun AppearanceSection(vm: MeshCoreViewModel) {
                     vm.prefs.theme = option
                 },
                 enabled = theme != option,
-            ) { Text(option.replaceFirstChar { it.uppercase() }) }
+            ) {
+                Text(
+                    stringResource(
+                        when (option) {
+                            "light" -> R.string.theme_light
+                            "dark" -> R.string.theme_dark
+                            else -> R.string.theme_system
+                        },
+                    ),
+                )
+            }
         }
     }
-    HintText("\"System\" follows the phone's light/dark setting.")
+    HintText(stringResource(R.string.set_theme_hint))
 
     Spacer(Modifier.height(16.dp))
-    Text("Units", style = MaterialTheme.typography.labelLarge)
+    Text(stringResource(R.string.set_units), style = MaterialTheme.typography.labelLarge)
     var units by remember { mutableStateOf(vm.prefs.units) }
     val resolved by vm.unitSystem.collectAsState()
     ButtonFlowRow {
         for ((value, label) in listOf(
-            UnitSystem.FOLLOW_SYSTEM to "System",
-            UnitSystem.METRIC to "Metric",
-            UnitSystem.IMPERIAL to "Imperial",
+            UnitSystem.FOLLOW_SYSTEM to stringResource(R.string.set_units_system),
+            UnitSystem.METRIC to stringResource(R.string.set_units_metric),
+            UnitSystem.IMPERIAL to stringResource(R.string.set_units_imperial),
         )) {
             OutlinedButton(
                 onClick = {
@@ -706,13 +716,10 @@ internal fun AppearanceSection(vm: MeshCoreViewModel) {
     // Says what is in force, not just what was chosen: "System" on its
     // own does not tell you which way it went, and that is the only
     // thing the reader actually wants to know.
-    HintText("Showing ${Units.label(resolved)}. \"System\" follows the phone's region.")
-    ExpandableHint("Distances, temperatures and altitudes only.") {
+    HintText(stringResource(R.string.set_units_hint, stringResource(if (resolved == UnitSystem.Imperial) R.string.set_units_imperial else R.string.set_units_metric)))
+    ExpandableHint(stringResource(R.string.set_units_scope)) {
         Text(
-            "Radio figures never change: frequency stays in MHz, signal in dB, and " +
-                "pressure in hPa — none of those has a US customary form a mesh operator " +
-                "would rather read. What a node sent is stored as it was sent; this only " +
-                "changes how it is shown, so switching back and forth loses nothing.",
+            stringResource(R.string.set_units_detail),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -728,7 +735,7 @@ internal fun PrivacySection(vm: MeshCoreViewModel) {
     val dbWarning = io.alvaroedo.meshconnect.storage.DatabaseKey
         .encryptionUnavailableReason
     if (dbWarning == null) {
-        HintText("Message storage is encrypted (SQLCipher, key sealed in the device keystore).")
+        HintText(stringResource(R.string.set_db_encrypted))
     } else {
         Text(
             "⚠ $dbWarning",
@@ -739,15 +746,13 @@ internal fun PrivacySection(vm: MeshCoreViewModel) {
 
     Spacer(Modifier.height(12.dp))
     var tiles by remember { mutableStateOf(vm.prefs.mapTilesEnabled) }
-    SettingRow("Load map tiles (network)", tiles) {
+    SettingRow(stringResource(R.string.map_load_tiles), tiles) {
         tiles = it
         vm.prefs.mapTilesEnabled = it
     }
-    ExpandableHint("The map is the app's only outbound HTTP.") {
+    ExpandableHint(stringResource(R.string.set_tiles_hint)) {
         Text(
-            "With tiles off, node markers still plot on a blank canvas — nothing is " +
-                "fetched, so no third party learns where you are looking. Nothing else " +
-                "in this app makes an outbound connection; it works in airplane mode.",
+            stringResource(R.string.set_tiles_detail),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -757,7 +762,7 @@ internal fun PrivacySection(vm: MeshCoreViewModel) {
 @Composable
 internal fun NotificationsSection(vm: MeshCoreViewModel) {
     var notifications by remember { mutableStateOf(vm.prefs.notificationsEnabled) }
-    SettingRow("Message notifications", notifications) {
+    SettingRow(stringResource(R.string.set_notif_messages), notifications) {
         notifications = it
         vm.prefs.notificationsEnabled = it
     }
@@ -766,18 +771,17 @@ internal fun NotificationsSection(vm: MeshCoreViewModel) {
     if (notifications) {
         var notifyDirect by remember { mutableStateOf(vm.prefs.notifyDirect) }
         var notifyChannels by remember { mutableStateOf(vm.prefs.notifyChannels) }
-        SettingRow("  · Direct messages", notifyDirect) {
+        SettingRow("  · " + stringResource(R.string.set_notif_direct), notifyDirect) {
             notifyDirect = it
             vm.prefs.notifyDirect = it
         }
-        SettingRow("  · Channel messages", notifyChannels) {
+        SettingRow("  · " + stringResource(R.string.set_notif_channels), notifyChannels) {
             notifyChannels = it
             vm.prefs.notifyChannels = it
         }
-        ExpandableHint("Mute a single conversation from its own screen.") {
+        ExpandableHint(stringResource(R.string.set_notif_mute_hint)) {
             Text(
-                "A muted thread still counts unread — silence is about interruption, " +
-                    "not about hiding that something arrived.",
+                stringResource(R.string.set_notif_mute_detail),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -788,11 +792,11 @@ internal fun NotificationsSection(vm: MeshCoreViewModel) {
 @Composable
 internal fun DiagnosticsSection(vm: MeshCoreViewModel) {
     var diagnostics by remember { mutableStateOf(vm.prefs.diagnosticsEnabled) }
-    SettingRow("Diagnostics log", diagnostics) {
+    SettingRow(stringResource(R.string.set_diag_log), diagnostics) {
         diagnostics = it
         vm.prefs.diagnosticsEnabled = it
     }
-    HintText("Secrets (passwords, keys, PSKs) are redacted before lines are written.")
+    HintText(stringResource(R.string.set_diag_redacted))
     if (diagnostics) {
         DiagnosticsViewer(vm)
     }
