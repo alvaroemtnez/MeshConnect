@@ -29,6 +29,10 @@ import io.alvaroedo.meshconnect.storage.MessageRepository
 import io.alvaroedo.meshconnect.storage.Preferences
 import io.alvaroedo.meshconnect.storage.SecretsRepository
 import io.github.thatsfguy.meshcore.engine.EngineState
+import io.github.thatsfguy.meshcore.protocol.DeviceEvent
+import io.alvaroedo.meshconnect.ui.model.LinkMeter
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
 import io.github.thatsfguy.meshcore.engine.MeshCoreEngine
 import io.github.thatsfguy.meshcore.platform.BleTransport
 import io.github.thatsfguy.meshcore.platform.UsbSerialTransport
@@ -88,6 +92,15 @@ class MeshCoreService : Service() {
 
     private val _lastError = MutableStateFlow<String?>(null)
     val lastError: StateFlow<String?> = _lastError
+
+    /**
+     * Repeaters this radio hears directly, from the RX log ([LinkMeter]).
+     * Held by the service, not the UI, so the widget and a reopened app
+     * see the same picture. Cleared when the link drops: readings from a
+     * radio we are no longer attached to describe nothing.
+     */
+    private val _directRepeaters = MutableStateFlow<List<LinkMeter.DirectRepeater>>(emptyList())
+    val directRepeaters: StateFlow<List<LinkMeter.DirectRepeater>> = _directRepeaters
 
     private var supervisor: ReconnectSupervisor? = null
     private var currentMemory: ConnectionMemory? = null
@@ -170,6 +183,30 @@ class MeshCoreService : Service() {
         }
         scope.launch {
             engine.state.collect { updateNotification(it) }
+        }
+        scope.launch {
+            engine.events.collect { ev ->
+                if (ev is DeviceEvent.LogRxData) {
+                    _directRepeaters.value = LinkMeter.record(
+                        _directRepeaters.value, ev.packet, ev.snr, ev.rssi, System.currentTimeMillis(),
+                    )
+                }
+            }
+        }
+        // The engine reads the battery once, at connect. The top bar and the
+        // widget show it, so refresh it while connected; one small command
+        // every few minutes is nothing next to the contact refresh.
+        scope.launch {
+            engine.state.collectLatest { state ->
+                if (state != EngineState.Ready) {
+                    if (state == EngineState.Detached) _directRepeaters.value = emptyList()
+                    return@collectLatest
+                }
+                while (true) {
+                    delay(BATTERY_POLL_MS)
+                    runCatching { engine.refreshBattery() }
+                }
+            }
         }
 
         repository.log = { diagnostics.log("Inbox", it) }
@@ -629,6 +666,7 @@ class MeshCoreService : Service() {
     }
 
     companion object {
+        private const val BATTERY_POLL_MS = 5L * 60 * 1000
         private const val NOTIF_CHANNEL = "meshcore_connection_quiet"
 
         /** Created with badges on, before 0.10.2; deleted on start. */

@@ -30,3 +30,4 @@ docs/screenshots/raw/
 dist/
 *.apk
 *.aab
+__pycache__/

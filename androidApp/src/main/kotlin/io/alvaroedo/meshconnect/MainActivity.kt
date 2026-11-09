@@ -7,13 +7,19 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import android.content.Intent
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Icon
@@ -96,6 +102,9 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Transparent system bars; the app's top bar and bottom navigation
+        // draw under them (see MeshCoreTheme).
+        enableEdgeToEdge()
         if (!BlePermissions.allGranted(this)) {
             permissionLauncher.launch(BlePermissions.required())
         }
@@ -142,6 +151,14 @@ class MainActivity : ComponentActivity() {
         const val EXTRA_THREAD_PEER = "thread_peer"
     }
 }
+
+private const val SLIDE_MS = 250
+private const val TAB_FADE_MS = 120
+private val TAB_ROUTES = setOf("chats", "nodes", "map", "settings")
+
+/** Both ends are bottom-bar tabs: switching tabs, not drilling in. */
+internal fun isTabSwitch(from: String?, to: String?): Boolean =
+    from in TAB_ROUTES && to in TAB_ROUTES
 
 private data class Tab(
     val route: String,
@@ -190,14 +207,19 @@ private fun AppShell(
     val unreadBadge = Inbox.badgeLabel(Inbox.unreadTotal(conversations.map { it.unread }))
 
     val tabs = listOf(
-        Tab("chats", "Chats", unreadBadge) { Icon(Icons.Filled.Email, contentDescription = "Chats") },
-        Tab("nodes", "Nodes") { Icon(Icons.Filled.Person, contentDescription = "Nodes") },
-        Tab("map", "Map") { Icon(Icons.Filled.LocationOn, contentDescription = "Map") },
-        Tab("settings", "Settings") { Icon(Icons.Filled.Settings, contentDescription = "Settings") },
+        Tab("chats", stringResource(R.string.nav_chats), unreadBadge) { Icon(painterResource(R.drawable.ic_chat), null) },
+        Tab("nodes", stringResource(R.string.nav_nodes)) { Icon(painterResource(R.drawable.ic_hub), null) },
+        Tab("map", stringResource(R.string.nav_map)) { Icon(painterResource(R.drawable.ic_map), null) },
+        Tab("settings", stringResource(R.string.nav_settings)) { Icon(painterResource(R.drawable.ic_settings), null) },
     )
+    val unreadLabel = stringResource(R.string.unread_count, unreadBadge)
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbar) },
+        // Edge-to-edge: the shell adds no system-bar padding of its own.
+        // Each screen's top bar pads for the status bar, the NavigationBar
+        // for the gesture bar, and screens without it pad themselves.
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         bottomBar = {
             val backStack by nav.currentBackStackEntryAsState()
             val currentRoute = backStack?.destination?.route
@@ -220,7 +242,10 @@ private fun AppShell(
                                 } else {
                                     BadgedBox(
                                         badge = {
-                                            Badge {
+                                            Badge(
+                                                containerColor = MaterialTheme.colorScheme.primary,
+                                                contentColor = MaterialTheme.colorScheme.onPrimary,
+                                            ) {
                                                 Text(
                                                     tab.badge,
                                                     // The number is on the icon, which
@@ -228,8 +253,7 @@ private fun AppShell(
                                                     // reader saying "Chats, 3" beats
                                                     // "Chats, 3, Chats".
                                                     modifier = Modifier.semantics {
-                                                        contentDescription =
-                                                            "${tab.badge} unread"
+                                                        contentDescription = unreadLabel
                                                     },
                                                 )
                                             }
@@ -249,7 +273,38 @@ private fun AppShell(
             // First run lands on setup rather than an empty Chats list
             // with no hint that a radio is required (PARITY §1).
             startDestination = if (vm.prefs.setupComplete) "chats" else "setup",
-            modifier = Modifier.padding(padding),
+            modifier = Modifier.padding(padding).consumeWindowInsets(padding),
+            // Push: the new screen slides in from the right over the old
+            // one; back: it slides out to the right, uncovering the one
+            // below (Skypost, Signal). Between tabs: a short crossfade.
+            enterTransition = {
+                if (isTabSwitch(initialState.destination.route, targetState.destination.route)) {
+                    fadeIn(tween(TAB_FADE_MS))
+                } else {
+                    slideInHorizontally(tween(SLIDE_MS)) { it }
+                }
+            },
+            exitTransition = {
+                if (isTabSwitch(initialState.destination.route, targetState.destination.route)) {
+                    fadeOut(tween(TAB_FADE_MS))
+                } else {
+                    slideOutHorizontally(tween(SLIDE_MS)) { -it / 4 }
+                }
+            },
+            popEnterTransition = {
+                if (isTabSwitch(initialState.destination.route, targetState.destination.route)) {
+                    fadeIn(tween(TAB_FADE_MS))
+                } else {
+                    slideInHorizontally(tween(SLIDE_MS)) { -it / 4 }
+                }
+            },
+            popExitTransition = {
+                if (isTabSwitch(initialState.destination.route, targetState.destination.route)) {
+                    fadeOut(tween(TAB_FADE_MS))
+                } else {
+                    slideOutHorizontally(tween(SLIDE_MS)) { it }
+                }
+            },
         ) {
             composable("setup") {
                 SetupScreen(vm) {

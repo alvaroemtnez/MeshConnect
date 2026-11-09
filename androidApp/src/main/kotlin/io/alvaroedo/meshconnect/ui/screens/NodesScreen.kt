@@ -2,6 +2,21 @@ package io.alvaroedo.meshconnect.ui.screens
 
 import io.github.thatsfguy.meshcore.presentation.AdminSession
 import android.graphics.Bitmap
+import androidx.annotation.DrawableRes
+import androidx.annotation.StringRes
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.material3.Button
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
+import io.alvaroedo.meshconnect.R
+import io.alvaroedo.meshconnect.ui.model.NodeKinds
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -88,10 +103,13 @@ import java.text.DateFormat
 import java.util.Date
 
 /**
- * Contacts/nodes list grouped by type, QR import via the + FAB, and the
- * contact detail sheet (pubkey, QR share, rename, reset path, remove;
- * repeaters/rooms add the admin entry point). SCOPE.md "Contacts /
- * nodes" + "Repeater / room administration" entry.
+ * Contacts/nodes list with kind filter chips (All, Contacts, Repeaters,
+ * Rooms, Sensors), search in the top bar, QR import from the scan FAB,
+ * and the contact detail sheet.
+ *
+ * Nodes heard but not added sit above the list and stay hidden until the
+ * list is pulled down: on a busy mesh they were a wall of rows in front of
+ * the contacts you came for. The chips carry their counts.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -103,7 +121,6 @@ fun NodesScreen(vm: MeshCoreViewModel, nav: NavController) {
     // A room is one thing — sign in, then read and post — so it opens
     // its conversation, through the sign-in when this app has no
     // session (RoomModel.kt says why the sign-in is not optional).
-    // Management is inside the room, for an admin.
     fun openRoom(room: ContactEntity) {
         if ((vm.adminSessions.value[room.keyHex] ?: AdminSession.None).signedIn) {
             nav.navigate(conversationRoute(MessageRepository.KIND_DM, room.keyHex))
@@ -137,88 +154,110 @@ fun NodesScreen(vm: MeshCoreViewModel, nav: NavController) {
     val scanLauncher = rememberLauncherForActivityResult(ScanContract()) { result ->
         result.contents?.let { vm.importScannedCode(it) }
     }
+    val scanPrompt = stringResource(R.string.scan_prompt)
     var showSelfQr by remember { mutableStateOf(false) }
     var discovering by remember { mutableStateOf(false) }
     val clipboard = androidx.compose.ui.platform.LocalClipboardManager.current
 
+    // Saveable: opening a node or a conversation takes this screen off the
+    // composition, and the search term must survive the round trip.
+    var query by rememberSaveable { mutableStateOf("") }
+    var searching by rememberSaveable { mutableStateOf(false) }
+    var kind by remember { mutableStateOf(NodeKinds.fromSaved(vm.prefs.nodesKind)) }
+    var sort by remember { mutableStateOf(vm.prefs.nodesSort) }
+    var filters by remember { mutableStateOf(vm.prefs.nodesFilters) }
+    var hideHeard by remember { mutableStateOf(vm.prefs.nodesHideHeard) }
+    var sortMenu by remember { mutableStateOf(false) }
+
     Scaffold(
         topBar = {
             AppTopBar(
-                title = "Nodes",
+                title = stringResource(R.string.nav_nodes),
                 vm = vm,
-                menuActions = listOf(
-                    MenuAction("Import contact QR…") {
-                        scanLauncher.launch(
-                            meshScanOptions("Scan a MeshCore QR — contact, channel or community"),
+                search = TopBarSearch(
+                    query = query,
+                    onQueryChange = { query = it },
+                    active = searching,
+                    onActiveChange = { searching = it },
+                    hint = stringResource(R.string.nodes_search_hint),
+                ),
+                actions = {
+                    Box {
+                        IconButton(onClick = { sortMenu = true }) {
+                            Icon(
+                                painterResource(R.drawable.ic_sort),
+                                stringResource(R.string.nodes_sort_filter),
+                                // Tinted while something is hidden, so the
+                                // state shows without opening the menu.
+                                tint = if (filters.isEmpty() && !hideHeard) {
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                } else {
+                                    MaterialTheme.colorScheme.primary
+                                },
+                            )
+                        }
+                        SortFilterMenu(
+                            open = sortMenu,
+                            onDismiss = { sortMenu = false },
+                            sort = sort,
+                            filters = filters,
+                            hideHeard = hideHeard,
+                            onSortChange = { sort = it; vm.prefs.nodesSort = it },
+                            onToggleFilter = { f ->
+                                filters = if (f in filters) filters - f else filters + f
+                                vm.prefs.nodesFilters = filters
+                            },
+                            onClearFilters = { filters = emptySet(); vm.prefs.nodesFilters = filters },
+                            onHideHeardChange = { hideHeard = it; vm.prefs.nodesHideHeard = it },
                         )
-                    },
-                    // The camera is not the only way a code arrives, and
-                    // for contacts shared between clients it is not even
-                    // the usual one — they get copied as a link. Same
-                    // decoder, same confirmations; only the way in is new.
-                    MenuAction("Paste a code") {
+                    }
+                },
+                menuActions = listOf(
+                    // The camera is not the only way a code arrives: contacts
+                    // shared between clients usually come as a copied link.
+                    MenuAction(stringResource(R.string.nodes_paste_code), icon = R.drawable.ic_content_copy) {
                         vm.importPastedText(clipboard.getText()?.text)
                     },
-                    MenuAction("Share my node QR…") { showSelfQr = true },
-                    // Active discovery (PARITY §2): a broadcast asking
-                    // nearby repeaters to speak up, as opposed to the
-                    // passive advert inbox shown on each type's tab.
-                    MenuAction("Discover nearby repeaters") { discovering = true },
-                    // The other direction from "Discover": not who is
-                    // out there, but who is carrying MY traffic.
-                    MenuAction("Who repeats me") { nav.navigate(HEARD_REPEATS_ROUTE) },
-                    // The only bulk-destructive action in the app, and
-                    // it lives where the list it prunes is.
-                    MenuAction("Remove stale nodes…") { staleOpen = true },
+                    MenuAction(stringResource(R.string.my_qr), icon = R.drawable.ic_qr_code) { showSelfQr = true },
+                    // Active discovery: a broadcast asking nearby repeaters
+                    // to speak up, as opposed to the passive advert inbox.
+                    MenuAction(stringResource(R.string.nodes_discover), icon = R.drawable.ic_radar) { discovering = true },
+                    // Not who is out there, but who is carrying MY traffic.
+                    MenuAction(stringResource(R.string.nodes_who_repeats), icon = R.drawable.ic_cell_tower) {
+                        nav.navigate(HEARD_REPEATS_ROUTE)
+                    },
+                    // The only bulk-destructive action in the app; it has
+                    // its own preview-then-confirm dialog.
+                    MenuAction(stringResource(R.string.nodes_remove_stale), icon = R.drawable.ic_delete_sweep) {
+                        staleOpen = true
+                    },
                 ),
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = {
-                scanLauncher.launch(
-                    meshScanOptions("Scan a MeshCore QR — contact, channel or community"),
-                )
-            }) {
-                Icon(Icons.Filled.Add, contentDescription = "Import contact QR")
+            FloatingActionButton(onClick = { scanLauncher.launch(meshScanOptions(scanPrompt)) }) {
+                Icon(painterResource(R.drawable.ic_qr_code_scanner), stringResource(R.string.nodes_scan_qr))
             }
         },
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(padding)) {
-            // Selection persists across tab switches and restarts. A
-            // position saved for the retired "New" tab opens on Contacts.
-            var tab by remember { mutableStateOf(NodeTab.fromSaved(vm.prefs.nodesTab)) }
             val discovered by vm.discovered.collectAsState()
-            // Saveable, not remember: opening a node or a conversation takes this
-            // screen off the composition, and coming back used to start the search
-            // over — the term typed to find it was gone (reported 2026-09-25).
-            var query by rememberSaveable { mutableStateOf("") }
-            // Order and narrowing survive tab switches and restarts, the
-            // same as the tab itself: a list you had to arrange once is
-            // one you should not have to arrange again.
-            var sort by remember { mutableStateOf(vm.prefs.nodesSort) }
-            var filters by remember { mutableStateOf(vm.prefs.nodesFilters) }
-            // Muting newcomers: nodes heard but not added, and their badges.
-            var hideHeard by remember { mutableStateOf(vm.prefs.nodesHideHeard) }
-            // Contacts tab folds in sensors/unknown types.
-            val ofThisType = contacts.filter { NodeTab.of(it.type) == tab }
-            // Searching, narrowing and ordering are all NodeListModel's,
-            // so the rules are pinned by tests rather than by driving a
-            // phone (CLAUDE.md — logic that carries decisions is pure).
-            val tabContacts = NodeListModel.arrange(
-                items = ofThisType,
+            val ofThisKind = contacts.filter { NodeKinds.matches(kind, it.type) }
+            // Searching, narrowing and ordering are NodeListModel's, so the
+            // rules are pinned by tests rather than by driving a phone.
+            val listed = NodeListModel.arrange(
+                items = ofThisKind,
                 query = query,
                 sort = sort,
                 filters = filters,
                 nowSeconds = vm.nowSeconds(),
             )
-            // Heard but not added: on the tab for their own kind, not in a
-            // tab of their own. See [NodeTab].
             val newCounts = NodeTabsModel.counts(discovered, hidden = hideHeard)
             val signals by vm.heardSignals.collectAsState()
             // Useful ones first — relayed your traffic or heard direct —
             // then the rest, each group newest first (the sort is stable).
-            val heard = NodeTabsModel.heardFor(
-                tab = tab,
+            val heard = NodeKinds.heard(
+                kind = kind,
                 heard = discovered,
                 query = query,
                 filtersActive = filters.isNotEmpty(),
@@ -227,138 +266,88 @@ fun NodesScreen(vm: MeshCoreViewModel, nav: NavController) {
                 signals[d.keyHex]?.let { it.provenRelay || it.heardDirect } == true
             }
 
-            // ScrollableTabRow, not TabRow: a fixed row divides the width
-            // evenly and WRAPS labels ("Repeat/ers") once the user raises
-            // the font or display size. Scrollable tabs size to their text
-            // and scroll if they overflow, so the user's accessibility
-            // setting is respected rather than fought.
-            ScrollableTabRow(selectedTabIndex = tab.ordinal, edgePadding = 12.dp) {
-                for (t in NodeTab.entries) {
-                    val count = newCounts[t] ?: 0
-                    Tab(
-                        selected = tab == t,
-                        onClick = {
-                            tab = t
-                            vm.prefs.nodesTab = t.ordinal
-                        },
-                        modifier = Modifier.semantics {
-                            contentDescription = NodeTabsModel.spokenLabel(t, count)
-                        },
-                        text = {
-                            // An overlapping badge, taking no width. A word
-                            // ("Repeaters · 3 new") or even a badge beside
-                            // the label pushed Sensors off the edge of a
-                            // 384 dp screen — the way "New" used to be —
-                            // because each tab also has a 90 dp minimum.
-                            BadgedBox(
-                                // Nudged into the tab's own 16 dp side
-                                // padding so it clears the last letter.
-                                badge = {
-                                    if (count > 0) {
-                                        Badge(Modifier.offset(x = 12.dp, y = (-2).dp)) {
-                                            Text("$count")
-                                        }
-                                    }
-                                },
-                            ) {
-                                Text(t.title, maxLines = 1, softWrap = false)
-                            }
-                        },
-                    )
-                }
-            }
-
-            NodeListControls(
-                query = query,
-                onQueryChange = { query = it },
-                sort = sort,
-                filters = filters,
-                onSortChange = {
-                    sort = it
-                    vm.prefs.nodesSort = it
-                },
-                onToggleFilter = { f ->
-                    filters = if (f in filters) filters - f else filters + f
-                    vm.prefs.nodesFilters = filters
-                },
-                onClearFilters = {
-                    filters = emptySet()
-                    vm.prefs.nodesFilters = filters
-                },
-                hideHeard = hideHeard,
-                hiddenNote = NodeTabsModel.hiddenNote(tab, discovered, hideHeard),
-                onHideHeardChange = {
-                    hideHeard = it
-                    vm.prefs.nodesHideHeard = it
+            KindChips(
+                selected = kind,
+                newCounts = newCounts,
+                onSelect = {
+                    kind = it
+                    vm.prefs.nodesKind = NodeKinds.toSaved(it)
                 },
             )
+            ActiveFilterNotes(
+                filters = filters,
+                hiddenNote = if (hideHeard) stringResource(R.string.hiding_not_added) else null,
+                onShowHeard = { hideHeard = false; vm.prefs.nodesHideHeard = false },
+            )
 
-            if (tabContacts.isEmpty() && heard.isEmpty()) {
-                EmptyHint(
-                    // An empty list with an active filter is the app
-                    // working, and it looks exactly like the app being
-                    // broken. Say which it is, and say what to undo.
-                    text = when {
-                        filters.isNotEmpty() && ofThisType.isNotEmpty() ->
-                            "Nothing here matches " +
-                                filters.joinToString(" and ") { it.label.lowercase() } +
-                                ".\nClear the filters from the list menu beside the search box."
-                        query.isNotBlank() && ofThisType.isNotEmpty() ->
-                            "Nothing here matches \"$query\"."
-                        hideHeard && discovered.any { NodeTab.of(it.type) == tab } ->
-                            "Nothing added here yet, and nodes not added are hidden.\n" +
-                                "Tap Show above to see them."
-                        tab == NodeTab.Repeaters -> "No repeaters heard yet."
-                        tab == NodeTab.Rooms -> "No room servers heard yet."
-                        else -> "No contacts yet.\nContacts appear when nearby nodes advertise, or scan a contact QR with +."
-                    },
-                )
-            } else {
-                // Collapsed state is kept: someone who has chosen not to
-                // auto-add a kind may still not want its newcomers above
-                // their list every time they open it.
-                var heardCollapsed by remember { mutableStateOf(vm.prefs.nodesHeardCollapsed) }
-                val radioFull by vm.contactsFull.collectAsState()
+            // Revealed by pulling the list down; kept across navigation so
+            // opening a node and coming back doesn't fold it away again.
+            var heardRevealed by rememberSaveable { mutableStateOf(false) }
+            var confirmDismiss by remember { mutableStateOf<List<String>?>(null) }
+            val radioFull by vm.contactsFull.collectAsState()
+            val pullState = rememberPullToRefreshState()
+
+            PullToRefreshBox(
+                isRefreshing = false,
+                onRefresh = { if (heard.isNotEmpty()) heardRevealed = true },
+                state = pullState,
+                modifier = Modifier.fillMaxSize(),
+            ) {
                 LazyColumn(Modifier.fillMaxSize()) {
-                    if (heard.isNotEmpty()) {
+                    if (heard.isNotEmpty() && heardRevealed) {
                         item(key = "heard_header") {
                             HeardHeader(
                                 count = heard.size,
-                                collapsed = heardCollapsed,
                                 radioFull = radioFull,
-                                onToggle = {
-                                    heardCollapsed = !heardCollapsed
-                                    vm.prefs.nodesHeardCollapsed = heardCollapsed
-                                },
-                                onDismissAll = { heard.forEach { vm.dismissDiscovered(it.keyHex) } },
+                                onHide = { heardRevealed = false },
+                                onDismissAll = { confirmDismiss = heard.map { it.keyHex } },
                             )
                         }
-                        if (!heardCollapsed) {
-                            items(heard, key = { "heard_${it.keyHex}" }) { d ->
-                                DiscoveredRow(
-                                    node = d,
-                                    signals = signals[d.keyHex],
-                                    onOpen = { heardDetail = d },
-                                    onAdd = { vm.addDiscovered(d.keyHex) },
-                                    onDismiss = { vm.dismissDiscovered(d.keyHex) },
-                                )
-                            }
+                        items(heard, key = { "heard_${it.keyHex}" }) { d ->
+                            DiscoveredRow(
+                                node = d,
+                                signals = signals[d.keyHex],
+                                onOpen = { heardDetail = d },
+                                onAdd = { vm.addDiscovered(d.keyHex) },
+                                onDismiss = { vm.dismissDiscovered(d.keyHex) },
+                            )
                         }
                         item(key = "heard_divider") { HorizontalDivider() }
+                    } else if (heard.isNotEmpty()) {
+                        item(key = "heard_hint") {
+                            Text(
+                                stringResource(R.string.heard_pull_hint),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+                            )
+                        }
                     }
-                    items(tabContacts, key = { it.keyHex }) { c ->
-                        // Infrastructure rows go straight to administration —
-                        // the reference client does this
-                        // (`contacts_screen._showRepeaterLogin`), and driving
-                        // both on hardware put us two taps and a scroll behind
-                        // it on the commonest admin task: the detail sheet sat
-                        // in the way and "Administer" was below the fold.
-                        // Long-press still opens the sheet for the things that
-                        // live there (routing, rename, favourite, QR).
-                        //
-                        // A room is the exception: what you come to a room
-                        // for is its conversation, so that is where a tap
-                        // goes, signing in first.
+                    if (listed.isEmpty() && (heard.isEmpty() || heardRevealed)) {
+                        item(key = "empty") {
+                            val joined = filters.map { filterLabel(it).lowercase() }
+                                .joinToString(stringResource(R.string.nodes_and))
+                            EmptyHint(
+                                modifier = Modifier.height(360.dp),
+                                // An empty list with an active filter looks
+                                // exactly like a broken app. Say which it is.
+                                text = when {
+                                    filters.isNotEmpty() && ofThisKind.isNotEmpty() ->
+                                        stringResource(R.string.nodes_empty_filtered, joined)
+                                    query.isNotBlank() && ofThisKind.isNotEmpty() ->
+                                        stringResource(R.string.nodes_empty_query, query)
+                                    kind == NodeTab.Repeaters -> stringResource(R.string.nodes_empty_repeaters)
+                                    kind == NodeTab.Rooms -> stringResource(R.string.nodes_empty_rooms)
+                                    kind == NodeTab.Sensors -> stringResource(R.string.nodes_empty_sensors)
+                                    else -> stringResource(R.string.nodes_empty)
+                                },
+                            )
+                        }
+                    }
+                    items(listed, key = { it.keyHex }) { c ->
+                        // Infrastructure rows go straight to administration;
+                        // long-press opens the sheet (routing, rename, QR).
+                        // A room opens its conversation, signing in first.
                         val adminable = c.type == Codes.ADV_TYPE_REPEATER ||
                             c.type == Codes.ADV_TYPE_SENSOR
                         ContactRow(
@@ -373,7 +362,27 @@ fun NodesScreen(vm: MeshCoreViewModel, nav: NavController) {
                             onLongClick = { detail = c },
                         )
                     }
+                    item(key = "fab_clearance") { Spacer(Modifier.height(88.dp)) }
                 }
+            }
+
+            confirmDismiss?.let { keys ->
+                AlertDialog(
+                    onDismissRequest = { confirmDismiss = null },
+                    icon = { Icon(painterResource(R.drawable.ic_delete_sweep), null) },
+                    title = { Text(pluralStringResource(R.plurals.dismiss_all_title, keys.size, keys.size)) },
+                    text = { Text(stringResource(R.string.dismiss_all_body)) },
+                    confirmButton = {
+                        Button(onClick = {
+                            keys.forEach { vm.dismissDiscovered(it) }
+                            confirmDismiss = null
+                            heardRevealed = false
+                        }) { Text(stringResource(R.string.dismiss_all)) }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { confirmDismiss = null }) { Text(stringResource(R.string.cancel)) }
+                    },
+                )
             }
         }
     }
@@ -441,16 +450,10 @@ fun NodesScreen(vm: MeshCoreViewModel, nav: NavController) {
                 nav.navigate("repeater/${contact.keyHex}")
             },
             // Straight to the transfer, using the address the node
-            // announced. A node stuck in update mode cannot be reached
-            // through its admin session — that route needs the mesh,
-            // and it left the mesh.
+            // announced: a node in update mode has left the mesh.
             onFlashFirmware = {
                 detail = null
                 val role = if (contact.type == Codes.ADV_TYPE_ROOM) "room" else "repeater"
-                // Everything known about the node travels with the
-                // route; what is not known is scanned for. The node key
-                // is always present, so the screen can read the board
-                // and address from the contact record as they arrive.
                 nav.navigate(
                     "firmware/node?role=$role&node=${contact.keyHex}" +
                         (contact.otaAddress?.let { "&mac=$it" } ?: "") +
@@ -461,114 +464,95 @@ fun NodesScreen(vm: MeshCoreViewModel, nav: NavController) {
     }
 }
 
-/**
- * Search box plus the list menu that orders and narrows what is below.
- *
- * The menu sits beside the search field rather than in the top bar's
- * overflow because it acts on this list, and the overflow already holds
- * seven actions that act on the mesh — importing, sharing, syncing,
- * discovering. Mixing "what do I see" into "what do I do" is how that
- * menu became a place nobody reads.
- *
- * Active filters are named in a line under the box. A filter is a piece
- * of hidden state that changes what the app appears to contain, and one
- * left on from a previous session, invisible behind an icon, is
- * indistinguishable from missing contacts.
- */
+@DrawableRes
+internal fun kindIcon(kind: NodeTab?): Int = when (kind) {
+    null -> R.drawable.ic_apps
+    NodeTab.Contacts -> R.drawable.ic_person
+    NodeTab.Repeaters -> R.drawable.ic_cell_tower
+    NodeTab.Rooms -> R.drawable.ic_forum
+    NodeTab.Sensors -> R.drawable.ic_sensors
+}
+
+@StringRes
+internal fun kindLabel(kind: NodeTab?): Int = when (kind) {
+    null -> R.string.kind_all
+    NodeTab.Contacts -> R.string.kind_contacts
+    NodeTab.Repeaters -> R.string.kind_repeaters
+    NodeTab.Rooms -> R.string.kind_rooms
+    NodeTab.Sensors -> R.string.kind_sensors
+}
+
 @Composable
-private fun NodeListControls(
-    query: String,
-    onQueryChange: (String) -> Unit,
-    sort: NodeListModel.Sort,
-    filters: Set<NodeListModel.Filter>,
-    onSortChange: (NodeListModel.Sort) -> Unit,
-    onToggleFilter: (NodeListModel.Filter) -> Unit,
-    onClearFilters: () -> Unit,
-    hideHeard: Boolean,
-    hiddenNote: String?,
-    onHideHeardChange: (Boolean) -> Unit,
-) {
-    var open by remember { mutableStateOf(false) }
-    Row(
-        Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
+private fun filterLabel(f: NodeListModel.Filter): String = stringResource(
+    when (f) {
+        NodeListModel.Filter.Favorites -> R.string.filter_favorites
+        NodeListModel.Filter.Unread -> R.string.filter_unread
+        NodeListModel.Filter.ActiveDay -> R.string.filter_active_day
+    },
+)
+
+@Composable
+private fun sortLabel(s: NodeListModel.Sort): String = stringResource(
+    when (s) {
+        NodeListModel.Sort.Activity -> R.string.sort_activity
+        NodeListModel.Sort.LastHeard -> R.string.sort_last_heard
+        NodeListModel.Sort.Name -> R.string.sort_name
+        NodeListModel.Sort.Hops -> R.string.sort_hops
+    },
+)
+
+/**
+ * All / Contacts / Repeaters / Rooms / Sensors, as filter chips with icons.
+ * A chip whose kind has newcomers heard but not added carries their count.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun KindChips(selected: NodeTab?, newCounts: Map<NodeTab, Int>, onSelect: (NodeTab?) -> Unit) {
+    val kinds: List<NodeTab?> = listOf(null) + NodeTab.entries
+    LazyRow(
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        SearchField(
-            query = query,
-            onQueryChange = onQueryChange,
-            label = "Search name or key",
-            modifier = Modifier.weight(1f),
-        )
-        Box {
-            IconButton(onClick = { open = true }) {
-                Icon(
-                    Icons.AutoMirrored.Filled.List,
-                    contentDescription = "Sort and filter — " +
-                        sort.label.lowercase() +
-                        (if (filters.isEmpty()) "" else ", ${filters.size} filter on") +
-                        (if (hideHeard) ", nodes not added hidden" else ""),
-                    // Tinted when something is hidden, so the state is
-                    // visible without opening the menu.
-                    tint = if (filters.isEmpty() && !hideHeard) MaterialTheme.colorScheme.onSurfaceVariant
-                    else MaterialTheme.colorScheme.primary,
-                )
-            }
-            DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
-                MenuHeading("Sort by")
-                for (option in NodeListModel.Sort.entries) {
-                    DropdownMenuItem(
-                        text = { Text(option.label) },
-                        onClick = {
-                            onSortChange(option)
-                            open = false
-                        },
-                        trailingIcon = { if (option == sort) SelectedTick() },
-                    )
-                }
-                HorizontalDivider()
-                MenuHeading("Show only")
-                for (option in NodeListModel.Filter.entries) {
-                    DropdownMenuItem(
-                        text = { Text(option.label) },
-                        // Filters stack, so the menu stays open — closing
-                        // it after each one turns "favourites, heard
-                        // today" into three trips.
-                        onClick = { onToggleFilter(option) },
-                        trailingIcon = { if (option in filters) SelectedTick() },
-                    )
-                }
-                HorizontalDivider()
-                MenuHeading("New nodes")
-                // A standing choice rather than a filter: Clear filters
-                // leaves it alone, and the list says so while it is on.
-                DropdownMenuItem(
-                    text = { Text("Hide nodes not added") },
-                    onClick = { onHideHeardChange(!hideHeard) },
-                    trailingIcon = { if (hideHeard) SelectedTick() },
-                )
-                if (filters.isNotEmpty()) {
-                    HorizontalDivider()
-                    DropdownMenuItem(
-                        text = { Text("Clear filters") },
-                        onClick = {
-                            onClearFilters()
-                            open = false
-                        },
-                    )
-                }
-            }
+        items(kinds.size) { i ->
+            val k = kinds[i]
+            val count = if (k == null) newCounts.values.sum() else newCounts[k] ?: 0
+            val label = stringResource(kindLabel(k))
+            FilterChip(
+                selected = selected == k,
+                onClick = { onSelect(k) },
+                label = { Text(label, maxLines = 1) },
+                leadingIcon = {
+                    Icon(painterResource(kindIcon(k)), null, Modifier.size(FilterChipDefaults.IconSize))
+                },
+                trailingIcon = if (count > 0) {
+                    { Badge(containerColor = MaterialTheme.colorScheme.primary) { Text("$count") } }
+                } else {
+                    null
+                },
+            )
         }
     }
+}
+
+/**
+ * Active filters and muted newcomers are hidden state that changes what
+ * the app appears to contain, so each is named in a line under the chips.
+ */
+@Composable
+private fun ActiveFilterNotes(
+    filters: Set<NodeListModel.Filter>,
+    hiddenNote: String?,
+    onShowHeard: () -> Unit,
+) {
     if (filters.isNotEmpty()) {
+        val joined = filters.map { filterLabel(it).lowercase() }.joinToString(stringResource(R.string.nodes_and))
         Text(
-            "Showing " + filters.joinToString(" and ") { it.label.lowercase() },
+            stringResource(R.string.nodes_showing, joined),
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.primary,
             modifier = Modifier.padding(horizontal = 16.dp).padding(bottom = 4.dp),
         )
     }
-    // Muted newcomers stay one tap from view — the "discover" step is
-    // turning this off, not digging through a menu to remember it's on.
     hiddenNote?.let { note ->
         Row(
             Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp),
@@ -580,7 +564,60 @@ private fun NodeListControls(
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.weight(1f),
             )
-            TextButton(onClick = { onHideHeardChange(false) }) { Text("Show") }
+            TextButton(onClick = onShowHeard) { Text(stringResource(R.string.show)) }
+        }
+    }
+}
+
+/**
+ * Orders and narrows the list. A top-bar icon rather than the overflow,
+ * which holds actions on the mesh: "what do I see" and "what do I do" are
+ * kept apart.
+ */
+@Composable
+private fun SortFilterMenu(
+    open: Boolean,
+    onDismiss: () -> Unit,
+    sort: NodeListModel.Sort,
+    filters: Set<NodeListModel.Filter>,
+    hideHeard: Boolean,
+    onSortChange: (NodeListModel.Sort) -> Unit,
+    onToggleFilter: (NodeListModel.Filter) -> Unit,
+    onClearFilters: () -> Unit,
+    onHideHeardChange: (Boolean) -> Unit,
+) {
+    DropdownMenu(expanded = open, onDismissRequest = onDismiss) {
+        MenuHeading(stringResource(R.string.nodes_sort_by))
+        for (option in NodeListModel.Sort.entries) {
+            DropdownMenuItem(
+                text = { Text(sortLabel(option)) },
+                onClick = { onSortChange(option); onDismiss() },
+                trailingIcon = { if (option == sort) SelectedTick() },
+            )
+        }
+        HorizontalDivider()
+        MenuHeading(stringResource(R.string.nodes_show_only))
+        for (option in NodeListModel.Filter.entries) {
+            DropdownMenuItem(
+                text = { Text(filterLabel(option)) },
+                // Filters stack, so the menu stays open.
+                onClick = { onToggleFilter(option) },
+                trailingIcon = { if (option in filters) SelectedTick() },
+            )
+        }
+        HorizontalDivider()
+        MenuHeading(stringResource(R.string.nodes_new_nodes))
+        DropdownMenuItem(
+            text = { Text(stringResource(R.string.nodes_hide_not_added)) },
+            onClick = { onHideHeardChange(!hideHeard) },
+            trailingIcon = { if (hideHeard) SelectedTick() },
+        )
+        if (filters.isNotEmpty()) {
+            HorizontalDivider()
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.nodes_clear_filters)) },
+                onClick = { onClearFilters(); onDismiss() },
+            )
         }
     }
 }
@@ -597,7 +634,7 @@ private fun MenuHeading(text: String) {
 
 @Composable
 private fun SelectedTick() {
-    Icon(Icons.Filled.Check, contentDescription = "Selected", modifier = Modifier.size(18.dp))
+    Icon(painterResource(R.drawable.ic_check), null, modifier = Modifier.size(18.dp))
 }
 
 @Composable
@@ -612,11 +649,10 @@ private fun DiscoveredRow(
     Row(
         Modifier
             .fillMaxWidth()
-            // Tap and long-press both open the node's sheet. A contact's
-            // tap can go to administration; this node can't be
-            // administered until it is added, so both mean "tell me more".
+            // Tap and long-press both open the node's sheet: it can't be
+            // administered until it is added.
             .combinedClickable(onClick = onOpen, onLongClick = onOpen)
-            .padding(horizontal = 16.dp, vertical = 10.dp),
+            .padding(start = 16.dp, end = 4.dp, top = 10.dp, bottom = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         NodeAvatar(
@@ -630,77 +666,75 @@ private fun DiscoveredRow(
                 node.name.ifBlank { node.keyHex.take(12) },
                 style = MaterialTheme.typography.bodyLarge,
                 maxLines = 1,
-                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                overflow = TextOverflow.Ellipsis,
             )
             // Hops, not the latest copy's SNR: after a relay that is the
             // last repeater's signal, not the node's (HeardReach).
             Text(
                 listOfNotNull(
-                    typeLabel(node.type).dropLast(1),
+                    stringResource(singleKindLabel(node.type)),
                     io.github.thatsfguy.meshcore.presentation.HeardReach.of(node.minHops, node.directSnr),
                     DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(node.lastHeardAt)),
                 ).joinToString(" · "),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            // Why it may be worth adding. Only a repeater relays, so the relay
-            // count is shown for those only.
             signals?.let {
-                // "direct" is already on the line above.
                 (if (node.type == Codes.ADV_TYPE_REPEATER) it else it.copy(relayed = 0))
                     .copy(heardDirect = false)
             }?.let { io.github.thatsfguy.meshcore.presentation.RepeaterSignals.describe(it) }?.let {
-                Text(
-                    it,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.primary,
-                )
+                Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
             }
         }
-        TextButton(onClick = onAdd) { Text("Add") }
-        TextButton(onClick = onDismiss) { Text("×", color = MaterialTheme.colorScheme.error) }
+        IconButton(onClick = onAdd) {
+            Icon(painterResource(R.drawable.ic_person_add), stringResource(R.string.add), tint = MaterialTheme.colorScheme.primary)
+        }
+        IconButton(onClick = onDismiss) {
+            Icon(painterResource(R.drawable.ic_close), stringResource(R.string.dismiss))
+        }
     }
 }
 
+@StringRes
+internal fun singleKindLabel(type: Int): Int = when (type) {
+    Codes.ADV_TYPE_REPEATER -> R.string.kind_repeater
+    Codes.ADV_TYPE_ROOM -> R.string.kind_room
+    Codes.ADV_TYPE_SENSOR -> R.string.kind_sensor
+    else -> R.string.kind_contact
+}
+
 /**
- * The top of a tab's "heard, not added" section: what it is, how many,
- * and a way to fold it away or clear it. The full-radio warning lives
- * here because a full radio is why most of these are here, and Add
- * cannot succeed until something is removed.
+ * The top of the revealed "heard, not added" section: how many, a way to
+ * fold it away, and Dismiss all, which asks first (it is easy to hit). The
+ * full-radio warning lives here because a full radio is why most of these
+ * are here.
  */
 @Composable
 private fun HeardHeader(
     count: Int,
-    collapsed: Boolean,
     radioFull: Boolean,
-    onToggle: () -> Unit,
+    onHide: () -> Unit,
     onDismissAll: () -> Unit,
 ) {
     Column(Modifier.fillMaxWidth()) {
         Row(
-            Modifier
-                .fillMaxWidth()
-                .clickable(onClick = onToggle)
-                .padding(start = 16.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
+            Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                "Heard, not added · $count",
+                stringResource(R.string.heard_header, count),
                 style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.weight(1f),
             )
-            TextButton(onClick = onDismissAll) {
-                Text("Dismiss all", color = MaterialTheme.colorScheme.error)
+            TextButton(onClick = onDismissAll) { Text(stringResource(R.string.dismiss_all)) }
+            IconButton(onClick = onHide) {
+                Icon(painterResource(R.drawable.ic_expand_less), stringResource(R.string.heard_hide))
             }
-            Icon(
-                if (collapsed) Icons.Filled.KeyboardArrowDown else Icons.Filled.KeyboardArrowUp,
-                contentDescription = if (collapsed) "Show them" else "Hide them",
-            )
         }
         if (radioFull) {
             Text(
-                "The radio's contact list is full, so it isn't adding new nodes. " +
-                    "Remove some (⋮ → Remove stale nodes) to make room.",
+                stringResource(R.string.radio_full),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.error,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),

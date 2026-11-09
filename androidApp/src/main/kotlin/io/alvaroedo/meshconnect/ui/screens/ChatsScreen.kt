@@ -36,6 +36,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import io.alvaroedo.meshconnect.R
 import io.alvaroedo.meshconnect.ui.ConversationRow
 import io.alvaroedo.meshconnect.ui.MeshCoreViewModel
 import io.github.thatsfguy.meshcore.engine.EngineState
@@ -58,6 +62,9 @@ fun ChatsScreen(vm: MeshCoreViewModel, nav: NavController) {
     // screen off the composition, and coming back used to start the search
     // over — the term typed to find it was gone (reported 2026-09-25).
     var query by rememberSaveable { mutableStateOf("") }
+    var searching by rememberSaveable { mutableStateOf(false) }
+    var showSelfQr by remember { mutableStateOf(false) }
+    val scanPrompt = stringResource(R.string.scan_prompt)
     var pinned by remember { mutableStateOf(vm.prefs.pinnedThreads) }
     var nicknameFor by remember { mutableStateOf<ConversationRow?>(null) }
 
@@ -70,8 +77,15 @@ fun ChatsScreen(vm: MeshCoreViewModel, nav: NavController) {
     Scaffold(
         topBar = {
             AppTopBar(
-                title = "Chats",
+                title = stringResource(R.string.nav_chats),
                 vm = vm,
+                search = TopBarSearch(
+                    query = query,
+                    onQueryChange = { query = it },
+                    active = searching,
+                    onActiveChange = { searching = it },
+                    hint = stringResource(R.string.chats_search_hint),
+                ),
                 menuActions = listOf(
                     // Adverts live here as well as on Settings -> Identity.
                     // Announcing yourself is a frequent, situational thing
@@ -80,31 +94,32 @@ fun ChatsScreen(vm: MeshCoreViewModel, nav: NavController) {
                     // it three taps deep behind a settings page. Being
                     // reachable from the screen you are already on beats
                     // being filed correctly.
-                    MenuAction("Send advert (0-hop)") { vm.sendSelfAdvert(flood = false) },
-                    MenuAction("Send advert (flood)") { vm.sendSelfAdvert(flood = true) },
-                    MenuAction("Add channel…") { showChannelSheet = true },
-                    MenuAction("Join community QR…") {
-                        communityScanLauncher.launch(
-                            meshScanOptions("Scan a MeshCore QR — contact, channel or community"),
-                        )
+                    MenuAction(stringResource(R.string.chats_advert_zero_hop), icon = R.drawable.ic_sensors) {
+                        vm.sendSelfAdvert(flood = false)
                     },
+                    MenuAction(stringResource(R.string.chats_advert_flood), icon = R.drawable.ic_radar) {
+                        vm.sendSelfAdvert(flood = true)
+                    },
+                    MenuAction(stringResource(R.string.chats_add_channel), icon = R.drawable.ic_tag) { showChannelSheet = true },
+                    MenuAction(stringResource(R.string.nodes_scan_qr), icon = R.drawable.ic_qr_code_scanner) {
+                        communityScanLauncher.launch(meshScanOptions(scanPrompt))
+                    },
+                    MenuAction(stringResource(R.string.my_qr), icon = R.drawable.ic_qr_code) { showSelfQr = true },
                 ),
             )
         },
         floatingActionButton = {
             FloatingActionButton(onClick = { showChannelSheet = true }) {
-                Icon(Icons.Filled.Add, contentDescription = "Add channel")
+                Icon(painterResource(R.drawable.ic_add), stringResource(R.string.chats_add_channel))
             }
         },
     ) { padding ->
         if (conversations.isEmpty()) {
             EmptyHint(
                 modifier = Modifier.padding(padding),
-                text = if (engineState == EngineState.Ready) {
-                    "No conversations yet.\nAdd a channel with +, or message a contact from the Nodes tab."
-                } else {
-                    "Not connected to a radio.\nConnect in Settings → Connection."
-                },
+                text = stringResource(
+                    if (engineState == EngineState.Ready) R.string.chats_empty else R.string.chats_empty_offline,
+                ),
             )
         } else {
             val filtered = conversations.filter { row ->
@@ -117,15 +132,9 @@ fun ChatsScreen(vm: MeshCoreViewModel, nav: NavController) {
             val rest = filtered.filter { "${it.kind}|${it.key}" !in pinned }
 
             Column(Modifier.fillMaxSize().padding(padding)) {
-                SearchField(
-                    query = query,
-                    onQueryChange = { query = it },
-                    label = "Search conversations",
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
-                )
                 LazyColumn(Modifier.fillMaxSize()) {
                     if (pinnedRows.isNotEmpty()) {
-                        item("pinned_header") { SectionHeader("Pinned") }
+                        item("pinned_header") { SectionHeader(stringResource(R.string.chats_pinned)) }
                         items(pinnedRows, key = { "p|${it.kind}|${it.key}" }) { row ->
                             ConversationRowItem(
                                 row,
@@ -139,7 +148,7 @@ fun ChatsScreen(vm: MeshCoreViewModel, nav: NavController) {
                                 onNickname = { nicknameFor = row },
                             )
                         }
-                        item("recent_header") { SectionHeader("Recent") }
+                        item("recent_header") { SectionHeader(stringResource(R.string.chats_recent)) }
                     }
                     items(rest, key = { "${it.kind}|${it.key}" }) { row ->
                         ConversationRowItem(
@@ -159,6 +168,9 @@ fun ChatsScreen(vm: MeshCoreViewModel, nav: NavController) {
         }
     }
 
+    if (showSelfQr) {
+        SelfQrDialog(vm, onDismiss = { showSelfQr = false })
+    }
     if (showChannelSheet) {
         ChannelAddSheet(vm, onDismiss = { showChannelSheet = false })
     }
@@ -225,7 +237,12 @@ private fun ConversationRowItem(
         }
         Column(horizontalAlignment = Alignment.End) {
             if (pinned) {
-                Text("📌", style = MaterialTheme.typography.labelSmall)
+                Icon(
+                    painterResource(R.drawable.ic_push_pin),
+                    stringResource(R.string.chats_pinned),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(14.dp),
+                )
             }
             if (row.timestamp > 0) {
                 Text(
@@ -236,17 +253,22 @@ private fun ConversationRowItem(
                 )
             }
             if (row.unread > 0) {
-                Badge { Text(row.unread.toString()) }
+                Badge(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                ) { Text(row.unread.toString()) }
             }
         }
         DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
             DropdownMenuItem(
-                text = { Text(if (pinned) "Unpin" else "Pin to top") },
+                text = { Text(stringResource(if (pinned) R.string.chats_unpin else R.string.chats_pin)) },
+                leadingIcon = { Icon(painterResource(R.drawable.ic_push_pin), null) },
                 onClick = { menuOpen = false; onTogglePin() },
             )
             if (!row.isChannel) {
                 DropdownMenuItem(
-                    text = { Text("Private nickname…") },
+                    text = { Text(stringResource(R.string.chats_nickname_menu)) },
+                    leadingIcon = { Icon(painterResource(R.drawable.ic_edit), null) },
                     onClick = { menuOpen = false; onNickname() },
                 )
             }
@@ -279,18 +301,17 @@ private fun NicknameDialog(
     var text by remember { mutableStateOf(current) }
     androidx.compose.material3.AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Private nickname") },
+        title = { Text(stringResource(R.string.chats_nickname_title)) },
         text = {
             Column {
                 Text(
-                    "Shown only on this phone, in place of \"$subject\". " +
-                        "Nothing is sent to the radio or the mesh.",
+                    stringResource(R.string.chats_nickname_body, subject),
                     style = MaterialTheme.typography.bodySmall,
                 )
                 OutlinedTextField(
                     value = text,
                     onValueChange = { text = it },
-                    label = { Text("Nickname") },
+                    label = { Text(stringResource(R.string.chats_nickname)) },
                     singleLine = true,
                 )
             }
@@ -298,10 +319,10 @@ private fun NicknameDialog(
         confirmButton = {
             androidx.compose.material3.TextButton(onClick = {
                 onSave(text.trim().ifBlank { null })
-            }) { Text("Save") }
+            }) { Text(stringResource(R.string.save)) }
         },
         dismissButton = {
-            androidx.compose.material3.TextButton(onClick = onDismiss) { Text("Cancel") }
+            androidx.compose.material3.TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
         },
     )
 }

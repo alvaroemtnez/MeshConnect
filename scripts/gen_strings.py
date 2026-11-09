@@ -25,7 +25,7 @@ UNTRANSLATABLE = {"app_name", "app_name_full"}
 
 
 def esc(t: str) -> str:
-    t = escape(t).replace("'", "\\'").replace('"', '\\"')
+    t = escape(t).replace("'", "\\'").replace('"', '\\"').replace("\n", "\\n")
     if t.startswith("@") or t.startswith("?"):
         t = "\\" + t
     return t

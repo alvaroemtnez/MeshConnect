@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Compose draws everything; this just avoids the stock ActionBar
-         flash before setContent runs. -->
-    <style name="Theme.MeshCore" parent="android:Theme.Material.NoActionBar">
+    <!-- Compose draws everything; this only avoids the stock ActionBar
+         flash before setContent runs. The activity is edge-to-edge. -->
+    <style name="Theme.MeshCore" parent="android:Theme.Material.Light.NoActionBar">
         <item name="android:statusBarColor">@android:color/transparent</item>
-        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowBackground">@color/window_background</item>
     </style>
 </resources>

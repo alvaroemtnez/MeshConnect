@@ -24,6 +24,134 @@ S = {
 "delete": ("Delete", "Eliminar", "Eliminar"),
 "open": ("Open", "Abrir", "Obrir"),
 
+# Chats
+"chats_search_hint": ("Search conversations", "Buscar conversaciones", "Cercar converses"),
+"chats_advert_zero_hop": ("Send advert (0-hop)", "Enviar anuncio (0 saltos)", "Enviar anunci (0 salts)"),
+"chats_advert_flood": ("Send advert (flood)", "Enviar anuncio (inundación)", "Enviar anunci (inundació)"),
+"chats_add_channel": ("Add channel", "Añadir canal", "Afegir canal"),
+"chats_empty": (
+    "No conversations yet.\nAdd a channel with +, or message a contact from Nodes.",
+    "Aún no hay conversaciones.\nAñade un canal con +, o escribe a un contacto desde Nodos.",
+    "Encara no hi ha converses.\nAfig un canal amb +, o escriu a un contacte des de Nodes.",
+),
+"chats_empty_offline": (
+    "Not connected to a radio.\nConnect in Settings → Connection.",
+    "No hay ninguna radio conectada.\nConecta en Ajustes → Conexión.",
+    "No hi ha cap ràdio connectada.\nConnecta en Configuració → Connexió.",
+),
+"chats_pinned": ("Pinned", "Fijados", "Fixats"),
+"chats_recent": ("Recent", "Recientes", "Recents"),
+"chats_pin": ("Pin to top", "Fijar arriba", "Fixar a dalt"),
+"chats_unpin": ("Unpin", "Desfijar", "Desfixar"),
+"chats_nickname_menu": ("Private nickname…", "Apodo privado…", "Sobrenom privat…"),
+"chats_nickname_title": ("Private nickname", "Apodo privado", "Sobrenom privat"),
+"chats_nickname_body": (
+    "Shown only on this phone, in place of \"%1$s\". Nothing is sent to the radio or the mesh.",
+    "Se muestra solo en este teléfono, en lugar de «%1$s». No se envía nada a la radio ni a la malla.",
+    "Es mostra només en este telèfon, en lloc de «%1$s». No s'envia res a la ràdio ni a la malla.",
+),
+"chats_nickname": ("Nickname", "Apodo", "Sobrenom"),
+"save": ("Save", "Guardar", "Guardar"),
+
+# Navigation
+"nav_chats": ("Chats", "Chats", "Xats"),
+"nav_nodes": ("Nodes", "Nodos", "Nodes"),
+"nav_map": ("Map", "Mapa", "Mapa"),
+"nav_settings": ("Settings", "Ajustes", "Configuració"),
+"unread_count": ("%1$s unread", "%1$s sin leer", "%1$s sense llegir"),
+
+# Node kinds
+"kind_all": ("All", "Todos", "Tots"),
+"kind_contacts": ("Contacts", "Contactos", "Contactes"),
+"kind_repeaters": ("Repeaters", "Repetidores", "Repetidors"),
+"kind_rooms": ("Rooms", "Salas", "Sales"),
+"kind_sensors": ("Sensors", "Sensores", "Sensors"),
+"kind_contact": ("Contact", "Contacto", "Contacte"),
+"kind_repeater": ("Repeater", "Repetidor", "Repetidor"),
+"kind_room": ("Room server", "Servidor de sala", "Servidor de sala"),
+"kind_sensor": ("Sensor", "Sensor", "Sensor"),
+
+# Nodes
+"nodes_search_hint": ("Search name or key", "Buscar nombre o clave", "Cercar nom o clau"),
+"nodes_scan_qr": ("Scan QR code", "Escanear código QR", "Escanejar codi QR"),
+"scan_prompt": ("Scan a MeshCore QR: contact, channel or community", "Escanea un QR de MeshCore: contacto, canal o comunidad", "Escaneja un QR de MeshCore: contacte, canal o comunitat"),
+"nodes_paste_code": ("Paste a code", "Pegar un código", "Apegar un codi"),
+"my_qr": ("My QR code", "Mi código QR", "El meu codi QR"),
+"nodes_discover": ("Discover nearby repeaters", "Descubrir repetidores cercanos", "Descobrir repetidors pròxims"),
+"nodes_who_repeats": ("Who repeats me", "Quién me repite", "Qui em repeteix"),
+"nodes_remove_stale": ("Remove stale nodes…", "Eliminar nodos inactivos…", "Eliminar nodes inactius…"),
+"nodes_sort_filter": ("Sort and filter", "Ordenar y filtrar", "Ordenar i filtrar"),
+"nodes_sort_by": ("Sort by", "Ordenar por", "Ordenar per"),
+"nodes_show_only": ("Show only", "Mostrar solo", "Mostrar només"),
+"nodes_new_nodes": ("New nodes", "Nodos nuevos", "Nodes nous"),
+"nodes_hide_not_added": ("Hide nodes not added", "Ocultar nodos no añadidos", "Amagar nodes no afegits"),
+"nodes_clear_filters": ("Clear filters", "Quitar filtros", "Llevar filtres"),
+"nodes_showing": ("Showing %1$s", "Mostrando: %1$s", "Mostrant: %1$s"),
+"nodes_and": (" and ", " y ", " i "),
+"sort_activity": ("Recent activity", "Actividad reciente", "Activitat recent"),
+"sort_last_heard": ("Last heard", "Oído por última vez", "Oït per última vegada"),
+"sort_name": ("Name (A–Z)", "Nombre (A–Z)", "Nom (A–Z)"),
+"sort_hops": ("Fewest hops", "Menos saltos", "Menys salts"),
+"filter_favorites": ("Favourites", "Favoritos", "Preferits"),
+"filter_unread": ("Unread", "Sin leer", "Sense llegir"),
+"filter_active_day": ("Heard in last 24 h", "Oídos en las últimas 24 h", "Oïts en les últimes 24 h"),
+"heard_header": ("Heard, not added · %1$d", "Oídos, no añadidos · %1$d", "Oïts, no afegits · %1$d"),
+"heard_hide": ("Hide", "Ocultar", "Amagar"),
+"heard_pull_hint": ("Pull down to see nodes heard but not added", "Desliza hacia abajo para ver los nodos oídos y no añadidos", "Llisca cap avall per a veure els nodes oïts i no afegits"),
+"dismiss": ("Dismiss", "Descartar", "Descartar"),
+"dismiss_all": ("Dismiss all", "Descartar todos", "Descartar-los tots"),
+"dismiss_all_body": (
+    "They disappear from this list until the radio hears them again. Nothing is removed from the radio.",
+    "Desaparecerán de esta lista hasta que la radio los vuelva a oír. No se elimina nada de la radio.",
+    "Desapareixeran d'esta llista fins que la ràdio els torne a sentir. No s'elimina res de la ràdio.",
+),
+"radio_full": (
+    "The radio's contact list is full, so it isn't adding new nodes. Remove some (⋮ → Remove stale nodes) to make room.",
+    "La lista de contactos de la radio está llena y no añade nodos nuevos. Elimina algunos (⋮ → Eliminar nodos inactivos) para hacer sitio.",
+    "La llista de contactes de la ràdio està plena i no afig nodes nous. Elimina'n alguns (⋮ → Eliminar nodes inactius) per a fer lloc.",
+),
+"hiding_not_added": ("Hiding nodes not added", "Ocultando nodos no añadidos", "Amagant nodes no afegits"),
+"show": ("Show", "Mostrar", "Mostrar"),
+"nodes_empty_filtered": ("Nothing here matches %1$s.\nClear the filters from the sort menu.", "Nada coincide con %1$s.\nQuita los filtros desde el menú de ordenar.", "Res no coincidix amb %1$s.\nLleva els filtres des del menú d'ordenar."),
+"nodes_empty_query": ("Nothing here matches \"%1$s\".", "Nada coincide con «%1$s».", "Res no coincidix amb «%1$s»."),
+"nodes_empty_repeaters": ("No repeaters heard yet.", "Aún no se ha oído ningún repetidor.", "Encara no s'ha oït cap repetidor."),
+"nodes_empty_rooms": ("No room servers heard yet.", "Aún no se ha oído ningún servidor de sala.", "Encara no s'ha oït cap servidor de sala."),
+"nodes_empty_sensors": ("No sensors heard yet.", "Aún no se ha oído ningún sensor.", "Encara no s'ha oït cap sensor."),
+"nodes_empty": (
+    "No nodes yet.\nThey appear when nearby nodes advertise, or scan a contact's QR code.",
+    "Aún no hay nodos.\nAparecen cuando los nodos cercanos se anuncian, o escanea el código QR de un contacto.",
+    "Encara no hi ha nodes.\nApareixen quan els nodes pròxims s'anuncien, o escaneja el codi QR d'un contacte.",
+),
+"hops_path": ("%1$d-hop path", "ruta de %1$d saltos", "ruta de %1$d salts"),
+"flood": ("flood", "inundación", "inundació"),
+
+# Top bar and connection status
+"status_offline": ("Offline", "Sin conexión", "Sense connexió"),
+"status_connecting": ("Connecting…", "Conectando…", "Connectant…"),
+"status_handshake": ("Handshake…", "Negociando…", "Negociant…"),
+"status_tcp_plain": ("TCP unencrypted", "TCP sin cifrar", "TCP sense xifrar"),
+"status_connected": ("Connected", "Conectado", "Connectat"),
+"status_open_details": ("Connection details", "Detalles de la conexión", "Detalls de la connexió"),
+"link_title": ("Radio link", "Enlace de radio", "Enllaç de ràdio"),
+"link_battery": ("Battery", "Batería", "Bateria"),
+"link_connection": ("Connection", "Conexión", "Connexió"),
+"link_repeaters": ("Repeaters heard directly", "Repetidores oídos directamente", "Repetidors oïts directament"),
+"link_repeaters_hint": (
+    "The last relay of each flooded packet your radio received, strongest first. Only the last 15 minutes count.",
+    "El último salto de cada paquete en inundación que ha recibido tu radio, del más fuerte al más débil. Solo cuentan los últimos 15 minutos.",
+    "L'últim salt de cada paquet en inundació que ha rebut la teua ràdio, del més fort al més feble. Només compten els últims 15 minuts.",
+),
+"link_no_repeaters": (
+    "No repeater heard in the last 15 minutes.",
+    "Ningún repetidor oído en los últimos 15 minutos.",
+    "Cap repetidor oït en els últims 15 minuts.",
+),
+"link_unknown_repeater": ("Unknown repeater", "Repetidor desconocido", "Repetidor desconegut"),
+"link_snr_rssi": ("SNR %1$s dB · RSSI %2$d dBm", "SNR %1$s dB · RSSI %2$d dBm", "SNR %1$s dB · RSSI %2$d dBm"),
+"link_not_connected": ("Not connected to a radio.", "No hay ninguna radio conectada.", "No hi ha cap ràdio connectada."),
+"search_close": ("Close search", "Cerrar búsqueda", "Tancar la cerca"),
+"menu": ("Menu", "Menú", "Menú"),
+
 # About
 "about_title": ("About", "Acerca de", "Quant a"),
 "about_version": ("Version %1$s", "Versión %1$s", "Versió %1$s"),
@@ -87,6 +215,7 @@ S = {
 
 # key -> ((one, other) en, (one, other) es, (one, other) ca)
 P = {
+"dismiss_all_title": (("Dismiss %1$d node?", "Dismiss %1$d nodes?"), ("¿Descartar %1$d nodo?", "¿Descartar %1$d nodos?"), ("Descartar %1$d node?", "Descartar %1$d nodes?")),
 }
 
 A = {

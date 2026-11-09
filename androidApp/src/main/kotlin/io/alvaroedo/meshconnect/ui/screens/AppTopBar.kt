@@ -1,35 +1,90 @@
 package io.alvaroedo.meshconnect.ui.screens
 
+import android.text.format.DateUtils
+import androidx.activity.compose.BackHandler
+import androidx.annotation.DrawableRes
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.clipPath
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
+import io.alvaroedo.meshconnect.R
 import io.alvaroedo.meshconnect.ui.MeshCoreViewModel
+import io.alvaroedo.meshconnect.ui.model.LinkMeter
+import io.alvaroedo.meshconnect.ui.theme.ExtraColors
+import io.alvaroedo.meshconnect.ui.theme.MonoFontFamily
 import io.github.thatsfguy.meshcore.engine.EngineState
+import io.github.thatsfguy.meshcore.presentation.BatteryLevel
+import io.github.thatsfguy.meshcore.protocol.Codes
+import kotlin.math.hypot
+import kotlin.math.max
 
 /** One entry in a screen's overflow (⋮) menu. */
 data class MenuAction(
@@ -37,14 +92,30 @@ data class MenuAction(
     val destructive: Boolean = false,
     /** Non-null renders a checkmark toggle state. */
     val checked: Boolean? = null,
+    @DrawableRes val icon: Int? = null,
     val onClick: () -> Unit,
 )
 
 /**
- * The app-wide top bar contract: title on the left, the space between
- * the title and the menu icon RESERVED for important information
- * (connection state, plaintext warning), and the right side dedicated
- * to a per-screen overflow menu.
+ * A screen's search, hoisted so the query survives navigation. The top bar
+ * shows a magnifying glass; tapping it turns the whole bar into a rounded
+ * search field with a back arrow (Signal/Molly), revealed as a circle
+ * growing from the icon.
+ */
+class TopBarSearch(
+    val query: String,
+    val onQueryChange: (String) -> Unit,
+    val active: Boolean,
+    val onActiveChange: (Boolean) -> Unit,
+    val hint: String,
+)
+
+/**
+ * The app-wide top bar: title on the left, connection status, the
+ * screen's own actions, search, then the overflow menu.
+ *
+ * It shares its colour with the bottom navigation bar and draws under the
+ * status bar (edge-to-edge), so each reads as one band with the system bar.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -55,110 +126,443 @@ fun AppTopBar(
     nav: NavController? = null,
     subtitle: String? = null,
     info: (@Composable () -> Unit)? = null,
+    search: TopBarSearch? = null,
+    actions: @Composable RowScope.() -> Unit = {},
 ) {
     var menuOpen by remember { mutableStateOf(false) }
-    TopAppBar(
-        title = {
-            androidx.compose.foundation.layout.Column {
-                Text(title, maxLines = 1)
-                subtitle?.let {
-                    Text(
-                        it,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                    )
-                }
-            }
-        },
-        navigationIcon = {
-            if (nav != null) {
-                IconButton(onClick = { nav.popBackStack() }) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                }
-            }
-        },
-        actions = {
-            // Reserved info slot — sits between the title and the menu.
-            if (info != null) info() else ConnectionInfoChip(vm)
-
-            if (menuActions.isNotEmpty()) {
-                IconButton(onClick = { menuOpen = true }) {
-                    Icon(Icons.Filled.MoreVert, contentDescription = "Menu")
-                }
-                DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-                    for (action in menuActions) {
-                        DropdownMenuItem(
-                            text = {
-                                Text(
-                                    action.label,
-                                    color = if (action.destructive) {
-                                        MaterialTheme.colorScheme.error
-                                    } else {
-                                        Color.Unspecified
-                                    },
-                                )
-                            },
-                            trailingIcon = {
-                                if (action.checked == true) {
-                                    Icon(Icons.Filled.Check, contentDescription = "Enabled")
-                                }
-                            },
-                            onClick = {
-                                menuOpen = false
-                                action.onClick()
-                            },
+    val barColor = MaterialTheme.colorScheme.surfaceContainer
+    Box {
+        TopAppBar(
+            colors = TopAppBarDefaults.topAppBarColors(
+                containerColor = barColor,
+                scrolledContainerColor = barColor,
+            ),
+            title = {
+                Column {
+                    Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    subtitle?.let {
+                        Text(
+                            it,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
                         )
                     }
                 }
-            }
-        },
+            },
+            navigationIcon = {
+                if (nav != null) {
+                    IconButton(onClick = { nav.popBackStack() }) {
+                        Icon(painterResource(R.drawable.ic_arrow_back), stringResource(R.string.back))
+                    }
+                }
+            },
+            actions = {
+                if (info != null) info() else ConnectionStatus(vm)
+                actions()
+                if (search != null) {
+                    IconButton(onClick = { search.onActiveChange(true) }) {
+                        Icon(painterResource(R.drawable.ic_search), stringResource(R.string.search))
+                    }
+                }
+                if (menuActions.isNotEmpty()) {
+                    IconButton(onClick = { menuOpen = true }) {
+                        Icon(painterResource(R.drawable.ic_more_vert), stringResource(R.string.more_options))
+                    }
+                    DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                        for (action in menuActions) {
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        action.label,
+                                        color = if (action.destructive) MaterialTheme.colorScheme.error else Color.Unspecified,
+                                    )
+                                },
+                                leadingIcon = action.icon?.let { res ->
+                                    {
+                                        Icon(
+                                            painterResource(res),
+                                            null,
+                                            tint = if (action.destructive) {
+                                                MaterialTheme.colorScheme.error
+                                            } else {
+                                                MaterialTheme.colorScheme.onSurfaceVariant
+                                            },
+                                        )
+                                    }
+                                },
+                                trailingIcon = {
+                                    if (action.checked == true) Icon(painterResource(R.drawable.ic_check), null)
+                                },
+                                onClick = {
+                                    menuOpen = false
+                                    action.onClick()
+                                },
+                            )
+                        }
+                    }
+                }
+            },
+        )
+        if (search != null) {
+            SearchOverlay(
+                search = search,
+                // The reveal grows from the magnifying glass, which sits one
+                // icon (48 dp) left of the overflow menu when there is one.
+                iconEndOffsetDp = if (menuActions.isNotEmpty()) 76f else 28f,
+                modifier = Modifier.matchParentSize(),
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SearchOverlay(search: TopBarSearch, iconEndOffsetDp: Float, modifier: Modifier) {
+    val progress by animateFloatAsState(
+        targetValue = if (search.active) 1f else 0f,
+        animationSpec = tween(durationMillis = 280, easing = FastOutSlowInEasing),
+        label = "searchReveal",
     )
+    BackHandler(enabled = search.active) {
+        search.onQueryChange("")
+        search.onActiveChange(false)
+    }
+    if (progress == 0f) return
+    val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+    val focus = remember { FocusRequester() }
+    LaunchedEffect(search.active) { if (search.active) runCatching { focus.requestFocus() } }
+
+    Box(
+        modifier
+            .drawWithContent {
+                val inset = iconEndOffsetDp.dp.toPx()
+                val cx = if (rtl) inset else size.width - inset
+                val top = size.height - 64.dp.toPx()
+                val cy = top + 32.dp.toPx()
+                val radius = progress * hypot(max(cx, size.width - cx), max(cy, size.height - cy))
+                val circle = Path().apply { addOval(Rect(Offset(cx, cy), radius)) }
+                clipPath(circle) { this@drawWithContent.drawContent() }
+            }
+            .background(MaterialTheme.colorScheme.surfaceContainer)
+            .windowInsetsPadding(TopAppBarDefaults.windowInsets),
+    ) {
+        Row(
+            Modifier.fillMaxWidth().height(64.dp).padding(start = 4.dp, end = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            IconButton(onClick = {
+                search.onQueryChange("")
+                search.onActiveChange(false)
+            }) {
+                Icon(painterResource(R.drawable.ic_arrow_back), stringResource(R.string.search_close))
+            }
+            Surface(
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                modifier = Modifier.weight(1f).height(48.dp),
+            ) {
+                Row(Modifier.padding(start = 16.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Box(Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
+                        if (search.query.isEmpty()) {
+                            Text(
+                                search.hint,
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                            )
+                        }
+                        BasicTextField(
+                            value = search.query,
+                            onValueChange = search.onQueryChange,
+                            singleLine = true,
+                            textStyle = MaterialTheme.typography.bodyLarge.copy(
+                                color = MaterialTheme.colorScheme.onSurface,
+                            ),
+                            cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                            modifier = Modifier.fillMaxWidth().focusRequester(focus),
+                        )
+                    }
+                    if (search.query.isNotEmpty()) {
+                        IconButton(onClick = { search.onQueryChange("") }) {
+                            Icon(painterResource(R.drawable.ic_close), stringResource(R.string.clear))
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 /**
- * Default content of the reserved info slot: connection state at a
- * glance — colored dot + node name, with the plaintext-TCP warning
- * taking priority in error color.
+ * The status cluster in every top bar.
+ *
+ * Connected: a signal meter for the best repeater heard directly (with its
+ * hash), and the radio's battery. Tapping opens [LinkSheet]. Connecting:
+ * a pulsing amber dot. TCP: the plaintext warning, which wins over all.
  */
 @Composable
-fun ConnectionInfoChip(vm: MeshCoreViewModel) {
-    val engineState by vm.engineState.collectAsState()
-    val plaintext by vm.plaintextLink.collectAsState()
-    val self by vm.selfInfo.collectAsState()
-
-    val (dotColor, text) = when {
-        engineState == EngineState.Ready && plaintext ->
-            MaterialTheme.colorScheme.error to "⚠ TCP unencrypted"
-        engineState == EngineState.Ready ->
-            Color(0xFF43A047) to (self?.name ?: "Connected")
-        engineState == EngineState.Handshaking ->
-            Color(0xFFFFB300) to "Handshake…"
-        engineState == EngineState.Connecting ->
-            Color(0xFFFFB300) to "Connecting…"
-        else ->
-            MaterialTheme.colorScheme.outline to "Offline"
-    }
+fun ConnectionStatus(vm: MeshCoreViewModel) {
+    val engineState by vm.engineState.collectAsStateWithLifecycle()
+    val plaintext by vm.plaintextLink.collectAsStateWithLifecycle()
+    var sheet by remember { mutableStateOf(false) }
+    val detailsLabel = stringResource(R.string.status_open_details)
 
     Row(
+        Modifier
+            .padding(end = 4.dp)
+            .clip(CircleShape)
+            .clickable { sheet = true }
+            .semantics { contentDescription = detailsLabel }
+            .padding(horizontal = 8.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.padding(end = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        androidx.compose.foundation.layout.Box(
-            Modifier
-                .size(8.dp)
-                .background(dotColor, CircleShape),
-        )
+        when {
+            engineState == EngineState.Ready && plaintext -> {
+                Icon(
+                    painterResource(R.drawable.ic_warning),
+                    null,
+                    tint = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.size(18.dp),
+                )
+                Text(
+                    stringResource(R.string.status_tcp_plain),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.error,
+                    maxLines = 1,
+                )
+            }
+            engineState == EngineState.Ready -> ConnectedCluster(vm)
+            engineState == EngineState.Handshaking || engineState == EngineState.Connecting -> {
+                PulsingDot(ExtraColors.connecting)
+                Text(
+                    stringResource(
+                        if (engineState == EngineState.Handshaking) R.string.status_handshake else R.string.status_connecting,
+                    ),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                )
+            }
+            else -> {
+                Box(Modifier.size(8.dp).background(MaterialTheme.colorScheme.outline, CircleShape))
+                Text(
+                    stringResource(R.string.status_offline),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                )
+            }
+        }
+    }
+    if (sheet) LinkSheet(vm) { sheet = false }
+}
+
+@Composable
+private fun ConnectedCluster(vm: MeshCoreViewModel) {
+    val repeaters by vm.directRepeaters.collectAsStateWithLifecycle()
+    val battery by vm.battery.collectAsStateWithLifecycle()
+    val self by vm.selfInfo.collectAsStateWithLifecycle()
+    val now = rememberNow()
+    val best = LinkMeter.fresh(repeaters, now).firstOrNull()
+    val ink = MaterialTheme.colorScheme.onSurfaceVariant
+
+    SignalBars(bars = best?.let { LinkMeter.bars(it.snr, self?.sf) } ?: 0, live = best != null)
+    if (best != null) {
         Text(
-            text,
-            style = MaterialTheme.typography.labelMedium,
-            color = if (plaintext && engineState == EngineState.Ready) {
-                MaterialTheme.colorScheme.error
-            } else {
-                MaterialTheme.colorScheme.onSurfaceVariant
-            },
+            best.prefixHex.uppercase(),
+            style = MaterialTheme.typography.labelSmall,
+            fontFamily = MonoFontFamily,
+            color = ink,
             maxLines = 1,
-            modifier = Modifier.padding(start = 6.dp),
         )
+    }
+    val pct = battery?.let { BatteryLevel.percent(it.batteryMillivolts) }
+    if (battery != null) {
+        Spacer(Modifier.width(2.dp))
+        BatteryGlyph(pct)
+        if (pct != null) {
+            Text("$pct%", style = MaterialTheme.typography.labelSmall, color = ink, maxLines = 1)
+        }
+    }
+}
+
+/** Wall-clock "now" that ticks every 30 s, for ageing readings. */
+@Composable
+private fun rememberNow(): Long {
+    var now by remember { mutableStateOf(System.currentTimeMillis()) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            kotlinx.coroutines.delay(30_000)
+            now = System.currentTimeMillis()
+        }
+    }
+    return now
+}
+
+@Composable
+private fun PulsingDot(color: Color) {
+    val t = rememberInfiniteTransition(label = "pulse")
+    val a by t.animateFloat(
+        initialValue = 0.35f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(tween(700, easing = FastOutSlowInEasing), RepeatMode.Reverse),
+        label = "pulseAlpha",
+    )
+    val s by t.animateFloat(
+        initialValue = 0.75f,
+        targetValue = 1.15f,
+        animationSpec = infiniteRepeatable(tween(700, easing = FastOutSlowInEasing), RepeatMode.Reverse),
+        label = "pulseScale",
+    )
+    Canvas(Modifier.size(10.dp)) {
+        drawCircle(color.copy(alpha = a * 0.35f), radius = size.minDimension / 2 * s)
+        drawCircle(color.copy(alpha = a), radius = size.minDimension / 2 * 0.7f)
+    }
+}
+
+/** Four ascending bars, like the phone's own cell meter. */
+@Composable
+fun SignalBars(bars: Int, live: Boolean, modifier: Modifier = Modifier) {
+    val on = MaterialTheme.colorScheme.onSurface
+    val off = MaterialTheme.colorScheme.onSurface.copy(alpha = if (live) 0.22f else 0.15f)
+    Canvas(modifier.size(width = 16.dp, height = 14.dp)) {
+        val gap = 1.5.dp.toPx()
+        val w = (size.width - gap * 3) / 4
+        for (i in 0 until 4) {
+            val h = size.height * (i + 1) / 4f
+            drawRoundRect(
+                color = if (i < bars) on else off,
+                topLeft = Offset(i * (w + gap), size.height - h),
+                size = Size(w, h),
+                cornerRadius = CornerRadius(1.dp.toPx()),
+            )
+        }
+    }
+}
+
+/** A horizontal battery outline filled to [percent]; error colour at 15% or less. */
+@Composable
+fun BatteryGlyph(percent: Int?, modifier: Modifier = Modifier) {
+    val ink = MaterialTheme.colorScheme.onSurface
+    val fillColor = if (percent != null && percent <= 15) MaterialTheme.colorScheme.error else ink
+    Canvas(modifier.size(width = 22.dp, height = 12.dp)) {
+        val stroke = 1.2.dp.toPx()
+        val nub = 2.dp.toPx()
+        val body = Size(size.width - nub, size.height)
+        drawRoundRect(
+            color = ink.copy(alpha = 0.7f),
+            topLeft = Offset(stroke / 2, stroke / 2),
+            size = Size(body.width - stroke, body.height - stroke),
+            cornerRadius = CornerRadius(3.dp.toPx()),
+            style = Stroke(stroke),
+        )
+        drawRoundRect(
+            color = ink.copy(alpha = 0.7f),
+            topLeft = Offset(body.width, size.height * 0.32f),
+            size = Size(nub, size.height * 0.36f),
+            cornerRadius = CornerRadius(1.dp.toPx()),
+        )
+        if (percent != null) {
+            val pad = stroke + 1.dp.toPx()
+            val full = body.width - pad * 2
+            drawRoundRect(
+                color = fillColor,
+                topLeft = Offset(pad, pad),
+                size = Size(full * (percent.coerceIn(0, 100) / 100f), size.height - pad * 2),
+                cornerRadius = CornerRadius(1.5.dp.toPx()),
+            )
+        }
+    }
+}
+
+/** Details behind the status cluster: battery, link, and the repeaters heard directly. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun LinkSheet(vm: MeshCoreViewModel, onDismiss: () -> Unit) {
+    val engineState by vm.engineState.collectAsStateWithLifecycle()
+    val self by vm.selfInfo.collectAsStateWithLifecycle()
+    val battery by vm.battery.collectAsStateWithLifecycle()
+    val label by vm.connectionLabel.collectAsStateWithLifecycle()
+    val repeaters by vm.directRepeaters.collectAsStateWithLifecycle()
+    val contacts by vm.liveContacts.collectAsStateWithLifecycle()
+    val now = rememberNow()
+    val rows = ListItemDefaults.colors(containerColor = Color.Transparent)
+
+    ModalBottomSheet(onDismissRequest = onDismiss) {
+        Column(Modifier.navigationBarsPadding().padding(bottom = 16.dp)) {
+            Text(
+                self?.name ?: stringResource(R.string.link_title),
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.padding(horizontal = 24.dp),
+            )
+            if (engineState != EngineState.Ready) {
+                Text(
+                    stringResource(R.string.link_not_connected),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(24.dp),
+                )
+                return@Column
+            }
+            label?.let {
+                ListItem(
+                    headlineContent = { Text(stringResource(R.string.link_connection)) },
+                    supportingContent = { Text(it) },
+                    colors = rows,
+                )
+            }
+            battery?.let { b ->
+                ListItem(
+                    headlineContent = { Text(stringResource(R.string.link_battery)) },
+                    supportingContent = { Text(BatteryLevel.label(b.batteryMillivolts)) },
+                    trailingContent = { BatteryGlyph(BatteryLevel.percent(b.batteryMillivolts)) },
+                    colors = rows,
+                )
+            }
+            HorizontalDivider(Modifier.padding(vertical = 4.dp))
+            Text(
+                stringResource(R.string.link_repeaters),
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(start = 24.dp, top = 8.dp, end = 24.dp),
+            )
+            Text(
+                stringResource(R.string.link_repeaters_hint),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 24.dp, vertical = 4.dp),
+            )
+            val fresh = LinkMeter.fresh(repeaters, now)
+            if (fresh.isEmpty()) {
+                Text(
+                    stringResource(R.string.link_no_repeaters),
+                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp),
+                )
+            }
+            for (r in fresh) {
+                // A name only on a unique match: a short hash can belong to
+                // several nodes, and guessing would name the wrong one.
+                val matches = contacts.values.filter {
+                    (it.type == Codes.ADV_TYPE_REPEATER || it.type == Codes.ADV_TYPE_ROOM) &&
+                        it.publicKeyHex.startsWith(r.prefixHex, ignoreCase = true)
+                }
+                val name = matches.singleOrNull()?.name ?: stringResource(R.string.link_unknown_repeater)
+                ListItem(
+                    headlineContent = { Text(name, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                    supportingContent = {
+                        Text(
+                            r.prefixHex.uppercase() + " · " +
+                                stringResource(R.string.link_snr_rssi, "%.1f".format(r.snr), r.rssi) + " · " +
+                                DateUtils.getRelativeTimeSpanString(r.lastHeardMs, now, DateUtils.MINUTE_IN_MILLIS),
+                        )
+                    },
+                    leadingContent = { SignalBars(LinkMeter.bars(r.snr, self?.sf), live = true) },
+                    colors = rows,
+                )
+            }
+        }
     }
 }

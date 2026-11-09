@@ -3,6 +3,7 @@ package io.alvaroedo.meshconnect.ui.screens
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -59,6 +60,8 @@ fun SetupScreen(vm: MeshCoreViewModel, onDone: () -> Unit) {
     Column(
         Modifier
             .fillMaxSize()
+            // No top bar here, so this screen pads for the system bars itself.
+            .safeDrawingPadding()
             .verticalScroll(rememberScrollState())
             .padding(24.dp),
     ) {

@@ -112,7 +112,9 @@ class StaleNodesWiringTest {
     fun `it is reachable from the node list`() {
         assertTrue(
             "no way in from the Nodes tab",
-            nodes.contains("MenuAction(\"Remove stale nodes…\") { staleOpen = true }") &&
+            // The label is a string resource since MeshConnect's i18n.
+            Regex("""MenuAction\(stringResource\(R\.string\.nodes_remove_stale\)[^{]*\{\s*staleOpen = true\s*\}""")
+                .containsMatchIn(nodes) &&
                 nodes.contains("StaleNodesDialog(vm, onDismiss = { staleOpen = false })"),
         )
     }

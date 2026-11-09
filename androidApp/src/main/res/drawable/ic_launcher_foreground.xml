@@ -1,21 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Three mesh nodes joined by links — a minimal MeshCore glyph. -->
+<!-- Launcher foreground: white bubble, mesh cut out to the background.
+     Logo concept B "Mesh bubble". Geometry generated with
+     shapely (scripts/gen_logo.py); see docs/logo.md. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
     <path
-        android:strokeColor="#4FC3A1"
-        android:strokeWidth="3"
-        android:pathData="M34,66 L54,38 L74,66 Z" />
-    <path
-        android:fillColor="#4FC3A1"
-        android:pathData="M54,38 m-6,0 a6,6 0 1,1 12,0 a6,6 0 1,1 -12,0" />
-    <path
-        android:fillColor="#E8F4F0"
-        android:pathData="M34,66 m-6,0 a6,6 0 1,1 12,0 a6,6 0 1,1 -12,0" />
-    <path
-        android:fillColor="#E8F4F0"
-        android:pathData="M74,66 m-6,0 a6,6 0 1,1 12,0 a6,6 0 1,1 -12,0" />
+        android:fillColor="#FFFFFFFF"
+        android:fillType="evenOdd"
+        android:pathData="M38.42,28.06"
+        tools:ignore="VectorPath" />
 </vector>

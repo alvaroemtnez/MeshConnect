@@ -231,6 +231,14 @@ class Preferences(context: Context) {
         set(v) { prefs.edit().putInt("nodes_tab", v).apply() }
 
     /**
+     * MeshConnect's Nodes kind filter: -1 All (default), else a NodeTab
+     * ordinal. Separate from upstream's [nodesTab], which had no "All".
+     */
+    var nodesKind: Int
+        get() = prefs.getInt("nodes_kind", -1)
+        set(v) { prefs.edit().putInt("nodes_kind", v).apply() }
+
+    /**
      * App-side auto-add for repeaters, used only while the radio's own
      * repeater auto-add is off: add the ones that relayed messages you
      * received, and/or the ones heard direct. See RepeaterSignals.
