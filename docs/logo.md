@@ -11,6 +11,8 @@ Assets:
   adaptive grid, inside the 66 dp safe circle.
 - `ic_stat_message.xml` / `ic_stat_link.xml` — the same mark on the 24 dp status-bar grid.
 
+All four are written by `scripts/gen_logo.py` (needs shapely); never paste path data by hand.
+
 The cut-outs are real geometry, not masks (Android vectors have none): the paths were computed by `scripts/gen_logo.py`
 with shapely (bubble minus the union of the node discs and the buffered links) and written with
 `fillType="evenOdd"`. To change the mark, regenerate the same four paths.

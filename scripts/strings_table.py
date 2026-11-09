@@ -13,6 +13,7 @@ S = {
 "close": ("Close", "Cerrar", "Tancar"),
 "ok": ("OK", "Aceptar", "D'acord"),
 "more_options": ("More options", "Más opciones", "Més opcions"),
+"just_now": ("just now", "ahora mismo", "ara mateix"),
 "search": ("Search", "Buscar", "Cercar"),
 "clear": ("Clear", "Borrar", "Esborrar"),
 "copy": ("Copy", "Copiar", "Copiar"),
@@ -124,6 +125,13 @@ S = {
 ),
 "trace_unknown": ("This node isn't on the radio's contact list.", "Este nodo no está en la lista de contactos de la radio.", "Este node no està en la llista de contactes de la ràdio."),
 "trace_done": ("Round trip %1$s s · %2$d hops", "Ida y vuelta %1$s s · %2$d saltos", "Anada i tornada %1$s s · %2$d salts"),
+
+# Widget
+"widget_description": ("Your radio at a glance: connection, battery, signal and new messages.", "Tu radio de un vistazo: conexión, batería, señal y mensajes nuevos.", "La teua ràdio d'un colp d'ull: connexió, bateria, senyal i missatges nous."),
+"widget_add": ("Add widget to home screen", "Añadir widget a la pantalla de inicio", "Afegir giny a la pantalla d'inici"),
+"widget_not_running": ("App not running", "La app no está abierta", "L'aplicació no està oberta"),
+"widget_no_messages": ("No messages yet", "Aún no hay mensajes", "Encara no hi ha missatges"),
+"widget_open_to_read": ("Open the app to read it", "Abre la app para leerlo", "Obri l'aplicació per a llegir-lo"),
 
 # Chats
 "chats_search_hint": ("Search conversations", "Buscar conversaciones", "Cercar converses"),
@@ -316,6 +324,7 @@ S = {
 
 # key -> ((one, other) en, (one, other) es, (one, other) ca)
 P = {
+"widget_unread": (("%1$d unread", "%1$d unread"), ("%1$d sin leer", "%1$d sin leer"), ("%1$d sense llegir", "%1$d sense llegir")),
 "dismiss_all_title": (("Dismiss %1$d node?", "Dismiss %1$d nodes?"), ("¿Descartar %1$d nodo?", "¿Descartar %1$d nodos?"), ("Descartar %1$d node?", "Descartar %1$d nodes?")),
 }
 

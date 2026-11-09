@@ -33,6 +33,12 @@ import io.github.thatsfguy.meshcore.protocol.DeviceEvent
 import io.alvaroedo.meshconnect.ui.model.LinkMeter
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import io.github.thatsfguy.meshcore.engine.MeshCoreEngine
 import io.github.thatsfguy.meshcore.platform.BleTransport
 import io.github.thatsfguy.meshcore.platform.UsbSerialTransport
@@ -154,7 +160,9 @@ class MeshCoreService : Service() {
         val dbKey = kotlinx.coroutines.runBlocking {
             io.alvaroedo.meshconnect.storage.DatabaseKey.passphrase(prefs, vault)
         }
-        repository = MessageRepository(MeshCoreDatabase.get(this, dbKey), secrets, scope)
+        val db = MeshCoreDatabase.get(this, dbKey)
+        repository = MessageRepository(db, secrets, scope)
+        publishWidget(db)
         repository.start(engine)
         // The block/filter sets are read on every inbound message, so
         // they live on the repository rather than behind a prefs lookup
@@ -240,6 +248,86 @@ class MeshCoreService : Service() {
             connect(memory)
         }
     }
+
+    /**
+     * Keep the home-screen widget's snapshot current: connection, battery,
+     * the best repeater heard directly, unread count and the latest message.
+     * WidgetState debounces the redraws.
+     */
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    private fun publishWidget(db: MeshCoreDatabase) {
+        val inbox = engine.selfInfo
+            .map { it?.publicKeyHex.orEmpty() }
+            .distinctUntilChanged()
+            .flatMapLatest { key ->
+                if (key.isEmpty()) {
+                    flowOf(Triple(0, null as String?, null as io.alvaroedo.meshconnect.storage.MessageEntity?))
+                } else {
+                    combine(db.contacts().all(key), db.channels().all(key), db.messages().latestPerThread(key)) { cs, chs, latest ->
+                        val unread = cs.sumOf { it.unread } + chs.sumOf { it.unread }
+                        val last = latest.filter { !it.outgoing }.maxByOrNull { it.timestamp }
+                        val from = last?.let { m ->
+                            if (m.kind == MessageRepository.KIND_CHANNEL) {
+                                val ch = chs.firstOrNull { it.idx == m.peerKey.toIntOrNull() }?.name?.ifBlank { null }
+                                listOfNotNull(ch, m.senderName?.ifBlank { null }).joinToString(" · ").ifBlank { null }
+                            } else {
+                                cs.firstOrNull { it.keyHex == m.peerKey }?.name?.ifBlank { null } ?: m.peerKey.take(8)
+                            }
+                        }
+                        Triple(unread, from, last)
+                    }
+                }
+            }
+        // A heartbeat, so a widget redrawn later can tell live data from a
+        // snapshot left behind by a stopped app.
+        val tick = flow { while (true) { emit(Unit); delay(WIDGET_HEARTBEAT_MS) } }
+        scope.launch {
+            combine(
+                combine(engine.state, engine.selfInfo, engine.battery, engine.plaintextLink) { st, me, b, pl ->
+                    WidgetCore(st, me, b, pl)
+                },
+                directRepeaters,
+                inbox,
+                tick,
+            ) { core, reps, box, _ ->
+                val state = core.state
+                val self = core.self
+                val batt = core.battery
+                val plain = core.plaintext
+                val now = System.currentTimeMillis()
+                val best = LinkMeter.fresh(reps, now).firstOrNull()
+                val (unread, from, last) = box
+                io.alvaroedo.meshconnect.widget.WidgetSnapshot(
+                    status = when (state) {
+                        EngineState.Ready -> io.alvaroedo.meshconnect.widget.WidgetSnapshot.Status.Connected
+                        EngineState.Connecting, EngineState.Handshaking -> io.alvaroedo.meshconnect.widget.WidgetSnapshot.Status.Connecting
+                        EngineState.Detached -> io.alvaroedo.meshconnect.widget.WidgetSnapshot.Status.Offline
+                    },
+                    nodeName = self?.name,
+                    batteryPercent = batt?.let { io.github.thatsfguy.meshcore.presentation.BatteryLevel.percent(it.batteryMillivolts) },
+                    plaintext = plain,
+                    signalBars = best?.let { LinkMeter.bars(it.snr, self?.sf) },
+                    repeaterHash = best?.prefixHex,
+                    repeaterSnr = best?.snr,
+                    unread = unread,
+                    lastFrom = from,
+                    lastText = last?.let {
+                        io.alvaroedo.meshconnect.ui.model.RichPreview.of(this@MeshCoreService, it.text)
+                            ?: io.github.thatsfguy.meshcore.protocol.Quoting.previewBody(it.text).take(120)
+                    },
+                    lastAtMs = (last?.timestamp ?: 0L) * 1000,
+                    updatedAtMs = now,
+                )
+            }.collect { io.alvaroedo.meshconnect.widget.WidgetState.publish(this@MeshCoreService, it) }
+        }
+    }
+
+    private data class WidgetCore(
+        val state: EngineState,
+        val self: io.github.thatsfguy.meshcore.model.SelfInfo?,
+        val battery: io.github.thatsfguy.meshcore.model.BatteryAndStorage?,
+        val plaintext: Boolean,
+    )
 
     /**
      * Re-read the block/filter sets into the repository. Called at start
@@ -669,6 +757,7 @@ class MeshCoreService : Service() {
 
     companion object {
         private const val BATTERY_POLL_MS = 5L * 60 * 1000
+        private const val WIDGET_HEARTBEAT_MS = 4L * 60 * 1000
         private const val NOTIF_CHANNEL = "meshcore_connection_quiet"
 
         /** Created with badges on, before 0.10.2; deleted on start. */

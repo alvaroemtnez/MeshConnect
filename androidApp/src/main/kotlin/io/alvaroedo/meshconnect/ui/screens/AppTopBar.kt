@@ -1,6 +1,5 @@
 package io.alvaroedo.meshconnect.ui.screens
 
-import android.text.format.DateUtils
 import androidx.activity.compose.BackHandler
 import androidx.annotation.DrawableRes
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -494,6 +493,7 @@ private fun LinkSheet(vm: MeshCoreViewModel, onDismiss: () -> Unit) {
     val contacts by vm.liveContacts.collectAsStateWithLifecycle()
     val now = rememberNow()
     val rows = ListItemDefaults.colors(containerColor = Color.Transparent)
+    val context = androidx.compose.ui.platform.LocalContext.current
 
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(Modifier.navigationBarsPadding().padding(bottom = 16.dp)) {
@@ -570,7 +570,7 @@ private fun LinkSheet(vm: MeshCoreViewModel, onDismiss: () -> Unit) {
                         Text(
                             r.prefixHex.uppercase() + " · " +
                                 stringResource(R.string.link_snr_rssi, "%.1f".format(r.snr), r.rssi) + " · " +
-                                DateUtils.getRelativeTimeSpanString(r.lastHeardMs, now, DateUtils.MINUTE_IN_MILLIS),
+                                io.alvaroedo.meshconnect.ui.model.Ago.of(context, r.lastHeardMs, now),
                         )
                     },
                     leadingContent = { SignalBars(LinkMeter.bars(r.snr, self?.sf), live = true) },

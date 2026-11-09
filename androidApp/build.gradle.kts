@@ -138,6 +138,10 @@ dependencies {
     // network use and are cached by MapLibre's ambient cache.
     implementation("org.maplibre.gl:android-sdk:11.13.5")
 
+    // Home-screen widget (Glance), with Material You colours.
+    implementation("androidx.glance:glance-appwidget:1.1.1")
+    implementation("androidx.glance:glance-material3:1.1.1")
+
     // SQLCipher — the Room DB is encrypted at rest with a key sealed in
     // the Android Keystore (2026-07-31 security review, accepted-risk
     // item #1). Adds ~4 MB of native libs; the tradeoff is deliberate:

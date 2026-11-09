@@ -235,6 +235,7 @@ fun SettingsAppScreen(vm: MeshCoreViewModel, nav: NavController) {
         ) {
             SettingsGroupHeader("Appearance")
             AppearanceSection(vm)
+            AddWidgetButton()
             SettingsGroupHeader("Notifications")
             NotificationsSection(vm)
             SettingsGroupHeader("Privacy and network")
@@ -265,4 +266,32 @@ fun SettingsBackupScreen(vm: MeshCoreViewModel, nav: NavController) {
 @Composable
 fun SettingsDataScreen(vm: MeshCoreViewModel, nav: NavController) {
     SettingsSpoke("Data and storage", vm, nav) { DataSection(vm) }
+}
+
+/**
+ * Ask the launcher to pin the home-screen widget. The launcher shows its
+ * own confirmation; a launcher that can't pin hides the button.
+ */
+@Composable
+private fun AddWidgetButton() {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val manager = android.appwidget.AppWidgetManager.getInstance(context)
+    if (!manager.isRequestPinAppWidgetSupported) return
+    androidx.compose.material3.OutlinedButton(
+        onClick = {
+            manager.requestPinAppWidget(
+                android.content.ComponentName(context, io.alvaroedo.meshconnect.widget.MeshWidgetReceiver::class.java),
+                null,
+                null,
+            )
+        },
+        modifier = Modifier.padding(vertical = 8.dp),
+    ) {
+        androidx.compose.material3.Icon(
+            androidx.compose.ui.res.painterResource(io.alvaroedo.meshconnect.R.drawable.ic_add),
+            null,
+        )
+        androidx.compose.foundation.layout.Spacer(Modifier.padding(start = 6.dp))
+        Text(androidx.compose.ui.res.stringResource(io.alvaroedo.meshconnect.R.string.widget_add))
+    }
 }

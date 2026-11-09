@@ -8,6 +8,7 @@
     <string name="close">Close</string>
     <string name="ok">OK</string>
     <string name="more_options">More options</string>
+    <string name="just_now">just now</string>
     <string name="search">Search</string>
     <string name="clear">Clear</string>
     <string name="copy">Copy</string>
@@ -75,6 +76,11 @@
     <string name="trace_direct">There\'s no repeater between you to trace: messages to this contact go direct or flood.</string>
     <string name="trace_unknown">This node isn\'t on the radio\'s contact list.</string>
     <string name="trace_done">Round trip %1$s s · %2$d hops</string>
+    <string name="widget_description">Your radio at a glance: connection, battery, signal and new messages.</string>
+    <string name="widget_add">Add widget to home screen</string>
+    <string name="widget_not_running">App not running</string>
+    <string name="widget_no_messages">No messages yet</string>
+    <string name="widget_open_to_read">Open the app to read it</string>
     <string name="chats_search_hint">Search conversations</string>
     <string name="chats_advert_zero_hop">Send advert (0-hop)</string>
     <string name="chats_advert_flood">Send advert (flood)</string>
@@ -179,6 +185,10 @@
     <string name="about_privacy_5">Secrets sit in the device keystore and the message database is encrypted.</string>
     <string name="about_licences">Open-source licences</string>
     <string name="about_endorsement">MeshConnect is an independent project. It is not affiliated with or endorsed by the MeshCore project or the MeshCore Hardened author.</string>
+    <plurals name="widget_unread">
+        <item quantity="one">%1$d unread</item>
+        <item quantity="other">%1$d unread</item>
+    </plurals>
     <plurals name="dismiss_all_title">
         <item quantity="one">Dismiss %1$d node?</item>
         <item quantity="other">Dismiss %1$d nodes?</item>

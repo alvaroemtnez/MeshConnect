@@ -6,6 +6,7 @@
     <string name="close">Cerrar</string>
     <string name="ok">Aceptar</string>
     <string name="more_options">Más opciones</string>
+    <string name="just_now">ahora mismo</string>
     <string name="search">Buscar</string>
     <string name="clear">Borrar</string>
     <string name="copy">Copiar</string>
@@ -73,6 +74,11 @@
     <string name="trace_direct">No hay ningún repetidor entre vosotros que trazar: los mensajes a este contacto van directos o por inundación.</string>
     <string name="trace_unknown">Este nodo no está en la lista de contactos de la radio.</string>
     <string name="trace_done">Ida y vuelta %1$s s · %2$d saltos</string>
+    <string name="widget_description">Tu radio de un vistazo: conexión, batería, señal y mensajes nuevos.</string>
+    <string name="widget_add">Añadir widget a la pantalla de inicio</string>
+    <string name="widget_not_running">La app no está abierta</string>
+    <string name="widget_no_messages">Aún no hay mensajes</string>
+    <string name="widget_open_to_read">Abre la app para leerlo</string>
     <string name="chats_search_hint">Buscar conversaciones</string>
     <string name="chats_advert_zero_hop">Enviar anuncio (0 saltos)</string>
     <string name="chats_advert_flood">Enviar anuncio (inundación)</string>
@@ -177,6 +183,11 @@
     <string name="about_privacy_5">Los secretos se guardan en el almacén de claves del dispositivo y la base de datos de mensajes está cifrada.</string>
     <string name="about_licences">Licencias de código abierto</string>
     <string name="about_endorsement">MeshConnect es un proyecto independiente. No está afiliado ni respaldado por el proyecto MeshCore ni por el autor de MeshCore Hardened.</string>
+    <plurals name="widget_unread">
+        <item quantity="one">%1$d sin leer</item>
+        <item quantity="many">%1$d sin leer</item>
+        <item quantity="other">%1$d sin leer</item>
+    </plurals>
     <plurals name="dismiss_all_title">
         <item quantity="one">¿Descartar %1$d nodo?</item>
         <item quantity="many">¿Descartar %1$d nodos?</item>

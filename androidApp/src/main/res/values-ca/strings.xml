@@ -6,6 +6,7 @@
     <string name="close">Tancar</string>
     <string name="ok">D\'acord</string>
     <string name="more_options">Més opcions</string>
+    <string name="just_now">ara mateix</string>
     <string name="search">Cercar</string>
     <string name="clear">Esborrar</string>
     <string name="copy">Copiar</string>
@@ -73,6 +74,11 @@
     <string name="trace_direct">No hi ha cap repetidor entre vosaltres per a traçar: els missatges a este contacte van directes o per inundació.</string>
     <string name="trace_unknown">Este node no està en la llista de contactes de la ràdio.</string>
     <string name="trace_done">Anada i tornada %1$s s · %2$d salts</string>
+    <string name="widget_description">La teua ràdio d\'un colp d\'ull: connexió, bateria, senyal i missatges nous.</string>
+    <string name="widget_add">Afegir giny a la pantalla d\'inici</string>
+    <string name="widget_not_running">L\'aplicació no està oberta</string>
+    <string name="widget_no_messages">Encara no hi ha missatges</string>
+    <string name="widget_open_to_read">Obri l\'aplicació per a llegir-lo</string>
     <string name="chats_search_hint">Cercar converses</string>
     <string name="chats_advert_zero_hop">Enviar anunci (0 salts)</string>
     <string name="chats_advert_flood">Enviar anunci (inundació)</string>
@@ -177,6 +183,11 @@
     <string name="about_privacy_5">Els secrets es guarden en el magatzem de claus del dispositiu i la base de dades de missatges està xifrada.</string>
     <string name="about_licences">Llicències de codi obert</string>
     <string name="about_endorsement">MeshConnect és un projecte independent. No està afiliat ni avalat pel projecte MeshCore ni per l\'autor de MeshCore Hardened.</string>
+    <plurals name="widget_unread">
+        <item quantity="one">%1$d sense llegir</item>
+        <item quantity="many">%1$d sense llegir</item>
+        <item quantity="other">%1$d sense llegir</item>
+    </plurals>
     <plurals name="dismiss_all_title">
         <item quantity="one">Descartar %1$d node?</item>
         <item quantity="many">Descartar %1$d nodes?</item>

@@ -87,6 +87,17 @@ ICONS = [
     ("ic_favorite", "favorite", False),
     ("ic_translate", "translate", False),
     ("ic_shield", "shield", False),
+    # Widget (Glance can't draw on a canvas, so its gauges are icons)
+    ("ic_battery_full", "battery_full", False),
+    ("ic_battery_5", "battery_5_bar", False),
+    ("ic_battery_3", "battery_3_bar", False),
+    ("ic_battery_1", "battery_1_bar", False),
+    ("ic_battery_alert", "battery_alert", False),
+    ("ic_signal_4", "signal_cellular_alt", False),
+    ("ic_signal_2", "signal_cellular_alt_2_bar", False),
+    ("ic_signal_1", "signal_cellular_alt_1_bar", False),
+    ("ic_signal_0", "signal_cellular_null", False),
+    ("ic_mark_unread", "mark_chat_unread", False),
 ]
 
 URL = "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/{}/default/24px.svg"
