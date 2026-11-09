@@ -9,7 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -74,7 +74,7 @@ fun BlockingSection(vm: MeshCoreViewModel) {
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                TextButton(onClick = { vm.setBlocked(key, false) }) { Text(stringResource(R.string.node_unblock)) }
+                FilledTonalButton(onClick = { vm.setBlocked(key, false) }) { Text(stringResource(R.string.node_unblock)) }
             }
         }
     }
@@ -89,14 +89,14 @@ fun BlockingSection(vm: MeshCoreViewModel) {
         color = MaterialTheme.colorScheme.error,
     )
     Row(verticalAlignment = Alignment.CenterVertically) {
-        OutlinedTextField(
+        FormField(
             value = newName,
             onValueChange = { newName = it },
             label = { Text(stringResource(R.string.block_name_to_hide)) },
             singleLine = true,
             modifier = Modifier.weight(1f),
         )
-        TextButton(
+        FilledTonalButton(
             onClick = { vm.setChannelNameFiltered(newName.trim(), true); newName = "" },
             enabled = BlockList.canonicalName(newName) != null,
         ) { Text(stringResource(R.string.heard_hide)) }
@@ -107,7 +107,7 @@ fun BlockingSection(vm: MeshCoreViewModel) {
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(name, Modifier.weight(1f))
-            TextButton(onClick = { vm.setChannelNameFiltered(name, false) }) { Text(stringResource(R.string.show)) }
+            FilledTonalButton(onClick = { vm.setChannelNameFiltered(name, false) }) { Text(stringResource(R.string.show)) }
         }
     }
 }

@@ -12,7 +12,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -74,7 +74,7 @@ fun BackupSection(vm: MeshCoreViewModel) {
         stringResource(R.string.backup_intro),
     )
     ButtonFlowRow {
-        TextButton(onClick = { exportPrompt = true }) { Text(stringResource(R.string.backup_export_menu)) }
+        FilledTonalButton(onClick = { exportPrompt = true }) { Text(stringResource(R.string.backup_export_menu)) }
         TextButton(onClick = { openFile.launch(arrayOf("*/*")) }) { Text(stringResource(R.string.backup_import_menu)) }
     }
     note?.let { HintText(it) }
@@ -155,7 +155,7 @@ private fun ExportDialog(
                         color = MaterialTheme.colorScheme.error,
                     )
                     Spacer(Modifier.height(8.dp))
-                    OutlinedTextField(
+                    FormField(
                         value = passphrase,
                         onValueChange = { passphrase = it },
                         label = { Text(stringResource(R.string.backup_passphrase_min, ConfigBackup.MIN_PASSPHRASE_LENGTH)) },
@@ -163,7 +163,7 @@ private fun ExportDialog(
                         visualTransformation = PasswordVisualTransformation(),
                         modifier = Modifier.fillMaxWidth(),
                     )
-                    OutlinedTextField(
+                    FormField(
                         value = confirm,
                         onValueChange = { confirm = it },
                         label = { Text(stringResource(R.string.backup_passphrase_confirm)) },
@@ -238,7 +238,7 @@ private fun ImportDialog(
                 if (parsed.hasSecrets) {
                     CheckRow(stringResource(R.string.backup_secrets), wantSecrets) { wantSecrets = it }
                     if (wantSecrets) {
-                        OutlinedTextField(
+                        FormField(
                             value = passphrase,
                             onValueChange = { passphrase = it },
                             label = { Text(stringResource(R.string.backup_passphrase)) },

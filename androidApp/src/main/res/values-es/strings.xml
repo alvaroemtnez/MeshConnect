@@ -151,6 +151,7 @@
     <string name="hub_notifications_on">notificaciones activadas</string>
     <string name="hub_notifications_off">notificaciones desactivadas</string>
     <string name="hub_reboot_menu">Reiniciar la radio…</string>
+    <string name="hub_reboot_sub">Reiniciar la radio conectada</string>
     <string name="hub_reboot_title">¿Reiniciar la radio?</string>
     <string name="hub_reboot_body">La conexión se cortará y volverá cuando la radio arranque.</string>
     <string name="hub_reboot">Reiniciar</string>
@@ -429,9 +430,9 @@
     <string name="perm_battery">Telemetría de batería</string>
     <string name="perm_location">Telemetría de ubicación</string>
     <string name="perm_environment">Telemetría ambiental</string>
-    <string name="perm_policy_flags">La política global es Flags: decide este interruptor.</string>
-    <string name="perm_policy_all">La política global es All: todos pueden leerlo, diga lo que diga el interruptor.</string>
-    <string name="perm_policy_deny">La política global es Deny: nadie puede leerlo, con o sin interruptor.</string>
+    <string name="perm_policy_flags">La política global es «Por contacto»: decide este interruptor.</string>
+    <string name="perm_policy_all">La política global es «Todos»: todos pueden leerlo, diga lo que diga el interruptor.</string>
+    <string name="perm_policy_deny">La política global es «Nadie»: nadie puede leerlo, con o sin interruptor.</string>
     <string name="discover_title">Repetidores cercanos</string>
     <string name="discover_listening">Esperando respuestas…</string>
     <string name="discover_none">Nadie ha respondido. Puede que no haya ninguno al alcance, que respondieran con un prefijo que no coincide con tus contactos, o que su firmware no tenga descubrimiento.</string>
@@ -703,7 +704,10 @@
     <string name="pol_flood_hint">Un mensaje que falla dos veces se reintenta una vez por inundación.</string>
     <string name="pol_flood_detail">El comportamiento por defecto documentado de MeshCore. Si desaparece un repetidor de tu ruta, reintentar por ella no funciona, así que el tercer intento borra la ruta guardada e inunda, y la respuesta enseña a tu radio una ruta que funciona. Desactivado, una ruta obsoleta sigue fallando hasta que algo la renueve. Está limitado a una inundación por mensaje.</string>
     <string name="pol_telemetry">Acceso a la telemetría</string>
-    <string name="pol_telemetry_hint">Quién puede leer la telemetría de este nodo: Deny / Flags por contacto / All.</string>
+    <string name="pol_tele_deny">Nadie</string>
+    <string name="pol_tele_flags">Por contacto</string>
+    <string name="pol_tele_all">Todos</string>
+    <string name="pol_telemetry_hint">Quién puede leer la telemetría de este nodo: nadie, los contactos elegidos o todos.</string>
     <string name="pol_hash_width">Ancho del hash de ruta</string>
     <string name="pol_hash_hint">Bytes por salto en las rutas de los paquetes. Todos los nodos de la malla deben coincidir; firmware v10+.</string>
     <string name="pol_scope">Ámbito de inundación global</string>

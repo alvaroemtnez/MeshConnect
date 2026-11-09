@@ -17,7 +17,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -259,7 +259,7 @@ fun FirmwareScreen(
                         current.version?.let { stringResource(R.string.fw_rebooting_into, it) } ?: stringResource(R.string.fw_rebooting),
                     )
                     Spacer(Modifier.height(8.dp))
-                    OutlinedButton(onClick = { vm.firmware.reset() }) { Text(stringResource(R.string.setup_done)) }
+                    FilledTonalButton(onClick = { vm.firmware.reset() }) { Text(stringResource(R.string.setup_done)) }
                 }
 
                 is FirmwareUi.WeakSignal -> {
@@ -272,7 +272,7 @@ fun FirmwareScreen(
                     Spacer(Modifier.height(12.dp))
                     ButtonFlowRow {
                         Button(onClick = { vm.firmware.flash() }) { Text(stringResource(R.string.ota_try_again)) }
-                        OutlinedButton(onClick = { vm.firmware.reset() }) { Text(stringResource(R.string.fw_stop)) }
+                        FilledTonalButton(onClick = { vm.firmware.reset() }) { Text(stringResource(R.string.fw_stop)) }
                     }
                     Spacer(Modifier.height(8.dp))
                     ExpandableHint(stringResource(R.string.fw_anyway_hint)) {
@@ -280,7 +280,7 @@ fun FirmwareScreen(
                             stringResource(R.string.fw_anyway_detail),
                         )
                         Spacer(Modifier.height(8.dp))
-                        OutlinedButton(onClick = { vm.firmware.retryOverWeakSignal() }) {
+                        FilledTonalButton(onClick = { vm.firmware.retryOverWeakSignal() }) {
                             Text(stringResource(R.string.fw_transfer_anyway))
                         }
                     }
@@ -302,7 +302,7 @@ fun FirmwareScreen(
                         if (current.retry != null) {
                             Button(onClick = { vm.firmware.flash() }) { Text(stringResource(R.string.ota_try_again)) }
                         }
-                        OutlinedButton(onClick = { vm.firmware.reset() }) { Text(stringResource(R.string.back)) }
+                        FilledTonalButton(onClick = { vm.firmware.reset() }) { Text(stringResource(R.string.back)) }
                     }
                 }
             }
@@ -344,7 +344,7 @@ private fun IdlePanel(
         // says nothing about the node you are standing next to, and
         // reaching that node needs no mesh, no admin session and no
         // contact record — only Bluetooth range.
-        OutlinedButton(onClick = onFlashOtherNode) {
+        FilledTonalButton(onClick = onFlashOtherNode) {
             Text(stringResource(R.string.fw_flash_other))
         }
         Spacer(Modifier.height(8.dp))
@@ -382,7 +382,7 @@ private fun IdlePanel(
                 currentVersion = currentVersion,
             )
         }) { Text(stringResource(R.string.fw_check)) }
-        OutlinedButton(onClick = onPickFile) { Text(stringResource(R.string.fw_open_zip)) }
+        FilledTonalButton(onClick = onPickFile) { Text(stringResource(R.string.fw_open_zip)) }
     }
     HintText(stringResource(R.string.fw_check_hint))
     if (target == FirmwareTargetKind.ConnectedRadio) {
@@ -392,7 +392,7 @@ private fun IdlePanel(
         // record either. It is found by scanning, which needs none of
         // that — so this must not be reachable only from the node's own
         // hub, which is precisely where it cannot be reached.
-        TextButton(onClick = onFlashOtherNode) {
+        FilledTonalButton(onClick = onFlashOtherNode) {
             Text(stringResource(R.string.fw_another))
         }
     }
@@ -482,7 +482,7 @@ private fun ChoosePanel(
         }
     }
     Spacer(Modifier.height(8.dp))
-    OutlinedButton(onClick = onPickFile) { Text(stringResource(R.string.fw_open_zip_instead)) }
+    FilledTonalButton(onClick = onPickFile) { Text(stringResource(R.string.fw_open_zip_instead)) }
 }
 
 @Composable
@@ -535,7 +535,7 @@ private fun ConfirmPanel(
     Spacer(Modifier.height(12.dp))
     ButtonFlowRow {
         Button(onClick = { confirming = true }) { Text(stringResource(R.string.fw_flash_this)) }
-        OutlinedButton(onClick = onCancel) { Text(stringResource(R.string.cancel)) }
+        FilledTonalButton(onClick = onCancel) { Text(stringResource(R.string.cancel)) }
     }
 
     if (confirming) {

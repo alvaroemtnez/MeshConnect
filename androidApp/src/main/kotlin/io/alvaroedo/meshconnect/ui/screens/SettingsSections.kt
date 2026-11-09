@@ -23,8 +23,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -96,9 +95,9 @@ internal fun ConnectionSection(vm: MeshCoreViewModel, onAddNode: () -> Unit) {
     }
     Spacer(Modifier.height(4.dp))
     ButtonFlowRow {
-        OutlinedButton(onClick = onAddNode) { Text(stringResource(R.string.set_add_node)) }
+        FilledTonalButton(onClick = onAddNode) { Text(stringResource(R.string.set_add_node)) }
         if (engineState != EngineState.Detached) {
-            OutlinedButton(onClick = { vm.disconnect() }) { Text(stringResource(R.string.set_disconnect)) }
+            FilledTonalButton(onClick = { vm.disconnect() }) { Text(stringResource(R.string.set_disconnect)) }
         }
     }
     SavedNodesList(vm)
@@ -165,14 +164,14 @@ internal fun IdentitySection(vm: MeshCoreViewModel, onShowSelfQr: () -> Unit) {
     )
     Spacer(Modifier.height(4.dp))
     Row(verticalAlignment = Alignment.CenterVertically) {
-        OutlinedTextField(
+        FormField(
             value = name,
             onValueChange = { name = it },
             label = { Text(stringResource(R.string.set_advert_name)) },
             singleLine = true,
             modifier = Modifier.weight(1f),
         )
-        TextButton(
+        FilledTonalButton(
             onClick = { vm.setAdvertName(name.trim()) },
             enabled = name.trim() != info.name && name.isNotBlank(),
         ) { Text(stringResource(R.string.set_set)) }
@@ -192,16 +191,16 @@ internal fun IdentitySection(vm: MeshCoreViewModel, onShowSelfQr: () -> Unit) {
         )
     }
     Row(verticalAlignment = Alignment.CenterVertically) {
-        OutlinedTextField(
+        FormField(
             value = lat, onValueChange = { lat = it },
             label = { Text(stringResource(R.string.set_latitude)) }, singleLine = true, modifier = Modifier.weight(1f),
         )
         Spacer(Modifier.width(8.dp))
-        OutlinedTextField(
+        FormField(
             value = lon, onValueChange = { lon = it },
             label = { Text(stringResource(R.string.set_longitude)) }, singleLine = true, modifier = Modifier.weight(1f),
         )
-        TextButton(onClick = {
+        FilledTonalButton(onClick = {
             val la = lat.toDoubleOrNull()
             val lo = lon.toDoubleOrNull()
             if (la != null && lo != null && la in -90.0..90.0 && lo in -180.0..180.0) {
@@ -215,10 +214,10 @@ internal fun IdentitySection(vm: MeshCoreViewModel, onShowSelfQr: () -> Unit) {
         )
     }
     ButtonFlowRow {
-        OutlinedButton(onClick = { pickPosition = true }) { Text(stringResource(R.string.set_pick_on_map)) }
-        OutlinedButton(onClick = { vm.sendSelfAdvert(flood = false) }) { Text(stringResource(R.string.chats_advert_zero_hop)) }
-        OutlinedButton(onClick = { vm.sendSelfAdvert(flood = true) }) { Text(stringResource(R.string.chats_advert_flood)) }
-        OutlinedButton(onClick = onShowSelfQr) { Text(stringResource(R.string.my_qr)) }
+        FilledTonalButton(onClick = { pickPosition = true }) { Text(stringResource(R.string.set_pick_on_map)) }
+        FilledTonalButton(onClick = { vm.sendSelfAdvert(flood = false) }) { Text(stringResource(R.string.chats_advert_zero_hop)) }
+        FilledTonalButton(onClick = { vm.sendSelfAdvert(flood = true) }) { Text(stringResource(R.string.chats_advert_flood)) }
+        FilledTonalButton(onClick = onShowSelfQr) { Text(stringResource(R.string.my_qr)) }
     }
 }
 
@@ -271,13 +270,13 @@ internal fun RadioSection(vm: MeshCoreViewModel) {
         result.contents?.let { vm.importScannedCode(it) }
     }
     ButtonFlowRow {
-        TextButton(onClick = { presetSheet = true }) { Text(stringResource(R.string.setup_pick_preset)) }
-        TextButton(onClick = {
+        FilledTonalButton(onClick = { presetSheet = true }) { Text(stringResource(R.string.setup_pick_preset)) }
+        FilledTonalButton(onClick = {
             scanLauncher.launch(
                 meshScanOptions(ctx.getString(R.string.radio_scan_prompt)),
             )
         }) { Text(stringResource(R.string.radio_scan)) }
-        TextButton(onClick = { shareSettings = true }) { Text(stringResource(R.string.radio_share)) }
+        FilledTonalButton(onClick = { shareSettings = true }) { Text(stringResource(R.string.radio_share)) }
     }
     if (presetSheet) {
         RadioPresetSheet(vm, onDismiss = { presetSheet = false })
@@ -298,27 +297,27 @@ internal fun RadioSection(vm: MeshCoreViewModel) {
     }
 
     Row(verticalAlignment = Alignment.CenterVertically) {
-        OutlinedTextField(
+        FormField(
             value = freq, onValueChange = { freq = it },
             label = { Text(stringResource(R.string.radio_freq)) }, singleLine = true, modifier = Modifier.weight(1.2f),
         )
         Spacer(Modifier.width(4.dp))
-        OutlinedTextField(
+        FormField(
             value = bw, onValueChange = { bw = it },
             label = { Text(stringResource(R.string.radio_bw)) }, singleLine = true, modifier = Modifier.weight(1f),
         )
         Spacer(Modifier.width(4.dp))
-        OutlinedTextField(
+        FormField(
             value = sf, onValueChange = { sf = it },
             label = { Text("SF") }, singleLine = true, modifier = Modifier.weight(0.5f),
         )
         Spacer(Modifier.width(4.dp))
-        OutlinedTextField(
+        FormField(
             value = cr, onValueChange = { cr = it },
             label = { Text("CR") }, singleLine = true, modifier = Modifier.weight(0.5f),
         )
     }
-    TextButton(onClick = {
+    FilledTonalButton(onClick = {
         // Typed in MHz/kHz, sent in kHz/Hz. The bounds stay in wire
         // units so they keep meaning the same thing as the radio's:
         // 300_000..2_500_000 kHz is 300..2500 MHz. An earlier upper
@@ -338,13 +337,13 @@ internal fun RadioSection(vm: MeshCoreViewModel) {
     }) { Text(stringResource(R.string.radio_apply_params)) }
 
     Row(verticalAlignment = Alignment.CenterVertically) {
-        OutlinedTextField(
+        FormField(
             value = tx, onValueChange = { tx = it },
             label = { Text(stringResource(R.string.radio_tx_power, info.maxTxPowerDbm)) },
             singleLine = true,
             modifier = Modifier.weight(1f),
         )
-        TextButton(onClick = {
+        FilledTonalButton(onClick = {
             tx.toIntOrNull()?.takeIf { it in 1..info.maxTxPowerDbm }?.let { vm.setTxPower(it) }
         }) { Text(stringResource(R.string.set)) }
     }
@@ -391,11 +390,11 @@ internal fun ClockSection(vm: MeshCoreViewModel) {
         )
     }
     ButtonFlowRow {
-        OutlinedButton(onClick = {
+        FilledTonalButton(onClick = {
             vm.syncDeviceClock()
             refresh++
         }) { Text(stringResource(R.string.clock_sync)) }
-        OutlinedButton(onClick = { refresh++ }) { Text(stringResource(R.string.clock_reread)) }
+        FilledTonalButton(onClick = { refresh++ }) { Text(stringResource(R.string.clock_reread)) }
     }
     ExpandableHint(stringResource(R.string.clock_auto)) {
         Text(
@@ -451,7 +450,7 @@ internal fun PoliciesSection(vm: MeshCoreViewModel) {
     Spacer(Modifier.height(4.dp))
     Text(stringResource(R.string.pol_telemetry), style = MaterialTheme.typography.labelLarge)
     HintText(stringResource(R.string.pol_telemetry_hint))
-    val teleOptions = listOf("Deny", "Flags", "All")
+    val teleOptions = listOf(stringResource(R.string.pol_tele_deny), stringResource(R.string.pol_tele_flags), stringResource(R.string.pol_tele_all))
     Text(stringResource(R.string.perm_battery), style = MaterialTheme.typography.bodySmall)
     ChoiceChips(teleOptions, teleBase) { apply(base = it) }
     Text(stringResource(R.string.perm_location), style = MaterialTheme.typography.bodySmall)
@@ -486,7 +485,7 @@ internal fun PoliciesSection(vm: MeshCoreViewModel) {
     val currentRegion by vm.floodScopeRegion.collectAsState()
     var region by remember(currentRegion) { mutableStateOf(currentRegion ?: "") }
     Row(verticalAlignment = Alignment.CenterVertically) {
-        OutlinedTextField(
+        FormField(
             value = region,
             onValueChange = { region = it },
             label = { Text(stringResource(R.string.reg_name)) },
@@ -494,11 +493,11 @@ internal fun PoliciesSection(vm: MeshCoreViewModel) {
             isError = region.isNotBlank() && !Regions.isValid(region),
             modifier = Modifier.weight(1f),
         )
-        TextButton(
+        FilledTonalButton(
             onClick = { vm.setFloodScope(region.trim()) },
             enabled = Regions.isValid(region),
         ) { Text(stringResource(R.string.set)) }
-        TextButton(onClick = {
+        FilledTonalButton(onClick = {
             region = ""
             vm.setFloodScope(null)
         }) { Text(stringResource(R.string.clear)) }
@@ -596,16 +595,16 @@ internal fun CustomVarsSection(vm: MeshCoreViewModel) {
     var key by remember { mutableStateOf("") }
     var value by remember { mutableStateOf("") }
     Row(verticalAlignment = Alignment.CenterVertically) {
-        OutlinedTextField(
+        FormField(
             value = key, onValueChange = { key = it },
             label = { Text(stringResource(R.string.vars_variable)) }, singleLine = true, modifier = Modifier.weight(1f),
         )
         Spacer(Modifier.width(8.dp))
-        OutlinedTextField(
+        FormField(
             value = value, onValueChange = { value = it },
             label = { Text(stringResource(R.string.vars_value)) }, singleLine = true, modifier = Modifier.weight(1f),
         )
-        TextButton(
+        FilledTonalButton(
             onClick = {
                 vm.setCustomVar(key.trim(), value.trim())
                 key = ""; value = ""
@@ -629,11 +628,11 @@ internal fun ChannelsSection(vm: MeshCoreViewModel, onEdit: (ChannelEntity) -> U
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text("${ch.idx}: ${ch.name.ifBlank { "–" }}", Modifier.weight(1f))
-            TextButton(onClick = { onEdit(ch) }) { Text(stringResource(R.string.set_edit)) }
+            FilledTonalButton(onClick = { onEdit(ch) }) { Text(stringResource(R.string.set_edit)) }
         }
     }
     ButtonFlowRow {
-        OutlinedButton(onClick = { showAdd = true }) { Text(stringResource(R.string.chats_add_channel)) }
+        FilledTonalButton(onClick = { showAdd = true }) { Text(stringResource(R.string.chats_add_channel)) }
     }
 
     if (showAdd) {
@@ -652,7 +651,7 @@ internal fun AppearanceSection(vm: MeshCoreViewModel) {
     var theme by remember { mutableStateOf(vm.prefs.theme) }
     ButtonFlowRow {
         for (option in listOf("system", "light", "dark")) {
-            OutlinedButton(
+            FilledTonalButton(
                 onClick = {
                     theme = option
                     vm.prefs.theme = option
@@ -683,7 +682,7 @@ internal fun AppearanceSection(vm: MeshCoreViewModel) {
             UnitSystem.METRIC to stringResource(R.string.set_units_metric),
             UnitSystem.IMPERIAL to stringResource(R.string.set_units_imperial),
         )) {
-            OutlinedButton(
+            FilledTonalButton(
                 onClick = {
                     units = value
                     vm.prefs.units = value
@@ -816,7 +815,7 @@ private fun ChannelDatagramTool(vm: MeshCoreViewModel) {
         )
     }
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        OutlinedTextField(
+        FormField(
             value = channelIdx,
             onValueChange = { channelIdx = it.filter(Char::isDigit).take(1) },
             label = { Text(stringResource(R.string.dg_channel)) },
@@ -824,7 +823,7 @@ private fun ChannelDatagramTool(vm: MeshCoreViewModel) {
             modifier = Modifier.weight(1f),
         )
         Spacer(Modifier.width(8.dp))
-        OutlinedTextField(
+        FormField(
             value = dataType,
             onValueChange = { dataType = it.filter { c -> c.isDigit() || c in "abcdefABCDEF" }.take(4) },
             label = { Text(stringResource(R.string.dg_type)) },
@@ -832,7 +831,7 @@ private fun ChannelDatagramTool(vm: MeshCoreViewModel) {
             modifier = Modifier.weight(1.4f),
         )
     }
-    OutlinedTextField(
+    FormField(
         value = payloadHex,
         onValueChange = { payloadHex = it.filter { c -> c.isDigit() || c in "abcdefABCDEF" } },
         label = { Text(stringResource(R.string.dg_payload)) },
@@ -902,13 +901,13 @@ internal fun SavedNodesList(vm: MeshCoreViewModel) {
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                TextButton(onClick = { vm.connectSaved(node) }) { Text(stringResource(R.string.set_connect)) }
+                FilledTonalButton(onClick = { vm.connectSaved(node) }) { Text(stringResource(R.string.set_connect)) }
                 // "Remove", not "Forget". Android's Bluetooth settings has
                 // a "Forget device" that drops the PAIRING; this only drops
                 // the app's list entry. Sharing the word sent someone
                 // looking for the first one to this button, and their new
                 // BLE PIN went untested because the bond was still in place.
-                TextButton(onClick = {
+                FilledTonalButton(onClick = {
                     vm.forgetNode(node)
                     refresh++
                 }) { Text(stringResource(R.string.node_remove_confirm)) }
@@ -1002,7 +1001,7 @@ fun AddNodeSheet(vm: MeshCoreViewModel, tcpEnabled: Boolean, onDismiss: () -> Un
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                             }
-                            TextButton(onClick = {
+                            FilledTonalButton(onClick = {
                                 vm.connectBle(dev.address, dev.name)
                                 onDismiss()
                             }) { Text(stringResource(R.string.set_connect)) }
@@ -1036,7 +1035,7 @@ fun AddNodeSheet(vm: MeshCoreViewModel, tcpEnabled: Boolean, onDismiss: () -> Un
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
-                        TextButton(onClick = {
+                        FilledTonalButton(onClick = {
                             io.alvaroedo.meshconnect.platform.UsbDevices
                                 .requestPermission(context, attached.device) { granted ->
                                     if (granted) vm.connectUsb(attached.device)
@@ -1055,7 +1054,7 @@ fun AddNodeSheet(vm: MeshCoreViewModel, tcpEnabled: Boolean, onDismiss: () -> Un
                     mutableStateOf(vm.prefs.lastTcpPort.takeIf { it != 0 }?.toString() ?: "5000")
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    OutlinedTextField(
+                    FormField(
                         value = host,
                         onValueChange = { host = it },
                         label = { Text(stringResource(R.string.add_host)) },
@@ -1063,7 +1062,7 @@ fun AddNodeSheet(vm: MeshCoreViewModel, tcpEnabled: Boolean, onDismiss: () -> Un
                         modifier = Modifier.weight(1f),
                     )
                     Spacer(Modifier.width(8.dp))
-                    OutlinedTextField(
+                    FormField(
                         value = port,
                         onValueChange = { port = it },
                         label = { Text(stringResource(R.string.add_port)) },
@@ -1071,7 +1070,7 @@ fun AddNodeSheet(vm: MeshCoreViewModel, tcpEnabled: Boolean, onDismiss: () -> Un
                         modifier = Modifier.width(100.dp),
                     )
                 }
-                TextButton(onClick = {
+                FilledTonalButton(onClick = {
                     val p = port.toIntOrNull()
                     if (host.isNotBlank() && p != null && p in 1..65535) {
                         vm.connectTcp(host.trim(), p)

@@ -8,7 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -68,7 +68,7 @@ fun DataSection(vm: MeshCoreViewModel) {
         stringResource(R.string.data_purge_hint),
     )
     ButtonFlowRow {
-        TextButton(onClick = { purgeConfirm = true }) {
+        FilledTonalButton(onClick = { purgeConfirm = true }) {
             Text(stringResource(R.string.data_purge_menu), color = MaterialTheme.colorScheme.error)
         }
     }
@@ -137,7 +137,7 @@ private fun PurgeDialog(onDismiss: () -> Unit, onConfirm: (Boolean) -> Unit) {
                     )
                 }
                 Spacer(Modifier.height(12.dp))
-                OutlinedTextField(
+                FormField(
                     value = typed,
                     onValueChange = { typed = it },
                     label = { Text(stringResource(R.string.data_type_confirm, CONFIRM_WORD)) },

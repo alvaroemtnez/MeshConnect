@@ -23,8 +23,8 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
+import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -174,7 +174,7 @@ fun SearchField(
     label: String,
     modifier: Modifier = Modifier,
 ) {
-    OutlinedTextField(
+    FormField(
         value = query,
         onValueChange = onQueryChange,
         label = { Text(label) },
@@ -252,7 +252,11 @@ fun ExpandableHint(summary: String, detail: @Composable () -> Unit) {
     }
 }
 
-/** Single-choice chip row; FlowRow so chips wrap as whole units. */
+/**
+ * Single choice. Up to four short options are a full-width segmented button row (the M3
+ * control for this); more, or long labels, fall back to wrapping chips so nothing is
+ * squeezed into vertical text.
+ */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ChoiceChips(
@@ -261,6 +265,20 @@ fun ChoiceChips(
     enabled: Boolean = true,
     onSelect: (Int) -> Unit,
 ) {
+    if (options.size in 2..4 && options.all { it.length <= 12 }) {
+        androidx.compose.material3.SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+            options.forEachIndexed { i, label ->
+                SegmentedButton(
+                    selected = selected == i,
+                    onClick = { if (enabled) onSelect(i) },
+                    shape = androidx.compose.material3.SegmentedButtonDefaults.itemShape(i, options.size),
+                    enabled = enabled,
+                    label = { Text(label, maxLines = 1) },
+                )
+            }
+        }
+        return
+    }
     FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
         options.forEachIndexed { i, label ->
             FilterChip(
@@ -268,6 +286,7 @@ fun ChoiceChips(
                 onClick = { if (enabled) onSelect(i) },
                 label = { Text(label) },
                 enabled = enabled,
+                shape = FieldShape,
             )
         }
     }
@@ -292,7 +311,7 @@ fun SettingsTextField(
     sensitive: Boolean = false,
     onChange: (String) -> Unit,
 ) {
-    OutlinedTextField(
+    FormField(
         value = value,
         onValueChange = onChange,
         label = { Text(label) },

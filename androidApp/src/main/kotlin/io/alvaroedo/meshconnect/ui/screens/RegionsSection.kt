@@ -10,7 +10,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -70,7 +70,7 @@ fun RegionsSection(vm: MeshCoreViewModel) {
 
     Spacer(Modifier.height(8.dp))
     Row(verticalAlignment = Alignment.CenterVertically) {
-        OutlinedTextField(
+        FormField(
             value = newRegion,
             onValueChange = { newRegion = it },
             label = { Text(stringResource(R.string.reg_name)) },
@@ -78,14 +78,14 @@ fun RegionsSection(vm: MeshCoreViewModel) {
             isError = newRegion.isNotBlank() && !Regions.isValid(newRegion),
             modifier = Modifier.weight(1f),
         )
-        TextButton(
+        FilledTonalButton(
             onClick = { vm.addRegion(newRegion); newRegion = "" },
             enabled = Regions.isValid(newRegion),
         ) { Text(stringResource(R.string.add)) }
     }
 
     ButtonFlowRow {
-        TextButton(
+        FilledTonalButton(
             onClick = {
                 discovering = true
                 scope.launch {
@@ -118,7 +118,7 @@ fun RegionsSection(vm: MeshCoreViewModel) {
                         )
                     }
                 }
-                TextButton(onClick = { confirmDelete = region }) {
+                FilledTonalButton(onClick = { confirmDelete = region }) {
                     Text(stringResource(R.string.node_remove_confirm), color = MaterialTheme.colorScheme.error)
                 }
             }
@@ -208,7 +208,7 @@ private fun DiscoveredRegionsDialog(
                             if (region in known) {
                                 HintText(stringResource(R.string.reg_added))
                             } else {
-                                TextButton(onClick = { onAdd(region) }) { Text(stringResource(R.string.add)) }
+                                FilledTonalButton(onClick = { onAdd(region) }) { Text(stringResource(R.string.add)) }
                             }
                         }
                     }

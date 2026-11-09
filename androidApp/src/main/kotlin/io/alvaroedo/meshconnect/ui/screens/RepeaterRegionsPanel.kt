@@ -16,7 +16,6 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -517,7 +516,7 @@ private fun AddRegionDialog(
         title = { Text(stringResource(R.string.rr_add)) },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState())) {
-                OutlinedTextField(
+                FormField(
                     value = name,
                     onValueChange = { name = it },
                     label = { Text(stringResource(R.string.rr_name)) },

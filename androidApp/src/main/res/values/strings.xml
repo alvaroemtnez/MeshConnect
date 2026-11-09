@@ -154,6 +154,7 @@
     <string name="hub_notifications_on">notifications on</string>
     <string name="hub_notifications_off">notifications off</string>
     <string name="hub_reboot_menu">Reboot radio…</string>
+    <string name="hub_reboot_sub">Restart the connected radio</string>
     <string name="hub_reboot_title">Reboot radio?</string>
     <string name="hub_reboot_body">The connection will drop and come back once the radio is up again.</string>
     <string name="hub_reboot">Reboot</string>
@@ -432,9 +433,9 @@
     <string name="perm_battery">Battery telemetry</string>
     <string name="perm_location">Location telemetry</string>
     <string name="perm_environment">Environment telemetry</string>
-    <string name="perm_policy_flags">Global policy is Flags: this switch decides.</string>
-    <string name="perm_policy_all">Global policy is All: everyone can read this whatever the switch says.</string>
-    <string name="perm_policy_deny">Global policy is Deny: nobody can read this, switch or not.</string>
+    <string name="perm_policy_flags">Global policy is Per contact: this switch decides.</string>
+    <string name="perm_policy_all">Global policy is Everyone: everyone can read this whatever the switch says.</string>
+    <string name="perm_policy_deny">Global policy is Nobody: nobody can read this, switch or not.</string>
     <string name="discover_title">Nearby repeaters</string>
     <string name="discover_listening">Listening for answers…</string>
     <string name="discover_none">Nothing answered. That can mean none are in range, that they answered with a key prefix matching no contact you hold, or that they run firmware without discovery.</string>
@@ -706,7 +707,10 @@
     <string name="pol_flood_hint">A message that fails twice is retried once as a flood.</string>
     <string name="pol_flood_detail">MeshCore\'s documented default. If a repeater your path went through goes away, retrying that path can\'t work, so the third attempt clears the stored path and floods, which also lets the reply teach your radio a working route. With this off, a stale path keeps failing until something else refreshes it. It\'s capped at one flood per message.</string>
     <string name="pol_telemetry">Telemetry access</string>
-    <string name="pol_telemetry_hint">Who may read this node\'s telemetry: Deny / per-contact Flags / All.</string>
+    <string name="pol_tele_deny">Nobody</string>
+    <string name="pol_tele_flags">Per contact</string>
+    <string name="pol_tele_all">Everyone</string>
+    <string name="pol_telemetry_hint">Who may read this node\'s telemetry: nobody, chosen contacts, or everyone.</string>
     <string name="pol_hash_width">On-air path hash width</string>
     <string name="pol_hash_hint">Bytes per hop in packet paths. Every node on a mesh must match; firmware v10+.</string>
     <string name="pol_scope">Global flood scope</string>

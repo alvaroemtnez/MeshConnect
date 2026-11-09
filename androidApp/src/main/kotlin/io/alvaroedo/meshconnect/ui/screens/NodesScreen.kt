@@ -46,7 +46,6 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Tab
 import androidx.compose.material3.ScrollableTabRow
@@ -1216,7 +1215,7 @@ fun ContactDetailSheet(
             onDismissRequest = { renameOpen = false },
             title = { Text(stringResource(R.string.node_rename_title)) },
             text = {
-                OutlinedTextField(value = name, onValueChange = { name = it }, singleLine = true)
+                FormField(value = name, onValueChange = { name = it }, singleLine = true)
             },
             confirmButton = {
                 TextButton(onClick = {

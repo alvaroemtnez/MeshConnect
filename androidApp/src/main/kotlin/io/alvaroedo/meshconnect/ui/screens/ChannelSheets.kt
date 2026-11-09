@@ -12,7 +12,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -163,7 +162,7 @@ private fun AddChannelForm(
     }
 
     if (choice != AddChannelChoice.Public) {
-        OutlinedTextField(
+        FormField(
             value = name,
             onValueChange = { name = it },
             label = { Text(stringResource(if (choice == AddChannelChoice.Hashtag) R.string.ch_channel_name else R.string.ch_name)) },
@@ -175,7 +174,7 @@ private fun AddChannelForm(
         )
     }
     if (choice == AddChannelChoice.JoinPrivate) {
-        OutlinedTextField(
+        FormField(
             value = key,
             onValueChange = { key = it },
             label = { Text(stringResource(R.string.ch_secret_key)) },
@@ -238,14 +237,14 @@ fun ChannelEditSheet(vm: MeshCoreViewModel, channel: ChannelEntity, onDismiss: (
         Column(Modifier.padding(horizontal = 24.dp).padding(bottom = 32.dp)) {
             Text(stringResource(R.string.ch_numbered, channel.idx), style = MaterialTheme.typography.headlineSmall)
             Spacer(Modifier.height(12.dp))
-            OutlinedTextField(
+            FormField(
                 value = name,
                 onValueChange = { name = it },
                 label = { Text(stringResource(R.string.ch_name)) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
             )
-            OutlinedTextField(
+            FormField(
                 value = pskHex,
                 onValueChange = { pskHex = it },
                 label = { Text(stringResource(if (pskLoaded) R.string.ch_secret_key else R.string.ch_loading_key)) },

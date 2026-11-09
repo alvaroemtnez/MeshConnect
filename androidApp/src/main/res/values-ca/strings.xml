@@ -151,6 +151,7 @@
     <string name="hub_notifications_on">notificacions activades</string>
     <string name="hub_notifications_off">notificacions desactivades</string>
     <string name="hub_reboot_menu">Reiniciar la ràdio…</string>
+    <string name="hub_reboot_sub">Reiniciar la ràdio connectada</string>
     <string name="hub_reboot_title">Reiniciar la ràdio?</string>
     <string name="hub_reboot_body">La connexió es tallarà i tornarà quan la ràdio arranque.</string>
     <string name="hub_reboot">Reiniciar</string>
@@ -429,9 +430,9 @@
     <string name="perm_battery">Telemetria de bateria</string>
     <string name="perm_location">Telemetria d\'ubicació</string>
     <string name="perm_environment">Telemetria ambiental</string>
-    <string name="perm_policy_flags">La política global és Flags: decidix este interruptor.</string>
-    <string name="perm_policy_all">La política global és All: tots poden llegir-ho, diga el que diga l\'interruptor.</string>
-    <string name="perm_policy_deny">La política global és Deny: ningú no pot llegir-ho, amb interruptor o sense.</string>
+    <string name="perm_policy_flags">La política global és «Per contacte»: decidix este interruptor.</string>
+    <string name="perm_policy_all">La política global és «Tots»: tots poden llegir-ho, diga el que diga l\'interruptor.</string>
+    <string name="perm_policy_deny">La política global és «Ningú»: ningú no pot llegir-ho, amb interruptor o sense.</string>
     <string name="discover_title">Repetidors pròxims</string>
     <string name="discover_listening">Esperant respostes…</string>
     <string name="discover_none">Ningú no ha respost. Pot ser que no n\'hi haja cap a l\'abast, que respongueren amb un prefix que no coincidix amb els teus contactes, o que el seu firmware no tinga descobriment.</string>
@@ -703,7 +704,10 @@
     <string name="pol_flood_hint">Un missatge que falla dues vegades es reintenta una vegada per inundació.</string>
     <string name="pol_flood_detail">El comportament per defecte documentat de MeshCore. Si desapareix un repetidor de la teua ruta, reintentar per ella no funciona, així que el tercer intent esborra la ruta guardada i inunda, i la resposta ensenya a la teua ràdio una ruta que funciona. Desactivat, una ruta obsoleta continua fallant fins que alguna cosa la renove. Està limitat a una inundació per missatge.</string>
     <string name="pol_telemetry">Accés a la telemetria</string>
-    <string name="pol_telemetry_hint">Qui pot llegir la telemetria d\'este node: Deny / Flags per contacte / All.</string>
+    <string name="pol_tele_deny">Ningú</string>
+    <string name="pol_tele_flags">Per contacte</string>
+    <string name="pol_tele_all">Tots</string>
+    <string name="pol_telemetry_hint">Qui pot llegir la telemetria d\'este node: ningú, els contactes triats o tots.</string>
     <string name="pol_hash_width">Amplada del hash de ruta</string>
     <string name="pol_hash_hint">Bytes per salt en les rutes dels paquets. Tots els nodes de la malla han de coincidir; firmware v10+.</string>
     <string name="pol_scope">Àmbit d\'inundació global</string>

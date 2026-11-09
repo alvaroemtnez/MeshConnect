@@ -7,7 +7,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -65,7 +65,7 @@ fun DevicePinSection(vm: MeshCoreViewModel) {
         )
     }
     Spacer(Modifier.height(8.dp))
-    OutlinedTextField(
+    FormField(
         value = pin,
         onValueChange = { typed -> pin = typed.filter { it in '0'..'9' }.take(DevicePin.LENGTH) },
         label = { Text(stringResource(R.string.pin_new, DevicePin.LENGTH)) },
@@ -85,7 +85,7 @@ fun DevicePinSection(vm: MeshCoreViewModel) {
         modifier = Modifier.fillMaxWidth(),
     )
     ButtonFlowRow {
-        TextButton(
+        FilledTonalButton(
             onClick = { confirm = true },
             enabled = DevicePin.isAcceptable(pin),
         ) { Text(stringResource(R.string.pin_change)) }

@@ -61,7 +61,14 @@ private fun SettingsSpoke(
             },
         ) {
             Spacer(Modifier.height(8.dp))
-            content()
+            // Every spoke sits in the same rounded card as the hub's groups, with one
+            // spacing rhythm, so the screens read as one app rather than one per author.
+            SettingsCard(Modifier) {
+                Column(
+                    Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                    verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(10.dp),
+                ) { content() }
+            }
             Spacer(Modifier.height(32.dp))
         }
     }
@@ -137,7 +144,7 @@ fun SettingsDevicePinScreen(vm: MeshCoreViewModel, nav: NavController) {
 fun SettingsIdentityScreen(vm: MeshCoreViewModel, nav: NavController) {
     var showSelfQr by remember { mutableStateOf(false) }
     SettingsSpoke(
-        "Identity",
+        stringResource(R.string.hub_identity),
         vm,
         nav,
         menuActions = listOf(
@@ -279,7 +286,7 @@ private fun AddWidgetButton() {
     val context = androidx.compose.ui.platform.LocalContext.current
     val manager = android.appwidget.AppWidgetManager.getInstance(context)
     if (!manager.isRequestPinAppWidgetSupported) return
-    androidx.compose.material3.OutlinedButton(
+    androidx.compose.material3.FilledTonalButton(
         onClick = {
             manager.requestPinAppWidget(
                 android.content.ComponentName(context, io.alvaroedo.meshconnect.widget.MeshWidgetReceiver::class.java),

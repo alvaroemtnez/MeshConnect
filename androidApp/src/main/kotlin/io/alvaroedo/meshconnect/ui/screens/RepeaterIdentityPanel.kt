@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -160,7 +159,7 @@ fun RepeaterIdentityPanel(vm: MeshCoreViewModel, keyHex: String, isAdmin: Boolea
 
     Spacer(Modifier.height(16.dp))
     Text(stringResource(R.string.id_replace_title), style = MaterialTheme.typography.titleSmall)
-    OutlinedTextField(
+    FormField(
         value = newKey,
         onValueChange = { newKey = it; generated = null },
         label = { Text(stringResource(R.string.id_new_key)) },
@@ -393,7 +392,7 @@ private fun ReplaceKeyDialog(onDismiss: () -> Unit, onConfirm: (Boolean) -> Unit
                 HintText(stringResource(R.string.id_reboot_silent))
                 HintText(stringResource(R.string.id_not_announced))
                 Spacer(Modifier.height(8.dp))
-                OutlinedTextField(
+                FormField(
                     value = typed,
                     onValueChange = { typed = it },
                     label = { Text(stringResource(R.string.id_type_to_confirm, confirmWord)) },

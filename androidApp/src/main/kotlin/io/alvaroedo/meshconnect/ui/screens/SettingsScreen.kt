@@ -11,6 +11,7 @@ import io.github.thatsfguy.meshcore.presentation.identitySubtitle
 import io.github.thatsfguy.meshcore.presentation.radioSubtitle
 import io.github.thatsfguy.meshcore.presentation.settingsGroups
 import io.github.thatsfguy.meshcore.presentation.transportsSubtitle
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -20,6 +21,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
@@ -107,9 +109,7 @@ fun SettingsScreen(vm: MeshCoreViewModel, nav: NavController) {
             AppTopBar(
                 title = stringResource(R.string.nav_settings),
                 vm = vm,
-                menuActions = listOf(
-                    MenuAction(stringResource(R.string.hub_reboot_menu), destructive = true) { rebootConfirm = true },
-                ),
+                menuActions = emptyList(),
             )
         },
     ) { padding ->
@@ -120,22 +120,32 @@ fun SettingsScreen(vm: MeshCoreViewModel, nav: NavController) {
                 .verticalScroll(rememberScrollState()),
         ) {
             for ((index, group) in settingsGroups().withIndex()) {
-                if (index > 0) HorizontalDivider(Modifier.padding(top = 8.dp))
                 GroupLabel(SettingsHubText.group(index, group.title))
-                for (tile in group.tiles) {
-                    SettingsTileRow(
-                        title = SettingsHubText.title(tile.route, tile.title),
-                        subtitle = subtitles[tile.route] ?: SettingsHubText.subtitle(tile.route, tile.subtitle),
-                        // NOT dimmed. Driving this disconnected, six of the
-                        // ten rows on the first screen were greyed — the
-                        // majority of the app's Settings reading as broken
-                        // before you have done anything wrong. The subtitle
-                        // already says "Connect to a radio"; that is the
-                        // whole message, and it does not need the row to
-                        // look disabled to carry it.
-                        dimmed = false,
-                        onClick = { nav.navigate("settings/${tile.route}") },
-                    )
+                SettingsCard {
+                    for (tile in group.tiles) {
+                        SettingsTileRow(
+                            title = SettingsHubText.title(tile.route, tile.title),
+                            subtitle = subtitles[tile.route] ?: SettingsHubText.subtitle(tile.route, tile.subtitle),
+                            // NOT dimmed. Driving this disconnected, six of the ten rows on
+                            // the first screen were greyed; the subtitle already says
+                            // "Connect to a radio", which is the whole message.
+                            dimmed = false,
+                            icon = settingsIcon(tile.route),
+                            onClick = { nav.navigate("settings/${tile.route}") },
+                        )
+                    }
+                    // Rebooting the radio is a device action with a home: This node. It
+                    // lived in the overflow menu, where nobody looks for it.
+                    if (isNodeGroup(group.tiles.map { it.route }) && isReady) {
+                        SettingsTileRow(
+                            title = stringResource(R.string.hub_reboot_menu).trimEnd('…'),
+                            subtitle = stringResource(R.string.hub_reboot_sub),
+                            dimmed = false,
+                            icon = R.drawable.ic_restart,
+                            destructive = true,
+                            onClick = { rebootConfirm = true },
+                        )
+                    }
                 }
             }
             Spacer(Modifier.height(32.dp))
@@ -147,11 +157,18 @@ fun SettingsScreen(vm: MeshCoreViewModel, nav: NavController) {
             onDismissRequest = { rebootConfirm = false },
             title = { Text(stringResource(R.string.hub_reboot_title)) },
             text = { Text(stringResource(R.string.hub_reboot_body)) },
+            icon = { Icon(androidx.compose.ui.res.painterResource(R.drawable.ic_restart), null) },
             confirmButton = {
-                TextButton(onClick = {
-                    vm.rebootRadio()
-                    rebootConfirm = false
-                }) { Text(stringResource(R.string.hub_reboot)) }
+                androidx.compose.material3.Button(
+                    onClick = {
+                        vm.rebootRadio()
+                        rebootConfirm = false
+                    },
+                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error,
+                        contentColor = MaterialTheme.colorScheme.onError,
+                    ),
+                ) { Text(stringResource(R.string.hub_reboot)) }
             },
             dismissButton = {
                 TextButton(onClick = { rebootConfirm = false }) { Text(stringResource(R.string.cancel)) }
@@ -160,14 +177,53 @@ fun SettingsScreen(vm: MeshCoreViewModel, nav: NavController) {
     }
 }
 
+private fun isNodeGroup(routes: List<String>) = "firmware" in routes
+
+/** The icon for each hub route. */
+@androidx.annotation.DrawableRes
+internal fun settingsIcon(route: String): Int = when (route) {
+    "connection" -> R.drawable.ic_link
+    "transports" -> R.drawable.ic_swap_horiz
+    "pin" -> R.drawable.ic_password
+    "identity" -> R.drawable.ic_badge
+    "radio" -> R.drawable.ic_antenna
+    "clock" -> R.drawable.ic_schedule
+    "policies" -> R.drawable.ic_policy
+    "autoadd" -> R.drawable.ic_person_add
+    "customvars" -> R.drawable.ic_tune
+    "firmware" -> R.drawable.ic_system_update
+    "channels" -> R.drawable.ic_tag
+    "blocking" -> R.drawable.ic_block
+    "app" -> R.drawable.ic_palette
+    "backup" -> R.drawable.ic_backup
+    "data" -> R.drawable.ic_database
+    "about" -> R.drawable.ic_info
+    else -> R.drawable.ic_settings
+}
+
 @Composable
 private fun GroupLabel(text: String) {
     Text(
-        text.uppercase(),
-        style = MaterialTheme.typography.labelMedium,
+        text,
+        style = MaterialTheme.typography.titleSmall,
         color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 4.dp),
+        modifier = Modifier.padding(start = 32.dp, end = 32.dp, top = 20.dp, bottom = 8.dp),
     )
+}
+
+/** A rounded group of rows: the hub's groups, and the blocks inside a settings screen. */
+@Composable
+internal fun SettingsCard(
+    modifier: Modifier = Modifier.padding(horizontal = 16.dp),
+    content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit,
+) {
+    androidx.compose.material3.Surface(
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        modifier = modifier.fillMaxWidth(),
+    ) {
+        Column(Modifier.padding(vertical = 6.dp), content = content)
+    }
 }
 
 /** Also used by the firmware picker, which is a list of the same shape. */
@@ -177,39 +233,58 @@ internal fun SettingsTileRow(
     subtitle: String,
     dimmed: Boolean,
     onClick: () -> Unit,
+    @androidx.annotation.DrawableRes icon: Int? = null,
+    destructive: Boolean = false,
 ) {
+    val warn = subtitle.startsWith("⚠")
     Row(
         Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
     ) {
+        if (icon != null) {
+            androidx.compose.foundation.layout.Box(
+                Modifier
+                    .size(40.dp)
+                    .background(
+                        if (destructive) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.secondaryContainer,
+                        androidx.compose.foundation.shape.CircleShape,
+                    ),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    androidx.compose.ui.res.painterResource(icon),
+                    contentDescription = null,
+                    tint = if (destructive) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onSecondaryContainer,
+                    modifier = Modifier.size(22.dp),
+                )
+            }
+        }
         Column(Modifier.weight(1f)) {
             Text(
                 title,
                 style = MaterialTheme.typography.bodyLarge,
-                color = if (dimmed) {
-                    MaterialTheme.colorScheme.onSurfaceVariant
-                } else {
-                    MaterialTheme.colorScheme.onSurface
+                color = when {
+                    destructive -> MaterialTheme.colorScheme.error
+                    dimmed -> MaterialTheme.colorScheme.onSurfaceVariant
+                    else -> MaterialTheme.colorScheme.onSurface
                 },
             )
             Text(
                 subtitle,
-                style = MaterialTheme.typography.bodySmall,
-                color = if (subtitle.startsWith("⚠")) {
-                    MaterialTheme.colorScheme.error
-                } else {
-                    MaterialTheme.colorScheme.onSurfaceVariant
-                },
+                style = MaterialTheme.typography.bodyMedium,
+                color = if (warn) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        Icon(
-            androidx.compose.ui.res.painterResource(io.alvaroedo.meshconnect.R.drawable.ic_chevron_right),
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+        if (icon == null) {
+            Icon(
+                androidx.compose.ui.res.painterResource(R.drawable.ic_chevron_right),
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
     }
 }

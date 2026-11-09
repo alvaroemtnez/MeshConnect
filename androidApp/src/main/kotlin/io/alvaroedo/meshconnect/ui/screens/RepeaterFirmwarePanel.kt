@@ -11,7 +11,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -317,7 +317,7 @@ fun RepeaterFirmwarePanel(
                 }
             }
             Spacer(Modifier.height(12.dp))
-            OutlinedButton(onClick = { nav.navigate(flashRoute) }) {
+            FilledTonalButton(onClick = { nav.navigate(flashRoute) }) {
                 Text(stringResource(R.string.ota_already))
             }
             // The address is kept whatever the state — it is hardware,

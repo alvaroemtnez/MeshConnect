@@ -18,7 +18,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -306,7 +305,7 @@ private fun NicknameDialog(
                     stringResource(R.string.chats_nickname_body, subject),
                     style = MaterialTheme.typography.bodySmall,
                 )
-                OutlinedTextField(
+                FormField(
                     value = text,
                     onValueChange = { text = it },
                     label = { Text(stringResource(R.string.chats_nickname)) },
