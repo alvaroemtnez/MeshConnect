@@ -15,7 +15,7 @@
 #   clean       remove build outputs
 #   distclean   also remove .tools/ (the downloaded toolchain and Gradle caches)
 #
-# Everything (JDK, Android SDK, Gradle, Kotlin/Native and their caches) is
+# Everything (JDK, Android SDK, Gradle and their caches) is
 # downloaded into .tools/; nothing is installed system-wide and nothing is
 # read from ~/.gradle, ~/.android or ~/.m2. Needs only bash, curl, tar, unzip
 # and sha256sum from the host. Works on immutable distros (Silverblue) and
@@ -55,8 +55,6 @@ export GRADLE_USER_HOME="$TOOLS_DIR/gradle"
 # Instead of ~/.android: AGP's debug keystore, the Android CLI and its caches.
 # (adb ignores it and keeps its key in ~/.android/adbkey.)
 export ANDROID_USER_HOME="$TOOLS_DIR/android-user"
-# Kotlin/Native toolchain (only fetched if an iOS task is ever run here).
-export KONAN_DATA_DIR="$TOOLS_DIR/konan"
 # Robolectric's android-all jars, instead of ~/.m2 (read by androidApp/build.gradle.kts).
 export MESHCONNECT_ROBOLECTRIC_DIR="$TOOLS_DIR/robolectric"
 # build.sh signs releases itself (apksigner); keep AGP from doing it too.
@@ -268,8 +266,8 @@ check() {
 
 print_env() {
     setup >&2
-    printf 'export JAVA_HOME=%q ANDROID_HOME=%q GRADLE_USER_HOME=%q ANDROID_USER_HOME=%q KONAN_DATA_DIR=%q MESHCONNECT_ROBOLECTRIC_DIR=%q\n' \
-        "$JAVA_HOME" "$ANDROID_HOME" "$GRADLE_USER_HOME" "$ANDROID_USER_HOME" "$KONAN_DATA_DIR" "$MESHCONNECT_ROBOLECTRIC_DIR"
+    printf 'export JAVA_HOME=%q ANDROID_HOME=%q GRADLE_USER_HOME=%q ANDROID_USER_HOME=%q MESHCONNECT_ROBOLECTRIC_DIR=%q\n' \
+        "$JAVA_HOME" "$ANDROID_HOME" "$GRADLE_USER_HOME" "$ANDROID_USER_HOME" "$MESHCONNECT_ROBOLECTRIC_DIR"
     printf 'export PATH=%q:"$PATH"\n' "$JDK_DIR/bin:$SDK_DIR/platform-tools:$SDK_DIR/cmdline-tools/latest/bin"
     printf 'unset ANDROID_SDK_ROOT\n'
 }

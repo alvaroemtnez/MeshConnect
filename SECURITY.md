@@ -1,6 +1,6 @@
 # Security policy
 
-This is an independent Kotlin Multiplatform MeshCore client. The
+MeshConnect is an independent MeshCore client for Android, forked from MeshCore Hardened. The
 protocol layer parses attacker-controlled frames off the LoRa mesh and
 handles identity, so a vulnerability here can affect anyone who
 messages anyone using this client.
@@ -20,36 +20,28 @@ documented in the app's own UI:
 What IS in scope: anything that breaks the app's own guarantees —
 advert signature verification, secret storage, frame-parse safety,
 data-at-rest encryption, or the redaction of secrets from logs. See
-[SECURITY_REVIEW.md](SECURITY_REVIEW.md) for the current posture.
+[docs/upstream/SECURITY_REVIEW.md](docs/upstream/SECURITY_REVIEW.md) for the posture inherited from upstream.
 
 If you've found something, **please report it privately first.** A
 public issue or PR puts every user at risk before a fix is shipped.
 
 ## Reporting a vulnerability
 
-Three channels, in preference order:
+Report privately to the MeshConnect maintainer, through the contact details on
+<https://code.alvaroedo.io/alvaroemtnez>, and not in a public issue.
 
-1. **GitHub Private Vulnerability Reporting** —
-   <https://github.com/thatSFguy/meshcore-mobile-app/security/advisories/new>
-   Creates a private thread visible only to maintainers; you can
-   collaborate on fixes there. Best for technical reports with PoC
-   code.
-
-2. **Email** — `rob@woodhousellc.com`
-   PGP welcome but not required. Use the same body shape as the
-   GitHub form below if you can; otherwise just describe the bug.
-
-3. **Off-platform** — if you'd rather avoid the channels above, say so
-   in a one-line email (#2) and we can agree on somewhere else.
+Problems that also affect MeshCore Hardened (most of `shared/`: protocol parsing, crypto,
+the engine) should also reach its author, thatSFguy, through
+<https://github.com/thatSFguy/meshcore-mobile-app/security/advisories/new>. MeshConnect will
+merge the fix.
 
 ## What to include
 
 A useful report has:
 
 - **Affected version(s)** — preferably the lowest version that
-  reproduces. This client is young (first tagged release v0.1.0); if
-  you're on an older build, please retest against current `main`
-  before reporting.
+  reproduces. If you're on an older build, please retest against
+  current `main` before reporting.
 - **Severity self-assessment** — one of:
   - **Critical** — RCE, key disclosure, ability to read other users'
     messages, ability to forge adverts (identity/GPS
@@ -63,8 +55,6 @@ A useful report has:
   - **Low** — hardening / defense-in-depth concerns; unverified or
     speculative findings.
 - **Reproducer** — minimum bytes / steps that trigger the bug.
-  Test vectors live in `reference/test-vectors.json` if you want
-  a starting fixture.
 - **Suggested mitigation** — optional but appreciated.
 
 ## What I'll do
@@ -75,7 +65,7 @@ A useful report has:
 - Triage to a severity level within **7 days**.
 - Targeted fix release timeline depending on severity:
   - **Critical** — patch and release within 7 days, immediately
-    yank the affected versions from the GitHub release page.
+    yank the affected versions from the release pages.
   - **High** — patch and release within 30 days.
   - **Medium / Low** — fix in the next regular release cycle.
 - Coordinate disclosure timing with you. The default is **90 days
@@ -108,7 +98,7 @@ explicit say-so.
   reference this client implements, including §12's list of the
   client-side mistakes this app exists to avoid. A weakness described
   there as protocol-inherent is upstream's, not this client's.
-- **[SECURITY_REVIEW.md](SECURITY_REVIEW.md)** — the last full-surface
-  review: findings, fixes, accepted risks, and what was verified sound.
+- **[docs/upstream/SECURITY_REVIEW.md](docs/upstream/SECURITY_REVIEW.md)** — upstream's last full-surface
+  review (2026-07-31, before the fork): findings, fixes, accepted risks, and what was verified sound.
 - **`HardeningTest.kt`** — regression tests pinning the fixes from that
   review. A report that also breaks one of these is especially useful.

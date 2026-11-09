@@ -1,10 +1,13 @@
 # Feature parity vs the mainstream MeshCore Android app
 
+> Upstream's working plan (MeshCore Hardened), kept as MeshConnect's map of the feature surface
+> and of the deliberate differences. Row statuses are as of the fork (2026-11-09).
+
 **Policy (2026-08-01):** the mainstream app — `com.liamcottle.meshcore.android`,
 "MeshCore", **v1.49.0** (was v1.47.0 when this was written; their 1.48.0 and 1.49.0 are
 tracked as a delta in §14) — is the **floor** for this app's feature set. Anything it does that
 we don't is a gap to close, unless it's explicitly out of scope below. This supersedes
-the original pruned-from-an-inventory scoping in [`SCOPE.md`](SCOPE.md) for anything
+the original pruned-from-an-inventory scoping in [`SCOPE.md`](upstream/SCOPE.md) for anything
 the two disagree on.
 
 **Two things parity does NOT mean:**

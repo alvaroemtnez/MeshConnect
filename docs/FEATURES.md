@@ -1,10 +1,13 @@
-# What MeshCore Hardened does
+# What MeshConnect does
 
-The complete feature list. [`README.md`](README.md) summarises; this is the inventory.
+> Inherited from MeshCore Hardened and still accurate for everything below, which MeshConnect
+> keeps. What MeshConnect adds or changes on top is in [`CHANGELOG.md`](../CHANGELOG.md).
+
+The complete feature list. [`README.md`](../README.md) summarises; this is the inventory.
 
 Two documents sit either side of it. [`PARITY.md`](PARITY.md) compares this surface against the
 official MeshCore Android app and records what is deliberately missing and why.
-[`CHANGELOG.md`](CHANGELOG.md) says which release each thing arrived in.
+[`CHANGELOG.md`](../CHANGELOG.md) says which release each thing arrived in.
 
 **A note on the caveats below.** Several entries say what a feature does *not* prove. That is not
 hedging for its own sake — a mesh client that overstates what it knows sends you to fix the wrong
@@ -38,7 +41,7 @@ feature rather than a footnote to it.
 - **Reactions.** MeshCore has no reaction field, so every client invents a text convention. This
   app reads both conventions on the air and sends the one this mesh mostly runs; an unmatched
   reaction renders as "reacted to an earlier message" rather than as raw wire text. Formats and the
-  reasoning: [`MESHCORE_PROTOCOL.md` §14](MESHCORE_PROTOCOL.md).
+  reasoning: [`MESHCORE_PROTOCOL.md` §14](../MESHCORE_PROTOCOL.md).
 - **Mentions.** Typing `@` offers the names it knows — on a channel, whoever has posted there; in
   a direct message, the one person who will read it — and picking one writes `@[Name]`, the form
   the official app uses. A message tagging you is tinted and outlined in the thread. Like
@@ -179,7 +182,7 @@ quiet. Opening a conversation clears its notification.
 ## Security properties
 
 These run through everything above rather than being a feature of their own; the reasoning is in
-[`README.md`](README.md#security-posture) and [`MESHCORE_PROTOCOL.md`](MESHCORE_PROTOCOL.md) §12.
+[`README.md`](README.md#security-posture) and [`MESHCORE_PROTOCOL.md`](../MESHCORE_PROTOCOL.md) §12.
 
 - **Advert Ed25519 signatures verified** before any node is imported, mapped or shown in the
   discovery inbox.

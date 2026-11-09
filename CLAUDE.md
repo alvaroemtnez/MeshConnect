@@ -30,6 +30,17 @@ disagrees with this preamble, this preamble wins.
   `docs/upstream/`); `ChangelogTest` ties it to the list in `AboutSection.kt`.
 - **No phone attached by default:** drive the headless AOSP emulator in `.tools/`
   (`tools/emulator.sh`), and screenshot to check UI work.
+- **Android only (2026-11-09).** iOS was removed: `iosApp/`, `shared/iosMain`, `iosTest`,
+  the CryptoKit bridge, cinterop and `.github/` (the iOS CI) are gone, and nothing on GitHub
+  is needed. Ignore every iOS passage below. Keep `commonMain` platform-neutral anyway — it
+  is what lets upstream's protocol/engine changes merge cleanly.
+- **Docs moved (2026-11-09):** `PARITY.md` and `FEATURES.md` are in `docs/`; upstream's
+  LESSONS, REBUILD-PLAYBOOK, REUSE, SCOPE and SECURITY_REVIEW are in `docs/upstream/` as
+  provenance. Code comments citing them by name still mean those files. The settings-QR web
+  generator (`docs/settings-qr`) and upstream's screenshots were removed; the app makes
+  settings codes itself.
+- **Brand colour** `#0F7B6C` (teal): launcher background, fallback Material seed
+  (`scripts/gen_colors.py`), `docs/icon.png` / `docs/logo.png` (`scripts/gen_logo.py`).
 
 ---
 
