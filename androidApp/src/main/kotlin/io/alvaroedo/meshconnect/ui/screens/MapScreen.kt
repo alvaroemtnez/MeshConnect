@@ -1,5 +1,8 @@
 package io.alvaroedo.meshconnect.ui.screens
 
+import io.alvaroedo.meshconnect.R
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -96,32 +99,32 @@ fun MapScreen(vm: MeshCoreViewModel, nav: NavController) {
     Scaffold(
         topBar = {
             AppTopBar(
-                title = "Map",
+                title = stringResource(R.string.nav_map),
                 vm = vm,
-                subtitle = "${located.size} nodes with GPS · tiles load over HTTP",
+                subtitle = pluralStringResource(R.plurals.map_subtitle, located.size, located.size),
                 menuActions = listOfNotNull(
-                    MenuAction("Show labels", checked = showLabels) { showLabels = !showLabels },
-                    MenuAction("Fit all nodes") { fitRequest++ },
-                    linksFor?.let { MenuAction("Hide neighbour links") { linksFor = null } },
+                    MenuAction(stringResource(R.string.map_labels), checked = showLabels) { showLabels = !showLabels },
+                    MenuAction(stringResource(R.string.map_fit_all)) { fitRequest++ },
+                    linksFor?.let { MenuAction(stringResource(R.string.map_hide_links)) { linksFor = null } },
                     MenuAction(
-                        "Only contacts",
+                        stringResource(R.string.map_only_contacts),
                         checked = io.github.thatsfguy.meshcore.protocol.Codes.ADV_TYPE_CHAT in typeFilter,
                     ) { toggleType(io.github.thatsfguy.meshcore.protocol.Codes.ADV_TYPE_CHAT) },
                     MenuAction(
-                        "Only repeaters",
+                        stringResource(R.string.map_only_repeaters),
                         checked = io.github.thatsfguy.meshcore.protocol.Codes.ADV_TYPE_REPEATER in typeFilter,
                     ) { toggleType(io.github.thatsfguy.meshcore.protocol.Codes.ADV_TYPE_REPEATER) },
                     MenuAction(
-                        "Only rooms",
+                        stringResource(R.string.map_only_rooms),
                         checked = io.github.thatsfguy.meshcore.protocol.Codes.ADV_TYPE_ROOM in typeFilter,
                     ) { toggleType(io.github.thatsfguy.meshcore.protocol.Codes.ADV_TYPE_ROOM) },
-                    MenuAction("Export nodes as GPX") { vm.exportGpx(located.size) },
-                    MenuAction("Load tiles (network)", checked = tilesEnabled) {
+                    MenuAction(stringResource(R.string.map_export_gpx)) { vm.exportGpx(located.size) },
+                    MenuAction(stringResource(R.string.map_load_tiles), checked = tilesEnabled) {
                         tilesEnabled = !tilesEnabled
                         vm.prefs.mapTilesEnabled = tilesEnabled
                     },
-                    MenuAction("Clear tile cache") {
-                        MapStyles.clearCache(context) { vm.transientMessage.value = "Tile cache cleared" }
+                    MenuAction(stringResource(R.string.map_clear_cache)) {
+                        MapStyles.clearCache(context) { vm.transientMessage.value = context.getString(R.string.map_cache_cleared) }
                     },
                 ),
             )
@@ -130,7 +133,7 @@ fun MapScreen(vm: MeshCoreViewModel, nav: NavController) {
         if (located.isEmpty()) {
             EmptyHint(
                 modifier = Modifier.padding(padding),
-                text = "No nodes with advertised GPS yet.\nNodes appear here once their adverts include a location.",
+                text = stringResource(R.string.map_empty),
             )
             return@Scaffold
         }

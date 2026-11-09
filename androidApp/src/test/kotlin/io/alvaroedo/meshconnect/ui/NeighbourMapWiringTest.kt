@@ -185,7 +185,7 @@ class NeighbourMapWiringTest {
         )
         assertTrue(
             "there is no way to put the links away again",
-            map.contains("MenuAction(\"Hide neighbour links\")"),
+            map.contains("MenuAction(stringResource(R.string.map_hide_links))"),
         )
     }
 

@@ -1,5 +1,7 @@
 package io.alvaroedo.meshconnect.ui.screens
 
+import androidx.compose.ui.res.stringResource
+import io.alvaroedo.meshconnect.R
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -85,7 +87,7 @@ private fun QueryOnEntry(
 @Composable
 fun SettingsConnectionScreen(vm: MeshCoreViewModel, nav: NavController) {
     var showAddNode by remember { mutableStateOf(false) }
-    SettingsSpoke("Connection", vm, nav) {
+    SettingsSpoke(stringResource(R.string.link_connection), vm, nav) {
         ConnectionSection(vm, onAddNode = { showAddNode = true })
     }
     if (showAddNode) {
@@ -97,7 +99,7 @@ fun SettingsConnectionScreen(vm: MeshCoreViewModel, nav: NavController) {
 fun SettingsTransportsScreen(vm: MeshCoreViewModel, nav: NavController) {
     var tcpEnabled by remember { mutableStateOf(vm.prefs.tcpEnabled) }
     var showTcpWarning by remember { mutableStateOf(false) }
-    SettingsSpoke("Transports", vm, nav) {
+    SettingsSpoke(stringResource(R.string.hub_transports), vm, nav) {
         TransportsSection(
             vm,
             tcpEnabled = tcpEnabled,
@@ -126,7 +128,7 @@ fun SettingsTransportsScreen(vm: MeshCoreViewModel, nav: NavController) {
 
 @Composable
 fun SettingsDevicePinScreen(vm: MeshCoreViewModel, nav: NavController) {
-    SettingsSpoke("Bluetooth PIN", vm, nav) { DevicePinSection(vm) }
+    SettingsSpoke(stringResource(R.string.hub_pin), vm, nav) { DevicePinSection(vm) }
 }
 
 // --- This node ---------------------------------------------------------
@@ -139,9 +141,9 @@ fun SettingsIdentityScreen(vm: MeshCoreViewModel, nav: NavController) {
         vm,
         nav,
         menuActions = listOf(
-            MenuAction("Send advert (0-hop)") { vm.sendSelfAdvert(flood = false) },
-            MenuAction("Send advert (flood)") { vm.sendSelfAdvert(flood = true) },
-            MenuAction("Share my node QR…") { showSelfQr = true },
+            MenuAction(stringResource(R.string.chats_advert_zero_hop)) { vm.sendSelfAdvert(flood = false) },
+            MenuAction(stringResource(R.string.chats_advert_flood)) { vm.sendSelfAdvert(flood = true) },
+            MenuAction(stringResource(R.string.my_qr)) { showSelfQr = true },
         ),
     ) {
         QueryOnEntry(vm, query = { vm.querySelfInfo() }) {
@@ -155,19 +157,19 @@ fun SettingsIdentityScreen(vm: MeshCoreViewModel, nav: NavController) {
 
 @Composable
 fun SettingsRadioScreen(vm: MeshCoreViewModel, nav: NavController) {
-    SettingsSpoke("Radio", vm, nav) {
+    SettingsSpoke(stringResource(R.string.hub_radio), vm, nav) {
         QueryOnEntry(vm, query = { vm.querySelfInfo() }) { RadioSection(vm) }
     }
 }
 
 @Composable
 fun SettingsClockScreen(vm: MeshCoreViewModel, nav: NavController) {
-    SettingsSpoke("Clock", vm, nav) { ClockSection(vm) }
+    SettingsSpoke(stringResource(R.string.hub_clock), vm, nav) { ClockSection(vm) }
 }
 
 @Composable
 fun SettingsPoliciesScreen(vm: MeshCoreViewModel, nav: NavController) {
-    SettingsSpoke("Mesh policies", vm, nav) {
+    SettingsSpoke(stringResource(R.string.hub_policies), vm, nav) {
         // Policies span two frames: SELF_INFO (telemetry/advert/multi-ack
         // bytes) and DEVICE_INFO (path-hash width).
         QueryOnEntry(
@@ -182,14 +184,14 @@ fun SettingsPoliciesScreen(vm: MeshCoreViewModel, nav: NavController) {
 
 @Composable
 fun SettingsAutoAddScreen(vm: MeshCoreViewModel, nav: NavController) {
-    SettingsSpoke("Auto-add contacts", vm, nav) {
+    SettingsSpoke(stringResource(R.string.hub_autoadd), vm, nav) {
         QueryOnEntry(vm, query = { vm.queryAutoAddConfig() }) { AutoAddSection(vm) }
     }
 }
 
 @Composable
 fun SettingsCustomVarsScreen(vm: MeshCoreViewModel, nav: NavController) {
-    SettingsSpoke("Custom variables", vm, nav) {
+    SettingsSpoke(stringResource(R.string.hub_customvars), vm, nav) {
         QueryOnEntry(vm, query = { vm.queryCustomVars() }) { CustomVarsSection(vm) }
     }
 }
@@ -199,7 +201,7 @@ fun SettingsCustomVarsScreen(vm: MeshCoreViewModel, nav: NavController) {
 @Composable
 fun SettingsChannelsScreen(vm: MeshCoreViewModel, nav: NavController) {
     var editChannel by remember { mutableStateOf<ChannelEntity?>(null) }
-    SettingsSpoke("Channels", vm, nav) {
+    SettingsSpoke(stringResource(R.string.hub_channels), vm, nav) {
         ChannelsSection(vm, onEdit = { editChannel = it })
     }
     editChannel?.let { ch ->
@@ -209,7 +211,7 @@ fun SettingsChannelsScreen(vm: MeshCoreViewModel, nav: NavController) {
 
 @Composable
 fun SettingsBlockingScreen(vm: MeshCoreViewModel, nav: NavController) {
-    SettingsSpoke("Blocked senders", vm, nav) { BlockingSection(vm) }
+    SettingsSpoke(stringResource(R.string.hub_blocking), vm, nav) { BlockingSection(vm) }
 }
 
 // --- App ---------------------------------------------------------------
@@ -227,20 +229,20 @@ fun SettingsBlockingScreen(vm: MeshCoreViewModel, nav: NavController) {
  */
 @Composable
 fun SettingsAppScreen(vm: MeshCoreViewModel, nav: NavController) {
-    SettingsSpoke("Appearance and alerts", vm, nav, scroll = false) {
+    SettingsSpoke(stringResource(R.string.hub_app), vm, nav, scroll = false) {
         Column(
             Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState()),
         ) {
-            SettingsGroupHeader("Appearance")
+            SettingsGroupHeader(stringResource(R.string.set_appearance))
             AppearanceSection(vm)
             AddWidgetButton()
-            SettingsGroupHeader("Notifications")
+            SettingsGroupHeader(stringResource(R.string.set_notifications))
             NotificationsSection(vm)
-            SettingsGroupHeader("Privacy and network")
+            SettingsGroupHeader(stringResource(R.string.set_privacy))
             PrivacySection(vm)
-            SettingsGroupHeader("Diagnostics")
+            SettingsGroupHeader(stringResource(R.string.set_diagnostics))
             DiagnosticsSection(vm)
             Spacer(Modifier.height(24.dp))
         }
@@ -260,12 +262,12 @@ private fun SettingsGroupHeader(text: String) {
 
 @Composable
 fun SettingsBackupScreen(vm: MeshCoreViewModel, nav: NavController) {
-    SettingsSpoke("Backup", vm, nav) { BackupSection(vm) }
+    SettingsSpoke(stringResource(R.string.hub_backup), vm, nav) { BackupSection(vm) }
 }
 
 @Composable
 fun SettingsDataScreen(vm: MeshCoreViewModel, nav: NavController) {
-    SettingsSpoke("Data and storage", vm, nav) { DataSection(vm) }
+    SettingsSpoke(stringResource(R.string.hub_data), vm, nav) { DataSection(vm) }
 }
 
 /**

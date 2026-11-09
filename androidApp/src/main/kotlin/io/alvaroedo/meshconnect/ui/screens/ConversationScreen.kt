@@ -215,31 +215,31 @@ fun ConversationScreen(
     val channelRegions by vm.channelRegions.collectAsState()
     val menu = if (isChannel) {
         listOf(
-            MenuAction("Mute notifications", checked = muted) {
+            MenuAction(stringResource(R.string.conv_mute), checked = muted) {
                 peerKey.toIntOrNull()?.let {
                     muted = !muted
                     vm.prefs.setChannelMuted(it, muted)
                 }
             },
-            MenuAction("Mark unread") { vm.markUnread(kind, peerKey); nav.popBackStack() },
-            MenuAction("Channel settings…") { showChannelEditor = true },
-            MenuAction("Names seen…") { showSendersSheet = true },
-            MenuAction("Clear thread…", destructive = true) { clearConfirm = true },
+            MenuAction(stringResource(R.string.conv_mark_unread)) { vm.markUnread(kind, peerKey); nav.popBackStack() },
+            MenuAction(stringResource(R.string.conv_channel_settings)) { showChannelEditor = true },
+            MenuAction(stringResource(R.string.conv_names_seen)) { showSendersSheet = true },
+            MenuAction(stringResource(R.string.conv_clear), destructive = true) { clearConfirm = true },
         )
     } else {
         listOfNotNull(
-            MenuAction("Mark unread") { vm.markUnread(kind, peerKey); nav.popBackStack() },
+            MenuAction(stringResource(R.string.conv_mark_unread)) { vm.markUnread(kind, peerKey); nav.popBackStack() },
             // A room's admin tools live inside the room: the hub, which
             // is gated on this same session.
             if (isRoom && roomSession.isAdmin) {
-                MenuAction("Manage room…") { nav.navigate("repeater/$peerKey") }
+                MenuAction(stringResource(R.string.conv_manage_room)) { nav.navigate("repeater/$peerKey") }
             } else {
                 null
             },
-            MenuAction("Contact details…") { showContact = true },
-            MenuAction("Routing / paths…") { showContact = true },
+            MenuAction(stringResource(R.string.conv_contact_details)) { showContact = true },
+            MenuAction(stringResource(R.string.conv_routing)) { showContact = true },
             MenuAction(stringResource(R.string.trace_route), icon = R.drawable.ic_route) { nav.navigate(traceRoute(peerKey)) },
-            MenuAction("Clear thread…", destructive = true) { clearConfirm = true },
+            MenuAction(stringResource(R.string.conv_clear), destructive = true) { clearConfirm = true },
         )
     }
 
@@ -532,16 +532,16 @@ fun ConversationScreen(
     if (clearConfirm) {
         AlertDialog(
             onDismissRequest = { clearConfirm = false },
-            title = { Text("Clear this thread?") },
-            text = { Text("Removes the messages from this phone only — nothing is sent to the mesh.") },
+            title = { Text(stringResource(R.string.conv_clear_title)) },
+            text = { Text(stringResource(R.string.conv_clear_body)) },
             confirmButton = {
                 TextButton(onClick = {
                     vm.clearThread(kind, peerKey)
                     clearConfirm = false
-                }) { Text("Clear", color = MaterialTheme.colorScheme.error) }
+                }) { Text(stringResource(R.string.clear), color = MaterialTheme.colorScheme.error) }
             },
             dismissButton = {
-                TextButton(onClick = { clearConfirm = false }) { Text("Cancel") }
+                TextButton(onClick = { clearConfirm = false }) { Text(stringResource(R.string.cancel)) }
             },
         )
     }
@@ -590,7 +590,7 @@ private fun LeaveTheMeshDialog(url: String, onDismiss: () -> Unit) {
     val context = LocalContext.current
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Open link?") },
+        title = { Text(stringResource(R.string.conv_open_link)) },
         text = {
             Text(
                 "This opens in your browser and leaves the mesh. The site — chosen by " +
@@ -677,7 +677,7 @@ private fun ReplyBanner(target: MessageEntity, onCancel: () -> Unit) {
             )
         }
         IconButton(onClick = onCancel) {
-            Icon(androidx.compose.ui.res.painterResource(io.alvaroedo.meshconnect.R.drawable.ic_close), contentDescription = "Cancel reply")
+            Icon(androidx.compose.ui.res.painterResource(io.alvaroedo.meshconnect.R.drawable.ic_close), contentDescription = stringResource(R.string.conv_cancel_reply))
         }
     }
 }

@@ -21,7 +21,7 @@ class NotificationChannelWiringTest {
 
     @Test
     fun `the connection channel is created without a badge`() {
-        val create = service.substringAfter("NOTIF_CHANNEL, \"Connection status\"")
+        val create = service.substringAfter("NOTIF_CHANNEL, getString(R.string.svc_channel_status)")
             .substringBefore("manager.createNotificationChannel")
         assertTrue("badge not switched off", create.contains("setShowBadge(false)"))
     }

@@ -425,7 +425,7 @@ class MeshCoreService : Service() {
         }
         is ConnectionMemory.Tcp -> {
             // The UI keeps flagging this link as unencrypted while up.
-            _connectionLabel.value = "${memory.host}:${memory.port} (unencrypted)"
+            _connectionLabel.value = getString(R.string.svc_tcp_label, "${memory.host}:${memory.port}")
             TcpInterface(memory.host, memory.port, scope, logger = { diagnostics.log("TCP", it) })
         }
     }
@@ -591,15 +591,15 @@ class MeshCoreService : Service() {
         manager.deleteNotificationChannel(LEGACY_NOTIF_CHANNEL)
         manager.createNotificationChannel(
             NotificationChannel(
-                NOTIF_CHANNEL, "Connection status", NotificationManager.IMPORTANCE_LOW,
+                NOTIF_CHANNEL, getString(R.string.svc_channel_status), NotificationManager.IMPORTANCE_LOW,
             ).apply { setShowBadge(false) },
         )
         manager.createNotificationChannel(
             NotificationChannel(
-                MSG_CHANNEL, "Messages", NotificationManager.IMPORTANCE_HIGH,
-            ).apply { description = "Incoming mesh messages" },
+                MSG_CHANNEL, getString(R.string.svc_channel_messages), NotificationManager.IMPORTANCE_HIGH,
+            ).apply { description = getString(R.string.svc_channel_messages_desc) },
         )
-        val notification = buildNotification("Not connected")
+        val notification = buildNotification(getString(R.string.hub_not_connected))
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             // Declare only the FGS types whose runtime permissions are
             // actually granted (connectedDevice needs BLUETOOTH_CONNECT
@@ -619,10 +619,10 @@ class MeshCoreService : Service() {
     private fun updateNotification(state: EngineState) {
         val label = _connectionLabel.value
         val text = when (state) {
-            EngineState.Ready -> "Connected to ${label ?: "radio"}"
-            EngineState.Handshaking -> "Handshaking with ${label ?: "radio"}…"
-            EngineState.Connecting -> if (label != null) "Reconnecting to $label…" else "Connecting…"
-            EngineState.Detached -> "Not connected"
+            EngineState.Ready -> getString(R.string.setup_connected_to, label ?: "")
+            EngineState.Handshaking -> getString(R.string.status_handshake)
+            EngineState.Connecting -> if (label != null) getString(R.string.svc_reconnecting, label) else getString(R.string.status_connecting)
+            EngineState.Detached -> getString(R.string.hub_not_connected)
         }
         (getSystemService(NOTIFICATION_SERVICE) as NotificationManager)
             .notify(NOTIF_ID, buildNotification(text))
@@ -724,7 +724,7 @@ class MeshCoreService : Service() {
                 NotificationCompat.Builder(this, MSG_CHANNEL)
                     .setSmallIcon(R.drawable.ic_stat_message)
                     .setContentTitle(getString(R.string.app_name_full))
-                    .setContentText("New message")
+                    .setContentText(getString(R.string.svc_new_message))
                     .setContentIntent(intent)
                     .setAutoCancel(true)
                     .build(),

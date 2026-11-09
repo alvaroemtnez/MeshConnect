@@ -228,6 +228,50 @@ S = {
 "hub_reboot_body": ("The connection will drop and come back once the radio is up again.", "La conexión se cortará y volverá cuando la radio arranque.", "La connexió es tallarà i tornarà quan la ràdio arranque."),
 "hub_reboot": ("Reboot", "Reiniciar", "Reiniciar"),
 
+# Service and notifications
+"svc_tcp_label": ("%1$s (unencrypted)", "%1$s (sin cifrar)", "%1$s (sense xifrar)"),
+"svc_channel_status": ("Connection status", "Estado de la conexión", "Estat de la connexió"),
+"svc_channel_messages": ("Messages", "Mensajes", "Missatges"),
+"svc_channel_messages_desc": ("Incoming mesh messages", "Mensajes entrantes de la malla", "Missatges entrants de la malla"),
+"svc_reconnecting": ("Reconnecting to %1$s…", "Reconectando con %1$s…", "Reconnectant amb %1$s…"),
+"svc_new_message": ("New message", "Mensaje nuevo", "Missatge nou"),
+
+# Settings spokes
+"set_appearance": ("Appearance", "Apariencia", "Aparença"),
+"set_notifications": ("Notifications", "Notificaciones", "Notificacions"),
+"set_privacy": ("Privacy and network", "Privacidad y red", "Privadesa i xarxa"),
+"set_diagnostics": ("Diagnostics", "Diagnóstico", "Diagnòstic"),
+
+# Map screen
+"map_labels": ("Show labels", "Mostrar etiquetas", "Mostrar etiquetes"),
+"map_hide_links": ("Hide neighbour links", "Ocultar enlaces de vecinos", "Amagar enllaços de veïns"),
+"map_only_contacts": ("Only contacts", "Solo contactos", "Només contactes"),
+"map_only_repeaters": ("Only repeaters", "Solo repetidores", "Només repetidors"),
+"map_only_rooms": ("Only rooms", "Solo salas", "Només sales"),
+"map_export_gpx": ("Export nodes as GPX", "Exportar nodos como GPX", "Exportar nodes com a GPX"),
+"map_load_tiles": ("Load map tiles (network)", "Cargar mapas (red)", "Carregar mapes (xarxa)"),
+"map_clear_cache": ("Clear map cache", "Borrar la caché del mapa", "Esborrar la memòria cau del mapa"),
+"map_cache_cleared": ("Map cache cleared", "Caché del mapa borrada", "Memòria cau del mapa esborrada"),
+"map_empty": (
+    "No nodes with a position yet.\nNodes appear here once their adverts include a location.",
+    "Aún no hay nodos con posición.\nAparecen aquí cuando sus anuncios incluyen una ubicación.",
+    "Encara no hi ha nodes amb posició.\nApareixen ací quan els seus anuncis inclouen una ubicació.",
+),
+
+# Conversation
+"conv_mute": ("Mute notifications", "Silenciar notificaciones", "Silenciar notificacions"),
+"conv_mark_unread": ("Mark unread", "Marcar como no leído", "Marcar com a no llegit"),
+"conv_channel_settings": ("Channel settings…", "Ajustes del canal…", "Configuració del canal…"),
+"conv_names_seen": ("Names seen…", "Nombres vistos…", "Noms vistos…"),
+"conv_clear": ("Clear thread…", "Vaciar conversación…", "Buidar conversa…"),
+"conv_manage_room": ("Manage room…", "Administrar sala…", "Administrar sala…"),
+"conv_contact_details": ("Contact details…", "Detalles del contacto…", "Detalls del contacte…"),
+"conv_routing": ("Routing / paths…", "Rutas…", "Rutes…"),
+"conv_clear_title": ("Clear this thread?", "¿Vaciar esta conversación?", "Buidar esta conversa?"),
+"conv_clear_body": ("Removes the messages from this phone only. Nothing is sent to the mesh.", "Borra los mensajes solo de este teléfono. No se envía nada a la malla.", "Esborra els missatges només d'este telèfon. No s'envia res a la malla."),
+"conv_open_link": ("Open link?", "¿Abrir el enlace?", "Obrir l'enllaç?"),
+"conv_cancel_reply": ("Cancel reply", "Cancelar respuesta", "Cancel·lar resposta"),
+
 # Chats
 "chats_search_hint": ("Search conversations", "Buscar conversaciones", "Cercar converses"),
 "chats_advert_zero_hop": ("Send advert (0-hop)", "Enviar anuncio (0 saltos)", "Enviar anunci (0 salts)"),
@@ -423,6 +467,7 @@ S = {
 
 # key -> ((one, other) en, (one, other) es, (one, other) ca)
 P = {
+"map_subtitle": (("%1$d node with a position", "%1$d nodes with a position"), ("%1$d nodo con posición", "%1$d nodos con posición"), ("%1$d node amb posició", "%1$d nodes amb posició")),
 "hub_channels": (("%1$d channel", "%1$d channels"), ("%1$d canal", "%1$d canales"), ("%1$d canal", "%1$d canals")),
 "hub_blocked": (("%1$d sender blocked", "%1$d senders blocked"), ("%1$d remitente bloqueado", "%1$d remitentes bloqueados"), ("%1$d remitent blocat", "%1$d remitents blocats")),
 "widget_unread": (("%1$d unread", "%1$d unread"), ("%1$d sin leer", "%1$d sin leer"), ("%1$d sense llegir", "%1$d sense llegir")),
