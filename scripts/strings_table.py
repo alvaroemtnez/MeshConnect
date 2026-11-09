@@ -78,6 +78,32 @@ S = {
     "Els mapes estan desactivats i el fons queda en blanc. Les coordenades seguixen el marcador.",
 ),
 
+# Scan confirmations
+"join_title": ("Join this channel?", "¿Unirte a este canal?", "Unir-te a este canal?"),
+"join_unnamed": ("(unnamed channel)", "(canal sin nombre)", "(canal sense nom)"),
+"join_scoped": ("Scoped to region %1$s: messages here only flood within it.", "Limitado a la región %1$s: los mensajes solo se inundan dentro de ella.", "Limitat a la regió %1$s: els missatges només s'inunden dins d'ella."),
+"join_bad_scope": (
+    "This code asks for region \"%1$s\", which this app can't use. Joining anyway means messages here flood the whole mesh, wider than the person sharing it intended.",
+    "Este código pide la región «%1$s», que esta app no puede usar. Si te unes igualmente, los mensajes se inundarán por toda la malla, más de lo que quería quien lo compartió.",
+    "Este codi demana la regió «%1$s», que esta aplicació no pot usar. Si t'hi unixes igualment, els missatges s'inundaran per tota la malla, més del que volia qui el va compartir.",
+),
+"join_body": (
+    "This code carries the channel's secret key: joining lets you read everything on it, and everyone with the key can read what you send. Channel traffic is obfuscated (AES-ECB with a 2-byte MAC), not secure.",
+    "Este código lleva la clave secreta del canal: al unirte podrás leer todo lo que haya, y quien tenga la clave podrá leer lo que envíes. El tráfico de los canales está ofuscado (AES-ECB con MAC de 2 bytes), no es seguro.",
+    "Este codi porta la clau secreta del canal: si t'hi unixes podràs llegir tot el que hi haja, i qui tinga la clau podrà llegir el que envies. El trànsit dels canals està ofuscat (AES-ECB amb MAC de 2 bytes), no és segur.",
+),
+"join_confirm": ("Join", "Unirse", "Unir-se"),
+"add_contact_title": ("Add contact?", "¿Añadir contacto?", "Afegir contacte?"),
+"add_contact_unnamed": ("(unnamed)", "(sin nombre)", "(sense nom)"),
+"add_contact_key": ("Public key", "Clave pública", "Clau pública"),
+"add_contact_warning": (
+    "This code carries no signature: the name is whatever the sender typed. Only add it if it came from someone you trust, and check the key matches theirs.",
+    "Este código no va firmado: el nombre es lo que haya escrito quien lo envía. Añádelo solo si viene de alguien de confianza y comprueba que la clave coincide con la suya.",
+    "Este codi no va signat: el nom és el que haja escrit qui l'envia. Afig-lo només si ve d'algú de confiança i comprova que la clau coincidix amb la seua.",
+),
+"radio_apply_title": ("Apply these radio settings?", "¿Aplicar estos ajustes de radio?", "Aplicar estos ajustos de ràdio?"),
+"radio_apply": ("Apply", "Aplicar", "Aplicar"),
+
 # Chats
 "chats_search_hint": ("Search conversations", "Buscar conversaciones", "Cercar converses"),
 "chats_advert_zero_hop": ("Send advert (0-hop)", "Enviar anuncio (0 saltos)", "Enviar anunci (0 salts)"),

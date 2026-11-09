@@ -1,5 +1,12 @@
 package io.alvaroedo.meshconnect.ui.screens
 
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import io.alvaroedo.meshconnect.R
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -51,11 +58,12 @@ fun ScanConfirmations(vm: MeshCoreViewModel) {
     pendingChannel?.let { share ->
         AlertDialog(
             onDismissRequest = { vm.dismissChannelShare() },
-            title = { Text("Join this channel?") },
+            icon = { Icon(painterResource(R.drawable.ic_tag), null) },
+            title = { Text(stringResource(R.string.join_title)) },
             text = {
                 Column {
                     Text(
-                        share.name.ifBlank { "(unnamed channel)" },
+                        share.name.ifBlank { stringResource(R.string.join_unnamed) },
                         style = MaterialTheme.typography.titleMedium,
                     )
                     // A scope is a routing decision, so it is stated
@@ -66,8 +74,7 @@ fun ScanConfirmations(vm: MeshCoreViewModel) {
                     if (share.regionScope.isNotBlank()) {
                         Spacer(Modifier.height(4.dp))
                         Text(
-                            "Scoped to region ${share.regionScope} — messages here will " +
-                                "only be flooded within it.",
+                            stringResource(R.string.join_scoped, share.regionScope),
                             style = MaterialTheme.typography.bodySmall,
                         )
                     } else if (share.rawRegionScope.isNotBlank()) {
@@ -78,28 +85,23 @@ fun ScanConfirmations(vm: MeshCoreViewModel) {
                         // join reported plain success.
                         Spacer(Modifier.height(4.dp))
                         Text(
-                            "This code asks for region \"${share.rawRegionScope}\", which this " +
-                                "app can't use. Joining anyway means messages here flood the " +
-                                "whole mesh — wider than the person sharing it intended.",
+                            stringResource(R.string.join_bad_scope, share.rawRegionScope),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.error,
                         )
                     }
                     Spacer(Modifier.height(12.dp))
                     Text(
-                        "This code carries the channel's secret key, so joining lets you " +
-                            "read everything on it — and everyone else with the key can read " +
-                            "what you send. Channel traffic is obfuscated (AES-ECB with a " +
-                            "2-byte MAC), not secure.",
+                        stringResource(R.string.join_body),
                         style = MaterialTheme.typography.bodySmall,
                     )
                 }
             },
             confirmButton = {
-                TextButton(onClick = { vm.confirmChannelShare(share) }) { Text("Join channel") }
+                Button(onClick = { vm.confirmChannelShare(share) }) { Text(stringResource(R.string.join_confirm)) }
             },
             dismissButton = {
-                TextButton(onClick = { vm.dismissChannelShare() }) { Text("Cancel") }
+                OutlinedButton(onClick = { vm.dismissChannelShare() }) { Text(stringResource(R.string.back)) }
             },
         )
     }
@@ -131,7 +133,8 @@ fun ScanConfirmations(vm: MeshCoreViewModel) {
         var picked by remember(config) { mutableStateOf(config.region ?: choices.lastOrNull()) }
         AlertDialog(
             onDismissRequest = { vm.pendingRadioConfig.value = null },
-            title = { Text("Apply these radio settings?") },
+            icon = { Icon(painterResource(R.drawable.ic_sensors), null) },
+            title = { Text(stringResource(R.string.radio_apply_title)) },
             text = {
                 // Scrolls: a region tree adds a row per level.
                 Column(Modifier.verticalScroll(rememberScrollState())) {
@@ -250,12 +253,17 @@ fun ScanConfirmations(vm: MeshCoreViewModel) {
                 }
             },
             confirmButton = {
-                TextButton(onClick = { vm.confirmRadioConfig(config, picked.takeIf { applyRegion }) }) {
-                    Text("Apply", color = MaterialTheme.colorScheme.error)
-                }
+                // Error-coloured: this retunes the radio.
+                Button(
+                    onClick = { vm.confirmRadioConfig(config, picked.takeIf { applyRegion }) },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error,
+                        contentColor = MaterialTheme.colorScheme.onError,
+                    ),
+                ) { Text(stringResource(R.string.radio_apply)) }
             },
             dismissButton = {
-                TextButton(onClick = { vm.pendingRadioConfig.value = null }) { Text("Cancel") }
+                OutlinedButton(onClick = { vm.pendingRadioConfig.value = null }) { Text(stringResource(R.string.back)) }
             },
         )
     }

@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.material3.Button
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -879,7 +880,7 @@ private fun HeardDetailSheet(
 
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
-                    Text("Public key", style = MaterialTheme.typography.labelLarge)
+                    Text(stringResource(R.string.add_contact_key), style = MaterialTheme.typography.labelLarge)
                     Text(node.keyHex, style = MaterialTheme.typography.bodySmall, fontFamily = FontFamily.Monospace)
                 }
                 TextButton(onClick = {
@@ -1400,15 +1401,16 @@ internal fun ContactCardConfirmDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Add contact?") },
+        icon = { Icon(painterResource(R.drawable.ic_person_add), null) },
+        title = { Text(stringResource(R.string.add_contact_title)) },
         text = {
             Column {
                 Text(
-                    card.name.ifBlank { "(unnamed)" },
+                    card.name.ifBlank { stringResource(R.string.add_contact_unnamed) },
                     style = MaterialTheme.typography.titleMedium,
                 )
                 Text(
-                    typeLabel(card.type).dropLast(1),
+                    stringResource(singleKindLabel(card.type)),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.primary,
                 )
@@ -1421,16 +1423,14 @@ internal fun ContactCardConfirmDialog(
                 )
                 Spacer(Modifier.height(12.dp))
                 Text(
-                    "This code carries no signature — the name is whatever " +
-                        "the sender typed. Only add it if you scanned it from " +
-                        "someone you trust, and check the key matches theirs.",
+                    stringResource(R.string.add_contact_warning),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.error,
                 )
             }
         },
-        confirmButton = { TextButton(onClick = onConfirm) { Text("Add contact") } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        confirmButton = { Button(onClick = onConfirm) { Text(stringResource(R.string.card_add_contact)) } },
+        dismissButton = { OutlinedButton(onClick = onDismiss) { Text(stringResource(R.string.back)) } },
     )
 }
 

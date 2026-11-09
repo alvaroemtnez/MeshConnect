@@ -147,6 +147,7 @@ class Session:
             channel_msg(0, "Marta", f"<{key('Hilltop Rpt').hex()}:2:Hilltop Rpt>"),
             channel_msg(0, "Pau EA5ABC", "meshcore://channel/add?name=%23valencia&secret=" + CHANNELS[1][2].hex()),
             channel_msg(1, "Marta", "39.47520,-0.37900"),
+            channel_msg(1, "Pau EA5ABC", "meshcore://channel/add?name=%23fallas&secret=" + key("#fallas")[:16].hex()),
             contact_msg("Marta", "Hi! Are you coming to the meetup?"),
             contact_msg("Marta", f"<{key('Pau EA5ABC').hex()}:1:Pau EA5ABC>"),
             contact_msg("Marta", "39.46990,-0.37630"),
