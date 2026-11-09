@@ -199,6 +199,28 @@
     <string name="chsub_hashtag">Hashtag · qualsevol pot llegir-lo</string>
     <string name="chsub_private">Privat · no és segur</string>
     <string name="chsub_unknown">Ofuscat, no segur</string>
+    <string name="info_title">Informació del missatge</string>
+    <string name="info_direction">Direcció</string>
+    <string name="info_received">Rebut</string>
+    <string name="info_time">Hora</string>
+    <string name="info_state">Estat</string>
+    <string name="info_state_delivered">Entregat (ACK d\'extrem a extrem)</string>
+    <string name="info_state_sent">Acceptat per la ràdio, encara sense ACK</string>
+    <string name="info_attempts">Intents</string>
+    <string name="info_arrival">Arribada</string>
+    <string name="info_copies">Còpies</string>
+    <string name="info_copies_body">El remitent el va reenviar. Un missatge directe es reintenta quan el seu ACK no torna a temps, i cada intent és un paquet distint que la malla no deduplica, així que ací es compten les còpies i en la conversa es mostra una vegada.</string>
+    <string name="info_sender_name">Nom del remitent</string>
+    <string name="info_unauthenticated">%1$s (sense autenticar)</string>
+    <string name="info_reaction_id">Id de reacció</string>
+    <string name="info_length">Longitud</string>
+    <string name="info_arrived_via">Va arribar per</string>
+    <string name="info_sender">remitent</string>
+    <string name="info_this_radio">esta ràdio</string>
+    <string name="info_repeated_by">Repetit per</string>
+    <string name="via_routed">Enviat per una ruta que el remitent ja tenia, així que la ràdio no va registrar el nombre de salts. No se sap quants repetidors el van portar.</string>
+    <string name="via_direct">Per inundació, i va arribar a esta ràdio directament: sense repetidors pel mig.</string>
+    <string name="via_unknown">No se sap com va arribar.</string>
     <string name="conv_cancel_reply">Cancel·lar resposta</string>
     <string name="vm_connect_to_add">Connecta una ràdio per a afegir contactes</string>
     <string name="vm_marked_unread">Marcat com a no llegit</string>
@@ -397,6 +419,26 @@
     <string name="about_this_licence">Llicència de MeshConnect</string>
     <string name="about_licences">Llicències de codi obert</string>
     <string name="about_endorsement">MeshConnect és un projecte independent. No està afiliat ni avalat pel projecte MeshCore ni per l\'autor de MeshCore Hardened.</string>
+    <plurals name="info_delivered_times">
+        <item quantity="one">Entregat %1$d vegada</item>
+        <item quantity="many">Entregat %1$d vegades</item>
+        <item quantity="other">Entregat %1$d vegades</item>
+    </plurals>
+    <plurals name="bytes">
+        <item quantity="one">%1$d byte</item>
+        <item quantity="many">%1$d bytes</item>
+        <item quantity="other">%1$d bytes</item>
+    </plurals>
+    <plurals name="via_repeaters">
+        <item quantity="one">Va arribar per %1$d repetidor, en l\'ordre en què va viatjar.</item>
+        <item quantity="many">Va arribar per %1$d repetidors, en l\'ordre en què va viatjar.</item>
+        <item quantity="other">Va arribar per %1$d repetidors, en l\'ordre en què va viatjar.</item>
+    </plurals>
+    <plurals name="via_flooded">
+        <item quantity="one">Per inundació amb %1$d salt, però no se sap quin repetidor el va portar: la trama només indica el nombre.</item>
+        <item quantity="many">Per inundació amb %1$d salts, però no se sap quins repetidors el van portar: la trama només indica el nombre.</item>
+        <item quantity="other">Per inundació amb %1$d salts, però no se sap quins repetidors el van portar: la trama només indica el nombre.</item>
+    </plurals>
     <plurals name="hops">
         <item quantity="one">%1$d salt</item>
         <item quantity="many">%1$d salts</item>

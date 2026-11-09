@@ -70,6 +70,21 @@ object SharedText {
         return if (region != null) "$head · #$region" else head
     }
 
+    /** HeardVia.summary: how a message arrived. */
+    fun heardVia(context: Context, hops: Int?, route: String?, hashWidth: Int): String {
+        val width = hashWidth.coerceIn(1, 4)
+        val routed = route?.takeIf { it.isNotEmpty() && it.length % (width * 2) == 0 }
+        return when {
+            routed != null -> context.resources.getQuantityString(
+                R.plurals.via_repeaters, routed.length / (width * 2), routed.length / (width * 2),
+            )
+            hops != null && hops < 0 -> context.getString(R.string.via_routed)
+            hops == 0 -> context.getString(R.string.via_direct)
+            hops != null && hops > 0 -> context.resources.getQuantityString(R.plurals.via_flooded, hops, hops)
+            else -> context.getString(R.string.via_unknown)
+        }
+    }
+
     fun kind(context: Context, type: Int): String = context.getString(
         when (type) {
             Codes.ADV_TYPE_REPEATER -> R.string.kind_repeater

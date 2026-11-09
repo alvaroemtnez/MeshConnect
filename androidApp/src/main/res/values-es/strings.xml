@@ -199,6 +199,28 @@
     <string name="chsub_hashtag">Hashtag · cualquiera puede leerlo</string>
     <string name="chsub_private">Privado · no es seguro</string>
     <string name="chsub_unknown">Ofuscado, no seguro</string>
+    <string name="info_title">Información del mensaje</string>
+    <string name="info_direction">Dirección</string>
+    <string name="info_received">Recibido</string>
+    <string name="info_time">Hora</string>
+    <string name="info_state">Estado</string>
+    <string name="info_state_delivered">Entregado (ACK de extremo a extremo)</string>
+    <string name="info_state_sent">Aceptado por la radio, aún sin ACK</string>
+    <string name="info_attempts">Intentos</string>
+    <string name="info_arrival">Llegada</string>
+    <string name="info_copies">Copias</string>
+    <string name="info_copies_body">El remitente lo reenvió. Un mensaje directo se reintenta cuando su ACK no vuelve a tiempo, y cada intento es un paquete distinto que la malla no deduplica, así que aquí se cuentan las copias y en la conversación se muestra una vez.</string>
+    <string name="info_sender_name">Nombre del remitente</string>
+    <string name="info_unauthenticated">%1$s (sin autenticar)</string>
+    <string name="info_reaction_id">Id de reacción</string>
+    <string name="info_length">Longitud</string>
+    <string name="info_arrived_via">Llegó por</string>
+    <string name="info_sender">remitente</string>
+    <string name="info_this_radio">esta radio</string>
+    <string name="info_repeated_by">Repetido por</string>
+    <string name="via_routed">Enviado por una ruta que el remitente ya tenía, así que la radio no registró el número de saltos. No se sabe cuántos repetidores lo llevaron.</string>
+    <string name="via_direct">Por inundación, y llegó a esta radio directamente: sin repetidores en medio.</string>
+    <string name="via_unknown">No se sabe cómo llegó.</string>
     <string name="conv_cancel_reply">Cancelar respuesta</string>
     <string name="vm_connect_to_add">Conecta una radio para añadir contactos</string>
     <string name="vm_marked_unread">Marcado como no leído</string>
@@ -397,6 +419,26 @@
     <string name="about_this_licence">Licencia de MeshConnect</string>
     <string name="about_licences">Licencias de código abierto</string>
     <string name="about_endorsement">MeshConnect es un proyecto independiente. No está afiliado ni respaldado por el proyecto MeshCore ni por el autor de MeshCore Hardened.</string>
+    <plurals name="info_delivered_times">
+        <item quantity="one">Entregado %1$d vez</item>
+        <item quantity="many">Entregado %1$d veces</item>
+        <item quantity="other">Entregado %1$d veces</item>
+    </plurals>
+    <plurals name="bytes">
+        <item quantity="one">%1$d byte</item>
+        <item quantity="many">%1$d bytes</item>
+        <item quantity="other">%1$d bytes</item>
+    </plurals>
+    <plurals name="via_repeaters">
+        <item quantity="one">Llegó por %1$d repetidor, en el orden en que viajó.</item>
+        <item quantity="many">Llegó por %1$d repetidores, en el orden en que viajó.</item>
+        <item quantity="other">Llegó por %1$d repetidores, en el orden en que viajó.</item>
+    </plurals>
+    <plurals name="via_flooded">
+        <item quantity="one">Por inundación con %1$d salto, pero no se sabe qué repetidor lo llevó: la trama solo indica el número.</item>
+        <item quantity="many">Por inundación con %1$d saltos, pero no se sabe qué repetidores lo llevaron: la trama solo indica el número.</item>
+        <item quantity="other">Por inundación con %1$d saltos, pero no se sabe qué repetidores lo llevaron: la trama solo indica el número.</item>
+    </plurals>
     <plurals name="hops">
         <item quantity="one">%1$d salto</item>
         <item quantity="many">%1$d saltos</item>

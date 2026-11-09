@@ -1,5 +1,6 @@
 package io.alvaroedo.meshconnect.ui.screens
 
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.foundation.layout.size
 import androidx.compose.ui.res.painterResource
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -1173,25 +1174,27 @@ private fun MessageInfoSheet(
                 .padding(horizontal = 24.dp)
                 .padding(bottom = 32.dp),
         ) {
-            Text("Message info", style = MaterialTheme.typography.titleLarge)
+            Text(stringResource(R.string.info_title), style = MaterialTheme.typography.titleLarge)
             Spacer(Modifier.height(12.dp))
-            InfoRow("Direction", if (m.outgoing) "Sent" else "Received")
+            InfoRow(stringResource(R.string.info_direction), stringResource(if (m.outgoing) R.string.conv_sent else R.string.info_received))
             InfoRow(
-                "Time",
+                stringResource(R.string.info_time),
                 DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM)
                     .format(Date(m.timestamp * 1000)),
             )
             if (m.outgoing) {
                 InfoRow(
-                    "State",
-                    when (m.status) {
-                        MessageStatus.Delivered.ordinal -> "Delivered (end-to-end ACK)"
-                        MessageStatus.Sent.ordinal -> "Accepted by radio, no ACK yet"
-                        MessageStatus.Failed.ordinal -> "Failed"
-                        else -> "Pending"
-                    },
+                    stringResource(R.string.info_state),
+                    stringResource(
+                        when (m.status) {
+                            MessageStatus.Delivered.ordinal -> R.string.info_state_delivered
+                            MessageStatus.Sent.ordinal -> R.string.info_state_sent
+                            MessageStatus.Failed.ordinal -> R.string.conv_failed
+                            else -> R.string.conv_pending
+                        },
+                    ),
                 )
-                if (m.attempts > 0) InfoRow("Attempts", m.attempts.toString())
+                if (m.attempts > 0) InfoRow(stringResource(R.string.info_attempts), m.attempts.toString())
                 m.ackHash?.let { InfoRow("Ack hash", "%08x".format(it), mono = true) }
             }
             m.snr?.let { InfoRow("SNR", "%.1f dB".format(it)) }
@@ -1200,14 +1203,11 @@ private fun MessageInfoSheet(
             // route to itself — so calling it "Path" implied we knew
             // which repeaters carried it. We don't. And on a routed
             // arrival there is not even a count: see arrivalLabel.
-            arrivalLabel(m.hops)?.let { InfoRow("Arrival", it) }
+            io.alvaroedo.meshconnect.ui.model.SharedText.arrival(LocalContext.current, m.hops)?.let { InfoRow(stringResource(R.string.info_arrival), it) }
             copiesLabel(m.copies)?.let {
-                InfoRow("Copies", it)
+                InfoRow(stringResource(R.string.info_copies), pluralStringResource(R.plurals.info_delivered_times, m.copies, m.copies))
                 Text(
-                    "The sender re-sent this. A direct message is retried when its ACK does " +
-                        "not get back in time, and each attempt is a separate packet the mesh " +
-                        "will not de-duplicate — so the copies are counted here and shown once " +
-                        "in the thread.",
+                    stringResource(R.string.info_copies_body),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -1220,17 +1220,16 @@ private fun MessageInfoSheet(
             }
             if (showSender) {
                 InfoRow(
-                    "Sender name",
-                    (m.senderName?.takeIf { it.isNotBlank() } ?: "(none)") +
-                        " — unauthenticated",
+                    stringResource(R.string.info_sender_name),
+                    stringResource(R.string.info_unauthenticated, m.senderName?.takeIf { it.isNotBlank() } ?: "–"),
                 )
             }
-            InfoRow("Reaction id", Reactions.targetHash(
+            InfoRow(stringResource(R.string.info_reaction_id), Reactions.targetHash(
                 m.timestamp,
                 if (isChannel) m.senderName.orEmpty() else null,
                 m.text,
             ), mono = true)
-            InfoRow("Length", m.text.encodeToByteArray().size.toString() + " bytes")
+            InfoRow(stringResource(R.string.info_length), pluralStringResource(R.plurals.bytes, m.text.encodeToByteArray().size, m.text.encodeToByteArray().size))
         }
     }
 }
@@ -1254,10 +1253,10 @@ private fun ArrivalRoute(
     val width = m.arrivalHashWidth?.takeIf { it in 1..4 }
     val path = m.arrivalPathHex?.takeIf { it.isNotEmpty() && width != null }
     Spacer(Modifier.height(8.dp))
-    Text("Arrived via", style = MaterialTheme.typography.titleSmall)
+    Text(stringResource(R.string.info_arrived_via), style = MaterialTheme.typography.titleSmall)
     if (path == null || width == null) {
         Text(
-            HeardVia.summary(m.hops, null, 1),
+            io.alvaroedo.meshconnect.ui.model.SharedText.heardVia(LocalContext.current, m.hops, null, 1),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -1266,14 +1265,14 @@ private fun ArrivalRoute(
     val bytes = io.github.thatsfguy.meshcore.util.hexToBytesOrNull(path) ?: return
     val hops = PathCodec.resolveHops(bytes, width, contactNames, metresAway)
     Text(
-        HeardVia.summary(m.hops, path, width),
+        io.alvaroedo.meshconnect.ui.model.SharedText.heardVia(LocalContext.current, m.hops, path, width),
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
     Spacer(Modifier.height(4.dp))
     // The sender first, then each repeater in the order it carried the
     // message, then us. Reading it top-to-bottom IS the journey.
-    RouteStep("↑", "sender", dim = true)
+    RouteStep("↑", stringResource(R.string.info_sender), dim = true)
     hops.forEachIndexed { i, hop ->
         // An ambiguous hop names every node it could be, nearest
         // first, and never picks one. A 2-byte hop is 16 bits: nodes
@@ -1283,7 +1282,7 @@ private fun ArrivalRoute(
         // what the reader came to the sheet for.
         RouteStep("${i + 1}.", hop.label)
     }
-    RouteStep("↓", "this radio", dim = true)
+    RouteStep("↓", stringResource(R.string.info_this_radio), dim = true)
 }
 
 /**
@@ -1302,7 +1301,7 @@ private fun ArrivalRoute(
 private fun RepeatedBy(m: MessageEntity, contactNames: Map<String, String>) {
     val relays = MessageRepeats.relays(m.repeatHopsHex, m.repeatHashWidth)
     Spacer(Modifier.height(8.dp))
-    Text("Repeated by", style = MaterialTheme.typography.titleSmall)
+    Text(stringResource(R.string.info_repeated_by), style = MaterialTheme.typography.titleSmall)
     Text(
         MessageRepeats.summary(m.repeatHopsHex, m.repeatHashWidth),
         style = MaterialTheme.typography.bodySmall,

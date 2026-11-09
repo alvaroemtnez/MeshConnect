@@ -201,6 +201,28 @@
     <string name="chsub_hashtag">Hashtag · anyone can read it</string>
     <string name="chsub_private">Private · not secure</string>
     <string name="chsub_unknown">Obfuscated, not secure</string>
+    <string name="info_title">Message info</string>
+    <string name="info_direction">Direction</string>
+    <string name="info_received">Received</string>
+    <string name="info_time">Time</string>
+    <string name="info_state">State</string>
+    <string name="info_state_delivered">Delivered (end-to-end ACK)</string>
+    <string name="info_state_sent">Accepted by the radio, no ACK yet</string>
+    <string name="info_attempts">Attempts</string>
+    <string name="info_arrival">Arrival</string>
+    <string name="info_copies">Copies</string>
+    <string name="info_copies_body">The sender re-sent this. A direct message is retried when its ACK doesn\'t get back in time, and each attempt is a separate packet the mesh won\'t de-duplicate, so the copies are counted here and shown once in the thread.</string>
+    <string name="info_sender_name">Sender name</string>
+    <string name="info_unauthenticated">%1$s (unauthenticated)</string>
+    <string name="info_reaction_id">Reaction id</string>
+    <string name="info_length">Length</string>
+    <string name="info_arrived_via">Arrived via</string>
+    <string name="info_sender">sender</string>
+    <string name="info_this_radio">this radio</string>
+    <string name="info_repeated_by">Repeated by</string>
+    <string name="via_routed">Sent along a route the sender already had, so the radio recorded no hop count. How many repeaters carried it isn\'t known.</string>
+    <string name="via_direct">Flooded, and reached this radio directly: no repeater in between.</string>
+    <string name="via_unknown">How this arrived isn\'t known.</string>
     <string name="conv_cancel_reply">Cancel reply</string>
     <string name="vm_connect_to_add">Connect a radio to add contacts</string>
     <string name="vm_marked_unread">Marked unread</string>
@@ -399,6 +421,22 @@
     <string name="about_this_licence">MeshConnect\'s licence</string>
     <string name="about_licences">Open-source licences</string>
     <string name="about_endorsement">MeshConnect is an independent project. It is not affiliated with or endorsed by the MeshCore project or the MeshCore Hardened author.</string>
+    <plurals name="info_delivered_times">
+        <item quantity="one">Delivered %1$d time</item>
+        <item quantity="other">Delivered %1$d times</item>
+    </plurals>
+    <plurals name="bytes">
+        <item quantity="one">%1$d byte</item>
+        <item quantity="other">%1$d bytes</item>
+    </plurals>
+    <plurals name="via_repeaters">
+        <item quantity="one">Arrived via %1$d repeater, listed in the order it travelled.</item>
+        <item quantity="other">Arrived via %1$d repeaters, listed in the order it travelled.</item>
+    </plurals>
+    <plurals name="via_flooded">
+        <item quantity="one">Flooded across %1$d hop, but which repeater carried it isn\'t known: the message frame states a count only.</item>
+        <item quantity="other">Flooded across %1$d hops, but which repeaters carried it isn\'t known: the message frame states a count only.</item>
+    </plurals>
     <plurals name="hops">
         <item quantity="one">%1$d hop</item>
         <item quantity="other">%1$d hops</item>
