@@ -45,6 +45,12 @@ fun NodeAvatar(
      * falls back to the name's initial rather than claiming a kind.
      */
     channelKind: io.github.thatsfguy.meshcore.protocol.ChannelKind? = null,
+    /**
+     * Show the node-type icon instead of an initial for a chat node too, on its hashed
+     * colour. The Nodes list does: there the type is what you scan for, and the icons
+     * match its filter chips and the map pins. Chats keep the initial.
+     */
+    typeIcon: Boolean = false,
 ) {
     // Infrastructure nodes reuse the MAP marker artwork (same colors +
     // glyphs) so a repeater looks identical in the list and on the map.
@@ -85,6 +91,23 @@ fun NodeAvatar(
             } else {
                 GlobeGlyph(ink, Modifier.size(size * 0.52f))
             }
+        }
+        return
+    }
+
+    if (typeIcon && !isChannel) {
+        Box(
+            modifier = Modifier.size(size).background(background, CircleShape),
+            contentAlignment = Alignment.Center,
+        ) {
+            androidx.compose.material3.Icon(
+                androidx.compose.ui.res.painterResource(
+                    io.alvaroedo.meshconnect.platform.NodeMarkers.iconFor(type ?: Codes.ADV_TYPE_CHAT, isSelf = false),
+                ),
+                contentDescription = null,
+                tint = ink,
+                modifier = Modifier.size(size * 0.58f),
+            )
         }
         return
     }

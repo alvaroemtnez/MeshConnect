@@ -9,12 +9,14 @@ import android.graphics.Path
 import android.graphics.RectF
 import android.graphics.Typeface
 import android.graphics.drawable.BitmapDrawable
+import androidx.annotation.DrawableRes
+import androidx.core.content.ContextCompat
+import io.alvaroedo.meshconnect.R
 import io.github.thatsfguy.meshcore.protocol.Codes
 
 /**
- * Canvas-drawn map markers — colored pin + white glyph per node type
- * (person / radio tower / house / sensor, mirroring the reference
- * client's icon scheme) and an optional always-visible name label chip
+ * Canvas-drawn map markers — colored pin + white type icon (the Nodes
+ * tab's filter icons, see [iconFor]) and an optional always-visible name label chip
  * below the pin. Hand-drawn so the map needs no icon/marker libraries.
  */
 object NodeMarkers {
@@ -97,7 +99,7 @@ object NodeMarkers {
             },
         )
 
-        drawGlyph(canvas, cx, r, r, type, isSelf, density)
+        drawGlyph(context, canvas, cx, r, r, type, isSelf)
 
         if (labelText != null) {
             val chip = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -145,7 +147,7 @@ object NodeMarkers {
                 color = colorFor(type, isSelf)
             },
         )
-        drawGlyph(canvas, r, r, r, type, isSelf, density)
+        drawGlyph(context, canvas, r, r, r, type, isSelf)
         return BitmapDrawable(context.resources, bmp)
     }
 
@@ -191,72 +193,34 @@ object NodeMarkers {
         return BitmapDrawable(context.resources, bmp)
     }
 
-    /** White glyph inside the pin circle, centered at (cx, cy), radius r. */
+    /**
+     * The node-type icon: the same Material Symbols drawable as the Nodes tab's filter chips
+     * (`kindIcon` in NodesScreen), so a type reads the same on the map, in the list and in
+     * the filter. This radio gets the location target.
+     */
+    @DrawableRes
+    fun iconFor(type: Int, isSelf: Boolean): Int = when {
+        isSelf -> R.drawable.ic_my_location
+        type == Codes.ADV_TYPE_REPEATER -> R.drawable.ic_cell_tower
+        type == Codes.ADV_TYPE_ROOM -> R.drawable.ic_forum
+        type == Codes.ADV_TYPE_SENSOR -> R.drawable.ic_sensors
+        else -> R.drawable.ic_person
+    }
+
+    /** White type icon inside the pin circle, centred at (cx, cy), radius r. */
     private fun drawGlyph(
+        context: Context,
         canvas: Canvas,
         cx: Float,
         cy: Float,
         r: Float,
         type: Int,
         isSelf: Boolean,
-        density: Float,
     ) {
-        val stroke = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            style = Paint.Style.STROKE
-            strokeWidth = 1.8f * density
-            strokeCap = Paint.Cap.ROUND
-            color = Color.WHITE
-        }
-        val fill = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            style = Paint.Style.FILL
-            color = Color.WHITE
-        }
-
-        when {
-            isSelf -> {
-                // Location-dot: ring + center dot.
-                canvas.drawCircle(cx, cy, r * 0.45f, stroke)
-                canvas.drawCircle(cx, cy, r * 0.18f, fill)
-            }
-            type == Codes.ADV_TYPE_REPEATER -> {
-                // Radio tower: two legs, rungs, antenna dot.
-                canvas.drawLine(cx - r * 0.32f, cy + r * 0.5f, cx, cy - r * 0.42f, stroke)
-                canvas.drawLine(cx + r * 0.32f, cy + r * 0.5f, cx, cy - r * 0.42f, stroke)
-                canvas.drawLine(cx - r * 0.20f, cy + r * 0.12f, cx + r * 0.20f, cy + r * 0.12f, stroke)
-                canvas.drawLine(cx - r * 0.12f, cy - r * 0.16f, cx + r * 0.12f, cy - r * 0.16f, stroke)
-                canvas.drawCircle(cx, cy - r * 0.5f, r * 0.10f, fill)
-            }
-            type == Codes.ADV_TYPE_ROOM -> {
-                // House: roof + walls + door notch.
-                val roof = Path().apply {
-                    moveTo(cx - r * 0.45f, cy)
-                    lineTo(cx, cy - r * 0.45f)
-                    lineTo(cx + r * 0.45f, cy)
-                }
-                canvas.drawPath(roof, stroke)
-                canvas.drawRect(cx - r * 0.32f, cy, cx + r * 0.32f, cy + r * 0.45f, stroke)
-                canvas.drawLine(cx, cy + r * 0.45f, cx, cy + r * 0.15f, stroke)
-            }
-            type == Codes.ADV_TYPE_SENSOR -> {
-                // Sensor: dot + two radiating arcs.
-                canvas.drawCircle(cx, cy + r * 0.25f, r * 0.12f, fill)
-                canvas.drawArc(
-                    RectF(cx - r * 0.35f, cy - r * 0.10f, cx + r * 0.35f, cy + r * 0.60f),
-                    -150f, 120f, false, stroke,
-                )
-                canvas.drawArc(
-                    RectF(cx - r * 0.55f, cy - r * 0.40f, cx + r * 0.55f, cy + r * 0.70f),
-                    -150f, 120f, false, stroke,
-                )
-            }
-            else -> {
-                // Person: head + shoulders.
-                canvas.drawCircle(cx, cy - r * 0.22f, r * 0.18f, fill)
-                canvas.drawArc(
-                    RectF(cx - r * 0.35f, cy + r * 0.02f, cx + r * 0.35f, cy + r * 0.75f),
-                    180f, 180f, true, fill,
-                )
-            }
-        }
+        val icon = ContextCompat.getDrawable(context, iconFor(type, isSelf))?.mutate() ?: return
+        icon.setTint(Color.WHITE)
+        val half = r * 0.58f
+        icon.setBounds((cx - half).toInt(), (cy - half).toInt(), (cx + half).toInt(), (cy + half).toInt())
+        icon.draw(canvas)
     }
 }

@@ -660,6 +660,7 @@ private fun DiscoveredRow(
             seed = node.keyHex,
             label = node.name.ifBlank { node.keyHex },
             type = node.type,
+            typeIcon = true,
         )
         Spacer(Modifier.size(12.dp))
         Column(Modifier.weight(1f)) {
@@ -770,6 +771,7 @@ private fun ContactRow(
             seed = c.keyHex,
             label = c.name.ifBlank { c.keyHex },
             type = c.type,
+            typeIcon = true,
         )
         Spacer(Modifier.size(12.dp))
         Column(Modifier.weight(1f)) {
