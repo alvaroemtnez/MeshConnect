@@ -292,7 +292,7 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
      * beside the button says so; this is the operator's call.
      */
     fun exitUpdateMode(keyHex: String, onResult: (String) -> Unit) {
-        val svc = _service.value ?: return onResult("The radio service is not running.")
+        val svc = _service.value ?: return onResult(str(R.string.vm_service_down))
         val contact = dbContacts.value.firstOrNull { it.keyHex == keyHex }
         val announced = contact?.otaAddress
         viewModelScope.launch {
@@ -461,7 +461,7 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
                 when (ev) {
                     is MeshEvent.LoginResult ->
                         transientMessage.value =
-                            if (ev.success) "Login accepted" else "Login failed"
+                            if (ev.success) str(R.string.vm_login_ok) else str(R.string.vm_login_failed)
                     else -> Unit
                 }
             }
@@ -645,7 +645,7 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
                 rows.add(
                     ConversationRow(
                         kind = m.kind, key = m.peerKey,
-                        title = ch?.name?.ifBlank { "Channel $idx" } ?: "Channel $idx",
+                        title = ch?.name?.ifBlank { null } ?: str(R.string.ch_numbered, idx),
                         subtitle = (m.senderName?.plus(": ") ?: "") + previewOf(m),
                         timestamp = m.timestamp,
                         unread = ch?.unread ?: 0,
@@ -681,8 +681,8 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
                 rows.add(
                     ConversationRow(
                         kind = MessageRepository.KIND_CHANNEL, key = ch.idx.toString(),
-                        title = ch.name.ifBlank { "Channel ${ch.idx}" },
-                        subtitle = "No messages yet",
+                        title = ch.name.ifBlank { str(R.string.ch_numbered, ch.idx) },
+                        subtitle = str(R.string.widget_no_messages),
                         timestamp = 0,
                         unread = ch.unread,
                         isChannel = true,
@@ -1001,7 +1001,7 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
      * than by a filter written twice.
      */
     suspend fun removeStaleNodes(olderThanDays: Int): String {
-        val svc = _service.value ?: return "Not connected to a radio."
+        val svc = _service.value ?: return str(R.string.link_not_connected)
         val self = selfKey.value
         val sweep = StaleNodes.sweep(
             dbContacts.value,
@@ -1150,7 +1150,7 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
             }
             add(
                 io.github.thatsfguy.meshcore.protocol.PathSketch.Waypoint(
-                    label = selfInfo.value?.name?.ifBlank { null } ?: "This radio",
+                    label = selfInfo.value?.name?.ifBlank { null } ?: str(R.string.link_radio),
                     latitude = selfInfo.value?.latitude,
                     longitude = selfInfo.value?.longitude,
                     isEndpoint = true,
@@ -1194,7 +1194,7 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
         val dest = contacts.firstOrNull { it.keyHex == keyHex }
         return io.github.thatsfguy.meshcore.protocol.PathSketch.build(
             io.github.thatsfguy.meshcore.protocol.PathSketch.outboundChain(
-                selfLabel = selfInfo.value?.name?.ifBlank { null } ?: "This radio",
+                selfLabel = selfInfo.value?.name?.ifBlank { null } ?: str(R.string.link_radio),
                 selfLatitude = selfInfo.value?.latitude,
                 selfLongitude = selfInfo.value?.longitude,
                 hops = plot.hops,
@@ -1275,7 +1275,7 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
                 )
             }
             transientMessage.value =
-                if (ok) "Routing set to ${mode.name.lowercase()}" else "Radio rejected the route"
+                if (ok) str(R.string.vm_routing_set) else str(R.string.vm_route_rejected)
         }
     }
 
@@ -1480,7 +1480,7 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
             }
             val region = config.regionToApply(pickedRegion)
             val regionSet = region?.let { runCatching { svc.engine.setFloodScope(it) }.getOrDefault(false) }
-            val applied = "Applied ${config.name.ifBlank { "scanned settings" }}"
+            val applied = str(R.string.vm_applied, config.name.ifBlank { str(R.string.vm_scanned_settings) })
             transientMessage.value = when (regionSet) {
                 null -> applied
                 true -> "$applied · region #$region"
@@ -1515,9 +1515,9 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
         if (code == null) {
             transientMessage.value =
                 if (raw.isNullOrBlank()) {
-                    "Nothing on the clipboard"
+                    str(R.string.vm_clipboard_empty)
                 } else {
-                    "No MeshCore code on the clipboard"
+                    str(R.string.vm_clipboard_no_code)
                 }
             return
         }
@@ -1547,11 +1547,9 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
             // see pendingRadioConfig.
             is ShareUri.Decoded.RadioConfig -> pendingRadioConfig.value = decoded
             is ShareUri.Decoded.UnsupportedVersion ->
-                transientMessage.value = "This settings code needs a newer version of the app " +
-                    "(format v${decoded.version})"
+                transientMessage.value = str(R.string.vm_code_newer, decoded.version)
             ShareUri.Decoded.NotAContactCode ->
-                transientMessage.value = "Not a MeshCore code — expected a contact, channel, " +
-                    "settings or community QR"
+                transientMessage.value = str(R.string.vm_not_meshcore)
             ShareUri.Decoded.TooLarge ->
                 transientMessage.value = str(R.string.vm_code_too_large)
             ShareUri.Decoded.Malformed ->
@@ -1564,7 +1562,7 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             val ok = runCatching { svc.engine.importContact(blob) }.getOrDefault(false)
             transientMessage.value =
-                if (ok) "Contact imported" else "Import failed (bad signature?)"
+                if (ok) str(R.string.vm_contact_imported) else str(R.string.vm_import_failed)
         }
     }
 
@@ -1589,7 +1587,7 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
     fun confirmChannelShare(share: ShareUri.Decoded.ChannelShare) {
         pendingChannelShare.value = null
         addChannel(
-            share.name.ifBlank { "Shared channel" },
+            share.name.ifBlank { str(R.string.vm_shared_channel) },
             share.pskHex,
             // The RAW scope, not the canonical one. Handing over the
             // decoder's answer meant an unusable region arrived here as
@@ -1675,7 +1673,7 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
                 // added is exactly how a community rolls one out, and
                 // every existing member used to get "Already in this
                 // channel" and carry on flooding globally.
-                transientMessage.value = "Already in $label" + applyChannelScope(existing.index, regionScope)
+                transientMessage.value = str(R.string.vm_already_in, label) + applyChannelScope(existing.index, regionScope)
                 return@launch
             }
             val idx = svc.engine.nextFreeChannelIndex()
@@ -1683,9 +1681,9 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
                 transientMessage.value = if (!svc.engine.channelsKnown) {
                     // Not the same fact as "full", and the difference
                     // decides whether trying again helps.
-                    "Still reading the radio's channels — try again in a moment"
+                    str(R.string.vm_channels_reading)
                 } else {
-                    "No free channel slots on the radio"
+                    str(R.string.vm_no_slots)
                 }
                 return@launch
             }
@@ -1698,7 +1696,7 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
             // once the slot is known — and only if the write worked, or
             // a failed join would leave a scope pointing at a channel
             // that isn't there.
-            transientMessage.value = "Channel added" + applyChannelScope(idx, regionScope)
+            transientMessage.value = str(R.string.vm_channel_added) + applyChannelScope(idx, regionScope)
         }
     }
 
@@ -1807,8 +1805,7 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
                 // that could ever produce the others — and the QR is
                 // usually gone by the time anyone notices.
                 if (!svc.secrets.storeCommunitySecret(communityId, secret)) {
-                    transientMessage.value = "This device's keystore refused to store the " +
-                        "community secret, so the community was not joined"
+                    transientMessage.value = str(R.string.vm_community_keystore)
                     return@launch
                 }
 
@@ -1816,17 +1813,17 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
                 val idx = svc.engine.nextFreeChannelIndex()
                 if (idx == null) {
                     transientMessage.value = if (!svc.engine.channelsKnown) {
-                        "Still reading the radio's channels — try again in a moment"
+                        str(R.string.vm_channels_reading)
                     } else {
-                        "No free channel slots on the radio"
+                        str(R.string.vm_no_slots)
                     }
                     return@launch
                 }
                 val ok = runCatching { svc.engine.setChannel(idx, name, psk) }.getOrDefault(false)
                 transientMessage.value =
-                    if (ok) "Joined community \"$name\"" else str(R.string.vm_channel_write_failed)
+                    if (ok) str(R.string.vm_community_joined, name) else str(R.string.vm_channel_write_failed)
             } catch (t: Throwable) {
-                transientMessage.value = "Invalid community code: ${t.message}"
+                transientMessage.value = str(R.string.vm_community_invalid)
             }
         }
     }
@@ -1895,19 +1892,18 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
             // of it would name the wrong culprit.
             if (!result.attempted) return@launch
             val sealNote = if (result.sealFailed) {
-                " — but this device's keystore refused to store the password, " +
-                    "so you'll need to type it again next time"
+                str(R.string.vm_password_not_saved)
             } else {
                 ""
             }
             transientMessage.value = when {
-                result.session == AdminSession.Admin -> "Logged in as admin$sealNote"
+                result.session == AdminSession.Admin -> str(R.string.vm_signed_admin) + sealNote
                 // Say what was GRANTED, not what was asked for. A guest
                 // grant is a successful login, not a failure.
-                result.session == AdminSession.Member -> "Signed in to the room$sealNote"
-                result.session == AdminSession.Guest -> "Logged in as guest — read-only$sealNote"
-                result.answered -> "Password rejected"
-                else -> "No answer from the node"
+                result.session == AdminSession.Member -> str(R.string.vm_signed_room) + sealNote
+                result.session == AdminSession.Guest -> str(R.string.vm_signed_guest) + sealNote
+                result.answered -> str(R.string.vm_password_rejected)
+                else -> str(R.string.vm_no_answer)
             }
         }
     }
@@ -1944,13 +1940,13 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
         // sign-in dialog a dead button is all the user sees.
         val svc = _service.value
         if (svc == null) {
-            _loginError.value = _loginError.value + (keyHex to "Not connected to a radio.")
+            _loginError.value = _loginError.value + (keyHex to str(R.string.link_not_connected))
             return LoginResult(AdminSession.None, false, sealFailed = false, attempted = false)
         }
         val key = hexToBytesOrNull(keyHex)
         if (key == null) {
             _loginError.value = _loginError.value +
-                (keyHex to "That contact's public key is unreadable.")
+                (keyHex to str(R.string.vm_bad_key))
             return LoginResult(AdminSession.None, false, sealFailed = false, attempted = false)
         }
         _loginInFlight.value = _loginInFlight.value + keyHex
@@ -2013,9 +2009,9 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
             // different fixes — check the password, or get closer.
             _loginError.value = _loginError.value + (
                 keyHex to if (outcome.answered) {
-                    "The node rejected that password."
+                    str(R.string.vm_password_rejected)
                 } else {
-                    "No answer from the node after ${SendRetry.DEFAULT_MAX_ATTEMPTS} tries."
+                    str(R.string.vm_no_answer_tries, SendRetry.DEFAULT_MAX_ATTEMPTS)
                 }
                 )
         }
@@ -2184,13 +2180,13 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
     // Device settings
     // ------------------------------------------------------------------
 
-    fun setAdvertName(name: String) = deviceAction("Name updated") { it.setAdvertName(name) }
+    fun setAdvertName(name: String) = deviceAction(str(R.string.vm_name_updated)) { it.setAdvertName(name) }
 
     fun setAdvertLocation(lat: Double, lon: Double) =
-        deviceAction("Location updated") { it.setAdvertLatLon(lat, lon) }
+        deviceAction(str(R.string.vm_location_updated)) { it.setAdvertLatLon(lat, lon) }
 
     fun setRadioParams(freqKhz: Long, bwHz: Long, sf: Int, cr: Int) =
-        deviceAction("Radio params updated") { it.setRadioParams(freqKhz, bwHz, sf, cr) }
+        deviceAction(str(R.string.vm_radio_updated)) { it.setRadioParams(freqKhz, bwHz, sf, cr) }
 
     fun setTxPower(dbm: Int) = deviceAction("TX power updated") { it.setTxPower(dbm) }
 
@@ -2213,15 +2209,15 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
                 )
             }.getOrDefault(false)
             if (!paramsOk) {
-                transientMessage.value = "Radio rejected the ${preset.name} parameters"
+                transientMessage.value = str(R.string.vm_preset_rejected, preset.name)
                 return@launch
             }
             val powerOk = runCatching { svc.engine.setTxPower(preset.txPowerDbm) }
                 .getOrDefault(false)
             transientMessage.value = if (powerOk) {
-                "Applied ${preset.name}"
+                str(R.string.vm_applied, preset.name)
             } else {
-                "Applied ${preset.name}, but TX power stayed unchanged — set it by hand"
+                str(R.string.vm_applied_no_power, preset.name)
             }
         }
     }
@@ -2252,12 +2248,12 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
     }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     fun setOtherParams(telemetryFlags: Int, advertLocPolicy: Int, multiAcks: Int) =
-        deviceAction("Policies updated") {
+        deviceAction(str(R.string.vm_policies_updated)) {
             it.setOtherParams(telemetryFlags, advertLocPolicy, multiAcks)
         }
 
     fun setAutoAddConfig(flags: Int) =
-        deviceAction("Auto-add policy updated") { it.setAutoAddConfig(flags) }
+        deviceAction(str(R.string.vm_autoadd_updated)) { it.setAutoAddConfig(flags) }
 
     fun setFloodScope(region: String?) {
         if (!region.isNullOrBlank() && !Regions.isValid(region)) {
@@ -2267,9 +2263,9 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
         }
         deviceAction(
             if (region.isNullOrBlank()) {
-                "Flood scope cleared"
+                str(R.string.vm_scope_cleared)
             } else {
-                "Flood scope set to #${Regions.canonical(region)}"
+                str(R.string.vm_scope_set, Regions.canonical(region) ?: region)
             },
         ) { it.setFloodScope(region) }
     }
@@ -2911,9 +2907,9 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
         _service.value?.refreshBlockLists()
         blockRevision.value++
         transientMessage.value = if (blocked) {
-            "Blocked. Their direct messages will be dropped, not stored."
+            str(R.string.vm_blocked)
         } else {
-            "Unblocked."
+            str(R.string.vm_unblocked)
         }
     }
 
@@ -2929,9 +2925,9 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
         _service.value?.refreshBlockLists()
         blockRevision.value++
         transientMessage.value = if (filtered) {
-            "Hiding messages that claim the name \"$name\""
+            str(R.string.vm_hiding_name, name)
         } else {
-            "No longer hiding \"$name\""
+            str(R.string.vm_unhiding_name, name)
         }
     }
 
@@ -2981,9 +2977,9 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
      * clears the Keystore-sealed material. Never touches the radio.
      */
     suspend fun purgeLocalData(alsoSecrets: Boolean): String {
-        val svc = _service.value ?: return "Not connected — nothing to purge against."
+        val svc = _service.value ?: return str(R.string.link_not_connected)
         val counts = runCatching { svc.repository.purgeLocal() }
-            .getOrElse { return "Purge failed: ${it.message}" }
+            .getOrElse { return str(R.string.vm_purge_failed) }
 
         // Local-only preference state that mirrors the same history.
         prefs.pinnedThreads = emptySet()
@@ -2992,12 +2988,10 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
         if (alsoSecrets) prefs.clearAllSealed()
         regionRevision.value++
 
-        return buildString {
-            append("Purged ${counts.messages} message(s), ${counts.contacts} contact(s), ")
-            append("${counts.channels} channel(s)")
-            if (alsoSecrets) append(", and all stored keys and passwords")
-            append(". The radio was not touched.")
-        }
+        return str(
+            if (alsoSecrets) R.string.vm_purged_secrets else R.string.vm_purged,
+            counts.messages, counts.contacts, counts.channels,
+        )
     }
 
     // --- Config backup / restore (PARITY §1) ---
@@ -3041,8 +3035,8 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
                 getApplication<Application>().contentResolver.openOutputStream(uri)?.use {
                     it.write(text.encodeToByteArray())
                 } ?: error("could not open the file for writing")
-                "Backup written."
-            }.getOrElse { "Backup failed: ${it.message}" }
+                str(R.string.vm_backup_written)
+            }.getOrElse { str(R.string.vm_backup_failed) }
         }
 
     /** Read and parse a picked file; null when it isn't a backup. */
@@ -3074,7 +3068,7 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
     ): String {
         val result = runCatching {
             backupRepo.apply(parsed, options, passphrase, currentSelfKeyHex = selfKey.value)
-        }.getOrElse { return "Restore failed: ${it.message}" }
+        }.getOrElse { return str(R.string.vm_restore_failed) }
 
         // Radio-side writes happen here, one at a time, because they go
         // through the same serialised command queue as everything else.
@@ -3153,7 +3147,7 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
         transientMessage.value = if (added == null) {
             "Region names are lowercase letters, digits and hyphens (max ${Regions.MAX_NAME_LENGTH})"
         } else {
-            "Added #$added"
+            str(R.string.vm_region_added, added)
         }
         regionRevision.value++
     }
@@ -3224,7 +3218,7 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
     fun setCustomVar(key: String, value: String) =
         deviceAction("$key updated") { it.setCustomVar("$key:$value") }
 
-    fun syncDeviceClock() = deviceAction("Radio clock synced") { it.syncDeviceClock() }
+    fun syncDeviceClock() = deviceAction(str(R.string.vm_clock_synced)) { it.syncDeviceClock() }
 
     suspend fun deviceTime(): Long? = _service.value?.engine?.deviceTime()
 
@@ -3268,7 +3262,7 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
             }
             val gpx = buildString {
                 append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
-                append("<gpx version=\"1.1\" creator=\"MeshCore Mobile\" ")
+                append("<gpx version=\"1.1\" creator=\"MeshConnect\" ")
                 append("xmlns=\"http://www.topografix.com/GPX/1/1\">\n")
                 for (n in nodes) {
                     val name = n.name.ifBlank { n.keyHex.take(12) }
@@ -3296,7 +3290,7 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
                 putExtra(Intent.EXTRA_STREAM, uri)
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
             }
-            app.startActivity(Intent.createChooser(share, "Export nodes").apply {
+            app.startActivity(Intent.createChooser(share, str(R.string.map_export_gpx)).apply {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             })
             transientMessage.value = str(R.string.vm_exported, nodes.size)
@@ -3380,13 +3374,13 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
             transientMessage.value = if (ok) {
                 "PIN changed. Forget this radio in Bluetooth settings, then pair again."
             } else {
-                "The radio did not accept the new PIN"
+                str(R.string.vm_pin_rejected)
             }
         }
     }
 
     fun sendSelfAdvert(flood: Boolean) =
-        deviceAction(if (flood) "Flood advert sent" else "Zero-hop advert sent") {
+        deviceAction(if (flood) str(R.string.vm_advert_flood) else str(R.string.vm_advert_zero)) {
             it.sendSelfAdvert(flood)
         }
 
