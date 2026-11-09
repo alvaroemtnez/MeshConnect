@@ -224,10 +224,11 @@ internal fun IdentitySection(vm: MeshCoreViewModel, onShowSelfQr: () -> Unit) {
 
 @Composable
 internal fun RadioSection(vm: MeshCoreViewModel) {
+    val ctx = androidx.compose.ui.platform.LocalContext.current
     val self by vm.selfInfo.collectAsState()
     val info = self
     if (info == null) {
-        HintText("Connect to a radio to edit radio parameters.")
+        HintText(stringResource(R.string.radio_connect))
         return
     }
     // MHz and kHz — what the label says and what the remote form shows.
@@ -243,7 +244,7 @@ internal fun RadioSection(vm: MeshCoreViewModel) {
     var cr by remember(info.cr) { mutableStateOf(info.cr.toString()) }
     var tx by remember(info.txPowerDbm) { mutableStateOf(info.txPowerDbm.toString()) }
 
-    HintText("Parameters must match your mesh or the node goes deaf.")
+    HintText(stringResource(R.string.radio_must_match))
 
     // Which preset (if any) the radio is currently sitting on. More than
     // one can match — several Russian city presets share parameters — so
@@ -257,10 +258,9 @@ internal fun RadioSection(vm: MeshCoreViewModel) {
     }
     HintText(
         when {
-            matches.isEmpty() -> "Current settings match no known preset."
-            matches.size == 1 -> "Currently: ${matches[0].name}."
-            else -> "Currently matches ${matches.size} presets: " +
-                matches.joinToString(", ") { it.name }
+            matches.isEmpty() -> stringResource(R.string.radio_no_preset)
+            matches.size == 1 -> stringResource(R.string.setup_radio_current, matches[0].name)
+            else -> stringResource(R.string.setup_radio_current, matches.joinToString(", ") { it.name })
         },
     )
     // The scanner belongs HERE as well as on Chats/Nodes. A settings QR
@@ -271,13 +271,13 @@ internal fun RadioSection(vm: MeshCoreViewModel) {
         result.contents?.let { vm.importScannedCode(it) }
     }
     ButtonFlowRow {
-        TextButton(onClick = { presetSheet = true }) { Text("Use a regional preset…") }
+        TextButton(onClick = { presetSheet = true }) { Text(stringResource(R.string.setup_pick_preset)) }
         TextButton(onClick = {
             scanLauncher.launch(
-                meshScanOptions("Scan a mesh settings QR"),
+                meshScanOptions(ctx.getString(R.string.radio_scan_prompt)),
             )
-        }) { Text("Scan settings QR…") }
-        TextButton(onClick = { shareSettings = true }) { Text("Share these settings…") }
+        }) { Text(stringResource(R.string.radio_scan)) }
+        TextButton(onClick = { shareSettings = true }) { Text(stringResource(R.string.radio_share)) }
     }
     if (presetSheet) {
         RadioPresetSheet(vm, onDismiss = { presetSheet = false })
@@ -300,12 +300,12 @@ internal fun RadioSection(vm: MeshCoreViewModel) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         OutlinedTextField(
             value = freq, onValueChange = { freq = it },
-            label = { Text("Freq (MHz)") }, singleLine = true, modifier = Modifier.weight(1.2f),
+            label = { Text(stringResource(R.string.radio_freq)) }, singleLine = true, modifier = Modifier.weight(1.2f),
         )
         Spacer(Modifier.width(4.dp))
         OutlinedTextField(
             value = bw, onValueChange = { bw = it },
-            label = { Text("BW (kHz)") }, singleLine = true, modifier = Modifier.weight(1f),
+            label = { Text(stringResource(R.string.radio_bw)) }, singleLine = true, modifier = Modifier.weight(1f),
         )
         Spacer(Modifier.width(4.dp))
         OutlinedTextField(
@@ -333,16 +333,14 @@ internal fun RadioSection(vm: MeshCoreViewModel) {
         ) {
             vm.setRadioParams(f, b, s, c)
         } else {
-            vm.transientMessage.value =
-                "Freq is MHz (300–2500, e.g. 910.525), BW is kHz (7–500, e.g. 62.5), " +
-                    "SF 5–12, CR 5–8"
+            vm.transientMessage.value = ctx.getString(R.string.radio_bad_params)
         }
-    }) { Text("Apply radio params") }
+    }) { Text(stringResource(R.string.radio_apply_params)) }
 
     Row(verticalAlignment = Alignment.CenterVertically) {
         OutlinedTextField(
             value = tx, onValueChange = { tx = it },
-            label = { Text("TX power (dBm, max ${info.maxTxPowerDbm})") },
+            label = { Text(stringResource(R.string.radio_tx_power, info.maxTxPowerDbm)) },
             singleLine = true,
             modifier = Modifier.weight(1f),
         )
@@ -366,26 +364,24 @@ internal fun ClockSection(vm: MeshCoreViewModel) {
         loading = false
     }
     if (engineState != EngineState.Ready) {
-        HintText("Connect to a radio to read its clock.")
+        HintText(stringResource(R.string.clock_connect))
         return
     }
     if (loading) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 12.dp)) {
             CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
             Spacer(Modifier.width(12.dp))
-            HintText("Querying radio…")
+            HintText(stringResource(R.string.qr_loading))
         }
         return
     }
     val drift = radioTime?.let { it - System.currentTimeMillis() / 1000 }
     Text(
-        "Radio clock: " + (radioTime?.let {
-            DateFormat.getDateTimeInstance().format(Date(it * 1000))
-        } ?: "no answer"),
+        stringResource(R.string.clock_radio, radioTime?.let { DateFormat.getDateTimeInstance().format(Date(it * 1000)) } ?: stringResource(R.string.clock_no_answer)),
     )
     drift?.let { d ->
         Text(
-            "Drift: " + formatDrift(d),
+            stringResource(R.string.clock_drift, formatDrift(d)),
             style = MaterialTheme.typography.bodyMedium,
             color = if (kotlin.math.abs(d) > 30) {
                 MaterialTheme.colorScheme.error
@@ -398,15 +394,12 @@ internal fun ClockSection(vm: MeshCoreViewModel) {
         OutlinedButton(onClick = {
             vm.syncDeviceClock()
             refresh++
-        }) { Text("Sync from phone") }
-        OutlinedButton(onClick = { refresh++ }) { Text("Re-read") }
+        }) { Text(stringResource(R.string.clock_sync)) }
+        OutlinedButton(onClick = { refresh++ }) { Text(stringResource(R.string.clock_reread)) }
     }
-    ExpandableHint("The app auto-corrects drift over 30 s when it connects.") {
+    ExpandableHint(stringResource(R.string.clock_auto)) {
         Text(
-            "Radios without GPS lose their clock on power-cycle. Drift matters beyond " +
-                "timestamps: message ordering and reaction matching are both keyed on the " +
-                "sender's clock, so a skewed radio makes other apps attach your reactions " +
-                "to the wrong message.",
+            stringResource(R.string.clock_detail),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -418,7 +411,7 @@ internal fun PoliciesSection(vm: MeshCoreViewModel) {
     val self by vm.selfInfo.collectAsState()
     val info = self
     if (info == null) {
-        HintText("Connect to a radio to edit mesh policies.")
+        HintText(stringResource(R.string.pol_connect))
         return
     }
 
@@ -434,10 +427,10 @@ internal fun PoliciesSection(vm: MeshCoreViewModel) {
         vm.setOtherParams((env shl 4) or (loc shl 2) or base, locPolicy, multiAcks)
     }
 
-    SettingRow("Include location in adverts", info.advertLocPolicy == 1) {
+    SettingRow(stringResource(R.string.pol_location), info.advertLocPolicy == 1) {
         apply(locPolicy = if (it) 1 else 0)
     }
-    SettingRow("Multi-acks (redundant ACK copies)", info.multiAcks != 0) {
+    SettingRow(stringResource(R.string.pol_multiacks), info.multiAcks != 0) {
         apply(multiAcks = if (it) 1 else 0)
     }
 
@@ -445,35 +438,30 @@ internal fun PoliciesSection(vm: MeshCoreViewModel) {
     // screen about how traffic moves, and it is the one MeshCore's FAQ
     // means when it says the fallback "can be turned off in settings".
     var floodFallback by remember { mutableStateOf(vm.prefs.floodFallbackOnLastRetry) }
-    SettingRow("Flood on the last message retry", floodFallback) {
+    SettingRow(stringResource(R.string.pol_flood_retry), floodFallback) {
         floodFallback = it
         vm.prefs.floodFallbackOnLastRetry = it
     }
-    ExpandableHint("A message that fails twice is retried as a flood, once.") {
+    ExpandableHint(stringResource(R.string.pol_flood_hint)) {
         DetailText(
-            "MeshCore's documented default. If a repeater you had a path through goes " +
-                "away, retrying that same path cannot work — so the third attempt clears " +
-                "the stored path and floods, which also lets the reply teach your radio a " +
-                "live route. Turning this off means a stale path keeps failing until " +
-                "something else refreshes it. Clients never repeat otherwise, so this is " +
-                "capped at one flood per message.",
+            stringResource(R.string.pol_flood_detail),
         )
     }
 
     Spacer(Modifier.height(4.dp))
-    Text("Telemetry access", style = MaterialTheme.typography.labelLarge)
-    HintText("Who may read this node's telemetry: Deny / per-contact flags / everyone.")
+    Text(stringResource(R.string.pol_telemetry), style = MaterialTheme.typography.labelLarge)
+    HintText(stringResource(R.string.pol_telemetry_hint))
     val teleOptions = listOf("Deny", "Flags", "All")
-    Text("Base (battery)", style = MaterialTheme.typography.bodySmall)
+    Text(stringResource(R.string.perm_battery), style = MaterialTheme.typography.bodySmall)
     ChoiceChips(teleOptions, teleBase) { apply(base = it) }
-    Text("Location", style = MaterialTheme.typography.bodySmall)
+    Text(stringResource(R.string.perm_location), style = MaterialTheme.typography.bodySmall)
     ChoiceChips(teleOptions, teleLoc) { apply(loc = it) }
-    Text("Environment", style = MaterialTheme.typography.bodySmall)
+    Text(stringResource(R.string.perm_environment), style = MaterialTheme.typography.bodySmall)
     ChoiceChips(teleOptions, teleEnv) { apply(env = it) }
 
     Spacer(Modifier.height(8.dp))
-    Text("On-air path hash width", style = MaterialTheme.typography.labelLarge)
-    HintText("Bytes per hop in packet paths. All nodes on a mesh must match; firmware v10+.")
+    Text(stringResource(R.string.pol_hash_width), style = MaterialTheme.typography.labelLarge)
+    HintText(stringResource(R.string.pol_hash_hint))
     // The active width is radio truth (DEVICE_INFO), not local state.
     val deviceInfo by vm.deviceInfo.collectAsState()
     // Options come from PathHashMode, not a literal list: this offered a
@@ -485,13 +473,10 @@ internal fun PoliciesSection(vm: MeshCoreViewModel) {
     }
 
     Spacer(Modifier.height(8.dp))
-    Text("Global flood scope", style = MaterialTheme.typography.labelLarge)
-    ExpandableHint("Restricts flood routing to a named region. Blank = untagged.") {
+    Text(stringResource(R.string.pol_scope), style = MaterialTheme.typography.labelLarge)
+    ExpandableHint(stringResource(R.string.pol_scope_hint)) {
         Text(
-            "Saved on the radio as its default, so it holds across reboots and applies " +
-                "whichever app is connected. Per-channel regions (below) override it for " +
-                "each send. On firmware too old to save a default, the app sets it on every " +
-                "connect instead.",
+            stringResource(R.string.pol_scope_detail),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -504,7 +489,7 @@ internal fun PoliciesSection(vm: MeshCoreViewModel) {
         OutlinedTextField(
             value = region,
             onValueChange = { region = it },
-            label = { Text("Region (e.g. bayarea)") },
+            label = { Text(stringResource(R.string.reg_name)) },
             singleLine = true,
             isError = region.isNotBlank() && !Regions.isValid(region),
             modifier = Modifier.weight(1f),
@@ -516,11 +501,11 @@ internal fun PoliciesSection(vm: MeshCoreViewModel) {
         TextButton(onClick = {
             region = ""
             vm.setFloodScope(null)
-        }) { Text("Clear") }
+        }) { Text(stringResource(R.string.clear)) }
     }
 
     Spacer(Modifier.height(12.dp))
-    Text("Regions", style = MaterialTheme.typography.labelLarge)
+    Text(stringResource(R.string.backup_regions), style = MaterialTheme.typography.labelLarge)
     RegionsSection(vm)
 }
 
@@ -529,18 +514,18 @@ internal fun AutoAddSection(vm: MeshCoreViewModel) {
     val flags by vm.autoAddFlags.collectAsState()
     val current = flags
     if (current == null) {
-        HintText("Connect to a radio to read the auto-add policy.")
+        HintText(stringResource(R.string.auto_connect))
         return
     }
-    HintText("Which advert types are added to the contact list automatically when heard.")
+    HintText(stringResource(R.string.auto_hint))
 
     fun toggle(bit: Int, on: Boolean) {
         vm.setAutoAddConfig(if (on) current or bit else current and bit.inv())
     }
-    SettingRow("Companions (chat)", current and Codes.AUTO_ADD_CHAT != 0) {
+    SettingRow(stringResource(R.string.auto_companions), current and Codes.AUTO_ADD_CHAT != 0) {
         toggle(Codes.AUTO_ADD_CHAT, it)
     }
-    SettingRow("Repeaters", current and Codes.AUTO_ADD_REPEATER != 0) {
+    SettingRow(stringResource(R.string.kind_repeaters), current and Codes.AUTO_ADD_REPEATER != 0) {
         toggle(Codes.AUTO_ADD_REPEATER, it)
     }
     // With the radio adding every repeater, there is nothing to choose
@@ -550,44 +535,38 @@ internal fun AutoAddSection(vm: MeshCoreViewModel) {
         var relaying by remember { mutableStateOf(vm.prefs.autoAddRelayingRepeaters) }
         var direct by remember { mutableStateOf(vm.prefs.autoAddDirectRepeaters) }
         Column(Modifier.padding(start = 16.dp)) {
-            HintText("The radio isn't adding repeaters. This app can add the useful ones:")
-            SettingRow("…that relayed messages I received", relaying) {
+            HintText(stringResource(R.string.auto_app_adds))
+            SettingRow(stringResource(R.string.auto_relaying), relaying) {
                 relaying = it
                 vm.setRepeaterRule(relaysMyTraffic = it)
             }
-            SettingRow("…heard directly by my radio", direct) {
+            SettingRow(stringResource(R.string.auto_direct), direct) {
                 direct = it
                 vm.setRepeaterRule(heardDirect = it)
             }
-            ExpandableHint("\"Relayed\" means 3 or more messages in the last week.") {
+            ExpandableHint(stringResource(R.string.auto_relayed_hint)) {
                 Text(
-                    "A message's route lists a short hash for each repeater it passed " +
-                        "through. A repeater counts as relaying your traffic when its hash " +
-                        "appears in the routes of at least 3 messages you received in the " +
-                        "last week — fewer can be a one-off flood from far away, or another " +
-                        "node that happens to share the hash. When another node you know shares the same short " +
-                        "hash, the relays could be the other one's, so that repeater isn't " +
-                        "counted.",
+                    stringResource(R.string.auto_relayed_detail),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
     }
-    SettingRow("Room servers", current and Codes.AUTO_ADD_ROOM != 0) {
+    SettingRow(stringResource(R.string.auto_rooms), current and Codes.AUTO_ADD_ROOM != 0) {
         toggle(Codes.AUTO_ADD_ROOM, it)
     }
-    SettingRow("Sensors", current and Codes.AUTO_ADD_SENSOR != 0) {
+    SettingRow(stringResource(R.string.kind_sensors), current and Codes.AUTO_ADD_SENSOR != 0) {
         toggle(Codes.AUTO_ADD_SENSOR, it)
     }
-    SettingRow("Overwrite oldest when full", current and Codes.AUTO_ADD_OVERWRITE_OLDEST != 0) {
+    SettingRow(stringResource(R.string.auto_overwrite), current and Codes.AUTO_ADD_OVERWRITE_OLDEST != 0) {
         toggle(Codes.AUTO_ADD_OVERWRITE_OLDEST, it)
     }
     // The radio does this, not the app (BaseChatMesh.cpp,
     // allocateContactSlot skips flags & 0x01) — but the toggle alone
     // reads as though a favourite could be the one that goes.
     HintText(
-        "Favourites are never overwritten. \"Oldest\" is the node heard from least recently.",
+        stringResource(R.string.auto_overwrite_hint),
     )
 }
 
@@ -596,18 +575,18 @@ internal fun CustomVarsSection(vm: MeshCoreViewModel) {
     val vars by vm.customVars.collectAsState()
     val engineState by vm.engineState.collectAsState()
     if (engineState != EngineState.Ready) {
-        HintText("Connect to a radio to read custom variables.")
+        HintText(stringResource(R.string.vars_connect))
         return
     }
 
     // GPS is the variable users actually flip — give it a switch.
     if (vars.containsKey("gps")) {
-        SettingRow("GPS module", vars["gps"] == "1") {
+        SettingRow(stringResource(R.string.vars_gps), vars["gps"] == "1") {
             vm.setCustomVar("gps", if (it) "1" else "0")
         }
     }
     if (vars.isEmpty()) {
-        HintText("No custom variables reported by this firmware.")
+        HintText(stringResource(R.string.vars_none))
     } else {
         for ((k, v) in vars) {
             Text("$k: $v", fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodySmall)
@@ -619,12 +598,12 @@ internal fun CustomVarsSection(vm: MeshCoreViewModel) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         OutlinedTextField(
             value = key, onValueChange = { key = it },
-            label = { Text("Variable") }, singleLine = true, modifier = Modifier.weight(1f),
+            label = { Text(stringResource(R.string.vars_variable)) }, singleLine = true, modifier = Modifier.weight(1f),
         )
         Spacer(Modifier.width(8.dp))
         OutlinedTextField(
             value = value, onValueChange = { value = it },
-            label = { Text("Value") }, singleLine = true, modifier = Modifier.weight(1f),
+            label = { Text(stringResource(R.string.vars_value)) }, singleLine = true, modifier = Modifier.weight(1f),
         )
         TextButton(
             onClick = {
