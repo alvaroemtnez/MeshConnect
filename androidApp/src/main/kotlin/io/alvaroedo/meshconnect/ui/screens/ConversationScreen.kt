@@ -241,6 +241,7 @@ fun ConversationScreen(
             },
             MenuAction("Contact details…") { showContact = true },
             MenuAction("Routing / paths…") { showContact = true },
+            MenuAction(stringResource(R.string.trace_route), icon = R.drawable.ic_route) { nav.navigate(traceRoute(peerKey)) },
             MenuAction("Clear thread…", destructive = true) { clearConfirm = true },
         )
     }
@@ -558,6 +559,10 @@ fun ConversationScreen(
                 onOpenAdmin = {
                     showContact = false
                     nav.navigate("repeater/$peerKey")
+                },
+                onTrace = {
+                    showContact = false
+                    nav.navigate(traceRoute(peerKey))
                 },
             )
         } ?: run { showContact = false }

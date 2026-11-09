@@ -62,6 +62,17 @@
     <string name="add_contact_warning">Este código no va firmado: el nombre es lo que haya escrito quien lo envía. Añádelo solo si viene de alguien de confianza y comprueba que la clave coincide con la suya.</string>
     <string name="radio_apply_title">¿Aplicar estos ajustes de radio?</string>
     <string name="radio_apply">Aplicar</string>
+    <string name="trace_ping">Ping</string>
+    <string name="trace_route">Trazar ruta</string>
+    <string name="trace_ping_title">Ping</string>
+    <string name="trace_title">Trazar ruta</string>
+    <string name="trace_again">Repetir</string>
+    <string name="trace_you">Tú</string>
+    <string name="trace_waiting">Esperando la respuesta…</string>
+    <string name="trace_no_reply">Sin respuesta. Puede que el nodo esté fuera de alcance o que la ruta guardada esté obsoleta.</string>
+    <string name="trace_direct">No hay ningún repetidor entre vosotros que trazar: los mensajes a este contacto van directos o por inundación.</string>
+    <string name="trace_unknown">Este nodo no está en la lista de contactos de la radio.</string>
+    <string name="trace_done">Ida y vuelta %1$s s · %2$d saltos</string>
     <string name="chats_search_hint">Buscar conversaciones</string>
     <string name="chats_advert_zero_hop">Enviar anuncio (0 saltos)</string>
     <string name="chats_advert_flood">Enviar anuncio (inundación)</string>

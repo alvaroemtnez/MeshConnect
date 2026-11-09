@@ -450,6 +450,10 @@ fun NodesScreen(vm: MeshCoreViewModel, nav: NavController) {
                 detail = null
                 nav.navigate("repeater/${contact.keyHex}")
             },
+            onTrace = {
+                detail = null
+                nav.navigate(traceRoute(contact.keyHex))
+            },
             // Straight to the transfer, using the address the node
             // announced: a node in update mode has left the mesh.
             onFlashFirmware = {
@@ -935,6 +939,8 @@ fun ContactDetailSheet(
     onOpenChat: () -> Unit,
     onOpenAdmin: () -> Unit,
     onFlashFirmware: () -> Unit = {},
+    /** Ping (nodes that forward) or trace towards a person; upstream issue #5. */
+    onTrace: (() -> Unit)? = null,
 ) {
     var renameOpen by remember { mutableStateOf(false) }
     var routingOpen by remember { mutableStateOf(false) }
@@ -1108,6 +1114,11 @@ fun ContactDetailSheet(
                 ContactPermissions(vm, contact)
             }
             TextButton(onClick = { shareQrOpen = true }) { Text("Share contact QR…") }
+            onTrace?.let { trace ->
+                TextButton(onClick = trace) {
+                    Text(stringResource(if (isAdminable) R.string.trace_ping else R.string.trace_route))
+                }
+            }
             TextButton(onClick = { telemetryOpen = true }) { Text("Telemetry…") }
             TextButton(onClick = { routingOpen = true }) { Text("Routing / paths…") }
             TextButton(onClick = { renameOpen = true }) { Text("Rename") }

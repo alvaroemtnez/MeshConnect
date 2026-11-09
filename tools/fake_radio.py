@@ -189,7 +189,8 @@ class Session:
             self.send(bytes([RESP_OK]))
 
     def trace(self, frame: bytes):
-        """[36][tag u32][auth u32][flags][path…] → SENT, then TRACE_DATA echoing the path with SNRs."""
+        """[36][tag u32][auth u32][flags][path…] → SENT, then TRACE_DATA laid out as
+        companion_radio/MyMesh.cpp:855-876 writes it (hashes, one SNR per hop, final SNR)."""
         tag = frame[1:5]
         flags = frame[9] if len(frame) > 9 else 0
         path = frame[10:]

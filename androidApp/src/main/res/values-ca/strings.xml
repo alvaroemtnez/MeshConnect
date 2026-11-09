@@ -62,6 +62,17 @@
     <string name="add_contact_warning">Este codi no va signat: el nom és el que haja escrit qui l\'envia. Afig-lo només si ve d\'algú de confiança i comprova que la clau coincidix amb la seua.</string>
     <string name="radio_apply_title">Aplicar estos ajustos de ràdio?</string>
     <string name="radio_apply">Aplicar</string>
+    <string name="trace_ping">Ping</string>
+    <string name="trace_route">Traçar ruta</string>
+    <string name="trace_ping_title">Ping</string>
+    <string name="trace_title">Traçar ruta</string>
+    <string name="trace_again">Repetir</string>
+    <string name="trace_you">Tu</string>
+    <string name="trace_waiting">Esperant la resposta…</string>
+    <string name="trace_no_reply">Sense resposta. Pot ser que el node estiga fora d\'abast o que la ruta guardada estiga obsoleta.</string>
+    <string name="trace_direct">No hi ha cap repetidor entre vosaltres per a traçar: els missatges a este contacte van directes o per inundació.</string>
+    <string name="trace_unknown">Este node no està en la llista de contactes de la ràdio.</string>
+    <string name="trace_done">Anada i tornada %1$s s · %2$d salts</string>
     <string name="chats_search_hint">Cercar converses</string>
     <string name="chats_advert_zero_hop">Enviar anunci (0 salts)</string>
     <string name="chats_advert_flood">Enviar anunci (inundació)</string>

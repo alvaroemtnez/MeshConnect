@@ -1309,6 +1309,52 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
         return runCatching { svc.engine.tracePath(tag, path, width) }.getOrNull()
     }
 
+    /** What a ping or trace sent, and what came back. */
+    data class TraceRun(
+        val sentHops: List<String>,
+        val result: io.github.thatsfguy.meshcore.protocol.TraceResult?,
+        val roundTripMs: Long,
+        /** Why nothing was sent, when nothing was. */
+        val refused: TraceRefusal? = null,
+    )
+
+    enum class TraceRefusal { NotConnected, UnknownNode, NoRepeater }
+
+    /**
+     * Ping a repeater/room/sensor, or trace towards a person, along the
+     * stored route and back (TraceRoutes says why the list is a round trip).
+     */
+    suspend fun traceNode(keyHex: String): TraceRun {
+        val svc = _service.value ?: return TraceRun(emptyList(), null, 0, TraceRefusal.NotConnected)
+        val contact = svc.engine.contacts.value[keyHex]
+            ?: return TraceRun(emptyList(), null, 0, TraceRefusal.UnknownNode)
+        val width = deviceInfo.value?.pathHashByteWidth ?: 1
+        val info = contact.pathInfo
+        // The stored route is only usable at the mesh's own width: a trace
+        // declares one width for every hop.
+        val out = if (!info.isFlood && info.hashWidth == width) {
+            io.alvaroedo.meshconnect.ui.model.TraceRoutes.hops(contact.storedPath, width)
+        } else {
+            emptyList()
+        }
+        val forwards = contact.type != Codes.ADV_TYPE_CHAT
+        val hops = if (forwards) {
+            io.alvaroedo.meshconnect.ui.model.TraceRoutes.ping(
+                out,
+                io.alvaroedo.meshconnect.ui.model.TraceRoutes.hashOf(keyHex, width),
+            )
+        } else {
+            io.alvaroedo.meshconnect.ui.model.TraceRoutes.towards(out)
+                ?: return TraceRun(emptyList(), null, 0, TraceRefusal.NoRepeater)
+        }
+        val tag = System.currentTimeMillis() and 0xFFFFFFFFL
+        val started = android.os.SystemClock.elapsedRealtime()
+        val result = runCatching {
+            svc.engine.tracePath(tag, io.alvaroedo.meshconnect.ui.model.TraceRoutes.toBytes(hops), width)
+        }.getOrNull()
+        return TraceRun(hops, result, android.os.SystemClock.elapsedRealtime() - started)
+    }
+
     fun resetPath(keyHex: String) {
         val key = hexToBytesOrNull(keyHex) ?: return
         viewModelScope.launch {

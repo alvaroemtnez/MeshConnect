@@ -55,6 +55,8 @@ import io.alvaroedo.meshconnect.ui.screens.ChatsScreen
 import io.alvaroedo.meshconnect.ui.screens.conversationRoute
 import io.alvaroedo.meshconnect.ui.screens.ConversationScreen
 import io.alvaroedo.meshconnect.ui.screens.MapScreen
+import io.alvaroedo.meshconnect.ui.screens.TRACE_ROUTE
+import io.alvaroedo.meshconnect.ui.screens.TraceScreen
 import io.alvaroedo.meshconnect.ui.screens.NodesScreen
 import io.alvaroedo.meshconnect.ui.screens.RepeaterConsoleScreen
 import io.alvaroedo.meshconnect.ui.screens.ScanConfirmations
@@ -310,6 +312,9 @@ private fun AppShell(
             // this node, which is what that tab is for.
             composable(HEARD_REPEATS_ROUTE) { HeardRepeatsScreen(vm, nav) }
             composable("map") { MapScreen(vm, nav) }
+            composable(TRACE_ROUTE) { entry ->
+                TraceScreen(vm, nav, entry.arguments?.getString("key") ?: "")
+            }
             // Settings is hub-and-spoke for the same reason repeater
             // admin is: eleven expandable sections on one scroll, one of
             // which held another eight surfaces (REBUILD-PLAYBOOK §6.2).

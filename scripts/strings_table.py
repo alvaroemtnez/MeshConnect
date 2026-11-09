@@ -104,6 +104,27 @@ S = {
 "radio_apply_title": ("Apply these radio settings?", "¿Aplicar estos ajustes de radio?", "Aplicar estos ajustos de ràdio?"),
 "radio_apply": ("Apply", "Aplicar", "Aplicar"),
 
+# Ping and trace
+"trace_ping": ("Ping", "Ping", "Ping"),
+"trace_route": ("Trace route", "Trazar ruta", "Traçar ruta"),
+"trace_ping_title": ("Ping", "Ping", "Ping"),
+"trace_title": ("Trace route", "Trazar ruta", "Traçar ruta"),
+"trace_again": ("Again", "Repetir", "Repetir"),
+"trace_you": ("You", "Tú", "Tu"),
+"trace_waiting": ("Waiting for the reply…", "Esperando la respuesta…", "Esperant la resposta…"),
+"trace_no_reply": (
+    "No reply. The node may be out of range, or the stored route may be stale.",
+    "Sin respuesta. Puede que el nodo esté fuera de alcance o que la ruta guardada esté obsoleta.",
+    "Sense resposta. Pot ser que el node estiga fora d'abast o que la ruta guardada estiga obsoleta.",
+),
+"trace_direct": (
+    "There's no repeater between you to trace: messages to this contact go direct or flood.",
+    "No hay ningún repetidor entre vosotros que trazar: los mensajes a este contacto van directos o por inundación.",
+    "No hi ha cap repetidor entre vosaltres per a traçar: els missatges a este contacte van directes o per inundació.",
+),
+"trace_unknown": ("This node isn't on the radio's contact list.", "Este nodo no está en la lista de contactos de la radio.", "Este node no està en la llista de contactes de la ràdio."),
+"trace_done": ("Round trip %1$s s · %2$d hops", "Ida y vuelta %1$s s · %2$d saltos", "Anada i tornada %1$s s · %2$d salts"),
+
 # Chats
 "chats_search_hint": ("Search conversations", "Buscar conversaciones", "Cercar converses"),
 "chats_advert_zero_hop": ("Send advert (0-hop)", "Enviar anuncio (0 saltos)", "Enviar anunci (0 salts)"),
