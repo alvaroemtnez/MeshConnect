@@ -1,5 +1,7 @@
 package io.alvaroedo.meshconnect.ui.screens
 
+import io.alvaroedo.meshconnect.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -65,34 +67,29 @@ fun SetupScreen(vm: MeshCoreViewModel, onDone: () -> Unit) {
             .verticalScroll(rememberScrollState())
             .padding(24.dp),
     ) {
-        Text("Set up MeshConnect", style = MaterialTheme.typography.headlineSmall)
+        Text(stringResource(R.string.setup_title), style = MaterialTheme.typography.headlineSmall)
         Spacer(Modifier.height(8.dp))
-        HintText(
-            "This app talks to a MeshCore LoRa radio over Bluetooth or USB. Without one " +
-                "there is nothing to send messages with — there is no internet fallback, " +
-                "by design.",
-        )
+        HintText(stringResource(R.string.setup_intro))
 
         Spacer(Modifier.height(20.dp))
         SetupStep(
             number = 1,
-            title = "Connect a radio",
+            title = stringResource(R.string.setup_step_connect),
             done = connected,
             detail = if (connected) {
-                "Connected to ${vm.connectionLabel.collectAsState().value ?: "a radio"}."
+                stringResource(R.string.setup_connected_to, vm.connectionLabel.collectAsState().value ?: "")
             } else {
-                "Pair over Bluetooth, or plug one in over USB."
+                stringResource(R.string.setup_connect_detail)
             },
         ) {
-            HintText("Open Settings → Connection to pair or plug in a radio.")
+            HintText(stringResource(R.string.setup_connect_hint))
         }
 
         SetupStep(
             number = 2,
-            title = "Name this node",
+            title = stringResource(R.string.setup_step_name),
             done = connected && !self?.name.isNullOrBlank(),
-            detail = "Your name is broadcast in every advert — the whole mesh sees it. " +
-                "Pick something you're happy being known by out there.",
+            detail = stringResource(R.string.setup_name_detail),
         ) {
             if (!connected) {
                 HintText("Connect a radio first.")
@@ -100,7 +97,7 @@ fun SetupScreen(vm: MeshCoreViewModel, onDone: () -> Unit) {
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text("Node name") },
+                    label = { Text(stringResource(R.string.setup_node_name)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -108,28 +105,26 @@ fun SetupScreen(vm: MeshCoreViewModel, onDone: () -> Unit) {
                     TextButton(
                         onClick = { vm.setAdvertName(name.trim()) },
                         enabled = name.isNotBlank() && name.trim() != self?.name,
-                    ) { Text("Set name") }
+                    ) { Text(stringResource(R.string.setup_set_name)) }
                 }
             }
         }
 
         SetupStep(
             number = 3,
-            title = "Match your local radio settings",
+            title = stringResource(R.string.setup_step_radio),
             done = connected && matches.isNotEmpty(),
             detail = if (matches.isNotEmpty()) {
-                "Currently on ${matches.joinToString(", ") { it.name }}."
+                stringResource(R.string.setup_radio_current, matches.joinToString(", ") { it.name })
             } else {
-                "Every node on a mesh must share the same frequency, bandwidth, " +
-                    "spreading factor and coding rate. Mismatched, you'll see an empty " +
-                    "app rather than an error."
+                stringResource(R.string.setup_radio_detail)
             },
         ) {
             if (!connected) {
                 HintText("Connect a radio first.")
             } else {
                 ButtonFlowRow {
-                    TextButton(onClick = { presetSheet = true }) { Text("Pick a regional preset…") }
+                    TextButton(onClick = { presetSheet = true }) { Text(stringResource(R.string.setup_pick_preset)) }
                 }
                 HintText(io.github.thatsfguy.meshcore.protocol.RadioPresets.REGULATORY_CAVEAT)
             }
@@ -137,13 +132,11 @@ fun SetupScreen(vm: MeshCoreViewModel, onDone: () -> Unit) {
 
         SetupStep(
             number = 4,
-            title = "Know what this app protects",
+            title = stringResource(R.string.setup_step_protects),
             done = false,
-            detail = "Direct messages are end-to-end encrypted. Channels are only " +
-                "obfuscated — AES-ECB with a 2-byte MAC and a key that never changes — " +
-                "so treat a channel as a room with an unlocked door, not a sealed one.",
+            detail = stringResource(R.string.setup_protects_detail),
         ) {
-            HintText("The full list is in Settings → About.")
+            HintText(stringResource(R.string.setup_protects_hint))
         }
 
         Spacer(Modifier.height(24.dp))
@@ -151,7 +144,7 @@ fun SetupScreen(vm: MeshCoreViewModel, onDone: () -> Unit) {
             OutlinedButton(onClick = {
                 vm.prefs.setupComplete = true
                 onDone()
-            }) { Text(if (connected) "Done" else "Skip for now") }
+            }) { Text(stringResource(if (connected) R.string.setup_done else R.string.setup_skip)) }
         }
         Spacer(Modifier.height(32.dp))
     }

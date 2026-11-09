@@ -1,5 +1,7 @@
 package io.alvaroedo.meshconnect.ui.screens
 
+import io.alvaroedo.meshconnect.R
+import androidx.compose.ui.res.stringResource
 import io.github.thatsfguy.meshcore.presentation.appSubtitle
 import io.github.thatsfguy.meshcore.presentation.blockingSubtitle
 import io.github.thatsfguy.meshcore.presentation.channelsSubtitle
@@ -73,36 +75,40 @@ fun SettingsScreen(vm: MeshCoreViewModel, nav: NavController) {
     // Read once per composition — these are plain prefs, not flows, and
     // the hub recomposes when it is returned to.
     val subtitles: Map<String, String> = mapOf(
-        "connection" to connectionSubtitle(engineState, connectionLabel),
-        "transports" to transportsSubtitle(
+        "connection" to SettingsHubText.connection(engineState, connectionLabel),
+        "transports" to SettingsHubText.transports(
             ble = vm.prefs.bleEnabled,
             usb = vm.prefs.usbEnabled,
             tcp = vm.prefs.tcpEnabled,
         ),
-        "identity" to if (isReady) identitySubtitle(self?.name) else "Connect to a radio",
-        "radio" to radioSubtitle(self?.freqKhz, self?.sf, self?.txPowerDbm),
-        "firmware" to firmwareSubtitle(
-            currentVersion = vm.deviceInfo.collectAsState().value?.firmwareVersion,
-            latestVersion = vm.firmware.latestVersion.collectAsState().value,
-            updateCapable = vm.firmwareUpdatesSupported(),
+        "identity" to SettingsHubText.identity(isReady, self?.name),
+        "radio" to if (self?.freqKhz?.let { it > 0 } == true) {
+            radioSubtitle(self?.freqKhz, self?.sf, self?.txPowerDbm)
+        } else {
+            stringResource(R.string.hub_radio_connect)
+        },
+        "firmware" to SettingsHubText.firmware(
+            current = vm.deviceInfo.collectAsState().value?.firmwareVersion?.takeIf { it.isNotBlank() },
+            latest = vm.firmware.latestVersion.collectAsState().value,
+            capable = vm.firmwareUpdatesSupported(),
             connected = isReady,
         ),
-        "channels" to channelsSubtitle(channels.size),
-        "blocking" to blockingSubtitle(blocked.size),
-        "app" to appSubtitle(
+        "channels" to SettingsHubText.channels(channels.size),
+        "blocking" to SettingsHubText.blocking(blocked.size),
+        "app" to SettingsHubText.app(
             theme = vm.prefs.theme,
-            notificationsEnabled = vm.prefs.notificationsEnabled,
-            storageEncrypted = DatabaseKey.encryptionUnavailableReason == null,
+            notifications = vm.prefs.notificationsEnabled,
+            encrypted = DatabaseKey.encryptionUnavailableReason == null,
         ),
     )
 
     Scaffold(
         topBar = {
             AppTopBar(
-                title = "Settings",
+                title = stringResource(R.string.nav_settings),
                 vm = vm,
                 menuActions = listOf(
-                    MenuAction("Reboot radio…", destructive = true) { rebootConfirm = true },
+                    MenuAction(stringResource(R.string.hub_reboot_menu), destructive = true) { rebootConfirm = true },
                 ),
             )
         },
@@ -115,11 +121,11 @@ fun SettingsScreen(vm: MeshCoreViewModel, nav: NavController) {
         ) {
             for ((index, group) in settingsGroups().withIndex()) {
                 if (index > 0) HorizontalDivider(Modifier.padding(top = 8.dp))
-                GroupLabel(group.title)
+                GroupLabel(SettingsHubText.group(index, group.title))
                 for (tile in group.tiles) {
                     SettingsTileRow(
-                        title = tile.title,
-                        subtitle = subtitles[tile.route] ?: tile.subtitle,
+                        title = SettingsHubText.title(tile.route, tile.title),
+                        subtitle = subtitles[tile.route] ?: SettingsHubText.subtitle(tile.route, tile.subtitle),
                         // NOT dimmed. Driving this disconnected, six of the
                         // ten rows on the first screen were greyed — the
                         // majority of the app's Settings reading as broken
@@ -139,16 +145,16 @@ fun SettingsScreen(vm: MeshCoreViewModel, nav: NavController) {
     if (rebootConfirm) {
         AlertDialog(
             onDismissRequest = { rebootConfirm = false },
-            title = { Text("Reboot radio?") },
-            text = { Text("The connection will drop and re-establish once the radio is back up.") },
+            title = { Text(stringResource(R.string.hub_reboot_title)) },
+            text = { Text(stringResource(R.string.hub_reboot_body)) },
             confirmButton = {
                 TextButton(onClick = {
                     vm.rebootRadio()
                     rebootConfirm = false
-                }) { Text("Reboot") }
+                }) { Text(stringResource(R.string.hub_reboot)) }
             },
             dismissButton = {
-                TextButton(onClick = { rebootConfirm = false }) { Text("Cancel") }
+                TextButton(onClick = { rebootConfirm = false }) { Text(stringResource(R.string.cancel)) }
             },
         )
     }
