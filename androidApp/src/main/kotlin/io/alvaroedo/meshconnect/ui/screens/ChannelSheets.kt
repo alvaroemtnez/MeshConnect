@@ -1,5 +1,7 @@
 package io.alvaroedo.meshconnect.ui.screens
 
+import androidx.compose.ui.res.stringResource
+import io.alvaroedo.meshconnect.R
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -58,40 +60,36 @@ fun ChannelAddSheet(vm: MeshCoreViewModel, onDismiss: () -> Unit) {
         onDismiss()
     }
 
+    val scanPrompt = stringResource(R.string.scan_prompt)
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(Modifier.padding(horizontal = 24.dp).padding(bottom = 32.dp)) {
             when (val c = choice) {
                 null -> {
-                    Text("Add a channel", style = MaterialTheme.typography.headlineSmall)
+                    Text(stringResource(R.string.ch_add_title), style = MaterialTheme.typography.headlineSmall)
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        "A channel is a group conversation across the mesh. It is its secret key: " +
-                            "everyone with the same key is in the same channel, whatever each of " +
-                            "them calls it.",
+                        stringResource(R.string.ch_add_intro),
                         style = MaterialTheme.typography.bodyMedium,
                     )
                     Spacer(Modifier.height(8.dp))
-                    ChoiceRow("Join the Public Channel", "Anyone can join this channel.") {
+                    ChoiceRow(stringResource(R.string.ch_public), stringResource(R.string.ch_public_sub)) {
                         choice = AddChannelChoice.Public
                     }
-                    ChoiceRow("Create a Private Channel", "Only people you give the key to can join.") {
+                    ChoiceRow(stringResource(R.string.ch_create_private), stringResource(R.string.ch_create_private_sub)) {
                         choice = AddChannelChoice.CreatePrivate
                     }
-                    ChoiceRow("Join a Private Channel", "Enter a secret key someone gave you.") {
+                    ChoiceRow(stringResource(R.string.ch_join_private), stringResource(R.string.ch_join_private_sub)) {
                         choice = AddChannelChoice.JoinPrivate
                     }
-                    ChoiceRow("Join a Hashtag Channel", "Anyone can join hashtag channels.") {
+                    ChoiceRow(stringResource(R.string.ch_hashtag), stringResource(R.string.ch_hashtag_sub)) {
                         choice = AddChannelChoice.Hashtag
                     }
-                    ChoiceRow("Scan a channel or community QR", "Join from a code someone shows you.") {
-                        communityScanLauncher.launch(
-                            meshScanOptions("Scan a MeshCore QR — contact, channel or community"),
-                        )
+                    ChoiceRow(stringResource(R.string.ch_scan), stringResource(R.string.ch_scan_sub)) {
+                        communityScanLauncher.launch(meshScanOptions(scanPrompt))
                     }
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        "Channels are obfuscated, not secure (AES-ECB with a 2-byte MAC). Don't " +
-                            "send anything you couldn't bear to be read.",
+                        stringResource(R.string.ch_add_warning),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -138,10 +136,10 @@ private fun AddChannelForm(
     var key by remember(choice) { mutableStateOf("") }
 
     val title = when (choice) {
-        AddChannelChoice.Public -> "Join the Public Channel"
-        AddChannelChoice.CreatePrivate -> "Create a Private Channel"
-        AddChannelChoice.JoinPrivate -> "Join a Private Channel"
-        AddChannelChoice.Hashtag -> "Join a Hashtag Channel"
+        AddChannelChoice.Public -> stringResource(R.string.ch_public)
+        AddChannelChoice.CreatePrivate -> stringResource(R.string.ch_create_private)
+        AddChannelChoice.JoinPrivate -> stringResource(R.string.ch_join_private)
+        AddChannelChoice.Hashtag -> stringResource(R.string.ch_hashtag)
     }
     Text(title, style = MaterialTheme.typography.headlineSmall)
     Spacer(Modifier.height(8.dp))
@@ -158,29 +156,17 @@ private fun AddChannelForm(
         (r as? ChannelSetup.Result.Problem)?.message?.takeIf { typed.isNotBlank() }
 
     when (choice) {
-        AddChannelChoice.Public -> Explain(
-            "The Public channel uses a key every MeshCore radio knows. Anyone in range can read " +
-                "and post in it.",
-        )
-        AddChannelChoice.Hashtag -> Explain(
-            "Hashtag channels are public. Anyone can join by entering the same name, because the " +
-                "key is made from the name. Only a–z, 0–9 and hyphens.",
-        )
-        AddChannelChoice.CreatePrivate -> Explain(
-            "A new random key is made on this phone. Only people you give it to can join. After " +
-                "creating it, share it from the channel's settings → Share channel QR.",
-        )
-        AddChannelChoice.JoinPrivate -> Explain(
-            "The name can be anything you like — it stays on this phone. Only the secret key " +
-                "must match.",
-        )
+        AddChannelChoice.Public -> Explain(stringResource(R.string.ch_public_explain))
+        AddChannelChoice.Hashtag -> Explain(stringResource(R.string.ch_hashtag_explain))
+        AddChannelChoice.CreatePrivate -> Explain(stringResource(R.string.ch_create_explain))
+        AddChannelChoice.JoinPrivate -> Explain(stringResource(R.string.ch_join_explain))
     }
 
     if (choice != AddChannelChoice.Public) {
         OutlinedTextField(
             value = name,
             onValueChange = { name = it },
-            label = { Text(if (choice == AddChannelChoice.Hashtag) "Channel name" else "Name") },
+            label = { Text(stringResource(if (choice == AddChannelChoice.Hashtag) R.string.ch_channel_name else R.string.ch_name)) },
             prefix = if (choice == AddChannelChoice.Hashtag) ({ Text("#") }) else null,
             singleLine = true,
             isError = problem(nameResult, name) != null,
@@ -192,7 +178,7 @@ private fun AddChannelForm(
         OutlinedTextField(
             value = key,
             onValueChange = { key = it },
-            label = { Text("Secret key (32 hex characters)") },
+            label = { Text(stringResource(R.string.ch_secret_key)) },
             singleLine = true,
             isError = problem(keyResult, key) != null,
             supportingText = problem(keyResult, key)?.let { { Text(it) } },
@@ -208,10 +194,10 @@ private fun AddChannelForm(
         AddChannelChoice.JoinPrivate -> okName != null && okKey != null
         else -> okName != null
     }
-    androidx.compose.foundation.layout.Row {
-        TextButton(onClick = onBack) { Text("Back") }
+    androidx.compose.foundation.layout.Row(Modifier.fillMaxWidth().padding(top = 8.dp)) {
+        androidx.compose.material3.OutlinedButton(onClick = onBack) { Text(stringResource(R.string.back)) }
         Spacer(Modifier.weight(1f))
-        TextButton(
+        androidx.compose.material3.Button(
             enabled = ready,
             onClick = {
                 when (choice) {
@@ -222,7 +208,7 @@ private fun AddChannelForm(
                 }
                 onDone()
             },
-        ) { Text(if (choice == AddChannelChoice.CreatePrivate) "Create" else "Join") }
+        ) { Text(stringResource(if (choice == AddChannelChoice.CreatePrivate) R.string.ch_create else R.string.join_confirm)) }
     }
 }
 

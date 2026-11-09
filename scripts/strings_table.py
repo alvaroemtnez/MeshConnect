@@ -303,6 +303,37 @@ S = {
 "vm_region_removed": ('Removed #%1$s', 'Eliminada #%1$s', 'Eliminada #%1$s'),
 "vm_exported": ('Exported %1$d nodes', '%1$d nodos exportados', '%1$d nodes exportats'),
 
+# Channels
+"ch_add_title": ("Add a channel", "Añadir un canal", "Afegir un canal"),
+"ch_add_intro": (
+    "A channel is a group conversation across the mesh. It is its secret key: everyone with the same key is in the same channel, whatever each of them calls it.",
+    "Un canal es una conversación de grupo por la malla. El canal es su clave secreta: quien tenga la misma clave está en el mismo canal, lo llame como lo llame.",
+    "Un canal és una conversa de grup per la malla. El canal és la seua clau secreta: qui tinga la mateixa clau està en el mateix canal, li diga com li diga.",
+),
+"ch_public": ("Join the Public channel", "Unirse al canal Public", "Unir-se al canal Public"),
+"ch_public_sub": ("Anyone can join this channel.", "Cualquiera puede unirse a este canal.", "Qualsevol pot unir-se a este canal."),
+"ch_create_private": ("Create a private channel", "Crear un canal privado", "Crear un canal privat"),
+"ch_create_private_sub": ("Only people you give the key to can join.", "Solo puede unirse quien reciba la clave.", "Només pot unir-s'hi qui reba la clau."),
+"ch_join_private": ("Join a private channel", "Unirse a un canal privado", "Unir-se a un canal privat"),
+"ch_join_private_sub": ("Enter a secret key someone gave you.", "Introduce la clave secreta que te han dado.", "Introduïx la clau secreta que t'han donat."),
+"ch_hashtag": ("Join a hashtag channel", "Unirse a un canal hashtag", "Unir-se a un canal hashtag"),
+"ch_hashtag_sub": ("Anyone can join hashtag channels.", "Cualquiera puede unirse a los canales hashtag.", "Qualsevol pot unir-se als canals hashtag."),
+"ch_scan": ("Scan a channel or community QR", "Escanear un QR de canal o comunidad", "Escanejar un QR de canal o comunitat"),
+"ch_scan_sub": ("Join from a code someone shows you.", "Únete con un código que te enseñen.", "Unix-te amb un codi que et mostren."),
+"ch_add_warning": (
+    "Channels are obfuscated, not secure (AES-ECB with a 2-byte MAC). Don't send anything you couldn't bear to be read.",
+    "Los canales están ofuscados, no son seguros (AES-ECB con MAC de 2 bytes). No envíes nada que no soportarías que se leyera.",
+    "Els canals estan ofuscats, no són segurs (AES-ECB amb MAC de 2 bytes). No envies res que no suportaries que es llegira.",
+),
+"ch_public_explain": ("The Public channel uses a key every MeshCore radio knows. Anyone in range can read and post in it.", "El canal Public usa una clave que conocen todas las radios MeshCore. Cualquiera al alcance puede leer y escribir en él.", "El canal Public usa una clau que coneixen totes les ràdios MeshCore. Qualsevol a l'abast pot llegir-hi i escriure-hi."),
+"ch_hashtag_explain": ("Hashtag channels are public: anyone can join by entering the same name, because the key is made from the name. Only a–z, 0–9 and hyphens.", "Los canales hashtag son públicos: cualquiera puede unirse escribiendo el mismo nombre, porque la clave sale del nombre. Solo a–z, 0–9 y guiones.", "Els canals hashtag són públics: qualsevol pot unir-se escrivint el mateix nom, perquè la clau ix del nom. Només a–z, 0–9 i guions."),
+"ch_create_explain": ("A new random key is made on this phone. Only people you give it to can join. Share it afterwards from the channel's settings → Share channel QR.", "Se genera una clave aleatoria en este teléfono. Solo puede unirse quien la reciba. Compártela después desde los ajustes del canal → Compartir QR del canal.", "Es genera una clau aleatòria en este telèfon. Només pot unir-s'hi qui la reba. Comparteix-la després des de la configuració del canal → Compartir QR del canal."),
+"ch_join_explain": ("The name can be anything you like: it stays on this phone. Only the secret key must match.", "El nombre puede ser el que quieras: se queda en este teléfono. Solo tiene que coincidir la clave secreta.", "El nom pot ser el que vulgues: es queda en este telèfon. Només ha de coincidir la clau secreta."),
+"ch_channel_name": ("Channel name", "Nombre del canal", "Nom del canal"),
+"ch_name": ("Name", "Nombre", "Nom"),
+"ch_secret_key": ("Secret key (32 hex characters)", "Clave secreta (32 caracteres hexadecimales)", "Clau secreta (32 caràcters hexadecimals)"),
+"ch_create": ("Create", "Crear", "Crear"),
+
 # Chats
 "chats_search_hint": ("Search conversations", "Buscar conversaciones", "Cercar converses"),
 "chats_advert_zero_hop": ("Send advert (0-hop)", "Enviar anuncio (0 saltos)", "Enviar anunci (0 salts)"),
