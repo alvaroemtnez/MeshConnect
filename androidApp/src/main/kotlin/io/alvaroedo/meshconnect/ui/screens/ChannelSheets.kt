@@ -236,24 +236,24 @@ fun ChannelEditSheet(vm: MeshCoreViewModel, channel: ChannelEntity, onDismiss: (
 
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(Modifier.padding(horizontal = 24.dp).padding(bottom = 32.dp)) {
-            Text("Channel ${channel.idx}", style = MaterialTheme.typography.headlineSmall)
+            Text(stringResource(R.string.ch_numbered, channel.idx), style = MaterialTheme.typography.headlineSmall)
             Spacer(Modifier.height(12.dp))
             OutlinedTextField(
                 value = name,
                 onValueChange = { name = it },
-                label = { Text("Name") },
+                label = { Text(stringResource(R.string.ch_name)) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
             )
             OutlinedTextField(
                 value = pskHex,
                 onValueChange = { pskHex = it },
-                label = { Text(if (pskLoaded) "PSK (32 hex chars)" else "Loading PSK…") },
+                label = { Text(stringResource(if (pskLoaded) R.string.ch_secret_key else R.string.ch_loading_key)) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
             )
             Text(
-                "The PSK is stored sealed in the device keystore and on the radio.",
+                stringResource(R.string.ch_key_stored),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontFamily = FontFamily.Default,
@@ -267,15 +267,15 @@ fun ChannelEditSheet(vm: MeshCoreViewModel, channel: ChannelEntity, onDismiss: (
             TextButton(onClick = {
                 vm.editChannel(channel.idx, name.trim(), pskHex.trim())
                 onDismiss()
-            }) { Text("Save") }
+            }) { Text(stringResource(R.string.save)) }
             TextButton(
                 onClick = { shareConfirm = true },
                 enabled = pskLoaded && pskHex.isNotBlank(),
-            ) { Text("Share channel QR…") }
+            ) { Text(stringResource(R.string.ch_share_qr)) }
             TextButton(onClick = {
                 vm.deleteChannel(channel.idx)
                 onDismiss()
-            }) { Text("Remove channel", color = MaterialTheme.colorScheme.error) }
+            }) { Text(stringResource(R.string.ch_remove), color = MaterialTheme.colorScheme.error) }
         }
     }
 
@@ -284,31 +284,27 @@ fun ChannelEditSheet(vm: MeshCoreViewModel, channel: ChannelEntity, onDismiss: (
     if (shareConfirm) {
         androidx.compose.material3.AlertDialog(
             onDismissRequest = { shareConfirm = false },
-            title = { Text("Share this channel?") },
+            title = { Text(stringResource(R.string.ch_share_title)) },
             text = {
                 Text(
-                    "The code contains the channel's secret key. Anyone who scans it can " +
-                        "read everything on this channel — including messages sent before " +
-                        "they scanned, because the key never changes and the cipher has no " +
-                        "forward secrecy.\n\nThere is no way to revoke it: undoing a share " +
-                        "means changing the key on every device that uses the channel.",
+                    stringResource(R.string.ch_share_body),
                     style = MaterialTheme.typography.bodyMedium,
                 )
             },
             confirmButton = {
                 TextButton(onClick = { shareConfirm = false; shareQr = true }) {
-                    Text("Show the code", color = MaterialTheme.colorScheme.error)
+                    Text(stringResource(R.string.ch_show_code), color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
-                TextButton(onClick = { shareConfirm = false }) { Text("Cancel") }
+                TextButton(onClick = { shareConfirm = false }) { Text(stringResource(R.string.cancel)) }
             },
         )
     }
 
     if (shareQr) {
         ChannelQrDialog(
-            name = name.ifBlank { "Channel ${channel.idx}" },
+            name = name.ifBlank { "#${channel.idx}" },
             pskHex = pskHex.trim(),
             // Share the scope along with the key: a code that omits it
             // hands someone a channel that behaves differently from the
@@ -334,29 +330,28 @@ private fun ChannelQrDialog(
     val clipboard = androidx.compose.ui.platform.LocalClipboardManager.current
     androidx.compose.material3.AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Share $name", maxLines = 2) },
+        title = { Text(stringResource(R.string.ch_share_named, name), maxLines = 2) },
         text = {
             Column(horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally) {
                 qr?.let {
                     androidx.compose.foundation.Image(
                         it.asImageBitmap(),
-                        contentDescription = "Channel QR",
+                        contentDescription = stringResource(R.string.ch_qr),
                         modifier = Modifier.size(280.dp),
                     )
                 }
                 Text(
-                    "Anyone who scans this can read the channel. Show it only to people " +
-                        "you mean to give that to.",
+                    stringResource(R.string.ch_qr_warning),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.error,
                 )
             }
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("Done") } },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.setup_done)) } },
         dismissButton = {
             TextButton(onClick = {
                 clipboard.setText(androidx.compose.ui.text.AnnotatedString(uri))
-            }) { Text("Copy link") }
+            }) { Text(stringResource(R.string.ch_copy_link)) }
         },
     )
 }

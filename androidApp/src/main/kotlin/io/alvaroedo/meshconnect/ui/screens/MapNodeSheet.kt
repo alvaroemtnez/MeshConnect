@@ -1,5 +1,7 @@
 package io.alvaroedo.meshconnect.ui.screens
 
+import io.alvaroedo.meshconnect.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -94,11 +96,11 @@ fun MapNodeSheet(
                 .verticalScroll(rememberScrollState()),
         ) {
             Text(
-                contact.name.ifBlank { "Unnamed node" },
+                contact.name.ifBlank { stringResource(R.string.node_unnamed) },
                 style = MaterialTheme.typography.headlineSmall,
             )
             Text(
-                typeLabel(contact.type).dropLast(1),
+                io.alvaroedo.meshconnect.ui.model.SharedText.kind(androidx.compose.ui.platform.LocalContext.current, contact.type),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.primary,
             )
@@ -106,7 +108,7 @@ fun MapNodeSheet(
                 Text(
                     // Our radio's clock, not the node's claim — see
                     // LastHeard.
-                    "Last heard ${relativeAge(LastHeard.seconds(contact))}",
+                    stringResource(R.string.mapnode_last_heard, relativeAge(LastHeard.seconds(contact))),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -118,12 +120,12 @@ fun MapNodeSheet(
                 // — so offering the control here could only ever produce
                 // a timeout that blames the link.
                 Spacer(Modifier.height(16.dp))
-                TextButton(onClick = onOpenNode) { Text("Open this node") }
+                TextButton(onClick = onOpenNode) { Text(stringResource(R.string.mapnode_open)) }
                 return@Column
             }
 
             Spacer(Modifier.height(16.dp))
-            Text("Neighbours", style = MaterialTheme.typography.titleSmall)
+            Text(stringResource(R.string.mapnode_neighbours), style = MaterialTheme.typography.titleSmall)
             offer.collected?.let {
                 Text(
                     "${offer.storedCount} heard · $it",
@@ -135,7 +137,7 @@ fun MapNodeSheet(
             ButtonFlowRow {
                 if (offer.hasStored) {
                     TextButton(onClick = onToggleLinks) {
-                        Text(if (linksShown) "Hide links" else "Show links on map")
+                        Text(stringResource(if (linksShown) R.string.mapnode_hide_links else R.string.mapnode_show_links))
                     }
                 }
                 TextButton(
@@ -150,7 +152,7 @@ fun MapNodeSheet(
                 ) { Text(offer.fetchLabel) }
             }
             if (busy) {
-                SectionSpinner("Asking the node…")
+                SectionSpinner(stringResource(R.string.mapnode_asking))
                 // What the radio actually reported, rather than a
                 // spinner that reads the same at second 1 and second 60.
                 RequestProgressHint(vm, contact.keyHex)
@@ -163,33 +165,23 @@ fun MapNodeSheet(
                 for (link in links) NeighbourRow(link)
                 val undrawable = links.count { !it.isDrawable }
                 if (undrawable > 0) {
-                    HintText("$undrawable of these cannot be placed on the map.")
+                    HintText(stringResource(R.string.mapnode_undrawable, undrawable))
                 }
                 Spacer(Modifier.height(4.dp))
                 // The caveats belong behind the tap, once, at the point
                 // they matter (REBUILD-PLAYBOOK §6.3).
-                ExpandableHint("A line means this repeater heard that node's advert directly.") {
-                    HintText(
-                        "It says nothing about the other direction, and nothing about now — " +
-                            "the node records a neighbour when a repeater's advert arrives at " +
-                            "zero hops, and nothing expires it.",
-                    )
-                    HintText(
-                        "Companions, rooms and sensors are never recorded, so a short list " +
-                            "is the firmware being narrow, not a fault.",
-                    )
-                    HintText(
-                        "The list is what this repeater says it hears, relayed by that " +
-                            "repeater, and the signal figure is its reading at the time.",
-                    )
+                ExpandableHint(stringResource(R.string.mapnode_line_means)) {
+                    HintText(stringResource(R.string.mapnode_line_1))
+                    HintText(stringResource(R.string.mapnode_line_2))
+                    HintText(stringResource(R.string.mapnode_line_3))
                 }
             }
 
             Spacer(Modifier.height(8.dp))
-            TextButton(onClick = onOpenNode) { Text("Administer this node") }
+            TextButton(onClick = onOpenNode) { Text(stringResource(R.string.node_administer)) }
             if (offer.hasStored) {
                 TextButton(onClick = { vm.forgetNeighbours(contact.keyHex) }) {
-                    Text("Forget this reading")
+                    Text(stringResource(R.string.mapnode_forget))
                 }
             }
         }
