@@ -471,6 +471,23 @@ S = {
 "set_diag_log": ('Diagnostics log', 'Registro de diagnóstico', 'Registre de diagnòstic'),
 "set_diag_redacted": ('Secrets (passwords, keys, PSKs) are removed before lines are written.', 'Los secretos (contraseñas, claves, PSK) se eliminan antes de escribir cada línea.', "Els secrets (contrasenyes, claus, PSK) s'eliminen abans d'escriure cada línia."),
 
+"set_saved_nodes": ('Saved radios', 'Radios guardadas', 'Ràdios guardades'),
+"set_connect": ('Connect', 'Conectar', 'Connectar'),
+"set_log_empty": ('The log is empty. Secrets (passwords, keys, PSKs) are removed before lines land here.', 'El registro está vacío. Los secretos (contraseñas, claves, PSK) se eliminan antes de que lleguen aquí.', "El registre està buit. Els secrets (contrasenyes, claus, PSK) s'eliminen abans que arriben ací."),
+"tcp_title": ('Enable the TCP transport?', '¿Activar el transporte TCP?', 'Activar el transport TCP?'),
+"tcp_body": ("The MeshCore TCP link is UNENCRYPTED and UNAUTHENTICATED.\n\n• Every message you send or receive crosses the network in plain text.\n• Repeater and room passwords cross the network in plain text.\n• Anyone who can reach the radio's IP and port can control your radio.\n\nOnly use TCP to reach a Wi-Fi or Ethernet MeshCore node on a trusted network you control, never over untrusted Wi-Fi or the open internet.\n\nWhile it's on, the connection status keeps flagging the link as unencrypted.", 'El enlace TCP de MeshCore NO va cifrado NI autenticado.\n\n• Cada mensaje que envías o recibes cruza la red en texto plano.\n• Las contraseñas de repetidores y salas cruzan la red en texto plano.\n• Cualquiera que llegue a la IP y el puerto de la radio puede controlarla.\n\nUsa TCP solo para llegar a un nodo MeshCore por Wi-Fi o Ethernet en una red de confianza que controles, nunca por una Wi-Fi ajena ni por internet.\n\nMientras esté activado, el estado de la conexión seguirá marcando el enlace como no cifrado.', "L'enllaç TCP de MeshCore NO va xifrat NI autenticat.\n\n• Cada missatge que envies o reps creua la xarxa en text pla.\n• Les contrasenyes de repetidors i sales creuen la xarxa en text pla.\n• Qualsevol que arribe a la IP i el port de la ràdio pot controlar-la.\n\nUsa TCP només per a arribar a un node MeshCore per Wi-Fi o Ethernet en una xarxa de confiança que controles, mai per una Wi-Fi alié ni per internet.\n\nMentre estiga activat, l'estat de la connexió continuarà marcant l'enllaç com a no xifrat."),
+"tcp_accept": ('I understand the risk, enable it', 'Entiendo el riesgo, activar', 'Entenc el risc, activar'),
+"add_ble_nearby": ('Bluetooth radios nearby', 'Radios Bluetooth cercanas', 'Ràdios Bluetooth pròximes'),
+"add_scanning": ('Scanning… make sure the radio is on and advertising.', 'Buscando… comprueba que la radio está encendida y anunciándose.', 'Buscant… comprova que la ràdio està encesa i anunciant-se.'),
+"add_ble_off": ('The Bluetooth transport is off in Settings → Transports.', 'El transporte Bluetooth está desactivado en Ajustes → Transportes.', 'El transport Bluetooth està desactivat en Configuració → Transports.'),
+"add_usb": ('USB radios attached', 'Radios USB conectadas', 'Ràdios USB connectades'),
+"add_usb_none": ('No supported USB serial device attached (CDC-ACM / CP210x).', 'No hay ningún dispositivo USB serie compatible (CDC-ACM / CP210x).', 'No hi ha cap dispositiu USB sèrie compatible (CDC-ACM / CP210x).'),
+"add_tcp": ('Network radio (TCP, unencrypted)', 'Radio en red (TCP, sin cifrar)', 'Ràdio en xarxa (TCP, sense xifrar)'),
+"add_host": ('Host', 'Host', 'Host'),
+"add_port": ('Port', 'Puerto', 'Port'),
+"add_tcp_connect": ('Connect (unencrypted)', 'Conectar (sin cifrar)', 'Connectar (sense xifrar)'),
+"add_tcp_off": ("The TCP transport is off. Turn it on in Settings → Transports (you'll be asked to accept the plaintext warning).", 'El transporte TCP está desactivado. Actívalo en Ajustes → Transportes (tendrás que aceptar el aviso de texto plano).', "El transport TCP està desactivat. Activa'l en Configuració → Transports (hauràs d'acceptar l'avís de text pla)."),
+
 # Chats
 "chats_search_hint": ("Search conversations", "Buscar conversaciones", "Cercar converses"),
 "chats_advert_zero_hop": ("Send advert (0-hop)", "Enviar anuncio (0 saltos)", "Enviar anunci (0 salts)"),

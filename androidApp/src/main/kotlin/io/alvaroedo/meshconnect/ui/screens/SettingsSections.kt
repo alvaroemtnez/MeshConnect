@@ -915,7 +915,7 @@ internal fun SavedNodesList(vm: MeshCoreViewModel) {
     if (nodes.isEmpty()) return
     Column {
         Text(
-            "Saved nodes",
+            stringResource(R.string.set_saved_nodes),
             style = MaterialTheme.typography.labelLarge,
             modifier = Modifier.padding(top = 8.dp),
         )
@@ -932,7 +932,7 @@ internal fun SavedNodesList(vm: MeshCoreViewModel) {
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                TextButton(onClick = { vm.connectSaved(node) }) { Text("Connect") }
+                TextButton(onClick = { vm.connectSaved(node) }) { Text(stringResource(R.string.set_connect)) }
                 // "Remove", not "Forget". Android's Bluetooth settings has
                 // a "Forget device" that drops the PAIRING; this only drops
                 // the app's list entry. Sharing the word sent someone
@@ -941,7 +941,7 @@ internal fun SavedNodesList(vm: MeshCoreViewModel) {
                 TextButton(onClick = {
                     vm.forgetNode(node)
                     refresh++
-                }) { Text("Remove") }
+                }) { Text(stringResource(R.string.node_remove_confirm)) }
             }
         }
     }
@@ -957,7 +957,7 @@ internal fun DiagnosticsViewer(vm: MeshCoreViewModel) {
             .padding(top = 4.dp),
     ) {
         if (lines.isEmpty()) {
-            HintText("Log is empty. Secrets (passwords, keys, PSKs) are redacted before lines land here.")
+            HintText(stringResource(R.string.set_log_empty))
         }
         LazyColumn {
             items(lines.size) { i ->
@@ -976,23 +976,14 @@ internal fun DiagnosticsViewer(vm: MeshCoreViewModel) {
 fun TcpSternWarningDialog(onAccept: () -> Unit, onCancel: () -> Unit) {
     AlertDialog(
         onDismissRequest = onCancel,
-        title = { Text("Enable TCP transport?") },
+        title = { Text(stringResource(R.string.tcp_title)) },
         text = {
-            Text(
-                "The MeshCore TCP link is UNENCRYPTED and UNAUTHENTICATED.\n\n" +
-                    "• Every message you send or receive crosses the network in plain text.\n" +
-                    "• Repeater/room login passwords cross the network in plain text.\n" +
-                    "• Anyone who can reach the radio's IP and port can drive your radio.\n\n" +
-                    "Only use TCP to reach a WiFi/Ethernet MeshCore node on a trusted network " +
-                    "you control — never over untrusted WiFi or the open internet.\n\n" +
-                    "While enabled, the connection status will keep flagging the link as " +
-                    "unencrypted.",
-            )
+            Text(stringResource(R.string.tcp_body))
         },
         confirmButton = {
-            TextButton(onClick = onAccept) { Text("I understand the risk — enable") }
+            TextButton(onClick = onAccept) { Text(stringResource(R.string.tcp_accept), color = MaterialTheme.colorScheme.error) }
         },
-        dismissButton = { TextButton(onClick = onCancel) { Text("Cancel") } },
+        dismissButton = { androidx.compose.material3.Button(onClick = onCancel) { Text(stringResource(R.string.cancel)) } },
     )
 }
 
@@ -1016,16 +1007,16 @@ fun AddNodeSheet(vm: MeshCoreViewModel, tcpEnabled: Boolean, onDismiss: () -> Un
 
     androidx.compose.material3.ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(Modifier.padding(horizontal = 24.dp).padding(bottom = 32.dp)) {
-            Text("Add node", style = MaterialTheme.typography.headlineSmall)
+            Text(stringResource(R.string.set_add_node), style = MaterialTheme.typography.headlineSmall)
 
             if (vm.prefs.bleEnabled) {
                 Text(
-                    "Bluetooth radios nearby",
+                    stringResource(R.string.add_ble_nearby),
                     style = MaterialTheme.typography.titleSmall,
                     modifier = Modifier.padding(top = 12.dp),
                 )
                 if (discovered.isEmpty()) {
-                    HintText("Scanning… make sure the radio is powered and advertising.")
+                    HintText(stringResource(R.string.add_scanning))
                 }
                 LazyColumn(Modifier.heightIn(max = 220.dp)) {
                     items(discovered, key = { it.address }) { dev ->
@@ -1044,23 +1035,23 @@ fun AddNodeSheet(vm: MeshCoreViewModel, tcpEnabled: Boolean, onDismiss: () -> Un
                             TextButton(onClick = {
                                 vm.connectBle(dev.address, dev.name)
                                 onDismiss()
-                            }) { Text("Connect") }
+                            }) { Text(stringResource(R.string.set_connect)) }
                         }
                     }
                 }
             } else {
-                HintText("Bluetooth transport is disabled in Settings → Transports.")
+                HintText(stringResource(R.string.add_ble_off))
             }
 
             HorizontalDivider(Modifier.padding(vertical = 8.dp))
 
             if (vm.prefs.usbEnabled) {
-                Text("USB radios attached", style = MaterialTheme.typography.titleSmall)
+                Text(stringResource(R.string.add_usb), style = MaterialTheme.typography.titleSmall)
                 val usbDevices = remember {
                     io.alvaroedo.meshconnect.platform.UsbDevices.attached(context)
                 }
                 if (usbDevices.isEmpty()) {
-                    HintText("No supported USB-serial device attached (CDC-ACM / CP210x).")
+                    HintText(stringResource(R.string.add_usb_none))
                 }
                 for (attached in usbDevices) {
                     Row(
@@ -1081,14 +1072,14 @@ fun AddNodeSheet(vm: MeshCoreViewModel, tcpEnabled: Boolean, onDismiss: () -> Un
                                     if (granted) vm.connectUsb(attached.device)
                                 }
                             onDismiss()
-                        }) { Text("Connect") }
+                        }) { Text(stringResource(R.string.set_connect)) }
                     }
                 }
                 HorizontalDivider(Modifier.padding(vertical = 8.dp))
             }
 
             if (tcpEnabled) {
-                Text("Network radio (TCP — unencrypted)", style = MaterialTheme.typography.titleSmall)
+                Text(stringResource(R.string.add_tcp), style = MaterialTheme.typography.titleSmall)
                 var host by remember { mutableStateOf(vm.prefs.lastTcpHost ?: "192.168.40.10") }
                 var port by remember {
                     mutableStateOf(vm.prefs.lastTcpPort.takeIf { it != 0 }?.toString() ?: "5000")
@@ -1097,7 +1088,7 @@ fun AddNodeSheet(vm: MeshCoreViewModel, tcpEnabled: Boolean, onDismiss: () -> Un
                     OutlinedTextField(
                         value = host,
                         onValueChange = { host = it },
-                        label = { Text("Host") },
+                        label = { Text(stringResource(R.string.add_host)) },
                         singleLine = true,
                         modifier = Modifier.weight(1f),
                     )
@@ -1105,7 +1096,7 @@ fun AddNodeSheet(vm: MeshCoreViewModel, tcpEnabled: Boolean, onDismiss: () -> Un
                     OutlinedTextField(
                         value = port,
                         onValueChange = { port = it },
-                        label = { Text("Port") },
+                        label = { Text(stringResource(R.string.add_port)) },
                         singleLine = true,
                         modifier = Modifier.width(100.dp),
                     )
@@ -1116,12 +1107,9 @@ fun AddNodeSheet(vm: MeshCoreViewModel, tcpEnabled: Boolean, onDismiss: () -> Un
                         vm.connectTcp(host.trim(), p)
                         onDismiss()
                     }
-                }) { Text("Connect (unencrypted)") }
+                }) { Text(stringResource(R.string.add_tcp_connect)) }
             } else {
-                HintText(
-                    "TCP transport is off. Enable it in Settings → Transports (requires " +
-                        "acknowledging the plaintext warning).",
-                )
+                HintText(stringResource(R.string.add_tcp_off))
             }
         }
     }
