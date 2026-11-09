@@ -218,7 +218,7 @@ class MentionWiringTest {
         // commonest action on the tightest budget in the app.
         assertTrue(
             "Mention must be its own action",
-            screen.contains("""ActionLabel(stringResource(R.string.conv_mention), onMention)"""),
+            screen.contains("""MenuRow(R.drawable.ic_alternate_email, stringResource(R.string.conv_mention), onMention)"""),
         )
         assertTrue(
             "Mention is only useful where more than one person can read it",

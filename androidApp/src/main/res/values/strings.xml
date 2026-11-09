@@ -465,6 +465,7 @@
     <string name="conv_replying_to">Replying to %1$s</string>
     <string name="conv_them">them</string>
     <string name="conv_reply">Reply</string>
+    <string name="conv_more_reactions">More reactions</string>
     <string name="conv_mention">Mention</string>
     <string name="conv_info">Info</string>
     <string name="conv_resend">Resend</string>

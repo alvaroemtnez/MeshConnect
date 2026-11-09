@@ -159,10 +159,13 @@ fun AttachSheet(onPick: (Attachment) -> Unit, onDismiss: () -> Unit) {
             Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 16.dp).padding(bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp),
         ) {
+            // A short last row is centred under the full ones, not left-aligned with gaps.
             for (row in entries.chunked(3)) {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally),
+                ) {
                     for (a in row) AttachButton(a) { onPick(a) }
-                    repeat(3 - row.size) { Spacer(Modifier.width(96.dp)) }
                 }
             }
         }

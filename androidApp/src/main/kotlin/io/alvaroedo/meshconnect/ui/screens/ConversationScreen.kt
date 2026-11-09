@@ -2,6 +2,9 @@ package io.alvaroedo.meshconnect.ui.screens
 
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Surface
 import androidx.compose.ui.res.painterResource
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -64,6 +67,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
@@ -778,37 +783,10 @@ private fun MessageBubble(
         bottomEnd = if (outgoing) 2.dp else 12.dp,
     )
 
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .offset { IntOffset(dragOffsetX.toInt(), 0) }
-            .draggable(
-                state = dragState,
-                orientation = Orientation.Horizontal,
-                onDragStopped = {
-                    if (dragOffsetX >= thresholdPx) onSwipeReply()
-                    dragOffsetX = 0f
-                },
-            )
-            .combinedClickable(onClick = {}, onLongClick = { showActions = true })
-            .padding(horizontal = 8.dp),
-        horizontalArrangement = if (outgoing) Arrangement.End else Arrangement.Start,
-        verticalAlignment = Alignment.Bottom,
-    ) {
-        // No name, no avatar: a "?" circle on every historical room post
-        // (stored before authors were parsed) is noise, not information.
-        if (showAvatar && !outgoing && !m.senderName.isNullOrBlank()) {
-            // Seeded on the sender NAME, which is unauthenticated display
-            // text — the colour is a readability aid, never identity.
-            NodeAvatar(
-                seed = "sender|" + m.senderName.orEmpty(),
-                label = m.senderName.orEmpty(),
-                size = 28.dp,
-            )
-            Spacer(Modifier.width(6.dp))
-        }
+    var bubbleBounds by remember(m.id) { mutableStateOf(androidx.compose.ui.geometry.Rect.Zero) }
+    val bubble: @Composable (Modifier) -> Unit = { extra ->
         Box(
-            Modifier
+            extra
                 .widthIn(max = 300.dp)
                 .background(
                     color = when {
@@ -867,29 +845,63 @@ private fun MessageBubble(
                 if (reactions.isNotEmpty()) ReactionChips(reactions)
                 MessageFooter(m)
             }
+        }
+    }
 
-            if (showActions) {
-                MessageActionBar(
-                    // Reacting to yourself is a round-trip over LoRa that
-                    // tells nobody anything; the sibling gates it the
-                    // same way.
-                    canReact = !m.outgoing,
-                    canResend = m.outgoing && m.status == MessageStatus.Failed.ordinal,
-                    canMention = canMention,
-                    onReact = { emoji -> showActions = false; onReact(emoji) },
-                    onMoreEmoji = { showActions = false; onMoreEmoji() },
-                    onReply = { showActions = false; onReply() },
-                    onMention = { showActions = false; onMention() },
-                    onCopy = {
-                        showActions = false
-                        clipboard.setText(AnnotatedString(m.text))
-                    },
-                    onInfo = { showActions = false; onInfo() },
-                    onDelete = { showActions = false; onDelete() },
-                    onResend = { showActions = false; onResend() },
-                    onDismiss = { showActions = false },
-                )
-            }
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .offset { IntOffset(dragOffsetX.toInt(), 0) }
+            .draggable(
+                state = dragState,
+                orientation = Orientation.Horizontal,
+                onDragStopped = {
+                    if (dragOffsetX >= thresholdPx) onSwipeReply()
+                    dragOffsetX = 0f
+                },
+            )
+            .combinedClickable(onClick = {}, onLongClick = { showActions = true })
+            .padding(horizontal = 8.dp),
+        horizontalArrangement = if (outgoing) Arrangement.End else Arrangement.Start,
+        verticalAlignment = Alignment.Bottom,
+    ) {
+        // No name, no avatar: a "?" circle on every historical room post
+        // (stored before authors were parsed) is noise, not information.
+        if (showAvatar && !outgoing && !m.senderName.isNullOrBlank()) {
+            // Seeded on the sender NAME, which is unauthenticated display
+            // text — the colour is a readability aid, never identity.
+            NodeAvatar(
+                seed = "sender|" + m.senderName.orEmpty(),
+                label = m.senderName.orEmpty(),
+                size = 28.dp,
+            )
+            Spacer(Modifier.width(6.dp))
+        }
+        bubble(
+            Modifier.onGloballyPositioned { bubbleBounds = it.boundsInWindow() },
+        )
+        if (showActions) {
+            MessageFocusOverlay(
+                bounds = bubbleBounds,
+                outgoing = outgoing,
+                // Reacting to yourself is a round-trip over LoRa that tells nobody anything.
+                canReact = !m.outgoing,
+                canResend = m.outgoing && m.status == MessageStatus.Failed.ordinal,
+                canMention = canMention,
+                bubble = { bubble(Modifier) },
+                onReact = { emoji -> showActions = false; onReact(emoji) },
+                onMoreEmoji = { showActions = false; onMoreEmoji() },
+                onReply = { showActions = false; onReply() },
+                onMention = { showActions = false; onMention() },
+                onCopy = {
+                    showActions = false
+                    clipboard.setText(AnnotatedString(m.text))
+                },
+                onInfo = { showActions = false; onInfo() },
+                onDelete = { showActions = false; onDelete() },
+                onResend = { showActions = false; onResend() },
+                onDismiss = { showActions = false },
+            )
         }
     }
 }
@@ -934,15 +946,21 @@ private fun MentionPicker(names: List<String>, onPick: (String) -> Unit) {
 }
 
 /**
- * Inline action bar for a message: quick reactions on top, text actions
- * below. A popup anchored on the bubble rather than a modal dialog —
- * reacting should be one tap, not read-dialog-then-tap.
+ * Long-press on a message, the way Signal and Molly do it: everything behind blurs, the
+ * message stays where it was, quick reactions sit above it and the actions are a list with
+ * icons below it. It replaced a small popup of bare text labels.
+ *
+ * A full-screen dialog, so the blur covers the top bar and composer too. Window blur needs
+ * Android 12 and a device that allows it; elsewhere the scrim alone dims the thread.
  */
 @Composable
-private fun MessageActionBar(
+private fun MessageFocusOverlay(
+    bounds: androidx.compose.ui.geometry.Rect,
+    outgoing: Boolean,
     canReact: Boolean,
     canResend: Boolean,
     canMention: Boolean,
+    bubble: @Composable () -> Unit,
     onReact: (String) -> Unit,
     onMoreEmoji: () -> Unit,
     onReply: () -> Unit,
@@ -953,78 +971,149 @@ private fun MessageActionBar(
     onResend: () -> Unit,
     onDismiss: () -> Unit,
 ) {
-    Popup(
-        alignment = Alignment.TopCenter,
-        offset = IntOffset(0, -140),
+    androidx.compose.ui.window.Dialog(
         onDismissRequest = onDismiss,
-        properties = PopupProperties(focusable = true),
+        properties = androidx.compose.ui.window.DialogProperties(
+            usePlatformDefaultWidth = false,
+            decorFitsSystemWindows = false,
+        ),
     ) {
-        Column(
-            Modifier
-                .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(20.dp))
-                .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(20.dp))
-                .padding(horizontal = 6.dp, vertical = 4.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            if (canReact) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                for (emoji in Reactions.QUICK) {
-                    Text(
-                        emoji,
-                        style = MaterialTheme.typography.titleLarge,
-                        modifier = Modifier
-                            .clickable { onReact(emoji) }
-                            .padding(horizontal = 6.dp, vertical = 6.dp),
-                    )
-                }
-                // Overflow to the full list. Unlike the sibling's client
-                // we can't offer the system emoji keyboard: the wire
-                // format is an index into a fixed list, so anything
-                // outside it is unsendable.
-                Text(
-                    "＋",
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier
-                        .clickable { onMoreEmoji() }
-                        .padding(horizontal = 6.dp, vertical = 6.dp),
-                )
+        val view = androidx.compose.ui.platform.LocalView.current
+        androidx.compose.runtime.SideEffect {
+            (view.parent as? androidx.compose.ui.window.DialogWindowProvider)?.window?.let { w ->
+                w.setDimAmount(0f)
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                    w.addFlags(android.view.WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
+                    w.attributes = w.attributes.apply { blurBehindRadius = 48 }
                 }
             }
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                ActionLabel(stringResource(R.string.conv_reply), onReply)
-                // Separate from Reply on purpose. Reply quotes the text
-                // being answered, which costs those bytes out of a
-                // ~150-byte frame; Mention costs the name and nothing
-                // else. The official app folds them together by seeding
-                // a mention on reply — here that would silently double
-                // the cost of the commonest action on the tightest
-                // budget in the app, so both are offered and neither is
-                // implied.
-                if (canMention) ActionLabel(stringResource(R.string.conv_mention), onMention)
-                ActionLabel(stringResource(R.string.copy), onCopy)
-                ActionLabel(stringResource(R.string.conv_info), onInfo)
-                if (canResend) ActionLabel(stringResource(R.string.conv_resend), onResend)
-                ActionLabel(stringResource(R.string.delete), onDelete, color = MaterialTheme.colorScheme.error)
+        }
+        val density = LocalDensity.current
+        val margin = with(density) { 12.dp.roundToPx() }
+        val gap = with(density) { 8.dp.roundToPx() }
+        val insets = androidx.compose.foundation.layout.WindowInsets.safeDrawing
+        val top = insets.getTop(density) + margin
+        val bottomInset = insets.getBottom(density) + margin
+        androidx.compose.ui.layout.Layout(
+            content = {
+                // Scrim: tapping anywhere off the menu closes it.
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.35f))
+                        .clickable(
+                            interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+                            indication = null,
+                            onClick = onDismiss,
+                        ),
+                )
+                Box { if (canReact) ReactionPill(onReact, onMoreEmoji) }
+                Box { bubble() }
+                ActionMenu(canMention, canResend, onReply, onMention, onCopy, onInfo, onResend, onDelete)
+            },
+        ) { measurables, constraints ->
+            val w = constraints.maxWidth
+            val h = constraints.maxHeight
+            val loose = constraints.copy(minWidth = 0, minHeight = 0)
+            val scrim = measurables[0].measure(constraints)
+            val pill = measurables[1].measure(loose)
+            val menu = measurables[3].measure(loose)
+            val room = (h - top - bottomInset - pill.height - menu.height - 2 * gap).coerceAtLeast(0)
+            val msg = measurables[2].measure(loose.copy(maxHeight = room))
+            // Where the bubble was, pushed just enough to fit the pill above and menu below.
+            val minY = top + pill.height + gap
+            val maxY = (h - bottomInset - menu.height - gap - msg.height).coerceAtLeast(minY)
+            val y = bounds.top.toInt().coerceIn(minY, maxY)
+            val bubbleX = bounds.left.toInt().coerceIn(0, (w - msg.width).coerceAtLeast(0))
+            fun side(width: Int) = if (outgoing) {
+                (bubbleX + msg.width - width).coerceIn(margin, (w - width - margin).coerceAtLeast(margin))
+            } else {
+                bubbleX.coerceIn(margin, (w - width - margin).coerceAtLeast(margin))
+            }
+            layout(w, h) {
+                scrim.place(0, 0)
+                pill.place(side(pill.width), y - gap - pill.height)
+                msg.place(bubbleX, y)
+                menu.place(side(menu.width), y + msg.height + gap)
             }
         }
     }
 }
 
 @Composable
-private fun ActionLabel(
-    text: String,
-    onClick: () -> Unit,
-    color: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.onSurface,
+private fun ReactionPill(onReact: (String) -> Unit, onMoreEmoji: () -> Unit) {
+    Surface(
+        shape = RoundedCornerShape(28.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        shadowElevation = 6.dp,
+    ) {
+        Row(Modifier.padding(horizontal = 6.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+            for (emoji in Reactions.QUICK) {
+                Text(
+                    emoji,
+                    style = MaterialTheme.typography.headlineSmall,
+                    modifier = Modifier
+                        .clip(CircleShape)
+                        .clickable { onReact(emoji) }
+                        .padding(6.dp),
+                )
+            }
+            // The full list. Not the system emoji keyboard: the wire format is an index into
+            // a fixed list, so anything outside it cannot be sent.
+            Box(
+                Modifier.size(40.dp).clip(CircleShape).clickable(onClick = onMoreEmoji),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(painterResource(R.drawable.ic_add_reaction), stringResource(R.string.conv_more_reactions), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+    }
+}
+
+@Composable
+private fun ActionMenu(
+    canMention: Boolean,
+    canResend: Boolean,
+    onReply: () -> Unit,
+    onMention: () -> Unit,
+    onCopy: () -> Unit,
+    onInfo: () -> Unit,
+    onResend: () -> Unit,
+    onDelete: () -> Unit,
 ) {
-    Text(
-        text,
-        style = MaterialTheme.typography.labelLarge,
-        color = color,
-        modifier = Modifier
+    Surface(
+        shape = RoundedCornerShape(20.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        shadowElevation = 6.dp,
+        modifier = Modifier.width(232.dp),
+    ) {
+        Column(Modifier.padding(vertical = 6.dp)) {
+            MenuRow(R.drawable.ic_reply, stringResource(R.string.conv_reply), onReply)
+            // Separate from Reply on purpose: Reply quotes the text being answered, which
+            // costs those bytes out of a ~150-byte frame; Mention costs only the name.
+            if (canMention) MenuRow(R.drawable.ic_alternate_email, stringResource(R.string.conv_mention), onMention)
+            MenuRow(R.drawable.ic_content_copy, stringResource(R.string.copy), onCopy)
+            MenuRow(R.drawable.ic_info, stringResource(R.string.conv_info), onInfo)
+            if (canResend) MenuRow(R.drawable.ic_refresh, stringResource(R.string.conv_resend), onResend)
+            MenuRow(R.drawable.ic_delete, stringResource(R.string.delete), onDelete, destructive = true)
+        }
+    }
+}
+
+@Composable
+private fun MenuRow(@androidx.annotation.DrawableRes icon: Int, label: String, onClick: () -> Unit, destructive: Boolean = false) {
+    val color = if (destructive) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
+    Row(
+        Modifier
+            .fillMaxWidth()
             .clickable(onClick = onClick)
-            .padding(horizontal = 10.dp, vertical = 8.dp),
-    )
+            .padding(horizontal = 18.dp, vertical = 13.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(painterResource(icon), null, tint = color, modifier = Modifier.size(22.dp))
+        Spacer(Modifier.width(16.dp))
+        Text(label, style = MaterialTheme.typography.bodyLarge, color = color)
+    }
 }
 
 /** The `>` lines of a reply, rendered as a quote rather than as text. */

@@ -118,6 +118,7 @@ ICONS = [
     ("ic_reply", "reply", True),
     ("ic_add_reaction", "add_reaction", False),
     ("ic_forward", "forward", True),
+    ("ic_alternate_email", "alternate_email", False),
     ("ic_bluetooth_searching", "bluetooth_searching", False),
     # Message status
     ("ic_done", "done", False),

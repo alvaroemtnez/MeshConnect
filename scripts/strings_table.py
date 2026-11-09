@@ -574,6 +574,7 @@ S = {
 "conv_replying_to": ('Replying to %1$s', 'Respondiendo a %1$s', 'Responent a %1$s'),
 "conv_them": ('them', 'contacto', 'contacte'),
 "conv_reply": ('Reply', 'Responder', 'Respondre'),
+"conv_more_reactions": ("More reactions", "Más reacciones", "Més reaccions"),
 "conv_mention": ('Mention', 'Mencionar', 'Mencionar'),
 "conv_info": ('Info', 'Info', 'Info'),
 "conv_resend": ('Resend', 'Reenviar', 'Reenviar'),

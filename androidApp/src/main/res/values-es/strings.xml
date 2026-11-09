@@ -462,6 +462,7 @@
     <string name="conv_replying_to">Respondiendo a %1$s</string>
     <string name="conv_them">contacto</string>
     <string name="conv_reply">Responder</string>
+    <string name="conv_more_reactions">Más reacciones</string>
     <string name="conv_mention">Mencionar</string>
     <string name="conv_info">Info</string>
     <string name="conv_resend">Reenviar</string>
