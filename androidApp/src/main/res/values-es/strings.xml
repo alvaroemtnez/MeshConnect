@@ -157,6 +157,9 @@
     <string name="link_title">Enlace de radio</string>
     <string name="link_battery">Batería</string>
     <string name="link_connection">Conexión</string>
+    <string name="link_radio">Esta radio</string>
+    <string name="link_radio_values">Ruido %1$d dBm · último RSSI %2$d dBm · último SNR %3$s dB</string>
+    <string name="link_airtime">Tiempo en el aire: enviado %1$s · recibido %2$s</string>
     <string name="link_repeaters">Repetidores oídos directamente</string>
     <string name="link_repeaters_hint">El último salto de cada paquete en inundación que ha recibido tu radio, del más fuerte al más débil. Solo cuentan los últimos 15 minutos.</string>
     <string name="link_no_repeaters">Ningún repetidor oído en los últimos 15 minutos.</string>

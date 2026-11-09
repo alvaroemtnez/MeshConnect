@@ -516,7 +516,7 @@ private fun LinkSheet(vm: MeshCoreViewModel, onDismiss: () -> Unit) {
                     headlineContent = { Text(stringResource(R.string.link_connection)) },
                     supportingContent = {
                         Text(
-                            if (plaintext) it + " · " + stringResource(R.string.status_tcp_plain) else it,
+                            it,
                             color = if (plaintext) MaterialTheme.colorScheme.error else Color.Unspecified,
                         )
                     },
@@ -533,6 +533,35 @@ private fun LinkSheet(vm: MeshCoreViewModel, onDismiss: () -> Unit) {
                     headlineContent = { Text(stringResource(R.string.link_battery)) },
                     supportingContent = { Text(BatteryLevel.label(b.batteryMillivolts)) },
                     trailingContent = { BatteryGlyph(BatteryLevel.percent(b.batteryMillivolts)) },
+                    colors = rows,
+                )
+            }
+            // Live while the sheet is open; firmware before v8 has no stats.
+            var stats by remember { mutableStateOf<io.github.thatsfguy.meshcore.protocol.RadioStats?>(null) }
+            LaunchedEffect(Unit) {
+                while (true) {
+                    stats = vm.radioStats() ?: stats
+                    kotlinx.coroutines.delay(3_000)
+                }
+            }
+            stats?.let { st ->
+                ListItem(
+                    headlineContent = { Text(stringResource(R.string.link_radio)) },
+                    supportingContent = {
+                        Text(
+                            stringResource(
+                                R.string.link_radio_values,
+                                st.noiseFloorDbm,
+                                st.lastRssiDbm,
+                                String.format(java.util.Locale.ROOT, "%.2f", st.lastSnrDb),
+                            ) + "\n" + stringResource(
+                                R.string.link_airtime,
+                                android.text.format.DateUtils.formatElapsedTime(st.txAirSecs),
+                                android.text.format.DateUtils.formatElapsedTime(st.rxAirSecs),
+                            ),
+                            fontFamily = MonoFontFamily,
+                        )
+                    },
                     colors = rows,
                 )
             }

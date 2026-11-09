@@ -183,6 +183,9 @@ class Session:
             self.send(bytes([RESP_SENT, 1]) + struct.pack("<II", ack, 8000))
             if cmd == CMD_SEND_TXT_MSG:
                 threading.Timer(2.5, lambda: self.send(bytes([PUSH_SEND_CONFIRMED]) + struct.pack("<II", ack, 2400))).start()
+        elif cmd == 56 and len(frame) > 1 and frame[1] == 1:  # CMD_GET_STATS, STATS_TYPE_RADIO
+            self.send(bytes([24, 1]) + struct.pack("<hbbII", random.randint(-118, -108),
+                                                    random.randint(-110, -70), random.randint(-40, 40), 1234, 5678))
         elif cmd == CMD_SEND_TRACE_PATH:
             self.trace(frame)
         else:

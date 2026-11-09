@@ -2765,6 +2765,18 @@ class MeshCoreEngine(
         return ok
     }
 
+    /**
+     * The companion radio's noise floor, last RSSI/SNR and airtime
+     * (CMD_GET_STATS, STATS_TYPE_RADIO). Null on firmware without stats
+     * (before v8) or on no answer.
+     */
+    suspend fun radioStats(): io.github.thatsfguy.meshcore.protocol.RadioStats? {
+        val ev = sendAndAwait(io.github.thatsfguy.meshcore.protocol.RadioStats.request(), timeoutMs = 4_000) {
+            (it is DeviceEvent.Stats && it.statsType == Codes.STATS_TYPE_RADIO) || it is DeviceEvent.Err
+        }
+        return (ev as? DeviceEvent.Stats)?.let { io.github.thatsfguy.meshcore.protocol.RadioStats.parse(it.payload) }
+    }
+
     /** Escape hatch for commands without a 1:1 wrapper (e.g. contact
      *  rename via CMD_ADD_UPDATE_CONTACT). Sends and awaits OK. */
     suspend fun sendRaw(frame: ByteArray): Boolean =

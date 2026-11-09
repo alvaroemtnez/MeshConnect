@@ -1309,6 +1309,10 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
         return runCatching { svc.engine.tracePath(tag, path, width) }.getOrNull()
     }
 
+    /** The companion radio's own noise floor and last RSSI/SNR (upstream issue #6). */
+    suspend fun radioStats(): io.github.thatsfguy.meshcore.protocol.RadioStats? =
+        _service.value?.engine?.takeIf { it.isReady }?.let { runCatching { it.radioStats() }.getOrNull() }
+
     /** What a ping or trace sent, and what came back. */
     data class TraceRun(
         val sentHops: List<String>,

@@ -157,6 +157,9 @@
     <string name="link_title">Enllaç de ràdio</string>
     <string name="link_battery">Bateria</string>
     <string name="link_connection">Connexió</string>
+    <string name="link_radio">Esta ràdio</string>
+    <string name="link_radio_values">Soroll %1$d dBm · últim RSSI %2$d dBm · últim SNR %3$s dB</string>
+    <string name="link_airtime">Temps en l\'aire: enviat %1$s · rebut %2$s</string>
     <string name="link_repeaters">Repetidors oïts directament</string>
     <string name="link_repeaters_hint">L\'últim salt de cada paquet en inundació que ha rebut la teua ràdio, del més fort al més feble. Només compten els últims 15 minuts.</string>
     <string name="link_no_repeaters">Cap repetidor oït en els últims 15 minuts.</string>
