@@ -13,8 +13,9 @@ Google Play Services, no analytics, no crash reporting.
 > history up to the fork at [docs/upstream/CHANGELOG-MeshCoreHardened.md](docs/upstream/CHANGELOG-MeshCoreHardened.md).
 > Please report MeshConnect problems here, not upstream.
 
-- Source: <https://code.alvaroedo.io/alvaroemtnez/MeshConnect> (mirrored to GitHub)
-- Licence: [AGPL-3.0](LICENSE), as upstream
+- Source: <https://code.alvaroedo.io/alvaroemtnez/MeshConnect>, mirrored to
+  <https://github.com/alvaroemtnez/MeshCore>
+- Licence: [AGPL-3.0-only](LICENSE), as upstream
 - App id: `io.alvaroedo.meshconnect` — installs alongside MeshCore Hardened, not over it
 
 ## Radios

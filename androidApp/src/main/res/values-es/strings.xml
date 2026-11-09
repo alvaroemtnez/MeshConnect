@@ -184,6 +184,7 @@
     <string name="about_privacy_3">Los canales están ofuscados, no son seguros: AES-ECB con un MAC de 2 bytes, y la clave nunca cambia.</string>
     <string name="about_privacy_4">Las firmas de los anuncios se verifican antes de importar un contacto.</string>
     <string name="about_privacy_5">Los secretos se guardan en el almacén de claves del dispositivo y la base de datos de mensajes está cifrada.</string>
+    <string name="about_this_licence">Licencia de MeshConnect</string>
     <string name="about_licences">Licencias de código abierto</string>
     <string name="about_endorsement">MeshConnect es un proyecto independiente. No está afiliado ni respaldado por el proyecto MeshCore ni por el autor de MeshCore Hardened.</string>
     <plurals name="widget_unread">

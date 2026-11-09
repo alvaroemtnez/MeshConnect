@@ -317,6 +317,7 @@ S = {
     "Los secretos se guardan en el almacén de claves del dispositivo y la base de datos de mensajes está cifrada.",
     "Els secrets es guarden en el magatzem de claus del dispositiu i la base de dades de missatges està xifrada.",
 ),
+"about_this_licence": ("MeshConnect's licence", "Licencia de MeshConnect", "Llicència de MeshConnect"),
 "about_licences": ("Open-source licences", "Licencias de código abierto", "Llicències de codi obert"),
 "about_endorsement": (
     "MeshConnect is an independent project. It is not affiliated with or endorsed by the MeshCore project or the MeshCore Hardened author.",

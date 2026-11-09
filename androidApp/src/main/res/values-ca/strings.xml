@@ -184,6 +184,7 @@
     <string name="about_privacy_3">Els canals estan ofuscats, no són segurs: AES-ECB amb un MAC de 2 bytes, i la clau no canvia mai.</string>
     <string name="about_privacy_4">Les signatures dels anuncis es verifiquen abans d\'importar un contacte.</string>
     <string name="about_privacy_5">Els secrets es guarden en el magatzem de claus del dispositiu i la base de dades de missatges està xifrada.</string>
+    <string name="about_this_licence">Llicència de MeshConnect</string>
     <string name="about_licences">Llicències de codi obert</string>
     <string name="about_endorsement">MeshConnect és un projecte independent. No està afiliat ni avalat pel projecte MeshCore ni per l\'autor de MeshCore Hardened.</string>
     <plurals name="widget_unread">

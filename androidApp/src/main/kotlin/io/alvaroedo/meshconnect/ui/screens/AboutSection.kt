@@ -50,7 +50,7 @@ const val UPSTREAM_URL = "https://github.com/thatSFguy/meshcore-mobile-app"
 private data class Credit(val who: String, val what: Int, val url: String, val terms: String)
 
 private val BASED_ON = listOf(
-    Credit("MeshCore Hardened · thatSFguy", R.string.about_credit_mch, UPSTREAM_URL, "AGPL-3.0"),
+    Credit("MeshCore Hardened · thatSFguy", R.string.about_credit_mch, UPSTREAM_URL, "AGPL-3.0-only"),
     Credit(
         "reticulum-mobile-app · thatSFguy", R.string.about_credit_reticulum,
         "https://github.com/thatSFguy/reticulum-mobile-app", "AGPL-3.0",
@@ -58,16 +58,19 @@ private val BASED_ON = listOf(
     Credit("MeshCore · meshcore-dev", R.string.about_credit_meshcore, "https://github.com/meshcore-dev/MeshCore", "MIT"),
 )
 
+/** (component, licence, bundled text in assets/licences/) — every one is shipped in the APK. */
 private val LIBRARIES = listOf(
-    "Android Jetpack, Jetpack Compose, Material 3, Room" to "Apache-2.0",
-    "Kotlin, kotlinx.coroutines, kotlinx.serialization, kotlinx-datetime" to "Apache-2.0",
-    "SQLCipher for Android" to "BSD-3-Clause",
-    "Bouncy Castle" to "MIT",
-    "ZXing, ZXing Android Embedded" to "Apache-2.0",
-    "MapLibre Native" to "BSD-2-Clause",
-    "Map tiles: OpenFreeMap, OpenMapTiles" to "MIT / BSD-3-Clause, CC-BY 4.0",
-    "Map data © OpenStreetMap contributors" to "ODbL",
-    "Material Symbols" to "Apache-2.0",
+    Triple("Android Jetpack, Jetpack Compose, Material 3, Room, Glance", "Apache-2.0", "apache-2.0.txt"),
+    Triple("Kotlin, kotlinx.coroutines, kotlinx.serialization, kotlinx-datetime", "Apache-2.0", "apache-2.0.txt"),
+    Triple("MapLibre Native · © MapLibre contributors, MapTiler.com, Mapbox", "BSD-2-Clause", "maplibre-native.txt"),
+    Triple("MapLibre gestures · © Mapbox, MapLibre contributors", "BSD-2-Clause", "maplibre-gestures.txt"),
+    Triple("MapLibre GeoJSON and Turf", "Apache-2.0", "apache-2.0.txt"),
+    Triple("SQLCipher for Android · © ZETETIC LLC", "BSD-3-Clause", "sqlcipher.txt"),
+    Triple("Bouncy Castle · © The Legion of the Bouncy Castle Inc.", "MIT", "bouncycastle.txt"),
+    Triple("ZXing, ZXing Android Embedded", "Apache-2.0", "apache-2.0.txt"),
+    Triple("OkHttp, Okio (Square), Gson (Google), Timber (Jake Wharton)", "Apache-2.0", "apache-2.0.txt"),
+    Triple("Material Symbols (Google)", "Apache-2.0", "apache-2.0.txt"),
+    Triple("Map tiles: OpenFreeMap, OpenMapTiles · © OpenStreetMap contributors", "ODbL · CC-BY 4.0", null),
 )
 
 private val PRIVACY = listOf(
@@ -93,6 +96,8 @@ fun AboutScreen(vm: MeshCoreViewModel, nav: NavController) {
         Unit
     }
     var changelog by remember { mutableStateOf(false) }
+    // (title, asset file) of the licence being read, if any.
+    var licence by remember { mutableStateOf<Pair<String, String>?>(null) }
     val version = remember {
         runCatching {
             context.packageManager.getPackageInfo(context.packageName, 0).versionName
@@ -135,7 +140,11 @@ fun AboutScreen(vm: MeshCoreViewModel, nav: NavController) {
                     stringResource(R.string.about_version, version),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                Text("© 2026 Álvaro Edo Martínez · AGPL-3.0", style = MaterialTheme.typography.bodySmall)
+                Text(
+                    "© 2026 Álvaro Edo Martínez\n© thatSFguy and MeshCore Hardened contributors",
+                    style = MaterialTheme.typography.bodySmall,
+                    textAlign = TextAlign.Center,
+                )
                 Text(
                     stringResource(R.string.about_description),
                     Modifier.padding(top = 12.dp),
@@ -192,14 +201,41 @@ fun AboutScreen(vm: MeshCoreViewModel, nav: NavController) {
 
             HorizontalDivider(Modifier.padding(top = 8.dp))
             AboutGroup(stringResource(R.string.about_licences))
-            for ((what, terms) in LIBRARIES) {
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.about_this_licence)) },
+                supportingContent = { Text("AGPL-3.0-only") },
+                leadingContent = { Icon(painterResource(R.drawable.ic_gavel), null) },
+                modifier = Modifier.clickable { licence = "MeshConnect" to "agpl-3.0.txt" },
+                colors = rowColors,
+            )
+            for ((what, terms, file) in LIBRARIES) {
                 ListItem(
                     headlineContent = { Text(what) },
                     supportingContent = { Text(terms) },
+                    modifier = if (file != null) Modifier.clickable { licence = what to file } else Modifier,
                     colors = rowColors,
                 )
             }
         }
+    }
+
+    licence?.let { (title, file) ->
+        val text = remember(file) {
+            runCatching { context.assets.open("licences/$file").bufferedReader().use { it.readText() } }.getOrDefault("")
+        }
+        AlertDialog(
+            onDismissRequest = { licence = null },
+            title = { Text(title, style = MaterialTheme.typography.titleMedium) },
+            text = {
+                Text(
+                    text,
+                    style = MaterialTheme.typography.bodySmall,
+                    fontFamily = io.alvaroedo.meshconnect.ui.theme.MonoFontFamily,
+                    modifier = Modifier.verticalScroll(rememberScrollState()),
+                )
+            },
+            confirmButton = { TextButton(onClick = { licence = null }) { Text(stringResource(R.string.close)) } },
+        )
     }
 
     if (changelog) {
