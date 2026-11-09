@@ -12,7 +12,9 @@ package io.github.thatsfguy.meshcore.protocol
  * ## Where these came from, and what they are not
  *
  * Transcribed from the MeshCore Open reference client's own table
- * (`lib/models/radio_settings.dart`), which is what the local community
+ * (`lib/models/radio_settings.dart`, re-synced 2026-11-09 from `zjs81/meshcore-open`
+ * `main`: USA Philly added, USA/Canada and Arizona at 22 dBm, Arizona SF9 CR4/8,
+ * Off-Grid 869 on 869.495), which is what the local community
  * in each area is actually using. That makes them a good default and
  * NOT a statement of law:
  *
@@ -137,11 +139,12 @@ object RadioPresets {
         P("Russia Voronezh (VOZ)", 868.731, 62.5, 8, 6, 20),
         P("Russia Yekaterinburg (SVX)", 869.046, 62.5, 7, 7, 20),
         P("Switzerland", 869.618, 62.5, 8, 5, 14),
-        P("USA Arizona", 908.205, 62.5, 10, 5, 20),
-        P("USA/Canada", 910.525, 62.5, 7, 5, 20),
+        P("USA Arizona", 908.205, 62.5, 9, 8, 22),
+        P("USA Philly", 902.25, 500.0, 11, 5, 22),
+        P("USA/Canada", 910.525, 62.5, 7, 5, 22),
         P("Vietnam", 920.25, 250.0, 11, 5, 20),
         P("Off-Grid 433", 433.0, 250.0, 11, 8, 20),
-        P("Off-Grid 869", 869.0, 250.0, 11, 8, 14),
+        P("Off-Grid 869", 869.495, 250.0, 11, 8, 14),
         P("Off-Grid 918", 918.0, 250.0, 11, 8, 20),
     )
 

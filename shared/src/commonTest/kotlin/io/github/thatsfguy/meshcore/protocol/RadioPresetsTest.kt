@@ -22,7 +22,7 @@ class RadioPresetsTest {
         assertEquals(62.5, usa.bandwidthKhz)
         assertEquals(7, usa.spreadingFactor)
         assertEquals(5, usa.codingRate)
-        assertEquals(20, usa.txPowerDbm)
+        assertEquals(22, usa.txPowerDbm)
 
         val eu = RadioPresets.byName("EU/UK (Long Range)")!!
         assertEquals(869.525, eu.frequencyMhz)
@@ -39,7 +39,7 @@ class RadioPresetsTest {
 
     @Test
     fun theWholeTableIsPresent() {
-        assertEquals(47, RadioPresets.ALL.size)
+        assertEquals(48, RadioPresets.ALL.size)
         assertEquals(
             RadioPresets.ALL.size,
             RadioPresets.ALL.map { it.name }.distinct().size,
@@ -156,5 +156,21 @@ class RadioPresetsTest {
         val caveat = RadioPresets.REGULATORY_CAVEAT.lowercase()
         assertTrue("not legal advice" in caveat)
         assertTrue("regulated" in caveat)
+    }
+
+    @Test
+    fun matchesMeshCoreOpenAsResyncedOn20261109() {
+        // Pinned against zjs81/meshcore-open lib/models/radio_settings.dart (main, 2026-11-09):
+        // the three rows that had drifted from our earlier transcription.
+        val philly = RadioPresets.byName("USA Philly")!!
+        assertEquals(902_250L, philly.frequencyKhz)
+        assertEquals(500_000L, philly.bandwidthHz)
+        assertEquals(11, philly.spreadingFactor)
+        assertEquals(5, philly.codingRate)
+        assertEquals(22, philly.txPowerDbm)
+        val az = RadioPresets.byName("USA Arizona")!!
+        assertEquals(listOf(9, 8, 22), listOf(az.spreadingFactor, az.codingRate, az.txPowerDbm))
+        assertEquals(869_495L, RadioPresets.byName("Off-Grid 869")!!.frequencyKhz)
+        assertEquals("North America", RadioPresets.region(philly))
     }
 }
