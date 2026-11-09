@@ -1,5 +1,7 @@
 package io.alvaroedo.meshconnect.ui.screens
 
+import io.alvaroedo.meshconnect.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
@@ -223,7 +225,7 @@ fun RepeaterFirmwarePanel(
             .padding(horizontal = 16.dp),
     ) {
         Spacer(Modifier.height(8.dp))
-        Text("Update this node", style = MaterialTheme.typography.titleMedium)
+        Text(stringResource(R.string.ota_title), style = MaterialTheme.typography.titleMedium)
         // The stored record fills what the thread cannot: a `ver` from
         // before the last update-mode entry is deliberately not trusted,
         // and a node in update mode is not asked again.
@@ -232,38 +234,23 @@ fun RepeaterFirmwarePanel(
                 board = identity.board ?: storedContact?.boardName,
                 version = identity.version ?: storedContact?.firmwareVersion,
                 buildDate = null,
-            ).describe() ?: "Asking the node what board it is…",
+            ).describe() ?: stringResource(R.string.ota_asking_board),
         )
         Spacer(Modifier.height(8.dp))
         Text(
-            "Two steps, and only the first one goes over the mesh.\n\n" +
-                "1. `start ota` switches the node's Bluetooth on and makes it advertise " +
-                "for an update. It keeps running and keeps repeating — nothing reboots " +
-                "yet, and the command can be left sent until you get there.\n" +
-                "2. The firmware itself is carried over Bluetooth, from a phone next to " +
-                "the node. There is no path for this over LoRa. Connecting is what " +
-                "reboots it into its bootloader.",
+            stringResource(R.string.ota_steps),
             style = MaterialTheme.typography.bodyMedium,
         )
         Spacer(Modifier.height(12.dp))
-        ExpandableHint("Before you send this to a node you cannot reach") {
+        ExpandableHint(stringResource(R.string.ota_unreachable)) {
             DetailText(
-                "Sending the command is safe: the node carries on repeating with its " +
-                    "Bluetooth switched on, and a node nobody ever reaches is a node " +
-                    "still doing its job. Rebooting it costs a reboot's downtime and no " +
-                    "more.\n\n" +
-                    "The point of no return is later — the moment the transfer starts. " +
-                    "Most stock bootloaders erase the application first, so a node " +
-                    "interrupted after that has nothing to fall back to and waits in " +
-                    "update mode until someone flashes it again. The OTAFIX bootloader " +
-                    "recovers into update mode by itself and is worth putting on over USB " +
-                    "before a node goes up anywhere awkward." +
+                stringResource(R.string.ota_unreachable_detail) +
                     // Named only when the FAQ names it. A board that is
                     // not on that list gets no claim either way — this
                     // is advice about what to put on a node, and being
                     // confidently wrong about it costs the node.
                     if (DfuTuning.hasOtafixBootloader(storedContact?.boardName)) {
-                        "\n\nThere is one for this board: ${DfuTuning.OTAFIX_URL}"
+                        "\n\n" + stringResource(R.string.ota_otafix_board, DfuTuning.OTAFIX_URL)
                     } else {
                         ""
                     },
@@ -272,7 +259,7 @@ fun RepeaterFirmwarePanel(
         Spacer(Modifier.height(16.dp))
 
         if (inUpdateMode) {
-            Text("This node is in update mode", style = MaterialTheme.typography.titleSmall)
+            Text(stringResource(R.string.ota_in_mode), style = MaterialTheme.typography.titleSmall)
             // Always say when it was recorded, and always offer the
             // correction. This is a tracked state, not a reading: nothing
             // reachable from here can see a node that was reflashed over
@@ -281,63 +268,57 @@ fun RepeaterFirmwarePanel(
             // that argues with them.
             val since = storedContact?.updateModeSince ?: 0L
             HintText(
-                "Recorded" +
-                    (if (since > 0) " ${RelativeTime.ago(vm.nowSeconds() - since)}" else "") +
-                    (advertisingMac?.let { ", advertising on $it" } ?: "") +
-                    ". Sending the command again does nothing.",
+                listOfNotNull(
+                    if (since > 0) stringResource(R.string.ota_recorded_ago, relativeAge(since)) else stringResource(R.string.ota_recorded),
+                    advertisingMac?.let { stringResource(R.string.ota_advertising_on, it) },
+                ).joinToString(", ") + ". " + stringResource(R.string.ota_again_nothing),
             )
             Spacer(Modifier.height(12.dp))
-            Button(onClick = { nav.navigate(flashRoute) }) { Text("Flash this node") }
+            Button(onClick = { nav.navigate(flashRoute) }) { Text(stringResource(R.string.ota_flash)) }
             Spacer(Modifier.height(8.dp))
             TextButton(onClick = { vm.setUpdateMode(keyHex, false) }) {
-                Text("It is not in update mode")
+                Text(stringResource(R.string.ota_not_in_mode))
             }
         } else {
             when (val step = entry) {
                 is OtaEntry.Queued -> {
-                    Text("Waiting for the console…", style = MaterialTheme.typography.titleSmall)
+                    Text(stringResource(R.string.ota_wait_console), style = MaterialTheme.typography.titleSmall)
                     HintText(
-                        "The node still owes an answer to the last command. Only one can be " +
-                            "in flight at a time, or there is no telling which reply belongs " +
-                            "to which.",
+                        stringResource(R.string.ota_wait_console_hint),
                     )
                 }
 
                 is OtaEntry.ProvingTheNodeAnswers -> {
-                    Text("Checking the node is there…", style = MaterialTheme.typography.titleSmall)
+                    Text(stringResource(R.string.ota_checking), style = MaterialTheme.typography.titleSmall)
                     HintText(
-                        "Asking it for its firmware version. `start ota` is only sent if it " +
-                            "answers — a node that has stopped listening cannot be told to " +
-                            "stop again.",
+                        stringResource(R.string.ota_checking_hint),
                     )
                 }
 
                 is OtaEntry.AwaitingUpdateMode -> {
-                    Text("Waiting for the node…", style = MaterialTheme.typography.titleSmall)
+                    Text(stringResource(R.string.rs_waiting), style = MaterialTheme.typography.titleSmall)
                     HintText(
-                        "It answered as ${step.version}, and `start ota` has gone out. It is " +
-                            "in update mode once it reports the Bluetooth address it is " +
-                            "advertising on.",
+                        stringResource(R.string.ota_awaiting, step.version),
                     )
                 }
 
                 is OtaEntry.GaveUp -> {
-                    Text("Not in update mode", style = MaterialTheme.typography.titleSmall)
+                    Text(stringResource(R.string.ota_gave_up), style = MaterialTheme.typography.titleSmall)
                     HintText(step.reason)
                     Spacer(Modifier.height(12.dp))
-                    Button(onClick = { entry = OtaEntry.Idle }) { Text("Try again") }
+                    Button(onClick = { entry = OtaEntry.Idle }) { Text(stringResource(R.string.ota_try_again)) }
                 }
 
                 else -> {
                     Button(onClick = { confirming = true }) {
-                        Text("Send `start ota` to this node")
+                        Text(stringResource(R.string.ota_send_btn))
                     }
-                    HintText("The node keeps repeating; it just switches its Bluetooth on.")
+                    HintText(stringResource(R.string.ota_send_hint))
                 }
             }
             Spacer(Modifier.height(12.dp))
             OutlinedButton(onClick = { nav.navigate(flashRoute) }) {
-                Text("It is already in update mode")
+                Text(stringResource(R.string.ota_already))
             }
             // The address is kept whatever the state — it is hardware,
             // and it is what lets a flash pick this node out of
@@ -345,7 +326,7 @@ fun RepeaterFirmwarePanel(
             // here so it is visible that the app still holds it.
             advertisingMac?.let { mac ->
                 Spacer(Modifier.height(16.dp))
-                DetailText("Bluetooth address on file for this node: $mac.")
+                DetailText(stringResource(R.string.ota_mac_on_file, mac))
             }
         }
         Spacer(Modifier.height(32.dp))
@@ -354,14 +335,10 @@ fun RepeaterFirmwarePanel(
     if (confirming) {
         AlertDialog(
             onDismissRequest = { confirming = false },
-            title = { Text("Send `start ota`?") },
+            title = { Text(stringResource(R.string.ota_send_q)) },
             text = {
                 Text(
-                    "The node switches its Bluetooth on and advertises for an update. It " +
-                        "carries on repeating in the meantime.\n\nIt only reboots into " +
-                        "its bootloader when something connects and starts the update — " +
-                        "which has to happen within Bluetooth range of it, not over the " +
-                        "mesh.",
+                    stringResource(R.string.ota_send_detail),
                 )
             },
             confirmButton = {
@@ -375,10 +352,10 @@ fun RepeaterFirmwarePanel(
                     // answer, and only from it.
                     entry = OtaEntry.Queued(System.currentTimeMillis())
                     confirming = false
-                }) { Text("Send") }
+                }) { Text(stringResource(R.string.send)) }
             },
             dismissButton = {
-                TextButton(onClick = { confirming = false }) { Text("Cancel") }
+                TextButton(onClick = { confirming = false }) { Text(stringResource(R.string.cancel)) }
             },
         )
     }
