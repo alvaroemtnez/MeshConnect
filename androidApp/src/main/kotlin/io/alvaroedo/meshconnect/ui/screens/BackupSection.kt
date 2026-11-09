@@ -1,5 +1,7 @@
 package io.alvaroedo.meshconnect.ui.screens
 
+import io.alvaroedo.meshconnect.R
+import androidx.compose.ui.res.stringResource
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
@@ -39,6 +41,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun BackupSection(vm: MeshCoreViewModel) {
     val scope = rememberCoroutineScope()
+    val ctx = androidx.compose.ui.platform.LocalContext.current
     var exportPrompt by remember { mutableStateOf(false) }
     var pendingExport by remember { mutableStateOf<String?>(null) }
     var importPreview by remember { mutableStateOf<ConfigBackup.Parsed?>(null) }
@@ -60,7 +63,7 @@ fun BackupSection(vm: MeshCoreViewModel) {
         scope.launch {
             val parsed = vm.readBackupFile(uri)
             if (parsed == null) {
-                note = "That file isn't a MeshConnect backup (or is from a newer version)."
+                note = ctx.getString(R.string.backup_not_ours)
             } else {
                 importPreview = parsed
             }
@@ -68,12 +71,11 @@ fun BackupSection(vm: MeshCoreViewModel) {
     }
 
     HintText(
-        "A backup is an ordinary file. It leaves the Keystore and every protection this " +
-            "phone gives it, so what goes in is a decision, not a default.",
+        stringResource(R.string.backup_intro),
     )
     ButtonFlowRow {
-        TextButton(onClick = { exportPrompt = true }) { Text("Export configuration…") }
-        TextButton(onClick = { openFile.launch(arrayOf("*/*")) }) { Text("Import configuration…") }
+        TextButton(onClick = { exportPrompt = true }) { Text(stringResource(R.string.backup_export_menu)) }
+        TextButton(onClick = { openFile.launch(arrayOf("*/*")) }) { Text(stringResource(R.string.backup_import_menu)) }
     }
     note?.let { HintText(it) }
 
@@ -86,7 +88,7 @@ fun BackupSection(vm: MeshCoreViewModel) {
                 scope.launch {
                     val text = vm.buildBackup(passphrase)
                     if (text == null) {
-                        note = "Couldn't build the backup."
+                        note = ctx.getString(R.string.backup_build_failed)
                     } else {
                         pendingExport = text
                         createFile.launch(ConfigBackupRepository.suggestedFileName(vm.nowSeconds()))
@@ -123,13 +125,11 @@ private fun ExportDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Export configuration") },
+        title = { Text(stringResource(R.string.backup_export)) },
         text = {
             Column {
                 Text(
-                    "Always included: your settings, region names, and your contact list — " +
-                        "names and public keys. That is a map of who you talk to. Keep the " +
-                        "file somewhere you'd keep that.",
+                    stringResource(R.string.backup_always),
                     style = MaterialTheme.typography.bodySmall,
                 )
                 Spacer(Modifier.height(12.dp))
@@ -139,22 +139,18 @@ private fun ExportDialog(
                         onCheckedChange = { includeSecrets = it },
                         enabled = canEncrypt,
                     )
-                    Text("Include channel keys and passwords")
+                    Text(stringResource(R.string.backup_include_secrets))
                 }
                 if (!canEncrypt) {
                     Text(
-                        "This build has no authenticated cipher available, so an encrypted " +
-                            "backup can't be written. Settings-only export still works.",
+                        stringResource(R.string.backup_no_cipher),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.error,
                     )
                 }
                 if (includeSecrets) {
                     Text(
-                        "These are encrypted with your passphrase and nothing else. Anyone " +
-                            "who has the file and guesses the passphrase can read every " +
-                            "channel you're in and log into every repeater you administer. " +
-                            "There is no recovery if you forget it.",
+                        stringResource(R.string.backup_secrets_warning),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.error,
                     )
@@ -162,7 +158,7 @@ private fun ExportDialog(
                     OutlinedTextField(
                         value = passphrase,
                         onValueChange = { passphrase = it },
-                        label = { Text("Passphrase (min ${ConfigBackup.MIN_PASSPHRASE_LENGTH})") },
+                        label = { Text(stringResource(R.string.backup_passphrase_min, ConfigBackup.MIN_PASSPHRASE_LENGTH)) },
                         singleLine = true,
                         visualTransformation = PasswordVisualTransformation(),
                         modifier = Modifier.fillMaxWidth(),
@@ -170,7 +166,7 @@ private fun ExportDialog(
                     OutlinedTextField(
                         value = confirm,
                         onValueChange = { confirm = it },
-                        label = { Text("Confirm passphrase") },
+                        label = { Text(stringResource(R.string.backup_passphrase_confirm)) },
                         singleLine = true,
                         isError = confirm.isNotEmpty() && confirm != passphrase,
                         visualTransformation = PasswordVisualTransformation(),
@@ -183,9 +179,9 @@ private fun ExportDialog(
             TextButton(
                 onClick = { onExport(if (includeSecrets) passphrase else null) },
                 enabled = !includeSecrets || passphraseOk,
-            ) { Text(if (includeSecrets) "Export with secrets" else "Export settings only") }
+            ) { Text(stringResource(if (includeSecrets) R.string.backup_export_secrets else R.string.backup_export_plain)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
     )
 }
 
@@ -213,38 +209,39 @@ private fun ImportDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Restore from backup") },
+        title = { Text(stringResource(R.string.backup_restore_title)) },
         text = {
             Column {
                 Text(
-                    "Contains ${parsed.plain.settings.size} setting(s), " +
-                        "${parsed.plain.contacts.size} contact(s), " +
-                        "${parsed.plain.channels.size} channel(s), " +
-                        "${parsed.plain.regions.size} region(s)" +
-                        if (parsed.hasSecrets) ", plus an encrypted section." else ".",
+                    stringResource(
+                        if (parsed.hasSecrets) R.string.backup_contains_secrets else R.string.backup_contains,
+                        parsed.plain.settings.size,
+                        parsed.plain.contacts.size,
+                        parsed.plain.channels.size,
+                        parsed.plain.regions.size,
+                    ),
                     style = MaterialTheme.typography.bodySmall,
                 )
                 if (differentRadio) {
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        "This backup was made on a different radio. Restoring contacts or " +
-                            "channels will write them onto the radio connected now.",
+                        stringResource(R.string.backup_other_radio),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.error,
                     )
                 }
                 Spacer(Modifier.height(8.dp))
-                CheckRow("Settings", settings) { settings = it }
-                CheckRow("Regions", regions) { regions = it }
-                CheckRow("Channels (writes to the radio)", channels) { channels = it }
-                CheckRow("Contacts (writes to the radio)", contacts) { contacts = it }
+                CheckRow(stringResource(R.string.backup_settings), settings) { settings = it }
+                CheckRow(stringResource(R.string.backup_regions), regions) { regions = it }
+                CheckRow(stringResource(R.string.backup_channels), channels) { channels = it }
+                CheckRow(stringResource(R.string.backup_contacts), contacts) { contacts = it }
                 if (parsed.hasSecrets) {
-                    CheckRow("Channel keys and passwords", wantSecrets) { wantSecrets = it }
+                    CheckRow(stringResource(R.string.backup_secrets), wantSecrets) { wantSecrets = it }
                     if (wantSecrets) {
                         OutlinedTextField(
                             value = passphrase,
                             onValueChange = { passphrase = it },
-                            label = { Text("Passphrase") },
+                            label = { Text(stringResource(R.string.backup_passphrase)) },
                             singleLine = true,
                             visualTransformation = PasswordVisualTransformation(),
                             modifier = Modifier.fillMaxWidth(),
@@ -254,7 +251,7 @@ private fun ImportDialog(
                 if (channels || contacts) {
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        "Writing to the radio can't be undone from here.",
+                        stringResource(R.string.backup_no_undo),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.error,
                     )
@@ -273,9 +270,9 @@ private fun ImportDialog(
                     ),
                     passphrase.ifBlank { null },
                 )
-            }) { Text("Restore") }
+            }) { Text(stringResource(R.string.backup_restore)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
     )
 }
 

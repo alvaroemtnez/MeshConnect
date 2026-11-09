@@ -1,5 +1,7 @@
 package io.alvaroedo.meshconnect.ui.screens
 
+import io.alvaroedo.meshconnect.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -46,31 +48,27 @@ fun DevicePinSection(vm: MeshCoreViewModel) {
     val context = LocalContext.current
 
     if (engineState != EngineState.Ready) {
-        HintText("Connect to a radio to change its pairing PIN.")
+        HintText(stringResource(R.string.pin_connect))
         return
     }
 
-    Text("Bluetooth pairing PIN", style = MaterialTheme.typography.titleSmall)
+    Text(stringResource(R.string.pin_title), style = MaterialTheme.typography.titleSmall)
     // The node reports its configured PIN in DEVICE_INFO. 0.6.4 claimed
     // this could not be read and showed nothing — the four bytes were
     // simply being skipped by the parser.
-    HintText("Configured: " + DevicePin.describe(deviceInfo?.blePin))
+    HintText(stringResource(R.string.pin_configured, DevicePin.describe(deviceInfo?.blePin)))
     ExpandableHint(
-        "Nodes without a screen ship with ${DevicePin.FACTORY_DEFAULT}, which is public.",
+        stringResource(R.string.pin_default, DevicePin.FACTORY_DEFAULT),
     ) {
         DetailText(
-            "Until it is changed, anyone in Bluetooth range can pair with this radio and " +
-                "read its contacts, messages and settings — the default is the same on every " +
-                "node that has no screen, so it is documentation rather than a secret. " +
-                "The radio cannot be asked what its PIN currently is, so this screen can " +
-                "only set a new one, never show the one in force.",
+            stringResource(R.string.pin_detail),
         )
     }
     Spacer(Modifier.height(8.dp))
     OutlinedTextField(
         value = pin,
         onValueChange = { typed -> pin = typed.filter { it in '0'..'9' }.take(DevicePin.LENGTH) },
-        label = { Text("New PIN (${DevicePin.LENGTH} digits)") },
+        label = { Text(stringResource(R.string.pin_new, DevicePin.LENGTH)) },
         singleLine = true,
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
         supportingText = {
@@ -78,9 +76,9 @@ fun DevicePinSection(vm: MeshCoreViewModel) {
             when {
                 why != null -> Text(why)
                 DevicePin.isUseDefault(pin) ->
-                    Text("Clears the PIN — the node reverts to its built-in default")
+                    Text(stringResource(R.string.pin_clears))
                 DevicePin.isFactoryDefault(pin) ->
-                    Text("That is the factory default — it protects nothing")
+                    Text(stringResource(R.string.pin_factory))
             }
         },
         isError = DevicePin.rejection(pin) != null,
@@ -90,37 +88,22 @@ fun DevicePinSection(vm: MeshCoreViewModel) {
         TextButton(
             onClick = { confirm = true },
             enabled = DevicePin.isAcceptable(pin),
-        ) { Text("Change PIN") }
+        ) { Text(stringResource(R.string.pin_change)) }
     }
 
     if (confirm) {
         AlertDialog(
             onDismissRequest = { confirm = false },
-            title = { Text("Change the pairing PIN?") },
+            title = { Text(stringResource(R.string.pin_change_title)) },
             text = {
                 Text(
                     (
                         if (DevicePin.isUseDefault(pin)) {
-                            "The radio will drop its stored PIN and go back to its " +
-                                "built-in default.\n\n"
+                            stringResource(R.string.pin_will_default)
                         } else {
-                            "The radio will use $pin from now on.\n\n"
+                            stringResource(R.string.pin_will_use, pin)
                         }
-                        ) +
-                        "• It keeps pairing with the OLD pin until the node is " +
-                        "restarted — the firmware picks the active PIN at startup " +
-                        "and setting a new one does not change it. You will be " +
-                        "offered a reboot.\n" +
-                        "• This phone is already paired with the OLD pin, and only " +
-                        "Android can drop that pairing — \"Forget device\" in the system " +
-                        "Bluetooth settings, which is not the same as Remove under Saved " +
-                        "nodes in this app. Until you do it, the phone reconnects on the " +
-                        "old pairing and the change looks like it did nothing.\n" +
-                        "• Every other phone paired with this radio has to do the same.\n" +
-                        "• Nothing can read the PIN back off the radio. If you forget it, " +
-                        "Bluetooth access is gone until you reach the node another way — " +
-                        "USB, or a factory reset that takes its identity with it.\n\n" +
-                        "Write it down before you continue.",
+                        ) + "\n\n" + stringResource(R.string.pin_consequences),
                 )
             },
             confirmButton = {
@@ -129,10 +112,10 @@ fun DevicePinSection(vm: MeshCoreViewModel) {
                     confirm = false
                     pin = ""
                     rebootPrompt = true
-                }) { Text("Change it") }
+                }) { Text(stringResource(R.string.pin_change_it)) }
             },
             dismissButton = {
-                TextButton(onClick = { confirm = false }) { Text("Cancel") }
+                TextButton(onClick = { confirm = false }) { Text(stringResource(R.string.cancel)) }
             },
         )
     }
@@ -140,16 +123,10 @@ fun DevicePinSection(vm: MeshCoreViewModel) {
     if (rebootPrompt) {
         AlertDialog(
             onDismissRequest = { rebootPrompt = false },
-            title = { Text("Reboot to apply it?") },
+            title = { Text(stringResource(R.string.pin_reboot_title)) },
             text = {
                 Text(
-                    "The new PIN is stored, but the radio goes on pairing with the old " +
-                        "one until it restarts.\n\nAfter the reboot, your phone will " +
-                        "still reconnect without asking for the new PIN — Android " +
-                        "remembers the old pairing, and only Android can drop it. To " +
-                        "test the PIN you have to remove the pairing in the system " +
-                        "Bluetooth settings (\"Forget device\" there), which is NOT the " +
-                        "same as Remove under Saved nodes here.",
+                    stringResource(R.string.pin_reboot_body),
                 )
             },
             confirmButton = {
@@ -157,10 +134,10 @@ fun DevicePinSection(vm: MeshCoreViewModel) {
                     vm.rebootRadio()
                     rebootPrompt = false
                     bluetoothPrompt = true
-                }) { Text("Reboot now") }
+                }) { Text(stringResource(R.string.pin_reboot_now)) }
             },
             dismissButton = {
-                TextButton(onClick = { rebootPrompt = false }) { Text("Later") }
+                TextButton(onClick = { rebootPrompt = false }) { Text(stringResource(R.string.pin_later)) }
             },
         )
     }
@@ -168,14 +145,10 @@ fun DevicePinSection(vm: MeshCoreViewModel) {
     if (bluetoothPrompt) {
         AlertDialog(
             onDismissRequest = { bluetoothPrompt = false },
-            title = { Text("Remove the old pairing?") },
+            title = { Text(stringResource(R.string.pin_unpair_title)) },
             text = {
                 Text(
-                    "Android is holding a pairing made with the OLD pin, and an app " +
-                        "cannot delete it. Until you do, this phone reconnects without " +
-                        "being asked for the new PIN — so the change looks like it did " +
-                        "nothing.\n\nIn Bluetooth settings, find this radio and choose " +
-                        "\"Forget device\". The next connection will ask for the new PIN.",
+                    stringResource(R.string.pin_unpair_body),
                 )
             },
             confirmButton = {
@@ -188,10 +161,10 @@ fun DevicePinSection(vm: MeshCoreViewModel) {
                             ).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK),
                         )
                     }
-                }) { Text("Open Bluetooth settings") }
+                }) { Text(stringResource(R.string.pin_open_bt)) }
             },
             dismissButton = {
-                TextButton(onClick = { bluetoothPrompt = false }) { Text("Not now") }
+                TextButton(onClick = { bluetoothPrompt = false }) { Text(stringResource(R.string.pin_not_now)) }
             },
         )
     }
