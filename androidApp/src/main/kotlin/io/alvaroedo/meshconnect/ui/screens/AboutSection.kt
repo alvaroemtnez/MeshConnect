@@ -282,7 +282,17 @@ private val CHANGELOG: List<Pair<String, List<String>>> = listOf(
     "0.1.0" to listOf(
         "First MeshConnect release, forked from MeshCore Hardened 0.10.15.",
         "New name and app id: it installs alongside MeshCore Hardened, with its own database.",
-        "New About screen crediting MeshCore Hardened, the project this is built on.",
+        "Material You colours and icons, edge-to-edge bars, quick transitions and a new icon.",
+        "Spanish and Valencian throughout, following the phone or a per-app language.",
+        "Link meter in the top bar: signal, battery and live radio statistics.",
+        "Search in Chats and Nodes.",
+        "Composer + menu: share contacts, channels and locations, shown as cards.",
+        "Nodes: kind filters, heard list on pull-down, QR scan button.",
+        "MapLibre map that follows light and dark mode.",
+        "Ping and trace a route on the map, coloured by SNR.",
+        "Resizable home-screen widget.",
+        "New About screen with credits and readable licences.",
+        "Long node names no longer wrap the top bar.",
         "Each keystore fallback tier gets its own key generator (upstream PR #10).",
     ),
 )
