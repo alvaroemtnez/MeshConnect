@@ -21,7 +21,7 @@ from strings_table import S, P, A  # noqa: E402
 CATS = {0: ["one", "other"], 1: ["one", "many", "other"], 2: ["one", "many", "other"]}
 DIRS = {0: "values", 1: "values-es", 2: "values-ca"}
 NOTE = {0: "English (default)", 1: "Spanish", 2: "Valencian (Catalan)"}
-UNTRANSLATABLE = {"app_name", "app_name_full"}
+UNTRANSLATABLE = {"app_name", "app_name_full", "map_attribution"}
 
 
 def esc(t: str) -> str:
@@ -35,6 +35,8 @@ def main() -> None:
     for k, v in S.items():
         if len(v) != 3:
             raise SystemExit(f"{k}: needs (en, es, ca)")
+        if k not in UNTRANSLATABLE and not all(v):
+            raise SystemExit(f"{k}: empty translation (list it in UNTRANSLATABLE if it is not translated)")
     root = pathlib.Path(__file__).resolve().parents[1] / "androidApp" / "src" / "main" / "res"
     for i in range(3):
         out = [

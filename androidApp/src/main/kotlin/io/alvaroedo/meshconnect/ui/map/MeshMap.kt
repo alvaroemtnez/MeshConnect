@@ -3,6 +3,7 @@ package io.alvaroedo.meshconnect.ui.map
 import android.content.Context
 import android.graphics.Bitmap
 import androidx.annotation.DrawableRes
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,9 +12,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SmallFloatingActionButton
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -153,8 +156,10 @@ fun MeshMap(
             m.uiSettings.isCompassEnabled = true
             m.uiSettings.isRotateGesturesEnabled = false
             m.uiSettings.isTiltGesturesEnabled = false
-            // Attribution stays: OpenStreetMap's licence requires it.
-            m.uiSettings.isAttributionEnabled = true
+            // OpenStreetMap's licence requires attribution. MapLibre's own (i) button sits
+            // where its logo would be, so with the logo off it floats oddly; the map draws
+            // the credit itself instead (see the label below).
+            m.uiSettings.isAttributionEnabled = false
             initial?.let { m.cameraPosition = it }
             m.addOnMapClickListener { latLng ->
                 val pt = m.projection.toScreenLocation(latLng)
@@ -222,6 +227,18 @@ fun MeshMap(
 
     Box(modifier) {
         AndroidView(factory = { mapView }, modifier = Modifier.matchParentSize())
+        if (tilesEnabled) {
+            Text(
+                stringResource(R.string.map_attribution),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(8.dp)
+                    .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.75f), RoundedCornerShape(6.dp))
+                    .padding(horizontal = 6.dp, vertical = 2.dp),
+            )
+        }
         if (controls) {
             Column(
                 Modifier.align(Alignment.BottomEnd).padding(end = 16.dp, bottom = 32.dp),
