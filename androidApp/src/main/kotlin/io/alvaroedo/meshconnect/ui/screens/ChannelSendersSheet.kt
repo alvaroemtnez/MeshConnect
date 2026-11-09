@@ -1,5 +1,8 @@
 package io.alvaroedo.meshconnect.ui.screens
 
+import io.alvaroedo.meshconnect.R
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -52,22 +55,19 @@ fun ChannelSendersSheet(vm: MeshCoreViewModel, channelIndex: Int, onDismiss: () 
 
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(Modifier.padding(horizontal = 24.dp).padding(bottom = 32.dp)) {
-            Text("Names seen", style = MaterialTheme.typography.headlineSmall)
+            Text(stringResource(R.string.senders_title), style = MaterialTheme.typography.headlineSmall)
             Spacer(Modifier.height(4.dp))
             // The impersonation point is the whole reason this sheet is
             // called "Names seen" and not "Members", so it stays in the
             // one line rather than behind the tap.
             Text(
-                "Anyone with the channel key can post under any name, including one you " +
-                    "recognise.",
+                stringResource(R.string.senders_warning),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.error,
             )
-            ExpandableHint("These are names, not identities.") {
+            ExpandableHint(stringResource(R.string.senders_hint)) {
                 Text(
-                    "A channel message carries a name, not a key, so nothing here can be " +
-                        "verified. The list is built from the messages this phone kept — " +
-                        "it is not a membership list, and it cannot tell you who anyone is.",
+                    stringResource(R.string.senders_detail),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -76,10 +76,9 @@ fun ChannelSendersSheet(vm: MeshCoreViewModel, channelIndex: Int, onDismiss: () 
 
             val list = senders
             when {
-                list == null -> SectionSpinner("Reading history…")
+                list == null -> SectionSpinner(stringResource(R.string.senders_reading))
                 list.isEmpty() -> HintText(
-                    "No inbound messages kept for this channel yet. Retention settings " +
-                        "affect what's here.",
+                    stringResource(R.string.senders_none),
                 )
                 else -> LazyColumn(Modifier.fillMaxWidth().heightIn(max = 400.dp)) {
                     items(list, key = { it.name }) { sender ->
@@ -90,10 +89,7 @@ fun ChannelSendersSheet(vm: MeshCoreViewModel, channelIndex: Int, onDismiss: () 
                             Column(Modifier.weight(1f)) {
                                 Text(sender.name, style = MaterialTheme.typography.bodyLarge)
                                 HintText(
-                                    "${sender.messageCount} message(s) · last " +
-                                        DateFormat.getDateTimeInstance(
-                                            DateFormat.SHORT, DateFormat.SHORT,
-                                        ).format(Date(sender.lastSeenAt)),
+                                    pluralStringResource(R.plurals.senders_count, sender.messageCount, sender.messageCount, DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT).format(Date(sender.lastSeenAt))),
                                 )
                             }
                             // The only action that makes sense on a name:
@@ -101,7 +97,7 @@ fun ChannelSendersSheet(vm: MeshCoreViewModel, channelIndex: Int, onDismiss: () 
                             // there is no identity behind it.
                             TextButton(onClick = {
                                 vm.setChannelNameFiltered(sender.name, true)
-                            }) { Text("Hide") }
+                            }) { Text(stringResource(R.string.heard_hide)) }
                         }
                     }
                 }

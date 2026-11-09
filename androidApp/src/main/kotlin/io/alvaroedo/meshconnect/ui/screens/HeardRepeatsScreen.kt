@@ -1,5 +1,8 @@
 package io.alvaroedo.meshconnect.ui.screens
 
+import io.alvaroedo.meshconnect.R
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import io.github.thatsfguy.meshcore.presentation.RepeatRow
 import io.github.thatsfguy.meshcore.presentation.repeatRows
 import androidx.compose.foundation.layout.Arrangement
@@ -64,12 +67,12 @@ fun HeardRepeatsScreen(vm: MeshCoreViewModel, nav: NavController) {
     Scaffold(
         topBar = {
             AppTopBar(
-                title = "Who repeats me",
+                title = stringResource(R.string.nodes_who_repeats),
                 vm = vm,
                 nav = nav,
                 menuActions = listOf(
-                    MenuAction("Send flood advert") { vm.sendSelfAdvert(flood = true) },
-                    MenuAction("Clear", destructive = true) { vm.clearHeardRepeats() },
+                    MenuAction(stringResource(R.string.chats_advert_flood)) { vm.sendSelfAdvert(flood = true) },
+                    MenuAction(stringResource(R.string.clear), destructive = true) { vm.clearHeardRepeats() },
                 ),
             )
         },
@@ -87,17 +90,15 @@ fun HeardRepeatsScreen(vm: MeshCoreViewModel, nav: NavController) {
                 onClick = { vm.sendSelfAdvert(flood = true) },
                 enabled = connected,
                 modifier = Modifier.fillMaxWidth(),
-            ) { Text("Send a flood advert") }
+            ) { Text(stringResource(R.string.chats_advert_flood)) }
             Spacer(Modifier.height(4.dp))
             Text(
                 if (connected) {
-                    "Repeaters that relay it will appear below as their copies reach this " +
-                        "radio. Give it a minute — an advert has to travel out and come back."
+                    stringResource(R.string.repeats_wait)
                 } else {
                     // An enabled button that cannot work reads as a broken
                     // feature rather than a missing radio.
-                    "Connect a radio first — this measures what the mesh does with your " +
-                        "transmissions, so there has to be one."
+                    stringResource(R.string.repeats_connect)
                 },
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -150,7 +151,7 @@ private fun RepeatCard(row: RepeatRow) {
                         color = MaterialTheme.colorScheme.secondaryContainer,
                     ) {
                         Text(
-                            "Two-way",
+                            stringResource(R.string.repeats_two_way),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSecondaryContainer,
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
@@ -167,7 +168,7 @@ private fun RepeatCard(row: RepeatRow) {
             Spacer(Modifier.height(4.dp))
             Text(
                 buildString {
-                    append("Carried ${row.relayed} of your packet(s)")
+                    append(pluralStringResource(R.plurals.repeats_carried, row.relayed, row.relayed))
                     row.snrText?.let { append(" · $it") }
                     append(" · ${row.ageText}")
                 },

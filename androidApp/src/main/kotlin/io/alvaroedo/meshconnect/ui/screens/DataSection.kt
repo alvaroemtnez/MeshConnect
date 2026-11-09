@@ -1,5 +1,7 @@
 package io.alvaroedo.meshconnect.ui.screens
 
+import io.alvaroedo.meshconnect.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -36,12 +38,10 @@ fun DataSection(vm: MeshCoreViewModel) {
     var purgeConfirm by remember { mutableStateOf(false) }
     var note by remember { mutableStateOf<String?>(null) }
 
-    Text("Message retention", style = MaterialTheme.typography.labelLarge)
-    ExpandableHint("Deletes old messages from this phone only, in every conversation.") {
+    Text(stringResource(R.string.data_retention), style = MaterialTheme.typography.labelLarge)
+    ExpandableHint(stringResource(R.string.data_retention_hint)) {
         DetailText(
-            "Nothing is deleted from anyone else's device. Trimming counts by when a " +
-                "message ARRIVED here, not by the time it claims — a sender's clock " +
-                "shouldn't decide which of your messages survive.",
+            stringResource(R.string.data_retention_detail),
         )
     }
     ChoiceChips(
@@ -63,14 +63,13 @@ fun DataSection(vm: MeshCoreViewModel) {
     note?.let { HintText(it) }
 
     Spacer(Modifier.height(16.dp))
-    Text("Purge local data", style = MaterialTheme.typography.labelLarge)
+    Text(stringResource(R.string.data_purge), style = MaterialTheme.typography.labelLarge)
     HintText(
-        "Deletes this phone's copy of everything. It does NOT touch the radio: its " +
-            "contact list, channel slots and identity are on the device and stay there.",
+        stringResource(R.string.data_purge_hint),
     )
     ButtonFlowRow {
         TextButton(onClick = { purgeConfirm = true }) {
-            Text("Purge local data…", color = MaterialTheme.colorScheme.error)
+            Text(stringResource(R.string.data_purge_menu), color = MaterialTheme.colorScheme.error)
         }
     }
 
@@ -99,43 +98,40 @@ private fun PurgeDialog(onDismiss: () -> Unit, onConfirm: (Boolean) -> Unit) {
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Purge local data") },
+        title = { Text(stringResource(R.string.data_purge)) },
         text = {
             Column {
-                Text("This deletes, from this phone only:", style = MaterialTheme.typography.bodyMedium)
+                Text(stringResource(R.string.data_deletes), style = MaterialTheme.typography.bodyMedium)
                 Spacer(Modifier.height(6.dp))
                 for (line in listOf(
-                    "• Every message, in every conversation",
-                    "• The cached contact list and channel names",
-                    "• Path history and the discovery inbox",
-                    "• Nicknames, pins, mutes, and region labels",
+                    stringResource(R.string.data_del_1),
+                    stringResource(R.string.data_del_2),
+                    stringResource(R.string.data_del_3),
+                    stringResource(R.string.data_del_4),
                 )) {
                     Text(line, style = MaterialTheme.typography.bodySmall)
                 }
                 Spacer(Modifier.height(8.dp))
-                Text("It does NOT delete:", style = MaterialTheme.typography.bodyMedium)
+                Text(stringResource(R.string.data_keeps), style = MaterialTheme.typography.bodyMedium)
                 for (line in listOf(
-                    "• Anything on the radio — contacts, channels and its identity stay",
-                    "• Messages other people received from you",
+                    stringResource(R.string.data_keep_1),
+                    stringResource(R.string.data_keep_2),
                 )) {
                     Text(line, style = MaterialTheme.typography.bodySmall)
                 }
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    "Your message history cannot be recovered — the radio does not keep a " +
-                        "copy to re-sync from.",
+                    stringResource(R.string.data_unrecoverable),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.error,
                 )
                 Spacer(Modifier.height(8.dp))
-                SettingRow("Also forget stored keys and passwords", alsoSecrets) {
+                SettingRow(stringResource(R.string.data_also_secrets), alsoSecrets) {
                     alsoSecrets = it
                 }
                 if (alsoSecrets) {
                     Text(
-                        "Channel PSKs, repeater passwords and the saved identity seed go " +
-                            "too. Channels you have no other copy of the key for become " +
-                            "unreadable.",
+                        stringResource(R.string.data_secrets_detail),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.error,
                     )
@@ -144,7 +140,7 @@ private fun PurgeDialog(onDismiss: () -> Unit, onConfirm: (Boolean) -> Unit) {
                 OutlinedTextField(
                     value = typed,
                     onValueChange = { typed = it },
-                    label = { Text("Type $CONFIRM_WORD to confirm") },
+                    label = { Text(stringResource(R.string.data_type_confirm, CONFIRM_WORD)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -152,10 +148,10 @@ private fun PurgeDialog(onDismiss: () -> Unit, onConfirm: (Boolean) -> Unit) {
         },
         confirmButton = {
             TextButton(onClick = { onConfirm(alsoSecrets) }, enabled = armed) {
-                Text("Purge", color = MaterialTheme.colorScheme.error)
+                Text(stringResource(R.string.data_purge_confirm), color = MaterialTheme.colorScheme.error)
             }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
     )
 }
 

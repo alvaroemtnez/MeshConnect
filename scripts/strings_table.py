@@ -560,6 +560,51 @@ S = {
 "load_older": ('Load older (%1$d more)', 'Cargar anteriores (%1$d más)', 'Carregar anteriors (%1$d més)'),
 
 
+"block_contacts": ('Blocked contacts', 'Contactos bloqueados', 'Contactes blocats'),
+"block_by_key": ("Matched on the public key, so renaming doesn't get around it.", 'Se comprueba por la clave pública, así que cambiar de nombre no lo evita.', 'Es comprova per la clau pública, així que canviar de nom no ho evita.'),
+"block_dropped": ('Their direct messages are dropped as they arrive: not stored and hidden, but never written down at all.', 'Sus mensajes directos se descartan al llegar: no se guardan ocultos, nunca se escriben.', "Els seus missatges directes es descarten en arribar: no es guarden amagats, mai no s'escriuen."),
+"block_none": ('Nobody is blocked. Block someone from their contact sheet.', 'No hay nadie bloqueado. Bloquea a alguien desde su ficha de contacto.', 'No hi ha ningú blocat. Bloca algú des de la seua fitxa de contacte.'),
+"block_not_contact": ('(not in contacts)', '(no está en contactos)', '(no està en contactes)'),
+"block_hidden_names": ('Hidden channel names', 'Nombres ocultos en canales', 'Noms amagats en canals'),
+"block_name_to_hide": ('Sender name to hide', 'Nombre de remitente a ocultar', 'Nom de remitent a amagar'),
+
+"data_retention": ('Message retention', 'Conservación de mensajes', 'Conservació de missatges'),
+"data_retention_hint": ('Deletes old messages from this phone only, in every conversation.', 'Borra los mensajes antiguos solo de este teléfono, en todas las conversaciones.', "Esborra els missatges antics només d'este telèfon, en totes les converses."),
+"data_retention_detail": ("Nothing is deleted from anyone else's device. Trimming counts by when a message ARRIVED here, not by the time it claims: a sender's clock shouldn't decide which of your messages survive.", 'No se borra nada del dispositivo de nadie más. Se cuenta por cuándo LLEGÓ cada mensaje aquí, no por la hora que dice: el reloj de quien envía no debería decidir qué mensajes tuyos se quedan.', "No s'esborra res del dispositiu de ningú més. Es compta per quan va ARRIBAR cada missatge ací, no per l'hora que diu: el rellotge de qui envia no hauria de decidir quins missatges teus es queden."),
+"data_purge": ('Purge local data', 'Borrar los datos locales', 'Esborrar les dades locals'),
+"data_purge_hint": ("Deletes this phone's copy of everything. It does NOT touch the radio: its contact list, channel slots and identity are on the device and stay there.", 'Borra la copia de todo que hay en este teléfono. NO toca la radio: su lista de contactos, canales e identidad están en el dispositivo y se quedan allí.', "Esborra la còpia de tot que hi ha en este telèfon. NO toca la ràdio: la seua llista de contactes, canals i identitat estan en el dispositiu i s'hi queden."),
+"data_purge_menu": ('Purge local data…', 'Borrar los datos locales…', 'Esborrar les dades locals…'),
+"data_deletes": ('This deletes, from this phone only:', 'Esto borra, solo de este teléfono:', "Açò esborra, només d'este telèfon:"),
+"data_del_1": ('• Every message, in every conversation', '• Todos los mensajes, en todas las conversaciones', '• Tots els missatges, en totes les converses'),
+"data_del_2": ('• The cached contact list and channel names', '• La copia de la lista de contactos y los nombres de canales', '• La còpia de la llista de contactes i els noms de canals'),
+"data_del_3": ('• Path history and the discovery inbox', '• El historial de rutas y la bandeja de descubrimiento', "• L'historial de rutes i la safata de descobriment"),
+"data_del_4": ('• Nicknames, pins, mutes and region labels', '• Apodos, fijados, silenciados y etiquetas de región', '• Sobrenoms, fixats, silenciats i etiquetes de regió'),
+"data_keeps": ('It does NOT delete:', 'NO borra:', 'NO esborra:'),
+"data_keep_1": ('• Anything on the radio: contacts, channels and its identity stay', '• Nada de la radio: contactos, canales e identidad se quedan', '• Res de la ràdio: contactes, canals i identitat es queden'),
+"data_keep_2": ('• Messages other people received from you', '• Los mensajes que otros recibieron de ti', '• Els missatges que altres van rebre de tu'),
+"data_unrecoverable": ("Your message history can't be recovered: the radio doesn't keep a copy to re-sync from.", 'Tu historial de mensajes no se puede recuperar: la radio no guarda una copia.', 'El teu historial de missatges no es pot recuperar: la ràdio no en guarda còpia.'),
+"data_also_secrets": ('Also forget stored keys and passwords', 'Olvidar también claves y contraseñas guardadas', 'Oblidar també claus i contrasenyes guardades'),
+"data_secrets_detail": ('Channel keys, repeater passwords and the saved identity seed go too. Channels you have no other copy of the key for become unreadable.', 'También se van las claves de canales, las contraseñas de repetidores y la semilla de identidad guardada. Los canales de los que no tengas otra copia de la clave quedarán ilegibles.', "També se'n van les claus de canals, les contrasenyes de repetidors i la llavor d'identitat guardada. Els canals dels quals no tingues altra còpia de la clau quedaran il·legibles."),
+"data_type_confirm": ('Type %1$s to confirm', 'Escribe %1$s para confirmar', 'Escriu %1$s per a confirmar'),
+"data_purge_confirm": ('Purge', 'Borrar', 'Esborrar'),
+
+"senders_title": ('Names seen', 'Nombres vistos', 'Noms vistos'),
+"senders_warning": ('Anyone with the channel key can post under any name, including one you recognise.', 'Cualquiera con la clave del canal puede escribir con cualquier nombre, incluso uno que conozcas.', 'Qualsevol amb la clau del canal pot escriure amb qualsevol nom, fins i tot un que conegues.'),
+"senders_hint": ('These are names, not identities.', 'Son nombres, no identidades.', 'Són noms, no identitats.'),
+"senders_detail": ("A channel message carries a name, not a key, so nothing here can be verified. The list is built from the messages this phone kept: it isn't a membership list, and it can't tell you who anyone is.", 'Un mensaje de canal lleva un nombre, no una clave, así que nada de esto se puede verificar. La lista sale de los mensajes que guardó este teléfono: no es una lista de miembros ni dice quién es nadie.', "Un missatge de canal porta un nom, no una clau, així que res d'açò es pot verificar. La llista ix dels missatges que va guardar este telèfon: no és una llista de membres ni diu qui és ningú."),
+"senders_reading": ('Reading history…', 'Leyendo el historial…', "Llegint l'historial…"),
+"senders_none": ("No incoming messages kept for this channel yet. Retention settings affect what's here.", 'Aún no hay mensajes recibidos guardados en este canal. Los ajustes de conservación influyen en lo que aparece.', 'Encara no hi ha missatges rebuts guardats en este canal. La configuració de conservació influïx en el que apareix.'),
+
+"preset_title": ('Radio presets', 'Perfiles de radio', 'Perfils de ràdio'),
+"preset_apply_q": ('Apply %1$s?', '¿Aplicar %1$s?', 'Aplicar %1$s?'),
+"preset_apply_to": ('Apply %1$s to %2$s?', '¿Aplicar %1$s a %2$s?', 'Aplicar %1$s a %2$s?'),
+"preset_same_values": ("Every node you talk to must be on these same four values. If they aren't, you won't see errors: you'll see an empty mesh.", 'Todos los nodos con los que hablas deben tener estos mismos cuatro valores. Si no, no verás errores: verás la malla vacía.', 'Tots els nodes amb què parles han de tindre estos mateixos quatre valors. Si no, no voràs errors: voràs la malla buida.'),
+"preset_remote": ('This saves the settings on %1$s; they take effect when it reboots. After that, this radio must be on the same settings to reach %1$s again, or it will need physical access.', 'Esto guarda los ajustes en %1$s; se aplican al reiniciarse. Después, esta radio tendrá que estar en los mismos ajustes para volver a llegar a %1$s, o hará falta acceso físico.', "Açò guarda els ajustos en %1$s; s'apliquen en reiniciar-se. Després, esta ràdio haurà d'estar en els mateixos ajustos per a tornar a arribar a %1$s, o caldrà accés físic."),
+
+"repeats_wait": ('Repeaters that relay it appear below as their copies reach this radio. Give it a minute: an advert has to travel out and come back.', 'Los repetidores que lo retransmitan aparecerán abajo cuando sus copias lleguen a esta radio. Dale un minuto: el anuncio tiene que ir y volver.', "Els repetidors que el retransmeten apareixeran avall quan les seues còpies arriben a esta ràdio. Dona-li un minut: l'anunci ha d'anar i tornar."),
+"repeats_connect": ('Connect a radio first: this measures what the mesh does with your transmissions.', 'Conecta antes una radio: esto mide qué hace la malla con tus transmisiones.', 'Connecta abans una ràdio: açò mesura què fa la malla amb les teues transmissions.'),
+"repeats_two_way": ('Two-way', 'Bidireccional', 'Bidireccional'),
+
 # Chats
 "chats_search_hint": ("Search conversations", "Buscar conversaciones", "Cercar converses"),
 "chats_advert_zero_hop": ("Send advert (0-hop)", "Enviar anuncio (0 saltos)", "Enviar anunci (0 salts)"),
@@ -755,6 +800,10 @@ S = {
 
 # key -> ((one, other) en, (one, other) es, (one, other) ca)
 P = {
+"repeats_carried": (("Carried %1$d of your packets", "Carried %1$d of your packets"), ("Llevó %1$d de tus paquetes", "Llevó %1$d de tus paquetes"), ("Va portar %1$d dels teus paquets", "Va portar %1$d dels teus paquets")),
+
+"senders_count": (("%1$d message · last %2$s", "%1$d messages · last %2$s"), ("%1$d mensaje · último %2$s", "%1$d mensajes · último %2$s"), ("%1$d missatge · últim %2$s", "%1$d missatges · últim %2$s")),
+
 "stale_older": (("Older than %1$d day", "Older than %1$d days"), ("Más de %1$d día", "Más de %1$d días"), ("Més de %1$d dia", "Més de %1$d dies")),
 "stale_kept_fav": (("%1$d favourite", "%1$d favourites"), ("%1$d favorito", "%1$d favoritos"), ("%1$d preferit", "%1$d preferits")),
 "info_delivered_times": (("Delivered %1$d time", "Delivered %1$d times"), ("Entregado %1$d vez", "Entregado %1$d veces"), ("Entregat %1$d vegada", "Entregat %1$d vegades")),

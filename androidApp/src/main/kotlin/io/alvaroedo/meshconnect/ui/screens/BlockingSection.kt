@@ -1,5 +1,7 @@
 package io.alvaroedo.meshconnect.ui.screens
 
+import io.alvaroedo.meshconnect.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -48,15 +50,14 @@ fun BlockingSection(vm: MeshCoreViewModel) {
     val contacts by vm.dbContacts.collectAsState()
     var newName by remember { mutableStateOf("") }
 
-    Text("Blocked contacts", style = MaterialTheme.typography.labelLarge)
-    ExpandableHint("Matched on the public key, so renaming doesn't get around it.") {
+    Text(stringResource(R.string.block_contacts), style = MaterialTheme.typography.labelLarge)
+    ExpandableHint(stringResource(R.string.block_by_key)) {
         DetailText(
-            "Their direct messages are dropped as they arrive — not stored and hidden, " +
-                "but never written down at all.",
+            stringResource(R.string.block_dropped),
         )
     }
     if (blocked.isEmpty()) {
-        HintText("Nobody is blocked. Block someone from their contact sheet.")
+        HintText(stringResource(R.string.block_none))
     } else {
         for (key in blocked) {
             val name = contacts.firstOrNull { it.keyHex == key }?.name
@@ -65,7 +66,7 @@ fun BlockingSection(vm: MeshCoreViewModel) {
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Column(Modifier.weight(1f)) {
-                    Text(name?.ifBlank { null } ?: "(not in contacts)")
+                    Text(name?.ifBlank { null } ?: stringResource(R.string.block_not_contact))
                     Text(
                         key.take(16) + "…",
                         style = MaterialTheme.typography.bodySmall,
@@ -73,13 +74,13 @@ fun BlockingSection(vm: MeshCoreViewModel) {
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                TextButton(onClick = { vm.setBlocked(key, false) }) { Text("Unblock") }
+                TextButton(onClick = { vm.setBlocked(key, false) }) { Text(stringResource(R.string.node_unblock)) }
             }
         }
     }
 
     Spacer(Modifier.height(16.dp))
-    Text("Hidden channel names", style = MaterialTheme.typography.labelLarge)
+    Text(stringResource(R.string.block_hidden_names), style = MaterialTheme.typography.labelLarge)
     // The caveat lives in shared next to the matching code so the two
     // can't drift apart.
     Text(
@@ -91,14 +92,14 @@ fun BlockingSection(vm: MeshCoreViewModel) {
         OutlinedTextField(
             value = newName,
             onValueChange = { newName = it },
-            label = { Text("Sender name to hide") },
+            label = { Text(stringResource(R.string.block_name_to_hide)) },
             singleLine = true,
             modifier = Modifier.weight(1f),
         )
         TextButton(
             onClick = { vm.setChannelNameFiltered(newName.trim(), true); newName = "" },
             enabled = BlockList.canonicalName(newName) != null,
-        ) { Text("Hide") }
+        ) { Text(stringResource(R.string.heard_hide)) }
     }
     for (name in filtered) {
         Row(
@@ -106,7 +107,7 @@ fun BlockingSection(vm: MeshCoreViewModel) {
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(name, Modifier.weight(1f))
-            TextButton(onClick = { vm.setChannelNameFiltered(name, false) }) { Text("Show") }
+            TextButton(onClick = { vm.setChannelNameFiltered(name, false) }) { Text(stringResource(R.string.show)) }
         }
     }
 }

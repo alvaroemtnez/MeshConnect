@@ -1,5 +1,7 @@
 package io.alvaroedo.meshconnect.ui.screens
 
+import io.alvaroedo.meshconnect.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -65,7 +67,7 @@ fun RadioPresetSheet(
 
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(Modifier.padding(horizontal = 24.dp).padding(bottom = 24.dp)) {
-            Text("Radio presets", style = MaterialTheme.typography.headlineSmall)
+            Text(stringResource(R.string.preset_title), style = MaterialTheme.typography.headlineSmall)
             Spacer(Modifier.height(4.dp))
             Text(
                 RadioPresets.REGULATORY_CAVEAT,
@@ -76,7 +78,7 @@ fun RadioPresetSheet(
             SearchField(
                 query = query,
                 onQueryChange = { query = it },
-                label = "Search",
+                label = stringResource(R.string.search),
                 modifier = Modifier.fillMaxWidth(),
             )
             Spacer(Modifier.height(8.dp))
@@ -116,9 +118,9 @@ fun RadioPresetSheet(
             title = {
                 Text(
                     if (targetName == null) {
-                        "Apply ${preset.name}?"
+                        stringResource(R.string.preset_apply_q, preset.name)
                     } else {
-                        "Apply ${preset.name} to $targetName?"
+                        stringResource(R.string.preset_apply_to, preset.name, targetName)
                     },
                 )
             },
@@ -127,8 +129,7 @@ fun RadioPresetSheet(
                     Text(preset.summary(), style = MaterialTheme.typography.bodyMedium)
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        "Every node you talk to must be on these same four values. If " +
-                            "they aren't, you won't see errors — you'll see an empty mesh.",
+                        stringResource(R.string.preset_same_values),
                         style = MaterialTheme.typography.bodySmall,
                     )
                     if (targetName != null) {
@@ -140,10 +141,7 @@ fun RadioPresetSheet(
                         // one-way door is the REBOOT, not this dialog,
                         // which is why the reboot gets its own prompt.
                         Text(
-                            "This saves the settings on $targetName; they take effect when " +
-                                "it reboots. Once it does, this radio must be on the same " +
-                                "settings to reach $targetName again — otherwise it needs " +
-                                "physical access.",
+                            stringResource(R.string.preset_remote, targetName),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.error,
                         )
@@ -161,10 +159,10 @@ fun RadioPresetSheet(
                     onApply?.invoke(preset) ?: vm.applyRadioPreset(preset)
                     confirming = null
                     onDismiss()
-                }) { Text("Apply") }
+                }) { Text(stringResource(R.string.radio_apply)) }
             },
             dismissButton = {
-                TextButton(onClick = { confirming = null }) { Text("Cancel") }
+                TextButton(onClick = { confirming = null }) { Text(stringResource(R.string.cancel)) }
             },
         )
     }
