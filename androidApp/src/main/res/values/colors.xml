@@ -2,6 +2,6 @@
 <resources>
     <!-- Pre-Compose window colour only (launch); matches the generated
          fallback surface. The launcher icon background is the logo seed. -->
-    <color name="window_background">#FFFAF8FE</color>
-    <color name="icon_background">#FF2B5FD9</color>
+    <color name="window_background">#FFF6FAF8</color>
+    <color name="icon_background">#FF0F7B6C</color>
 </resources>

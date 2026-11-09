@@ -13,7 +13,7 @@ from materialyoucolor.dynamiccolor.material_dynamic_colors import MaterialDynami
 from materialyoucolor.hct import Hct
 from materialyoucolor.scheme.scheme_tonal_spot import SchemeTonalSpot
 
-SEED = 0x2B5FD9  # MeshConnect blue (logo concept B, "Mesh bubble")
+SEED = 0x0F7B6C  # MeshConnect teal (logo concept B, "Mesh bubble")
 
 # Roles of androidx.compose.material3.ColorScheme (1.3), in its order.
 ROLES = """primary onPrimary primaryContainer onPrimaryContainer inversePrimary

@@ -1,4 +1,6 @@
-# MeshConnect
+<p align="center"><img src="docs/logo.png" width="128" alt="MeshConnect logo"></p>
+
+<h1 align="center">MeshConnect</h1>
 
 Off-grid encrypted LoRa messaging for **MeshCore** radios, on Android. No servers, no accounts, no
 Google Play Services, no analytics, no crash reporting.
@@ -29,7 +31,7 @@ Requires Android 8.0 (API 26) or newer.
 
 ## Features
 
-Everything MeshCore Hardened does (see [FEATURES.md](FEATURES.md) and [PARITY.md](PARITY.md)):
+Everything MeshCore Hardened does (see [docs/FEATURES.md](docs/FEATURES.md) and [docs/PARITY.md](docs/PARITY.md)):
 direct and channel messages with retries and real delivery ticks, mentions and reactions, the route
 a message took, channels and community QR join, nodes with discovery and a stale-node sweep,
 per-contact routing and traces, a node map with repeater neighbour links, repeater and room
@@ -105,12 +107,16 @@ as notes, on Forgejo and on the GitHub mirror. `versionCode` is `X*10000 + Y*100
 
 ## Project docs
 
-Inherited from upstream and still accurate for the protocol and engine:
-[MESHCORE_PROTOCOL.md](MESHCORE_PROTOCOL.md) (wire spec, with citations),
-[PARITY.md](PARITY.md) (feature plan against the mainstream app),
-[SECURITY.md](SECURITY.md), [SECURITY_REVIEW.md](SECURITY_REVIEW.md),
-[LESSONS.md](LESSONS.md), [REBUILD-PLAYBOOK.md](REBUILD-PLAYBOOK.md). How this fork tracks
-upstream: [FORK.md](FORK.md).
+- [MESHCORE_PROTOCOL.md](MESHCORE_PROTOCOL.md) — the MeshCore wire spec as implemented, with
+  citations into the firmware. Inherited from upstream; code comments cite its sections.
+- [docs/FEATURES.md](docs/FEATURES.md) — the full feature inventory.
+- [docs/PARITY.md](docs/PARITY.md) — the feature surface against the mainstream MeshCore app,
+  and where this app deliberately differs.
+- [FORK.md](FORK.md) — how MeshConnect tracks upstream. [SECURITY.md](SECURITY.md),
+  [CONTRIBUTING.md](CONTRIBUTING.md).
+- [docs/upstream/](docs/upstream/) — MeshCore Hardened's own history and process documents
+  (README, changelog, security review, lessons, rebuild playbook, original scope and reuse
+  plan), kept for provenance.
 
 ## Credits
 

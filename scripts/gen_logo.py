@@ -1,7 +1,9 @@
 """Logo concept B geometry -> SVG path data for the Android vectors (docs/logo.md).
 
-Needs shapely: python3 -m venv /tmp/v && /tmp/v/bin/pip install shapely && /tmp/v/bin/python scripts/gen_logo.py
-Writes the four drawables (launcher foreground and monochrome, two status-bar icons).
+Needs shapely and Pillow:
+    python3 -m venv /tmp/v && /tmp/v/bin/pip install shapely pillow && /tmp/v/bin/python scripts/gen_logo.py
+Writes the four drawables (launcher foreground and monochrome, two status-bar icons) and the
+PNGs in docs/ (repository avatar and README header).
 """
 from shapely.geometry import Point, LineString, Polygon, box
 from shapely.ops import unary_union
@@ -60,11 +62,46 @@ def write(name, size, d, comment):
     print(f"{name}.xml  ({len(d)} chars)")
 
 
+SEED = "#0F7B6C"  # keep in step with scripts/gen_colors.py and res/values/colors.xml
+
+# Glyph size on the 108 dp adaptive grid. Launchers mask to at most the 72 dp centre
+# (Pixel: a 72 dp circle), so 40 dp keeps the mark at ~55% of what is visible, which is
+# where the system's own icons sit. 52 dp read as oversized on a Pixel 9 Pro.
+GLYPH = 40
+
 tray = path(bubble(1))
-g = bubble(52 / 18)
-minx, miny, maxx, maxy = g.bounds
-fg = path(g, 54 - (minx + maxx) / 2, 54 - (miny + maxy) / 2)
+g = bubble(GLYPH / 18)
+# Centre on the area centroid, not the bounding box: the tail hangs below the body, so a
+# bbox-centred bubble sits visibly high in a round mask.
+c = g.centroid
+fg = path(g, 54 - c.x, 54 - c.y)
 write("ic_launcher_foreground", 108, fg, "Launcher foreground: white bubble, mesh cut out to the background.")
 write("ic_launcher_monochrome", 108, fg, "Themed-icon (Android 13+) layer: the launcher tints this silhouette.")
 write("ic_stat_message", 24, tray, "Status-bar icon for messages. The system uses only its alpha channel.")
 write("ic_stat_link", 24, tray, "Status-bar icon for the connection service. Alpha channel only.")
+
+
+def png(out, size, round_mask):
+    """The launcher's visible 72 dp window, rendered at `size` px (4x supersampled)."""
+    from PIL import Image, ImageDraw
+    ss = size * 4
+    k = ss / 72.0
+    img = Image.new("RGBA", (ss, ss), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    if round_mask:
+        d.ellipse([0, 0, ss - 1, ss - 1], fill=SEED)
+    else:
+        d.rectangle([0, 0, ss, ss], fill=SEED)
+    moved = aff.translate(g, 54 - c.x - 18, 54 - c.y - 18)
+    polys = [moved] if moved.geom_type == "Polygon" else list(moved.geoms)
+    for p in polys:
+        d.polygon([(x * k, y * k) for x, y in p.exterior.coords], fill="white")
+        for ring in p.interiors:
+            d.polygon([(x * k, y * k) for x, y in ring.coords], fill=SEED)
+    img.resize((size, size), Image.LANCZOS).save(out)
+    print(out.name)
+
+
+DOCS = Path(__file__).resolve().parents[1] / "docs"
+png(DOCS / "icon.png", 512, round_mask=False)   # repository avatar (hosts crop it themselves)
+png(DOCS / "logo.png", 256, round_mask=True)    # README header
