@@ -1,5 +1,7 @@
 package io.alvaroedo.meshconnect.ui.screens
 
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import io.alvaroedo.meshconnect.R
 import io.github.thatsfguy.meshcore.presentation.AdminSession
 import io.github.thatsfguy.meshcore.util.isPlausiblePosition
@@ -108,23 +110,29 @@ fun RepeaterHubScreen(vm: MeshCoreViewModel, nav: NavController, keyHex: String)
                 title = name,
                 vm = vm,
                 nav = nav,
-                subtitle = repeaterRoleLabel(role),
+                subtitle = stringResource(
+                    when (role) {
+                        NodeRole.Room -> R.string.kind_room
+                        NodeRole.Sensor -> R.string.kind_sensor
+                        else -> R.string.kind_repeater
+                    },
+                ),
                 menuActions = buildList {
                     if (session.signedIn) {
-                        add(MenuAction("Request status") { vm.requestRepeaterStatus(keyHex) })
+                        add(MenuAction(stringResource(R.string.rpt_request_status)) { vm.requestRepeaterStatus(keyHex) })
                     }
                     if (session.isAdmin) {
                         add(
-                            MenuAction("Sync clock from phone") {
+                            MenuAction(stringResource(R.string.rpt_sync_clock)) {
                                 vm.sendCli(keyHex, "time ${System.currentTimeMillis() / 1000}")
                             },
                         )
                     }
                     if (session.signedIn) {
-                        add(MenuAction("Sign out") { vm.signOutOfNode(keyHex) })
+                        add(MenuAction(stringResource(R.string.rpt_sign_out)) { vm.signOutOfNode(keyHex) })
                     }
                     add(
-                        MenuAction("Forget saved password", destructive = true) {
+                        MenuAction(stringResource(R.string.rpt_forget_password), destructive = true) {
                             vm.forgetLoginPassword(keyHex)
                         },
                     )
@@ -154,8 +162,8 @@ fun RepeaterHubScreen(vm: MeshCoreViewModel, nav: NavController, keyHex: String)
 
             SectionLabel(
                 when (session) {
-                    AdminSession.Admin -> "Management tools"
-                    else -> "Read-only tools"
+                    AdminSession.Admin -> stringResource(R.string.rpt_tools_admin)
+                    else -> stringResource(R.string.rpt_tools_guest)
                 },
             )
 
@@ -215,10 +223,9 @@ private fun IdentityCard(
                     val info = PathCodec.decodePathLen(it)
                     Text(
                         when {
-                            info.isFlood -> "Flood — no stored path"
-                            info.hops == 0 -> "Direct"
-                            info.hops == 1 -> "1 hop away"
-                            else -> "${info.hops} hops away"
+                            info.isFlood -> stringResource(R.string.path_flood)
+                            info.hops == 0 -> stringResource(R.string.path_direct)
+                            else -> pluralStringResource(R.plurals.hops, info.hops, info.hops)
                         },
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -294,16 +301,16 @@ private fun GuestQueriesCard(vm: MeshCoreViewModel, keyHex: String) {
     ) {
         Column(Modifier.padding(16.dp)) {
             QueryRow(
-                title = "Owner",
-                idle = "Owner text and firmware version",
+                title = stringResource(R.string.rpt_owner),
+                idle = stringResource(R.string.rpt_owner_idle),
                 ask = owner,
                 onAsk = { ownerAsks++ },
             ) { reply ->
                 if (reply == null) {
-                    NoAnswerText("No answer — out of range, or firmware too old to report it.")
+                    NoAnswerText(stringResource(R.string.rpt_owner_none))
                 } else {
                     Text(
-                        reply.ownerInfo.ifEmpty { "No owner info set" },
+                        reply.ownerInfo.ifEmpty { stringResource(R.string.rpt_owner_empty) },
                         style = MaterialTheme.typography.bodyMedium,
                         color = if (reply.ownerInfo.isEmpty()) {
                             MaterialTheme.colorScheme.onSurfaceVariant
@@ -312,7 +319,7 @@ private fun GuestQueriesCard(vm: MeshCoreViewModel, keyHex: String) {
                         },
                     )
                     Text(
-                        "Firmware ${reply.firmwareVersion}",
+                        stringResource(R.string.rpt_firmware, reply.firmwareVersion),
                         style = MaterialTheme.typography.bodySmall,
                         fontFamily = FontFamily.Monospace,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -321,19 +328,17 @@ private fun GuestQueriesCard(vm: MeshCoreViewModel, keyHex: String) {
             }
             Spacer(Modifier.height(12.dp))
             QueryRow(
-                title = "Regions",
-                idle = "Which regions it floods",
+                title = stringResource(R.string.backup_regions),
+                idle = stringResource(R.string.rpt_regions_idle),
                 ask = regions,
                 onAsk = { regionAsks++ },
             ) { outcome ->
                 when (outcome) {
                     FloodRegionsAsk.NoRoute -> NoAnswerText(
-                        "Not asked — no direct route to this node is stored, and it " +
-                            "only answers a direct request.",
+                        stringResource(R.string.rpt_regions_noroute),
                     )
                     FloodRegionsAsk.NoAnswer -> NoAnswerText(
-                        "No answer — out of range, or asked too often " +
-                            "(it answers 4 anonymous requests per 3 minutes).",
+                        stringResource(R.string.rpt_regions_none),
                     )
                     is FloodRegionsAsk.Answered -> {
                         Text(
@@ -341,7 +346,7 @@ private fun GuestQueriesCard(vm: MeshCoreViewModel, keyHex: String) {
                             style = MaterialTheme.typography.bodyMedium,
                         )
                         Text(
-                            "Regions it doesn't flood aren't shared. The full setup needs an admin.",
+                            stringResource(R.string.rpt_regions_partial),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -370,13 +375,13 @@ private fun <T> QueryRow(
         Column(Modifier.weight(1f)) {
             when (ask) {
                 Ask.NotAsked -> NoAnswerText(idle)
-                Ask.Asking -> NoAnswerText("Asking the node…")
+                Ask.Asking -> NoAnswerText(stringResource(R.string.mapnode_asking))
                 is Ask.Done -> answer(ask.result)
             }
         }
         if (ask !is Ask.Asking) {
             TextButton(onClick = onAsk) {
-                Text(if (ask is Ask.NotAsked) "Ask the node" else "Ask again")
+                Text(stringResource(if (ask is Ask.NotAsked) R.string.rpt_ask else R.string.rpt_ask_again))
             }
         }
     }
@@ -439,9 +444,9 @@ private fun HubTileRow(tile: HubTile, onClick: () -> Unit) {
             tint = MaterialTheme.colorScheme.primary,
         )
         Column(Modifier.weight(1f)) {
-            Text(tile.title, style = MaterialTheme.typography.bodyLarge)
+            Text(hubTileTitle(tile.route, tile.title), style = MaterialTheme.typography.bodyLarge)
             Text(
-                tile.subtitle,
+                hubTileSubtitle(tile.route, tile.subtitle),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -461,4 +466,29 @@ private fun hubTileIcon(route: String): Int = when (route) {
     "identity" -> R.drawable.ic_lock
     "console" -> R.drawable.ic_send
     else -> R.drawable.ic_list
+}
+
+/** Translated hub tile text; the tiles and their gating stay upstream's (RepeaterHubModel). */
+@Composable
+private fun hubTileTitle(route: String, fallback: String): String = when (route) {
+    "status" -> stringResource(R.string.rpt_tile_status)
+    "settings" -> stringResource(R.string.rpt_tile_settings)
+    "regions" -> stringResource(R.string.backup_regions)
+    "identity" -> stringResource(R.string.hub_identity)
+    "console" -> stringResource(R.string.rpt_tile_console)
+    "firmware" -> stringResource(R.string.hub_firmware)
+    "help" -> stringResource(R.string.rpt_tile_help)
+    else -> fallback
+}
+
+@Composable
+private fun hubTileSubtitle(route: String, fallback: String): String = when (route) {
+    "status" -> stringResource(R.string.rpt_tile_status_sub)
+    "settings" -> stringResource(R.string.rpt_tile_settings_sub)
+    "regions" -> stringResource(R.string.rpt_tile_regions_sub)
+    "identity" -> stringResource(R.string.rpt_tile_identity_sub)
+    "console" -> stringResource(R.string.rpt_tile_console_sub)
+    "firmware" -> stringResource(R.string.rpt_tile_firmware_sub)
+    "help" -> stringResource(R.string.rpt_tile_help_sub)
+    else -> fallback
 }
