@@ -1,5 +1,7 @@
 package io.alvaroedo.meshconnect.ui.screens
 
+import io.alvaroedo.meshconnect.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -51,18 +53,16 @@ fun RegionsSection(vm: MeshCoreViewModel) {
 
     // "Not privacy" stays in the summary: a user who reads only the
     // first line must not come away thinking a region hides anything.
-    ExpandableHint("Restricts which repeaters flood a message onward — routing, not privacy.") {
+    ExpandableHint(stringResource(R.string.reg_hint)) {
         DetailText(
-            "Anyone who can hear the traffic can still read it exactly as before. " +
-                "Names are lowercase letters, digits and hyphens.",
+            stringResource(R.string.reg_detail),
         )
     }
 
     stuck?.let {
         Spacer(Modifier.height(4.dp))
         Text(
-            "The radio may still be scoped to region $it — restoring the scope after a send " +
-                "failed. Reconnect, or set the flood scope below, before sending again.",
+            stringResource(R.string.reg_stuck, it),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.error,
         )
@@ -73,7 +73,7 @@ fun RegionsSection(vm: MeshCoreViewModel) {
         OutlinedTextField(
             value = newRegion,
             onValueChange = { newRegion = it },
-            label = { Text("Region name (e.g. bayarea)") },
+            label = { Text(stringResource(R.string.reg_name)) },
             singleLine = true,
             isError = newRegion.isNotBlank() && !Regions.isValid(newRegion),
             modifier = Modifier.weight(1f),
@@ -81,7 +81,7 @@ fun RegionsSection(vm: MeshCoreViewModel) {
         TextButton(
             onClick = { vm.addRegion(newRegion); newRegion = "" },
             enabled = Regions.isValid(newRegion),
-        ) { Text("Add") }
+        ) { Text(stringResource(R.string.add)) }
     }
 
     ButtonFlowRow {
@@ -94,13 +94,13 @@ fun RegionsSection(vm: MeshCoreViewModel) {
                 }
             },
             enabled = !discovering,
-        ) { Text("Discover from repeaters…") }
+        ) { Text(stringResource(R.string.reg_discover)) }
     }
-    if (discovering) SectionSpinner("Asking nearby repeaters…")
+    if (discovering) SectionSpinner(stringResource(R.string.reg_asking))
 
     Spacer(Modifier.height(4.dp))
     if (regions.isEmpty()) {
-        HintText("No regions yet. Add one above, or discover what nearby repeaters know.")
+        HintText(stringResource(R.string.reg_none))
     } else {
         for (region in regions) {
             val usedBy = channelRegions.filterValues { it == region }.keys.sorted()
@@ -114,12 +114,12 @@ fun RegionsSection(vm: MeshCoreViewModel) {
                     Text("• $region", style = MaterialTheme.typography.bodyLarge)
                     if (usedBy.isNotEmpty()) {
                         HintText(
-                            "Used by channel " + usedBy.joinToString(", ") { it.toString() },
+                            stringResource(R.string.reg_used_by, usedBy.joinToString(", ") { it.toString() }),
                         )
                     }
                 }
                 TextButton(onClick = { confirmDelete = region }) {
-                    Text("Remove", color = MaterialTheme.colorScheme.error)
+                    Text(stringResource(R.string.node_remove_confirm), color = MaterialTheme.colorScheme.error)
                 }
             }
         }
@@ -129,29 +129,26 @@ fun RegionsSection(vm: MeshCoreViewModel) {
         val usedBy = channelRegions.filterValues { it == region }.keys.sorted()
         AlertDialog(
             onDismissRequest = { confirmDelete = null },
-            title = { Text("Forget region $region?") },
+            title = { Text(stringResource(R.string.reg_forget_title, region)) },
             text = {
                 Text(
                     if (usedBy.isEmpty()) {
-                        "The name is removed from this phone. Nothing changes on the radio " +
-                            "or on any repeater."
+                        stringResource(R.string.reg_forget_plain)
                     } else {
                         // Silently leaving a channel pointed at a deleted
                         // region would keep scoping its traffic to a name
                         // the user believes is gone.
-                        "Channel " + usedBy.joinToString(", ") { it.toString() } +
-                            " will go back to the app-wide flood scope. Nothing " +
-                            "changes on the radio or on any repeater."
+                        stringResource(R.string.reg_forget_used, usedBy.joinToString(", ") { it.toString() })
                     },
                 )
             },
             confirmButton = {
                 TextButton(onClick = { vm.removeRegion(region); confirmDelete = null }) {
-                    Text("Forget", color = MaterialTheme.colorScheme.error)
+                    Text(stringResource(R.string.reg_forget), color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
-                TextButton(onClick = { confirmDelete = null }) { Text("Cancel") }
+                TextButton(onClick = { confirmDelete = null }) { Text(stringResource(R.string.cancel)) }
             },
         )
     }
@@ -180,7 +177,7 @@ private fun DiscoveredRegionsDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Regions heard") },
+        title = { Text(stringResource(R.string.reg_heard)) },
         text = {
             Column {
                 val found = result.names
@@ -188,21 +185,16 @@ private fun DiscoveredRegionsDialog(
                     Text(
                         when {
                             result.asked == 0 ->
-                                "No repeater answered the discovery broadcast, so there was " +
-                                    "nobody to ask. Nothing may be in range."
+                                stringResource(R.string.reg_heard_nobody)
                             result.answered > 0 ->
-                                "${result.answered} of ${result.asked} repeater(s) answered, " +
-                                    "and none of them uses named regions — they carry the " +
-                                    "global scope only. There is nothing to add."
+                                stringResource(R.string.reg_heard_global, result.answered, result.asked)
                             else ->
-                                "Asked ${result.asked} repeater(s); none replied. They may be " +
-                                    "out of range, or running firmware without region support."
+                                stringResource(R.string.reg_heard_silent, result.asked)
                         },
                     )
                 } else {
                     Text(
-                        "Names reported by nearby repeaters. Nothing about them is " +
-                            "authenticated — add the ones you recognise.",
+                        stringResource(R.string.reg_heard_found),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -214,16 +206,16 @@ private fun DiscoveredRegionsDialog(
                         ) {
                             Text("• $region", Modifier.weight(1f))
                             if (region in known) {
-                                HintText("added")
+                                HintText(stringResource(R.string.reg_added))
                             } else {
-                                TextButton(onClick = { onAdd(region) }) { Text("Add") }
+                                TextButton(onClick = { onAdd(region) }) { Text(stringResource(R.string.add)) }
                             }
                         }
                     }
                 }
             }
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("Done") } },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.setup_done)) } },
     )
 }
 
@@ -238,22 +230,20 @@ fun ChannelRegionPicker(vm: MeshCoreViewModel, channelIndex: Int) {
     val channelRegions by vm.channelRegions.collectAsState()
     val current = channelRegions[channelIndex]
 
-    Text("Region (flood scope)", style = MaterialTheme.typography.labelLarge)
+    Text(stringResource(R.string.reg_channel_title), style = MaterialTheme.typography.labelLarge)
     if (regions.isEmpty()) {
-        HintText("No regions defined. Add one in Settings → Mesh policies → Regions.")
+        HintText(stringResource(R.string.reg_channel_none))
         return
     }
     HintText(
         if (current == null) {
-            "No channel region: messages use the app-wide flood scope " +
-                "(Settings → Mesh policies)."
+            stringResource(R.string.reg_channel_global)
         } else {
-            "Messages on this channel are sent scoped to region $current. This " +
-                "changes which repeaters carry them, not who can read them."
+            stringResource(R.string.reg_channel_scoped, current)
         },
     )
     ChoiceChips(
-        options = listOf("None") + regions,
+        options = listOf(stringResource(R.string.reg_none_option)) + regions,
         selected = if (current == null) 0 else regions.indexOf(current) + 1,
     ) { index ->
         vm.setChannelRegion(channelIndex, if (index == 0) null else regions[index - 1])
