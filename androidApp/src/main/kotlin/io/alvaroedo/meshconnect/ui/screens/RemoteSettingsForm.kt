@@ -1,5 +1,7 @@
 package io.alvaroedo.meshconnect.ui.screens
 
+import io.alvaroedo.meshconnect.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.LaunchedEffect
@@ -70,6 +72,7 @@ fun RemoteSettingsForm(
     role: NodeRole,
     isAdmin: Boolean = true,
 ) {
+    val ctx = androidx.compose.ui.platform.LocalContext.current
     val scope = rememberCoroutineScope()
     val engineState by vm.engineState.collectAsState()
     val isReady = engineState == EngineState.Ready
@@ -110,7 +113,7 @@ fun RemoteSettingsForm(
             is io.github.thatsfguy.meshcore.protocol.ShareUri.Decoded.RadioConfig ->
                 scannedConfig = d
             is io.github.thatsfguy.meshcore.protocol.ShareUri.Decoded.UnsupportedVersion ->
-                scanError = "That settings code needs a newer version of the app (v${d.version})."
+                scanError = ctx.getString(R.string.scan_newer_app, d.version.toString())
             else ->
                 vm.importScannedCode(text)
         }
@@ -192,18 +195,18 @@ fun RemoteSettingsForm(
             .padding(horizontal = 16.dp),
     ) {
         if (!isReady) {
-            HintText("Connect to your radio to administer this node.")
+            HintText(stringResource(R.string.rsf_connect))
         }
         if (!isAdmin) {
             HintText(
                 // Not "values can be fetched": every `get` here is CLI, and
                 // the node runs CLI text from admins only (MyMesh.cpp:689).
-                "Not signed in as admin — this node will not answer these queries.",
+                stringResource(R.string.rsf_not_admin),
             )
         }
 
         RemoteSection(
-            title = "Basic",
+            title = stringResource(R.string.rsf_basic),
             isReady = isReady,
             fetchIds = listOf(CliIds.NAME, CliIds.OWNER_INFO),
             fetch = ::fetch,
@@ -220,12 +223,12 @@ fun RemoteSettingsForm(
             send = ::send,
             clearDirty = { listOf(CliIds.NAME, CliIds.OWNER_INFO).forEach { dirty[it] = false } },
         ) {
-            SettingsTextField("Name", values[CliIds.NAME].orEmpty()) { edit(CliIds.NAME, it) }
-            SettingsTextField("Owner info", values[CliIds.OWNER_INFO].orEmpty()) { edit(CliIds.OWNER_INFO, it) }
+            SettingsTextField(stringResource(R.string.rr_name), values[CliIds.NAME].orEmpty()) { edit(CliIds.NAME, it) }
+            SettingsTextField(stringResource(R.string.rsf_owner), values[CliIds.OWNER_INFO].orEmpty()) { edit(CliIds.OWNER_INFO, it) }
         }
 
         RemoteSection(
-            title = "Radio",
+            title = stringResource(R.string.hub_radio),
             isReady = isReady,
             fetchIds = listOf(CliIds.RADIO, CliIds.TX, CliIds.PATH_HASH_MODE),
             fetch = ::fetch,
@@ -250,7 +253,7 @@ fun RemoteSettingsForm(
                         // Same as the preset path: the node writes these
                         // and keeps running on the old ones until it
                         // restarts. Typing them by hand is no different.
-                        pendingReboot = "The radio settings you saved"
+                        pendingReboot = ctx.getString(R.string.rsf_saved_radio)
                     }
                     values[CliIds.TX]?.trim()?.toIntOrNull()?.let {
                         if (dirty[CliIds.TX] == true) add("set tx $it")
@@ -269,25 +272,25 @@ fun RemoteSettingsForm(
                     .forEach { dirty[it] = false }
             },
         ) {
-            HintText("Parameters must match your mesh or the node goes deaf.")
+            HintText(stringResource(R.string.radio_must_match))
             if (isAdmin) {
                 ButtonFlowRow {
                     TextButton(
                         enabled = isReady,
                         onClick = { presetSheet = true },
-                    ) { Text("Use a regional preset…") }
+                    ) { Text(stringResource(R.string.setup_pick_preset)) }
                     TextButton(
                         enabled = isReady,
-                        onClick = { scanLauncher.launch(meshScanOptions("Scan a mesh settings QR")) },
-                    ) { Text("Scan settings QR…") }
+                        onClick = { scanLauncher.launch(meshScanOptions(ctx.getString(R.string.radio_scan_prompt))) },
+                    ) { Text(stringResource(R.string.radio_scan)) }
                 }
             }
             Row {
                 SettingsTextField(
-                    "Freq (MHz)", values[CliFormFields.RADIO_FREQ].orEmpty(), Modifier.weight(1.2f),
+                    stringResource(R.string.radio_freq), values[CliFormFields.RADIO_FREQ].orEmpty(), Modifier.weight(1.2f),
                 ) { edit(CliFormFields.RADIO_FREQ, it) }
                 Spacer(Modifier.width(6.dp))
-                SettingsTextField("BW (kHz)", values[CliFormFields.RADIO_BW].orEmpty(), Modifier.weight(1f)) {
+                SettingsTextField(stringResource(R.string.radio_bw), values[CliFormFields.RADIO_BW].orEmpty(), Modifier.weight(1f)) {
                     edit(CliFormFields.RADIO_BW, it)
                 }
             }
@@ -300,7 +303,7 @@ fun RemoteSettingsForm(
                     edit(CliFormFields.RADIO_CR, it)
                 }
                 Spacer(Modifier.width(6.dp))
-                SettingsTextField("TX (dBm)", values[CliIds.TX].orEmpty(), Modifier.weight(1f)) {
+                SettingsTextField(stringResource(R.string.rsf_tx), values[CliIds.TX].orEmpty(), Modifier.weight(1f)) {
                     edit(CliIds.TX, it)
                 }
             }
@@ -309,8 +312,8 @@ fun RemoteSettingsForm(
             // chips ARE the committed value, and a chip that shows a
             // selection the node has not been told about is a lie.
             Spacer(Modifier.height(8.dp))
-            Text("On-air path hash width", style = MaterialTheme.typography.labelLarge)
-            HintText("Bytes per hop in packet paths. Every node on the mesh must match.")
+            Text(stringResource(R.string.pol_hash_width), style = MaterialTheme.typography.labelLarge)
+            HintText(stringResource(R.string.rsf_hash_hint))
             // Blank until the node answers `get path.hash.mode` — the
             // width is mesh truth and guessing a default would show a
             // selection nobody chose. -1 selects nothing.
@@ -325,12 +328,12 @@ fun RemoteSettingsForm(
                 scope.launch { vm.cliQuery(keyHex, "set ${CliIds.PATH_HASH_MODE} $mode") }
             }
             if (hashMode == null) {
-                HintText("Fetch to read the node's current width.")
+                HintText(stringResource(R.string.rsf_hash_fetch))
             }
         }
 
         RemoteSection(
-            title = "Position",
+            title = stringResource(R.string.rsf_position),
             isReady = isReady,
             fetchIds = listOf(CliIds.LAT, CliIds.LON),
             fetch = ::fetch,
@@ -349,18 +352,18 @@ fun RemoteSettingsForm(
             clearDirty = { listOf(CliIds.LAT, CliIds.LON).forEach { dirty[it] = false } },
         ) {
             Row {
-                SettingsTextField("Latitude", values[CliIds.LAT].orEmpty(), Modifier.weight(1f)) {
+                SettingsTextField(stringResource(R.string.rsf_lat), values[CliIds.LAT].orEmpty(), Modifier.weight(1f)) {
                     edit(CliIds.LAT, it)
                 }
                 Spacer(Modifier.width(6.dp))
-                SettingsTextField("Longitude", values[CliIds.LON].orEmpty(), Modifier.weight(1f)) {
+                SettingsTextField(stringResource(R.string.rsf_lon), values[CliIds.LON].orEmpty(), Modifier.weight(1f)) {
                     edit(CliIds.LON, it)
                 }
             }
         }
 
         RemoteSection(
-            title = "Adverts",
+            title = stringResource(R.string.rsf_adverts),
             isReady = isReady,
             fetchIds = listOf(CliIds.ADVERT_INTERVAL, CliIds.FLOOD_ADVERT_INTERVAL),
             fetch = ::fetch,
@@ -387,18 +390,18 @@ fun RemoteSettingsForm(
                 TextButton(onClick = {
                     scope.launch {
                         vm.cliQuery(keyHex, CliIds.ADVERT)
-                        setStatus("Advert sent")
+                        setStatus(ctx.getString(R.string.rsf_advert_sent))
                     }
-                }) { Text("Send advert now") }
+                }) { Text(stringResource(R.string.rsf_advert_now)) }
             },
         ) {
             Row {
                 SettingsTextField(
-                    "Zero-hop (mins)", values[CliIds.ADVERT_INTERVAL].orEmpty(), Modifier.weight(1f),
+                    stringResource(R.string.rsf_zero_hop), values[CliIds.ADVERT_INTERVAL].orEmpty(), Modifier.weight(1f),
                 ) { edit(CliIds.ADVERT_INTERVAL, it) }
                 Spacer(Modifier.width(6.dp))
                 SettingsTextField(
-                    "Flood (hours)", values[CliIds.FLOOD_ADVERT_INTERVAL].orEmpty(), Modifier.weight(1f),
+                    stringResource(R.string.rsf_flood_hours), values[CliIds.FLOOD_ADVERT_INTERVAL].orEmpty(), Modifier.weight(1f),
                 ) { edit(CliIds.FLOOD_ADVERT_INTERVAL, it) }
             }
         }
@@ -409,7 +412,7 @@ fun RemoteSettingsForm(
         // server that doubles as a repeater is configured here too.
         if (role != NodeRole.Companion) {
             RemoteSection(
-                title = "Packet forwarding",
+                title = stringResource(R.string.rsf_forwarding),
                 isReady = isReady,
                 fetchIds = listOf(
                     CliIds.REPEAT,
@@ -446,32 +449,32 @@ fun RemoteSettingsForm(
                 },
             ) {
                 SettingRow(
-                    "Repeat (forward packets)",
+                    stringResource(R.string.rsf_repeat),
                     CliReplies.isTruthy(values[CliIds.REPEAT].orEmpty()),
                 ) { applySwitch(CliIds.REPEAT, it) }
                 Row {
                     SettingsTextField(
-                        "Flood max hops", values[CliIds.FLOOD_MAX].orEmpty(), Modifier.weight(1f),
+                        stringResource(R.string.rsf_flood_max), values[CliIds.FLOOD_MAX].orEmpty(), Modifier.weight(1f),
                     ) { edit(CliIds.FLOOD_MAX, it) }
                     Spacer(Modifier.width(6.dp))
-                    SettingsTextField("RX delay", values[CliIds.RXDELAY].orEmpty(), Modifier.weight(1f)) {
+                    SettingsTextField(stringResource(R.string.rsf_rx_delay), values[CliIds.RXDELAY].orEmpty(), Modifier.weight(1f)) {
                         edit(CliIds.RXDELAY, it)
                     }
                 }
                 Row {
-                    SettingsTextField("TX delay", values[CliIds.TXDELAY].orEmpty(), Modifier.weight(1f)) {
+                    SettingsTextField(stringResource(R.string.rsf_tx_delay), values[CliIds.TXDELAY].orEmpty(), Modifier.weight(1f)) {
                         edit(CliIds.TXDELAY, it)
                     }
                     Spacer(Modifier.width(6.dp))
                     SettingsTextField(
-                        "Direct TX delay", values[CliIds.DIRECT_TXDELAY].orEmpty(), Modifier.weight(1f),
+                        stringResource(R.string.rsf_direct_delay), values[CliIds.DIRECT_TXDELAY].orEmpty(), Modifier.weight(1f),
                     ) { edit(CliIds.DIRECT_TXDELAY, it) }
                 }
             }
         }
 
         RemoteSection(
-            title = "Access & security",
+            title = stringResource(R.string.rsf_access),
             isReady = isReady,
             fetchIds = if (role == NodeRole.Room) listOf(CliIds.ALLOW_READ_ONLY) else emptyList(),
             fetch = ::fetch,
@@ -495,23 +498,23 @@ fun RemoteSettingsForm(
         ) {
             if (role == NodeRole.Room) {
                 SettingRow(
-                    "Allow read-only (guest) logins",
+                    stringResource(R.string.rsf_allow_guest),
                     CliReplies.isTruthy(values[CliIds.ALLOW_READ_ONLY].orEmpty()),
                 ) { applySwitch(CliIds.ALLOW_READ_ONLY, it) }
             }
             // Passwords are write-only — blank fields that only send
             // when filled.
             SettingsTextField(
-                "New admin password", values[CliFormFields.PASSWORD_NEW].orEmpty(), sensitive = true,
+                stringResource(R.string.rsf_new_admin_pw), values[CliFormFields.PASSWORD_NEW].orEmpty(), sensitive = true,
             ) { values[CliFormFields.PASSWORD_NEW] = it }
             SettingsTextField(
-                "New guest password", values[CliFormFields.GUEST_PASSWORD_NEW].orEmpty(), sensitive = true,
+                stringResource(R.string.rsf_new_guest_pw), values[CliFormFields.GUEST_PASSWORD_NEW].orEmpty(), sensitive = true,
             ) { values[CliFormFields.GUEST_PASSWORD_NEW] = it }
-            HintText("Passwords are never read back from the node and stay out of the log.")
+            HintText(stringResource(R.string.rsf_pw_hint))
         }
 
         RemoteSection(
-            title = "Advanced",
+            title = stringResource(R.string.rsf_advanced),
             isReady = isReady,
             fetchIds = listOf(
                 CliIds.RADIO_RXGAIN,
@@ -543,7 +546,7 @@ fun RemoteSettingsForm(
             },
         ) {
             SettingRow(
-                "Multi-acks (redundant ACKs)",
+                stringResource(R.string.pol_multiacks),
                 CliReplies.isTruthy(values[CliIds.MULTI_ACKS].orEmpty()),
             ) {
                 applySwitch(
@@ -554,20 +557,20 @@ fun RemoteSettingsForm(
             // RX gain is a BOOLEAN in firmware (LNA boost on/off), not a
             // numeric gain value — a text field here would send garbage.
             SettingRow(
-                "RX gain boost (LNA)",
+                stringResource(R.string.rsf_rx_gain),
                 CliReplies.isTruthy(values[CliIds.RADIO_RXGAIN].orEmpty()),
             ) { applySwitch(CliIds.RADIO_RXGAIN, it) }
             Row {
                 SettingsTextField(
-                    "Duty cycle %", values[CliIds.DUTYCYCLE].orEmpty().trimEnd('%'), Modifier.weight(1f),
+                    stringResource(R.string.rsf_duty), values[CliIds.DUTYCYCLE].orEmpty().trimEnd('%'), Modifier.weight(1f),
                 ) { edit(CliIds.DUTYCYCLE, it) }
                 Spacer(Modifier.width(6.dp))
                 SettingsTextField(
-                    "Int. thresh", values[CliIds.INT_THRESH].orEmpty(), Modifier.weight(1f),
+                    stringResource(R.string.rsf_int_thresh), values[CliIds.INT_THRESH].orEmpty(), Modifier.weight(1f),
                 ) { edit(CliIds.INT_THRESH, it) }
             }
             // loop.detect is an enumerated mode, not free text.
-            Text("Loop detection", style = MaterialTheme.typography.labelMedium)
+            Text(stringResource(R.string.rsf_loop), style = MaterialTheme.typography.labelMedium)
             val loopModes = CliValues.LOOP_DETECT_MODES
             // An unrecognised reply selects nothing rather than falsely
             // showing "off".
@@ -581,22 +584,22 @@ fun RemoteSettingsForm(
                 scope.launch { vm.cliQuery(keyHex, "set loop.detect ${loopModes[i]}") }
             }
             if (loopSelected < 0 && !values[CliIds.LOOP_DETECT].isNullOrBlank()) {
-                HintText("Node reported an unrecognised mode: ${values[CliIds.LOOP_DETECT]}")
+                HintText(stringResource(R.string.rsf_loop_unknown, values[CliIds.LOOP_DETECT].orEmpty()))
             }
         }
 
-        ExpandableSection("Maintenance") {
-            HintText("Replies appear in the Console tab.")
+        ExpandableSection(stringResource(R.string.rsf_maintenance)) {
+            HintText(stringResource(R.string.rsf_console_hint))
             ButtonFlowRow {
                 for ((label, command) in buildList {
-                    add("Clock" to CliIds.CLOCK)
-                    add("Clock sync" to "clock sync")
-                    add("Version" to CliIds.VER)
-                    add("Board" to CliIds.BOARD)
-                    if (role == NodeRole.Repeater) add("Neighbors" to CliIds.NEIGHBORS)
-                    add("ACL" to "get acl")
-                    add("Log start" to "log start")
-                    add("Log stop" to "log stop")
+                    add(stringResource(R.string.rsf_m_clock) to CliIds.CLOCK)
+                    add(stringResource(R.string.rsf_m_clock_sync) to "clock sync")
+                    add(stringResource(R.string.rsf_m_version) to CliIds.VER)
+                    add(stringResource(R.string.rsf_m_board) to CliIds.BOARD)
+                    if (role == NodeRole.Repeater) add(stringResource(R.string.rs_neighbours) to CliIds.NEIGHBORS)
+                    add(stringResource(R.string.rsf_m_acl) to "get acl")
+                    add(stringResource(R.string.rsf_m_log_start) to "log start")
+                    add(stringResource(R.string.rsf_m_log_stop) to "log stop")
                 }) {
                     TextButton(onClick = { scope.launch { vm.cliQuery(keyHex, command) } }) {
                         Text(label)
@@ -605,11 +608,11 @@ fun RemoteSettingsForm(
             }
             if (isAdmin) ButtonFlowRow {
                 for ((label, command) in listOf(
-                    "Reboot" to CliIds.REBOOT,
-                    "Clear stats" to "clear stats",
-                    "Log erase" to "log erase",
-                    "Factory erase" to CliIds.ERASE,
-                    "Start OTA" to "start ota",
+                    stringResource(R.string.rsf_m_reboot) to CliIds.REBOOT,
+                    stringResource(R.string.rsf_m_clear_stats) to "clear stats",
+                    stringResource(R.string.rsf_m_log_erase) to "log erase",
+                    stringResource(R.string.rsf_m_factory) to CliIds.ERASE,
+                    stringResource(R.string.rsf_m_ota) to "start ota",
                 )) {
                     TextButton(onClick = { confirmAction = label to command }) {
                         Text(label, color = MaterialTheme.colorScheme.error)
@@ -658,9 +661,9 @@ fun RemoteSettingsForm(
     scanError?.let { message ->
         AlertDialog(
             onDismissRequest = { scanError = null },
-            title = { Text("Can't use that code") },
+            title = { Text(stringResource(R.string.scan_cant_use)) },
             text = { Text(message) },
-            confirmButton = { TextButton(onClick = { scanError = null }) { Text("OK") } },
+            confirmButton = { TextButton(onClick = { scanError = null }) { Text(stringResource(R.string.ok)) } },
         )
     }
 
@@ -698,12 +701,12 @@ fun RemoteSettingsForm(
         val nothingToDo = read != null && read.radioSame && changes == null
         AlertDialog(
             onDismissRequest = { scannedConfig = null },
-            title = { Text("Apply these settings to $node?") },
+            title = { Text(stringResource(R.string.rsf_apply_q, node)) },
             text = {
                 // Scrolls: the tree and the list of changes add a row each.
                 Column(Modifier.verticalScroll(rememberScrollState())) {
                     Text(
-                        config.name.ifBlank { "(unnamed mesh)" },
+                        config.name.ifBlank { stringResource(R.string.rsf_unnamed_mesh) },
                         style = MaterialTheme.typography.titleMedium,
                     )
                     Spacer(Modifier.height(4.dp))
@@ -713,31 +716,27 @@ fun RemoteSettingsForm(
                         read == null -> Row(verticalAlignment = Alignment.CenterVertically) {
                             CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
                             Spacer(Modifier.width(8.dp))
-                            Text("Checking what $node has now…", style = MaterialTheme.typography.bodySmall)
+                            Text(stringResource(R.string.rsf_checking, node), style = MaterialTheme.typography.bodySmall)
                         }
                         read.radioSame -> Text(
-                            "$node already runs these radio settings, so they won't be sent " +
-                                "again and it doesn't need a reboot.",
+                            stringResource(R.string.rsf_radio_same, node),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.primary,
                         )
                         else -> Text(
-                            "This is a remote node. The settings save now and take effect when " +
-                                "$node reboots; after that this radio must be on the same " +
-                                "settings to reach it again.",
+                            stringResource(R.string.rsf_remote_node, node),
                             style = MaterialTheme.typography.bodySmall,
                         )
                     }
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        "Anyone can make one of these codes; nothing in it is signed. " +
-                            io.github.thatsfguy.meshcore.protocol.RadioPresets.REGULATORY_CAVEAT,
+                        stringResource(R.string.scan_unsigned) + " " + stringResource(R.string.regulatory_caveat),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.error,
                     )
                     if (tree.isNotEmpty()) {
                         Spacer(Modifier.height(12.dp))
-                        Text("Regions", style = MaterialTheme.typography.titleSmall)
+                        Text(stringResource(R.string.backup_regions), style = MaterialTheme.typography.titleSmall)
                         config.regionHeadline()?.let {
                             Text(it, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
                         }
@@ -754,7 +753,7 @@ fun RemoteSettingsForm(
                                 if (name == config.region) {
                                     Spacer(Modifier.width(8.dp))
                                     Text(
-                                        "default",
+                                        stringResource(R.string.rr_tag_default),
                                         style = MaterialTheme.typography.labelMedium,
                                         color = MaterialTheme.colorScheme.primary,
                                     )
@@ -765,12 +764,10 @@ fun RemoteSettingsForm(
                         val small = MaterialTheme.typography.bodySmall
                         when (val plan = read?.plan) {
                             null -> if (read != null) {
-                                Text("This code's regions can't be written to a node.", style = small)
+                                Text(stringResource(R.string.rsf_regions_unwritable), style = small)
                             }
                             ScannedSettingsPlan.RegionPlan.AlreadyApplied -> Text(
-                                "$node already has these regions" +
-                                    (config.region?.let { " and #$it as its default" } ?: "") +
-                                    ". Nothing to send.",
+                                config.region?.let { stringResource(R.string.rsf_regions_same_default, node, it) } ?: stringResource(R.string.rsf_regions_same, node),
                                 style = small,
                                 color = MaterialTheme.colorScheme.primary,
                             )
@@ -787,30 +784,26 @@ fun RemoteSettingsForm(
                                 ) {
                                     Checkbox(checked = writeRegions, onCheckedChange = null)
                                     Spacer(Modifier.width(8.dp))
-                                    Text("Also update $node's regions:")
+                                    Text(stringResource(R.string.rsf_also_regions, node))
                                 }
                                 for (line in ScannedSettingsPlan.describe(plan)) {
                                     Text("• $line", style = small, modifier = Modifier.padding(start = 12.dp))
                                 }
                                 Text(
-                                    "Regions this code doesn't name are left alone, and untagged " +
-                                        "traffic isn't changed. Takes effect at once, without a " +
-                                        "reboot. Needs repeater firmware 1.16 or newer.",
+                                    stringResource(R.string.rsf_regions_note),
                                     style = small,
                                 )
                             }
                             ScannedSettingsPlan.RegionPlan.Unreadable -> Text(
-                                "Couldn't read $node's current regions, so they can't be checked " +
-                                    "and won't be written. Cancel and scan again, or use Regions.",
+                                stringResource(R.string.rsf_regions_unreadable, node),
                                 style = small,
                             )
                             ScannedSettingsPlan.RegionPlan.TooManyToRead -> Text(
-                                "$node holds more regions than one reply shows, so these can't be " +
-                                    "checked here; add them under Regions.",
+                                stringResource(R.string.rsf_regions_too_many, node),
                                 style = small,
                             )
                             ScannedSettingsPlan.RegionPlan.TooLong -> Text(
-                                "Too long to write in one node command; add these under Regions.",
+                                stringResource(R.string.rsf_regions_too_long),
                                 style = small,
                             )
                         }
@@ -849,26 +842,28 @@ fun RemoteSettingsForm(
                             for (command in regionCommands) {
                                 val reply = vm.cliQuery(keyHex, command)
                                 if (RegionAdmin.treeStepRefused(reply)) {
-                                    refused = "$node didn't take `$command`: " +
-                                        (reply?.trim()?.let { r ->
-                                            if (r.contains("??")) "$r (it needs firmware 1.16 or newer)" else r
-                                        } ?: "no reply")
+                                    refused = ctx.getString(
+                                        R.string.rsf_step_refused, node, command,
+                                        reply?.trim()?.let { r ->
+                                            if (r.contains("??")) ctx.getString(R.string.rsf_needs_116, r) else r
+                                        } ?: ctx.getString(R.string.clock_no_answer),
+                                    )
                                     break
                                 }
                             }
-                            vm.transientMessage.value = refused ?: "Regions updated on $node"
+                            vm.transientMessage.value = refused ?: ctx.getString(R.string.rsf_regions_updated, node)
                         }
-                        if (!state.radioSame) pendingReboot = c.name.ifBlank { "The scanned settings" }
+                        if (!state.radioSame) pendingReboot = c.name.ifBlank { ctx.getString(R.string.rsf_scanned_settings) }
                     }
                 }) {
                     Text(
-                        if (nothingToDo) "Close" else "Apply",
+                        stringResource(if (nothingToDo) R.string.close else R.string.rr_apply),
                         color = if (nothingToDo) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
                     )
                 }
             },
             dismissButton = {
-                if (!nothingToDo) TextButton(onClick = { scannedConfig = null }) { Text("Cancel") }
+                if (!nothingToDo) TextButton(onClick = { scannedConfig = null }) { Text(stringResource(R.string.cancel)) }
             },
         )
     }
@@ -877,19 +872,16 @@ fun RemoteSettingsForm(
         val node = contact?.name?.ifBlank { null } ?: keyHex.take(12)
         AlertDialog(
             onDismissRequest = { pendingReboot = null },
-            title = { Text("Reboot $node to apply?") },
+            title = { Text(stringResource(R.string.rsf_reboot_q, node)) },
             text = {
                 Column {
                     Text(
-                        "$what is saved on $node, but the node is still running on its old " +
-                            "radio settings. It applies them when it restarts.",
+                        stringResource(R.string.rsf_reboot_body, node, what),
                         style = MaterialTheme.typography.bodyMedium,
                     )
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        "After the reboot this radio must be on the same settings to reach " +
-                            "$node again. If they do not match, you will need physical " +
-                            "access to the node.",
+                        stringResource(R.string.rsf_reboot_warn, node),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.error,
                     )
@@ -899,11 +891,11 @@ fun RemoteSettingsForm(
                 TextButton(onClick = {
                     scope.launch { vm.cliQuery(keyHex, CliIds.REBOOT) }
                     pendingReboot = null
-                    vm.transientMessage.value = "Reboot sent to $node"
-                }) { Text("Reboot now", color = MaterialTheme.colorScheme.error) }
+                    vm.transientMessage.value = ctx.getString(R.string.rsf_reboot_sent, node)
+                }) { Text(stringResource(R.string.rsf_reboot_now), color = MaterialTheme.colorScheme.error) }
             },
             dismissButton = {
-                TextButton(onClick = { pendingReboot = null }) { Text("Later") }
+                TextButton(onClick = { pendingReboot = null }) { Text(stringResource(R.string.rsf_later)) }
             },
         )
     }
@@ -912,15 +904,15 @@ fun RemoteSettingsForm(
         AlertDialog(
             onDismissRequest = { confirmAction = null },
             title = { Text(label) },
-            text = { Text("This action is destructive or hard to undo. Send \"$command\"?") },
+            text = { Text(stringResource(R.string.rsf_destructive, command)) },
             confirmButton = {
                 TextButton(onClick = {
                     scope.launch { vm.cliQuery(keyHex, command) }
                     confirmAction = null
-                }) { Text("Send", color = MaterialTheme.colorScheme.error) }
+                }) { Text(stringResource(R.string.send), color = MaterialTheme.colorScheme.error) }
             },
             dismissButton = {
-                TextButton(onClick = { confirmAction = null }) { Text("Cancel") }
+                TextButton(onClick = { confirmAction = null }) { Text(stringResource(R.string.cancel)) }
             },
         )
     }
@@ -945,6 +937,7 @@ private fun RemoteSection(
     content: @Composable () -> Unit,
 ) {
     ExpandableSection(title) {
+        val ctx = androidx.compose.ui.platform.LocalContext.current
         val scope = rememberCoroutineScope()
         var status by remember { mutableStateOf<String?>(null) }
         var busy by remember { mutableStateOf(false) }
@@ -953,7 +946,7 @@ private fun RemoteSection(
             enabled = isReady && fetchIds.isNotEmpty(),
             query = {
                 val ok = fetch(fetchIds)
-                status = if (ok > 0) null else "No reply — connected and logged in?"
+                status = if (ok > 0) null else ctx.getString(R.string.rs_no_reply)
             },
         ) {
             content()
@@ -966,11 +959,11 @@ private fun RemoteSection(
                             busy = true
                             status = null
                             val ok = fetch(fetchIds)
-                            status = if (ok > 0) "Refreshed $ok value(s)" else "No reply"
+                            status = if (ok > 0) ctx.resources.getQuantityString(R.plurals.rsf_refreshed, ok, ok) else ctx.getString(R.string.clock_no_answer)
                             busy = false
                         }
                     },
-                ) { Text("Refresh") }
+                ) { Text(stringResource(R.string.rsf_refresh)) }
                 TextButton(
                     enabled = saveEnabled && !busy,
                     onClick = {
@@ -980,17 +973,17 @@ private fun RemoteSection(
                             val commands = buildSaves()
                             val ok = send(commands)
                             status = when {
-                                commands.isEmpty() -> "Nothing valid to save"
-                                ok == commands.size -> "Saved"
-                                else -> "Saved $ok/${commands.size} — check Console"
+                                commands.isEmpty() -> ctx.getString(R.string.rsf_nothing_valid)
+                                ok == commands.size -> ctx.getString(R.string.rr_saved)
+                                else -> ctx.getString(R.string.rsf_saved_partial, ok, commands.size)
                             }
                             if (ok == commands.size) clearDirty()
                             busy = false
                         }
                     },
-                ) { Text("Save") }
+                ) { Text(stringResource(R.string.rsf_save)) }
             }
-            if (busy) SectionSpinner("Talking to node…")
+            if (busy) SectionSpinner(stringResource(R.string.id_talking))
             status?.let {
                 Text(
                     it,

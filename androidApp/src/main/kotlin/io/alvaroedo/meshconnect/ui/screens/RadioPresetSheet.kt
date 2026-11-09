@@ -70,7 +70,7 @@ fun RadioPresetSheet(
             Text(stringResource(R.string.preset_title), style = MaterialTheme.typography.headlineSmall)
             Spacer(Modifier.height(4.dp))
             Text(
-                RadioPresets.REGULATORY_CAVEAT,
+                stringResource(R.string.regulatory_caveat),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.error,
             )
@@ -148,7 +148,7 @@ fun RadioPresetSheet(
                     }
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        RadioPresets.REGULATORY_CAVEAT,
+                        stringResource(R.string.regulatory_caveat),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.error,
                     )

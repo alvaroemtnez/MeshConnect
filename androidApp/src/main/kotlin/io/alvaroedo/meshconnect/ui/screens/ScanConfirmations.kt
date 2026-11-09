@@ -153,7 +153,7 @@ fun ScanConfirmations(vm: MeshCoreViewModel) {
                     Spacer(Modifier.height(8.dp))
                     Text(
                         "Anyone can make one of these codes; nothing in it is signed. " +
-                            io.github.thatsfguy.meshcore.protocol.RadioPresets.REGULATORY_CAVEAT,
+                            stringResource(R.string.regulatory_caveat),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.error,
                     )
