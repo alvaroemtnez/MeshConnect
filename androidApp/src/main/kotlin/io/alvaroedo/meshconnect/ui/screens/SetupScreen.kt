@@ -92,7 +92,7 @@ fun SetupScreen(vm: MeshCoreViewModel, onDone: () -> Unit) {
             detail = stringResource(R.string.setup_name_detail),
         ) {
             if (!connected) {
-                HintText("Connect a radio first.")
+                HintText(stringResource(R.string.setup_connect_first))
             } else {
                 OutlinedTextField(
                     value = name,
@@ -121,7 +121,7 @@ fun SetupScreen(vm: MeshCoreViewModel, onDone: () -> Unit) {
             },
         ) {
             if (!connected) {
-                HintText("Connect a radio first.")
+                HintText(stringResource(R.string.setup_connect_first))
             } else {
                 ButtonFlowRow {
                     TextButton(onClick = { presetSheet = true }) { Text(stringResource(R.string.setup_pick_preset)) }

@@ -1001,6 +1001,19 @@
     <string name="rsf_nothing_valid">Res vàlid per a guardar</string>
     <string name="rsf_saved_partial">Guardats %1$d/%2$d; revisa la consola</string>
     <string name="rsf_save">Guardar</string>
+    <string name="scan_retunes">Açò torna a sintonitzar la teua ràdio. Si els valors són incorrectes no veuràs errors; veuràs una malla buida.</string>
+    <string name="scan_region">Regió</string>
+    <string name="scan_set_region">Posar la regió d\'este telèfon en:</string>
+    <string name="scan_also_region">Posar també la regió d\'este telèfon en #%1$s</string>
+    <string name="scan_region_effect">Els teus missatges només viatjaran per repetidors que porten #%1$s. Canvia-ho després en Polítiques de malla → Regions.</string>
+    <string name="scan_bad_tree">També llista les regions «%1$s», que no és una llista que esta aplicació puga usar (fins a %2$d noms vàlids, sense repetir, inclosa la per defecte), així que s\'ignora.</string>
+    <string name="scan_bad_region">També nomena la regió «%1$s», que no és un nom vàlid (minúscules, dígits i guions), així que no s\'aplicarà.</string>
+    <string name="setup_connect_first">Connecta primer una ràdio.</string>
+    <string name="stale_removing">Eliminant…</string>
+    <string name="stale_nothing">Res a eliminar</string>
+    <string name="drift_none">cap, els rellotges coincidixen</string>
+    <string name="drift_ahead" formatted="false">%s (la ràdio va avançada)</string>
+    <string name="drift_behind" formatted="false">%s (la ràdio va endarrerida)</string>
     <string name="chats_search_hint">Cercar converses</string>
     <string name="chats_advert_zero_hop">Enviar anunci (0 salts)</string>
     <string name="chats_advert_flood">Enviar anunci (inundació)</string>
@@ -1109,6 +1122,16 @@
     <string name="about_this_licence">Llicència de MeshConnect</string>
     <string name="about_licences">Llicències de codi obert</string>
     <string name="about_endorsement">MeshConnect és un projecte independent. No està afiliat ni avalat pel projecte MeshCore ni per l\'autor de MeshCore Hardened.</string>
+    <plurals name="drift_days">
+        <item quantity="one">%1$d dia</item>
+        <item quantity="many">%1$d dies</item>
+        <item quantity="other">%1$d dies</item>
+    </plurals>
+    <plurals name="stale_remove_n">
+        <item quantity="one">Eliminar %1$d node</item>
+        <item quantity="many">Eliminar %1$d nodes</item>
+        <item quantity="other">Eliminar %1$d nodes</item>
+    </plurals>
     <plurals name="rsf_refreshed">
         <item quantity="one">%1$d valor actualitzat</item>
         <item quantity="many">%1$d valors actualitzats</item>

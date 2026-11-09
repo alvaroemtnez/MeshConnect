@@ -381,7 +381,7 @@ internal fun ClockSection(vm: MeshCoreViewModel) {
     )
     drift?.let { d ->
         Text(
-            stringResource(R.string.clock_drift, formatDrift(d)),
+            stringResource(R.string.clock_drift, formatDrift(d, driftWords())),
             style = MaterialTheme.typography.bodyMedium,
             color = if (kotlin.math.abs(d) > 30) {
                 MaterialTheme.colorScheme.error
@@ -1089,16 +1089,34 @@ fun AddNodeSheet(vm: MeshCoreViewModel, tcpEnabled: Boolean, onDismiss: () -> Un
  * Human-readable clock drift. Sign is stated in words rather than as a
  * bare "+"/"-", which nobody reads correctly under a status line.
  */
-internal fun formatDrift(seconds: Long): String {
+internal data class DriftWords(
+    val none: String = "none — clocks agree",
+    val ahead: String = "%s (radio ahead)",
+    val behind: String = "%s (radio behind)",
+    val days: (Long) -> String = { "$it days" },
+)
+
+@Composable
+internal fun driftWords(): DriftWords {
+    val res = androidx.compose.ui.platform.LocalContext.current.resources
+    return DriftWords(
+        none = stringResource(R.string.drift_none),
+        ahead = stringResource(R.string.drift_ahead),
+        behind = stringResource(R.string.drift_behind),
+        days = { res.getQuantityString(R.plurals.drift_days, it.toInt(), it.toInt()) },
+    )
+}
+
+internal fun formatDrift(seconds: Long, words: DriftWords = DriftWords()): String {
     val magnitude = kotlin.math.abs(seconds)
     val amount = when {
-        magnitude == 0L -> return "none — clocks agree"
+        magnitude == 0L -> return words.none
         magnitude < 60 -> "$magnitude s"
         magnitude < 3600 -> "${magnitude / 60} min ${magnitude % 60} s"
         magnitude < 86_400 -> "${magnitude / 3600} h ${(magnitude % 3600) / 60} min"
-        else -> "${magnitude / 86_400} days"
+        else -> words.days(magnitude / 86_400)
     }
-    return if (seconds > 0) "$amount (radio ahead)" else "$amount (radio behind)"
+    return (if (seconds > 0) words.ahead else words.behind).format(amount)
 }
 
 /**

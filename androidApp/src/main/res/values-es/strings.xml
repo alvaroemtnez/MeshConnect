@@ -1001,6 +1001,19 @@
     <string name="rsf_nothing_valid">Nada válido que guardar</string>
     <string name="rsf_saved_partial">Guardados %1$d/%2$d; revisa la consola</string>
     <string name="rsf_save">Guardar</string>
+    <string name="scan_retunes">Esto vuelve a sintonizar tu radio. Si los valores son incorrectos no verás errores; verás una malla vacía.</string>
+    <string name="scan_region">Región</string>
+    <string name="scan_set_region">Poner la región de este teléfono en:</string>
+    <string name="scan_also_region">Poner también la región de este teléfono en #%1$s</string>
+    <string name="scan_region_effect">Tus mensajes solo viajarán por repetidores que lleven #%1$s. Cámbialo luego en Políticas de malla → Regiones.</string>
+    <string name="scan_bad_tree">También lista las regiones «%1$s», que no es una lista que esta app pueda usar (hasta %2$d nombres válidos, sin repetir, incluida la de por defecto), así que se ignora.</string>
+    <string name="scan_bad_region">También nombra la región «%1$s», que no es un nombre válido (minúsculas, dígitos y guiones), así que no se aplicará.</string>
+    <string name="setup_connect_first">Conecta primero una radio.</string>
+    <string name="stale_removing">Eliminando…</string>
+    <string name="stale_nothing">Nada que eliminar</string>
+    <string name="drift_none">ninguno, los relojes coinciden</string>
+    <string name="drift_ahead" formatted="false">%s (la radio va adelantada)</string>
+    <string name="drift_behind" formatted="false">%s (la radio va atrasada)</string>
     <string name="chats_search_hint">Buscar conversaciones</string>
     <string name="chats_advert_zero_hop">Enviar anuncio (0 saltos)</string>
     <string name="chats_advert_flood">Enviar anuncio (inundación)</string>
@@ -1109,6 +1122,16 @@
     <string name="about_this_licence">Licencia de MeshConnect</string>
     <string name="about_licences">Licencias de código abierto</string>
     <string name="about_endorsement">MeshConnect es un proyecto independiente. No está afiliado ni respaldado por el proyecto MeshCore ni por el autor de MeshCore Hardened.</string>
+    <plurals name="drift_days">
+        <item quantity="one">%1$d día</item>
+        <item quantity="many">%1$d días</item>
+        <item quantity="other">%1$d días</item>
+    </plurals>
+    <plurals name="stale_remove_n">
+        <item quantity="one">Eliminar %1$d nodo</item>
+        <item quantity="many">Eliminar %1$d nodos</item>
+        <item quantity="other">Eliminar %1$d nodos</item>
+    </plurals>
     <plurals name="rsf_refreshed">
         <item quantity="one">%1$d valor actualizado</item>
         <item quantity="many">%1$d valores actualizados</item>

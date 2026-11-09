@@ -158,14 +158,14 @@ fun StaleNodesDialog(vm: MeshCoreViewModel, onDismiss: () -> Unit) {
                         modifier = Modifier.size(16.dp),
                     )
                     Spacer(Modifier.size(8.dp))
-                    Text("Removing…")
+                    Text(stringResource(R.string.stale_removing))
                 } else {
-                    Text(StaleNodes.actionLabel(sweep))
+                    Text(if (sweep.count == 0) stringResource(R.string.stale_nothing) else androidx.compose.ui.res.pluralStringResource(R.plurals.stale_remove_n, sweep.count, sweep.count))
                 }
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss, enabled = !busy) { Text("Cancel") }
+            TextButton(onClick = onDismiss, enabled = !busy) { Text(stringResource(R.string.cancel)) }
         },
     )
 }

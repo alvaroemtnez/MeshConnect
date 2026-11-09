@@ -1131,6 +1131,23 @@ S = {
 "rsf_saved_partial": ('Saved %1$d/%2$d; check the console', 'Guardados %1$d/%2$d; revisa la consola', 'Guardats %1$d/%2$d; revisa la consola'),
 "rsf_save": ('Save', 'Guardar', 'Guardar'),
 
+"scan_retunes": ("This retunes your radio. If these values are wrong you won't see errors; you'll see an empty mesh.", 'Esto vuelve a sintonizar tu radio. Si los valores son incorrectos no verás errores; verás una malla vacía.', 'Açò torna a sintonitzar la teua ràdio. Si els valors són incorrectes no veuràs errors; veuràs una malla buida.'),
+"scan_region": ('Region', 'Región', 'Regió'),
+"scan_set_region": ("Set this phone's region to:", 'Poner la región de este teléfono en:', "Posar la regió d'este telèfon en:"),
+"scan_also_region": ("Also set this phone's region to #%1$s", 'Poner también la región de este teléfono en #%1$s', "Posar també la regió d'este telèfon en #%1$s"),
+"scan_region_effect": ('Your messages then travel only through repeaters that carry #%1$s. Change it later under Mesh policies → Regions.', 'Tus mensajes solo viajarán por repetidores que lleven #%1$s. Cámbialo luego en Políticas de malla → Regiones.', 'Els teus missatges només viatjaran per repetidors que porten #%1$s. Canvia-ho després en Polítiques de malla → Regions.'),
+"scan_bad_tree": ('It also lists regions "%1$s", which isn\'t a list this app can use (up to %2$d valid names, each once, including the default), so it\'s ignored.', 'También lista las regiones «%1$s», que no es una lista que esta app pueda usar (hasta %2$d nombres válidos, sin repetir, incluida la de por defecto), así que se ignora.', "També llista les regions «%1$s», que no és una llista que esta aplicació puga usar (fins a %2$d noms vàlids, sense repetir, inclosa la per defecte), així que s'ignora."),
+"scan_bad_region": ('It also names region "%1$s", which isn\'t a valid region name (lowercase letters, digits and dashes), so it won\'t be set.', 'También nombra la región «%1$s», que no es un nombre válido (minúsculas, dígitos y guiones), así que no se aplicará.', "També nomena la regió «%1$s», que no és un nom vàlid (minúscules, dígits i guions), així que no s'aplicarà."),
+
+"setup_connect_first": ('Connect a radio first.', 'Conecta primero una radio.', 'Connecta primer una ràdio.'),
+
+"stale_removing": ('Removing…', 'Eliminando…', 'Eliminant…'),
+"stale_nothing": ('Nothing to remove', 'Nada que eliminar', 'Res a eliminar'),
+
+"drift_none": ('none, clocks agree', 'ninguno, los relojes coinciden', 'cap, els rellotges coincidixen'),
+"drift_ahead": ('%s (radio ahead)', '%s (la radio va adelantada)', '%s (la ràdio va avançada)'),
+"drift_behind": ('%s (radio behind)', '%s (la radio va atrasada)', '%s (la ràdio va endarrerida)'),
+
 # Chats
 "chats_search_hint": ("Search conversations", "Buscar conversaciones", "Cercar converses"),
 "chats_advert_zero_hop": ("Send advert (0-hop)", "Enviar anuncio (0 saltos)", "Enviar anunci (0 salts)"),
@@ -1326,6 +1343,12 @@ S = {
 
 # key -> ((one, other) en, (one, other) es, (one, other) ca)
 P = {
+"drift_days": (("%1$d day", "%1$d days"), ("%1$d día", "%1$d días"), ("%1$d dia", "%1$d dies")),
+
+
+"stale_remove_n": (("Remove %1$d node", "Remove %1$d nodes"), ("Eliminar %1$d nodo", "Eliminar %1$d nodos"), ("Eliminar %1$d node", "Eliminar %1$d nodes")),
+
+
 "rsf_refreshed": (("Refreshed %1$d value", "Refreshed %1$d values"), ("%1$d valor actualizado", "%1$d valores actualizados"), ("%1$d valor actualitzat", "%1$d valors actualitzats")),
 
 

@@ -139,27 +139,26 @@ fun ScanConfirmations(vm: MeshCoreViewModel) {
                 // Scrolls: a region tree adds a row per level.
                 Column(Modifier.verticalScroll(rememberScrollState())) {
                     Text(
-                        config.name.ifBlank { "(unnamed mesh)" },
+                        config.name.ifBlank { stringResource(R.string.rsf_unnamed_mesh) },
                         style = MaterialTheme.typography.titleMedium,
                     )
                     Spacer(Modifier.height(4.dp))
                     Text(config.summary(), style = MaterialTheme.typography.bodyMedium)
                     Spacer(Modifier.height(12.dp))
                     Text(
-                        "This retunes your radio. If these values are wrong you will not " +
-                            "see errors — you will see an empty mesh.",
+                        stringResource(R.string.scan_retunes),
                         style = MaterialTheme.typography.bodySmall,
                     )
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        "Anyone can make one of these codes; nothing in it is signed. " +
+                        stringResource(R.string.scan_unsigned) + " " +
                             stringResource(R.string.regulatory_caveat),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.error,
                     )
                     picked?.takeIf { choices.isNotEmpty() }?.let { current ->
                         Spacer(Modifier.height(12.dp))
-                        Text("Region", style = MaterialTheme.typography.titleSmall)
+                        Text(stringResource(R.string.scan_region), style = MaterialTheme.typography.titleSmall)
                         config.regionHeadline()?.let {
                             Text(it, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
                         }
@@ -176,8 +175,7 @@ fun ScanConfirmations(vm: MeshCoreViewModel) {
                             Checkbox(checked = applyRegion, onCheckedChange = null)
                             Spacer(Modifier.width(8.dp))
                             Text(
-                                if (choices.size > 1) "Set this phone's region to:"
-                                else "Also set this phone's region to #$current",
+                                if (choices.size > 1) stringResource(R.string.scan_set_region) else stringResource(R.string.scan_also_region, current),
                             )
                         }
                         if (choices.size > 1) {
@@ -210,7 +208,7 @@ fun ScanConfirmations(vm: MeshCoreViewModel) {
                                     if (choice == config.region) {
                                         Spacer(Modifier.width(8.dp))
                                         Text(
-                                            "default",
+                                            stringResource(R.string.rr_tag_default),
                                             style = MaterialTheme.typography.labelMedium,
                                             color = MaterialTheme.colorScheme.primary,
                                         )
@@ -226,17 +224,14 @@ fun ScanConfirmations(vm: MeshCoreViewModel) {
                         // relay #mi — which is why the tree is offered
                         // rather than assumed.
                         Text(
-                            "Your messages then travel only through repeaters that carry " +
-                                "#$current. Change it later under Mesh policies → Regions.",
+                            stringResource(R.string.scan_region_effect, current),
                             style = MaterialTheme.typography.bodySmall,
                         )
                     }
                     config.rejectedRegionTree?.let {
                         Spacer(Modifier.height(8.dp))
                         Text(
-                            "It also lists regions \"$it\", which isn't a list this app can use " +
-                                "(up to ${io.github.thatsfguy.meshcore.protocol.ShareUri.MAX_REGION_TREE} " +
-                                "valid names, each once, including the default), so it is ignored.",
+                            stringResource(R.string.scan_bad_tree, it, io.github.thatsfguy.meshcore.protocol.ShareUri.MAX_REGION_TREE),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.error,
                         )
@@ -244,8 +239,7 @@ fun ScanConfirmations(vm: MeshCoreViewModel) {
                     config.rejectedRegion?.let {
                         Spacer(Modifier.height(8.dp))
                         Text(
-                            "It also names region \"$it\", which isn't a valid region name " +
-                                "(lowercase letters, digits and dashes), so it won't be set.",
+                            stringResource(R.string.scan_bad_region, it),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.error,
                         )
