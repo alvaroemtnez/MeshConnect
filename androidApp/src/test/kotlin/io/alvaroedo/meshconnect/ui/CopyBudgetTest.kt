@@ -30,6 +30,24 @@ class CopyBudgetTest {
     private val screens = File("src/main/kotlin/io/alvaroedo/meshconnect/ui/screens")
 
     /**
+     * English strings by name. MeshConnect's i18n moved the hint copy
+     * into resources, so a hint written as `stringResource(R.string.x)`
+     * is measured by its English text, with `%1$s`-style arguments
+     * standing in for interpolation exactly as `${…}` does.
+     */
+    private val english: Map<String, String> by lazy {
+        val xml = File("src/main/res/values/strings.xml").readText()
+        Regex("""<string name="([a-z0-9_]+)">(.*?)</string>""", RegexOption.DOT_MATCHES_ALL)
+            .findAll(xml)
+            .associate { m ->
+                m.groupValues[1] to m.groupValues[2]
+                    .replace("\\'", "'").replace("\\\"", "\"").replace("\\n", "\n")
+                    .replace("&lt;", "<").replace("&gt;", ">").replace("&amp;", "&")
+                    .replace(Regex("""%\d\$[sd]"""), "0000")
+            }
+    }
+
+    /**
      * Replace `${…}` and `$name` with a short stand-in.
      *
      * The budget is about how much PROSE a user reads, and
@@ -86,6 +104,12 @@ class CopyBudgetTest {
                 j++
             }
             val arg = source.substring(i, (j - 1).coerceAtLeast(i))
+            // A resource hint is measured by its English text.
+            Regex("""^\s*stringResource\(R\.string\.([a-z0-9_]+)""").find(arg)?.let { m ->
+                english[m.groupValues[1]]?.let { text ->
+                    out += source.take(at).count { it == '\n' } + 1 to text
+                }
+            }
             // Only literal arguments — interpolated/computed hints
             // (counts, device names) are not prose and are exempt.
             if (!arg.trimStart().startsWith("\"")) continue

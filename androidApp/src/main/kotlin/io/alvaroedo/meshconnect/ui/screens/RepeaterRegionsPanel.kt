@@ -1,5 +1,7 @@
 package io.alvaroedo.meshconnect.ui.screens
 
+import io.alvaroedo.meshconnect.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -61,6 +63,7 @@ import kotlinx.coroutines.launch
  */
 @Composable
 fun RepeaterRegionsPanel(vm: MeshCoreViewModel, keyHex: String, isAdmin: Boolean) {
+    val ctx = androidx.compose.ui.platform.LocalContext.current
     val scope = rememberCoroutineScope()
     var tree by remember(keyHex) { mutableStateOf<Regions.RegionTree?>(null) }
     var rawReply by remember(keyHex) { mutableStateOf<String?>(null) }
@@ -98,7 +101,7 @@ fun RepeaterRegionsPanel(vm: MeshCoreViewModel, keyHex: String, isAdmin: Boolean
             chosenMode = RegionAdmin.currentUntagged(t.wildcardFloodAllowed, hopLimit, limitSupported)
             hopLimit?.takeIf { it in RegionAdmin.NEARBY_HOPS }?.let { chosenHops = it }
         }
-        if (listing == null) note = "No reply — logged in and in range?"
+        if (listing == null) note = ctx.getString(R.string.rs_no_reply)
     }
 
     fun refresh() {
@@ -123,7 +126,7 @@ fun RepeaterRegionsPanel(vm: MeshCoreViewModel, keyHex: String, isAdmin: Boolean
             for (command in commands) {
                 val reply = vm.cliQuery(keyHex, command)
                 when {
-                    reply == null -> failed = "No reply to `$command` — logged in and in range?"
+                    reply == null -> failed = ctx.getString(R.string.rr_no_reply_to, command)
                     reply.trim().startsWith("Err", ignoreCase = true) ->
                         failed = "`$command`: ${reply.trim()}"
                     RegionAdmin.savesRegions(command) -> pendingEdits = false
@@ -146,28 +149,26 @@ fun RepeaterRegionsPanel(vm: MeshCoreViewModel, keyHex: String, isAdmin: Boolean
             .padding(horizontal = 16.dp),
     ) {
         ExpandableHint(
-            "Decides what this repeater floods onward — routing, not access control.",
+            stringResource(R.string.rr_intro),
         ) {
             DetailText(
-                "A region the repeater refuses to flood can still be heard by anyone in " +
-                    "radio range.",
+                stringResource(R.string.rr_intro_d),
             )
         }
 
         ButtonFlowRow {
-            TextButton(enabled = !loading, onClick = { refresh() }) { Text("Fetch regions") }
+            TextButton(enabled = !loading, onClick = { refresh() }) { Text(stringResource(R.string.rr_fetch)) }
             TextButton(
                 enabled = !loading && isAdmin,
-                onClick = { run(Regions.save(), describe = "Saved") },
-            ) { Text("Save to node") }
+                onClick = { run(Regions.save(), describe = ctx.getString(R.string.rr_saved)) },
+            ) { Text(stringResource(R.string.rr_save)) }
         }
-        if (loading) SectionSpinner("Asking the node…")
+        if (loading) SectionSpinner(stringResource(R.string.rs_asking))
         note?.let { HintText(it) }
 
         if (pendingEdits) {
             Text(
-                "Unsaved: region edits live in RAM until \"Save to node\" runs. A reboot " +
-                    "before then discards them.",
+                stringResource(R.string.rr_unsaved),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.error,
             )
@@ -177,14 +178,13 @@ fun RepeaterRegionsPanel(vm: MeshCoreViewModel, keyHex: String, isAdmin: Boolean
         val parsed = tree
         if (parsed != null) {
             Spacer(Modifier.height(12.dp))
-            Text("Untagged traffic", style = MaterialTheme.typography.titleSmall)
-            HintText("Traffic carrying no region — what a mesh that doesn't use regions sends.")
+            Text(stringResource(R.string.rr_untagged), style = MaterialTheme.typography.titleSmall)
+            HintText(stringResource(R.string.rr_untagged_hint))
             val current =
                 RegionAdmin.currentUntagged(parsed.wildcardFloodAllowed, hopLimit, limitSupported)
             if (current == null) {
                 HintText(
-                    "The node didn't answer when asked for its untagged hop limit, so whether " +
-                        "it relays all of this or only nearby traffic isn't known. Fetch again.",
+                    stringResource(R.string.rr_limit_unknown),
                 )
             }
             UntaggedChoices(
@@ -198,7 +198,7 @@ fun RepeaterRegionsPanel(vm: MeshCoreViewModel, keyHex: String, isAdmin: Boolean
                 onHops = { chosenHops = it },
             )
             if (limitSupported == false) {
-                HintText("Relaying only nearby traffic needs repeater firmware 1.16 or newer.")
+                HintText(stringResource(R.string.rr_nearby_needs))
             }
             val target = chosenMode
             if (isAdmin && target != null) {
@@ -216,53 +216,49 @@ fun RepeaterRegionsPanel(vm: MeshCoreViewModel, keyHex: String, isAdmin: Boolean
                     onClick = {
                         if (target == Untagged.Refuse) {
                             confirm = PendingRegionAction(
-                                title = "Refuse untagged traffic?",
-                                body = "This repeater will stop relaying flood traffic that " +
-                                    "carries no region — including anyone nearby whose " +
-                                    "radio isn't set to one of the regions below. Traffic " +
-                                    "tagged with an allowed region is still relayed.",
-                                confirmLabel = "Refuse",
+                                title = ctx.getString(R.string.rr_refuse_q),
+                                body = ctx.getString(R.string.rr_refuse_body),
+                                confirmLabel = ctx.getString(R.string.rr_refuse),
                                 destructive = true,
                                 commands = commands,
-                                describe = "Untagged traffic refused",
+                                describe = ctx.getString(R.string.rr_refused),
                             )
                         } else {
-                            run(commands, describe = "Untagged traffic updated")
+                            run(commands, describe = ctx.getString(R.string.rr_updated))
                         }
                     },
-                ) { Text("Apply") }
+                ) { Text(stringResource(R.string.rr_apply)) }
             }
         }
 
         // --- Default scope --------------------------------------------------
         Spacer(Modifier.height(12.dp))
-        Text("Default region", style = MaterialTheme.typography.titleSmall)
+        Text(stringResource(R.string.rr_default), style = MaterialTheme.typography.titleSmall)
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 HintText(
                     when {
-                        !defaultKnown -> "Not read yet."
+                        !defaultKnown -> stringResource(R.string.rr_not_read)
                         defaultScope == Regions.GLOBAL_SELECTOR ->
-                            "None — this repeater's own adverts and replies go out untagged."
-                        defaultScope != null -> "#$defaultScope — tap a region below to change it."
+                            stringResource(R.string.rr_default_none)
+                        defaultScope != null -> stringResource(R.string.rr_default_is, defaultScope ?: "")
                         // A reply we couldn't parse is unknown, never "cleared":
                         // the two lead to opposite decisions.
-                        else -> "The node's answer wasn't recognised — use the console."
+                        else -> stringResource(R.string.rr_unrecognised)
                     },
                 )
             }
             if (isAdmin && defaultScope != null && defaultScope != Regions.GLOBAL_SELECTOR) {
                 TextButton(enabled = !loading, onClick = {
                     confirm = PendingRegionAction(
-                        title = "Clear the default region?",
-                        body = "This repeater's own adverts and replies go back to carrying " +
-                            "no region.",
-                        confirmLabel = "Clear",
+                        title = ctx.getString(R.string.rr_clear_q),
+                        body = ctx.getString(R.string.rr_clear_body),
+                        confirmLabel = ctx.getString(R.string.clear),
                         destructive = false,
                         commands = listOf(Regions.setDefault(null)),
-                        describe = "Default region cleared",
+                        describe = ctx.getString(R.string.rr_cleared),
                     )
-                }) { Text("Clear") }
+                }) { Text(stringResource(R.string.clear)) }
             }
         }
 
@@ -270,20 +266,19 @@ fun RepeaterRegionsPanel(vm: MeshCoreViewModel, keyHex: String, isAdmin: Boolean
         Spacer(Modifier.height(12.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                "Regions",
+                stringResource(R.string.backup_regions),
                 style = MaterialTheme.typography.titleSmall,
                 modifier = Modifier.weight(1f),
             )
             if (isAdmin && parsed != null) {
                 TextButton(enabled = !loading, onClick = { addUnder = Regions.GLOBAL_SELECTOR }) {
-                    Text("Add region")
+                    Text(stringResource(R.string.rr_add))
                 }
             }
         }
         if (parsed == null && rawReply != null) {
             HintText(
-                "The node's answer wasn't a region tree. Firmware without regions answers " +
-                    "\"??: region\" — its own words:",
+                stringResource(R.string.rr_not_tree),
             )
             rawReply?.lineSequence()?.filter { it.isNotBlank() }?.forEach { line ->
                 Text(
@@ -294,9 +289,9 @@ fun RepeaterRegionsPanel(vm: MeshCoreViewModel, keyHex: String, isAdmin: Boolean
                 )
             }
         }
-        if (parsed != null && parsed.regions.isEmpty()) HintText("No regions defined.")
+        if (parsed != null && parsed.regions.isEmpty()) HintText(stringResource(R.string.rr_none))
         if (parsed != null && isAdmin && parsed.regions.isNotEmpty()) {
-            HintText("Tap a region to make it the default, add one under it, or change it.")
+            HintText(stringResource(R.string.rr_tap_hint))
         }
         for (entry in parsed?.regions.orEmpty()) {
             val tappable = isAdmin && entry.actionable && !loading
@@ -309,25 +304,24 @@ fun RepeaterRegionsPanel(vm: MeshCoreViewModel, keyHex: String, isAdmin: Boolean
                 Text(entry.name, fontFamily = FontFamily.Monospace)
                 HintText(
                     listOfNotNull(
-                        "default".takeIf { entry.name == defaultScope },
-                        "home".takeIf { entry.home },
-                        if (entry.floodAllowed) "flood allowed" else "flood denied",
+                        stringResource(R.string.rr_tag_default).takeIf { entry.name == defaultScope },
+                        stringResource(R.string.rr_tag_home).takeIf { entry.home },
+                        stringResource(if (entry.floodAllowed) R.string.rr_tag_flood_on else R.string.rr_tag_flood_off),
                     ).joinToString(" · "),
                 )
                 if (!entry.actionable) {
-                    HintText("Not lowercase letters, digits and dashes — edit it from the console.")
+                    HintText(stringResource(R.string.rr_not_valid))
                 }
             }
         }
         if (parsed?.truncated == true) {
             HintText(
-                "The list filled the node's reply, so regions past the end are missing. " +
-                    "`region list allowed` in the console lists every name.",
+                stringResource(R.string.rr_truncated),
             )
         }
         if (!isAdmin) {
             Spacer(Modifier.height(12.dp))
-            HintText("Log in as admin to add, remove or re-scope regions.")
+            HintText(stringResource(R.string.rr_admin_only))
         }
         Spacer(Modifier.height(24.dp))
     }
@@ -350,35 +344,32 @@ fun RepeaterRegionsPanel(vm: MeshCoreViewModel, keyHex: String, isAdmin: Boolean
                                 when (action) {
                                     Action.MakeDefault -> run(
                                         Regions.setDefault(entry.name),
-                                        describe = "#${entry.name} is the default region",
+                                        describe = ctx.getString(R.string.rr_now_default, entry.name),
                                     )
                                     Action.SetHome -> run(
                                         Regions.setHome(entry.name),
-                                        describe = "#${entry.name} is the home region",
+                                        describe = ctx.getString(R.string.rr_now_home, entry.name),
                                     )
                                     Action.AddChild -> addUnder = entry.name
                                     Action.AllowFlood -> run(
                                         Regions.allowFlood(entry.name),
-                                        describe = "Flood allowed for #${entry.name}",
+                                        describe = ctx.getString(R.string.rr_flood_allowed, entry.name),
                                     )
                                     Action.DenyFlood -> confirm = PendingRegionAction(
-                                        title = "Deny flood for ${entry.name}?",
-                                        body = "This repeater will stop relaying flood traffic " +
-                                            "tagged #${entry.name}. Nothing becomes unreadable — " +
-                                            "it just stops being carried by this node.",
-                                        confirmLabel = "Deny",
+                                        title = ctx.getString(R.string.rr_deny_q, entry.name),
+                                        body = ctx.getString(R.string.rr_deny_body, entry.name),
+                                        confirmLabel = ctx.getString(R.string.rr_deny),
                                         destructive = true,
                                         commands = listOf(Regions.denyFlood(entry.name)),
-                                        describe = "Flood denied for #${entry.name}",
+                                        describe = ctx.getString(R.string.rr_flood_denied, entry.name),
                                     )
                                     Action.Remove -> confirm = PendingRegionAction(
-                                        title = "Remove ${entry.name}?",
-                                        body = "Removes the region from this repeater, which " +
-                                            "then stops relaying traffic tagged with it.",
-                                        confirmLabel = "Remove",
+                                        title = ctx.getString(R.string.rr_remove_q, entry.name),
+                                        body = ctx.getString(R.string.rr_remove_body),
+                                        confirmLabel = ctx.getString(R.string.rr_remove),
                                         destructive = true,
                                         commands = listOf(Regions.remove(entry.name)),
-                                        describe = "Removed #${entry.name}",
+                                        describe = ctx.getString(R.string.rr_removed, entry.name),
                                     )
                                 }
                             },
@@ -397,7 +388,7 @@ fun RepeaterRegionsPanel(vm: MeshCoreViewModel, keyHex: String, isAdmin: Boolean
                 }
             },
             confirmButton = {},
-            dismissButton = { TextButton(onClick = { actionsFor = null }) { Text("Close") } },
+            dismissButton = { TextButton(onClick = { actionsFor = null }) { Text(stringResource(R.string.close)) } },
         )
     }
 
@@ -408,7 +399,7 @@ fun RepeaterRegionsPanel(vm: MeshCoreViewModel, keyHex: String, isAdmin: Boolean
             onDismiss = { addUnder = null },
             onAdd = { name, parent ->
                 addUnder = null
-                run(Regions.put(name, parent), describe = "Added #${Regions.canonical(name)}")
+                run(Regions.put(name, parent), describe = ctx.getString(R.string.rr_added, Regions.canonical(name)))
             },
         )
     }
@@ -433,19 +424,20 @@ fun RepeaterRegionsPanel(vm: MeshCoreViewModel, keyHex: String, isAdmin: Boolean
                     )
                 }
             },
-            dismissButton = { TextButton(onClick = { confirm = null }) { Text("Cancel") } },
+            dismissButton = { TextButton(onClick = { confirm = null }) { Text(stringResource(R.string.cancel)) } },
         )
     }
 }
 
-private fun actionLabel(action: Action): String = when (action) {
-    Action.MakeDefault -> "Make default region"
-    Action.SetHome -> "Make home region"
-    Action.AddChild -> "Add a region under this"
-    Action.AllowFlood -> "Allow flood"
-    Action.DenyFlood -> "Deny flood"
-    Action.Remove -> "Remove"
-}
+@Composable
+private fun actionLabel(action: Action): String = stringResource(when (action) {
+    Action.MakeDefault -> R.string.rr_make_default
+    Action.SetHome -> R.string.rr_make_home
+    Action.AddChild -> R.string.rr_add_child
+    Action.AllowFlood -> R.string.rr_allow_flood
+    Action.DenyFlood -> R.string.rr_deny_flood
+    Action.Remove -> R.string.rr_remove
+})
 
 /** Relay all · only nearby (N hops) · refuse — one control for two firmware settings. */
 @Composable
@@ -481,13 +473,13 @@ private fun UntaggedChoices(
             Column(Modifier.weight(1f)) {
                 Text(
                     when (option) {
-                        Untagged.RelayAll -> "Relay all"
-                        Untagged.Nearby -> "Relay only nearby"
-                        Untagged.Refuse -> "Refuse"
-                    } + if (option == current) "  (now)" else "",
+                        Untagged.RelayAll -> stringResource(R.string.rr_relay_all)
+                        Untagged.Nearby -> stringResource(R.string.rr_relay_nearby)
+                        Untagged.Refuse -> stringResource(R.string.rr_refuse)
+                    } + if (option == current) "  " + stringResource(R.string.rr_now) else "",
                 )
                 if (option == Untagged.Nearby && (chosen == option || current == option)) {
-                    HintText(RegionAdmin.describeNearby(if (chosen == option) hops else currentHops ?: hops))
+                    HintText(describeNearby(if (chosen == option) hops else currentHops ?: hops))
                 }
             }
         }
@@ -500,7 +492,7 @@ private fun UntaggedChoices(
                     enabled = hops > RegionAdmin.NEARBY_HOPS.first,
                     onClick = { onHops(hops - 1) },
                 ) { Text("−") }
-                Text("$hops hop${if (hops == 1) "" else "s"}")
+                Text(androidx.compose.ui.res.pluralStringResource(R.plurals.rr_hops, hops, hops))
                 TextButton(
                     enabled = hops < RegionAdmin.NEARBY_HOPS.last,
                     onClick = { onHops(hops + 1) },
@@ -522,21 +514,21 @@ private fun AddRegionDialog(
     var parent by remember { mutableStateOf(initialParent) }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Add region") },
+        title = { Text(stringResource(R.string.rr_add)) },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState())) {
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text("Name") },
+                    label = { Text(stringResource(R.string.rr_name)) },
                     singleLine = true,
                     keyboardOptions = VERBATIM_KEYBOARD,
                     isError = name.isNotBlank() && !Regions.isValid(name),
-                    supportingText = { Text("Lowercase letters, digits and dashes") },
+                    supportingText = { Text(stringResource(R.string.rr_name_rule)) },
                     modifier = Modifier.fillMaxWidth(),
                 )
                 Spacer(Modifier.height(8.dp))
-                Text("Under", style = MaterialTheme.typography.titleSmall)
+                Text(stringResource(R.string.rr_under), style = MaterialTheme.typography.titleSmall)
                 for (choice in choices) {
                     Row(
                         Modifier
@@ -552,7 +544,7 @@ private fun AddRegionDialog(
                         RadioButton(selected = parent == choice.name, onClick = null)
                         Spacer(Modifier.width(8.dp))
                         Text(
-                            if (choice.name == Regions.GLOBAL_SELECTOR) "Top level" else choice.name,
+                            if (choice.name == Regions.GLOBAL_SELECTOR) stringResource(R.string.rr_top_level) else choice.name,
                             fontFamily = if (choice.name == Regions.GLOBAL_SELECTOR) {
                                 null
                             } else {
@@ -567,9 +559,9 @@ private fun AddRegionDialog(
             TextButton(
                 enabled = Regions.isValid(name),
                 onClick = { onAdd(name, parent) },
-            ) { Text("Add") }
+            ) { Text(stringResource(R.string.add)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
     )
 }
 
@@ -582,3 +574,12 @@ private data class PendingRegionAction(
     val commands: List<String>,
     val describe: String,
 )
+
+/** RegionAdmin.describeNearby, translated. */
+@Composable
+private fun describeNearby(hops: Int): String =
+    if (hops == 1) {
+        stringResource(R.string.rr_nearby_direct)
+    } else {
+        androidx.compose.ui.res.pluralStringResource(R.plurals.rr_nearby_via, hops - 1, hops - 1)
+    }

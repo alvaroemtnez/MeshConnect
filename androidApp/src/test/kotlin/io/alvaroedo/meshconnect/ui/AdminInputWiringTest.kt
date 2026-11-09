@@ -59,7 +59,7 @@ class AdminInputWiringTest {
         // A region name is a token the firmware matches byte for byte,
         // and `region home <name>` on a capitalised name fails as
         // "unknown region" — which reads as the region not existing.
-        val name = regions.substringAfter("label = { Text(\"Name\") }").substringBefore("modifier")
+        val name = regions.substringAfter("label = { Text(stringResource(R.string.rr_name)) }").substringBefore("modifier")
         assertTrue(
             "the region name field must use VERBATIM_KEYBOARD",
             name.contains("keyboardOptions = VERBATIM_KEYBOARD"),
