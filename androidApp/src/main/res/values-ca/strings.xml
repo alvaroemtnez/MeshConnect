@@ -1080,6 +1080,17 @@
     <string name="dfu_retrying">S\'ha demanat al node que es reinicie; reintentant…</string>
     <string name="dfu_progress">%1$d de %2$d KB</string>
     <string name="dfu_stay">Queda\'t al costat del node i deixa esta pantalla oberta. La pantalla es manté encesa durant la transferència.</string>
+    <string name="fwc_no_releases">No s\'han trobat versions per a este tipus de node.</string>
+    <string name="fwc_list_failed">No s\'ha pogut llegir la llista de versions de MeshCore.</string>
+    <string name="fwc_list_failed_hint">No s\'ha enviat res a la ràdio. La llista ve de GitHub; si no carrega, baixa el .zip d\'esta placa en un navegador i obri\'l des de l\'emmagatzematge.</string>
+    <string name="fwc_release_failed">No s\'ha pogut llegir eixa versió.</string>
+    <string name="fwc_nothing_sent">No s\'ha enviat res a la ràdio.</string>
+    <string name="fwc_download_failed">La baixada ha fallat.</string>
+    <string name="fwc_file_unusable">Eixe fitxer no servix.</string>
+    <string name="fwc_package_unreadable">No s\'ha pogut llegir eixe paquet.</string>
+    <string name="fwc_no_service">El servei de ràdio no està en marxa.</string>
+    <string name="fwc_not_ble">Esta ràdio no està connectada per Bluetooth.</string>
+    <string name="fwc_update_failed">L\'actualització ha fallat.</string>
     <string name="chats_search_hint">Cercar converses</string>
     <string name="chats_advert_zero_hop">Enviar anunci (0 salts)</string>
     <string name="chats_advert_flood">Enviar anunci (inundació)</string>

@@ -1215,6 +1215,18 @@ S = {
 "dfu_progress": ('%1$d of %2$d KB', '%1$d de %2$d KB', '%1$d de %2$d KB'),
 "dfu_stay": ('Stay next to the node and leave this screen open. The screen is kept awake for the transfer.', 'Quédate junto al nodo y deja esta pantalla abierta. La pantalla se mantiene encendida durante la transferencia.', "Queda't al costat del node i deixa esta pantalla oberta. La pantalla es manté encesa durant la transferència."),
 
+"fwc_no_releases": ('No releases were found for this kind of node.', 'No se encontraron versiones para este tipo de nodo.', "No s'han trobat versions per a este tipus de node."),
+"fwc_list_failed": ("Couldn't read the MeshCore version list.", 'No se pudo leer la lista de versiones de MeshCore.', "No s'ha pogut llegir la llista de versions de MeshCore."),
+"fwc_list_failed_hint": ("Nothing was sent to the radio. The version list comes from GitHub; if it won't load, download the .zip for this board in a browser and open it from storage instead.", 'No se envió nada a la radio. La lista viene de GitHub; si no carga, descarga el .zip de esta placa en un navegador y ábrelo desde el almacenamiento.', "No s'ha enviat res a la ràdio. La llista ve de GitHub; si no carrega, baixa el .zip d'esta placa en un navegador i obri'l des de l'emmagatzematge."),
+"fwc_release_failed": ("Couldn't read that release.", 'No se pudo leer esa versión.', "No s'ha pogut llegir eixa versió."),
+"fwc_nothing_sent": ('Nothing was sent to the radio.', 'No se envió nada a la radio.', "No s'ha enviat res a la ràdio."),
+"fwc_download_failed": ('The download failed.', 'La descarga falló.', 'La baixada ha fallat.'),
+"fwc_file_unusable": ("That file isn't usable.", 'Ese archivo no sirve.', 'Eixe fitxer no servix.'),
+"fwc_package_unreadable": ("That package couldn't be read.", 'No se pudo leer ese paquete.', "No s'ha pogut llegir eixe paquet."),
+"fwc_no_service": ("The radio service isn't running.", 'El servicio de radio no está en marcha.', 'El servei de ràdio no està en marxa.'),
+"fwc_not_ble": ("This radio isn't connected over Bluetooth.", 'Esta radio no está conectada por Bluetooth.', 'Esta ràdio no està connectada per Bluetooth.'),
+"fwc_update_failed": ('The update failed.', 'La actualización falló.', "L'actualització ha fallat."),
+
 # Chats
 "chats_search_hint": ("Search conversations", "Buscar conversaciones", "Cercar converses"),
 "chats_advert_zero_hop": ("Send advert (0-hop)", "Enviar anuncio (0 saltos)", "Enviar anunci (0 salts)"),

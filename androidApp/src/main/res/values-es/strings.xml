@@ -1080,6 +1080,17 @@
     <string name="dfu_retrying">Se ha pedido al nodo que se reinicie; reintentando…</string>
     <string name="dfu_progress">%1$d de %2$d KB</string>
     <string name="dfu_stay">Quédate junto al nodo y deja esta pantalla abierta. La pantalla se mantiene encendida durante la transferencia.</string>
+    <string name="fwc_no_releases">No se encontraron versiones para este tipo de nodo.</string>
+    <string name="fwc_list_failed">No se pudo leer la lista de versiones de MeshCore.</string>
+    <string name="fwc_list_failed_hint">No se envió nada a la radio. La lista viene de GitHub; si no carga, descarga el .zip de esta placa en un navegador y ábrelo desde el almacenamiento.</string>
+    <string name="fwc_release_failed">No se pudo leer esa versión.</string>
+    <string name="fwc_nothing_sent">No se envió nada a la radio.</string>
+    <string name="fwc_download_failed">La descarga falló.</string>
+    <string name="fwc_file_unusable">Ese archivo no sirve.</string>
+    <string name="fwc_package_unreadable">No se pudo leer ese paquete.</string>
+    <string name="fwc_no_service">El servicio de radio no está en marcha.</string>
+    <string name="fwc_not_ble">Esta radio no está conectada por Bluetooth.</string>
+    <string name="fwc_update_failed">La actualización falló.</string>
     <string name="chats_search_hint">Buscar conversaciones</string>
     <string name="chats_advert_zero_hop">Enviar anuncio (0 saltos)</string>
     <string name="chats_advert_flood">Enviar anuncio (inundación)</string>

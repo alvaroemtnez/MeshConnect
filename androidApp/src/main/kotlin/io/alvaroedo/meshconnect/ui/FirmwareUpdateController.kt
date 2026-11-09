@@ -1,5 +1,7 @@
 package io.alvaroedo.meshconnect.ui
 
+import io.alvaroedo.meshconnect.R
+import androidx.compose.ui.res.stringResource
 import android.content.Context
 import io.alvaroedo.meshconnect.service.MeshCoreService
 import io.github.thatsfguy.meshcore.firmware.AndroidHttpFetcher
@@ -227,7 +229,7 @@ class FirmwareUpdateController(
                 }
                 if (versions.isEmpty()) {
                     _state.value = FirmwareUi.Failed(
-                        "No ${role.name.lowercase()} releases were found.",
+                        context.getString(R.string.fwc_no_releases),
                         null,
                     )
                     return@launch
@@ -239,10 +241,8 @@ class FirmwareUpdateController(
                 // not be read blames the wrong thing. Nothing has been
                 // sent to any radio at this point.
                 _state.value = FirmwareUi.Failed(
-                    e.message ?: "Could not read the MeshCore version list.",
-                    "Nothing was sent to the radio. The version list comes from GitHub; if " +
-                        "it will not load, download the .zip for this board in a browser " +
-                        "and open it from storage instead.",
+                    e.message ?: context.getString(R.string.fwc_list_failed),
+                    context.getString(R.string.fwc_list_failed_hint),
                 )
             }
         }
@@ -291,8 +291,8 @@ class FirmwareUpdateController(
                 )
             } catch (e: Exception) {
                 _state.value = FirmwareUi.Failed(
-                    e.message ?: "Could not read that release.",
-                    "Nothing was sent to the radio.",
+                    e.message ?: context.getString(R.string.fwc_release_failed),
+                    context.getString(R.string.fwc_nothing_sent),
                 )
             }
         }
@@ -316,7 +316,7 @@ class FirmwareUpdateController(
             try {
                 openPackage(downloader.download(asset))
             } catch (e: Exception) {
-                _state.value = FirmwareUi.Failed(e.message ?: "The download failed.", null)
+                _state.value = FirmwareUi.Failed(e.message ?: context.getString(R.string.fwc_download_failed), null)
             }
         }
     }
@@ -327,7 +327,7 @@ class FirmwareUpdateController(
             try {
                 openPackage(downloader.describeLocal(bytes, name))
             } catch (e: Exception) {
-                _state.value = FirmwareUi.Failed(e.message ?: "That file is not usable.", null)
+                _state.value = FirmwareUi.Failed(e.message ?: context.getString(R.string.fwc_file_unusable), null)
             }
         }
     }
@@ -336,7 +336,7 @@ class FirmwareUpdateController(
         _state.value = try {
             FirmwareUi.Confirm(DfuPackage.read(source.bytes), source, target)
         } catch (e: Exception) {
-            FirmwareUi.Failed(e.message ?: "That package could not be read.", null)
+            FirmwareUi.Failed(e.message ?: context.getString(R.string.fwc_package_unreadable), null)
         }
     }
 
@@ -369,7 +369,7 @@ class FirmwareUpdateController(
         }
         val service = serviceProvider()
         if (service == null) {
-            _state.value = FirmwareUi.Failed("The radio service is not running.", null)
+            _state.value = FirmwareUi.Failed(context.getString(R.string.fwc_no_service), null)
             return
         }
         scope.launch {
@@ -380,7 +380,7 @@ class FirmwareUpdateController(
                             val transport = handover.transport
                             if (transport == null) {
                                 _state.value = FirmwareUi.Failed(
-                                    "This radio is not connected over Bluetooth.",
+                                    context.getString(R.string.fwc_not_ble),
                                     Recovery.NO_DFU_SERVICE,
                                 )
                                 return@withRadioHandedOver
@@ -535,7 +535,7 @@ class FirmwareUpdateController(
                 }
             } catch (e: Exception) {
                 _state.value = FirmwareUi.Failed(
-                    e.message ?: "The update failed.",
+                    e.message ?: context.getString(R.string.fwc_update_failed),
                     // Escaped the updater, so how far it got is not
                     // known here — and "safe to retry" is only true of
                     // a node that was never sent the start step.
