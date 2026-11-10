@@ -26,8 +26,13 @@ data class WidgetSnapshot(
     val lastText: String? = null,
     val lastAtMs: Long = 0,
     val updatedAtMs: Long = 0,
+    /** Repeaters heard directly, strongest first (largest widget size). */
+    val nearby: List<Nearby> = emptyList(),
 ) {
     enum class Status { Offline, Connecting, Connected }
+
+    /** One directly-heard repeater. [name] only on a unique match (LinkMeter.nameFor). */
+    data class Nearby(val hash: String, val name: String?, val snr: Double, val bars: Int)
 
     /** Older than this and nobody is updating it: the app isn't running. */
     fun isStale(nowMs: Long): Boolean = nowMs - updatedAtMs > STALE_MS
@@ -46,12 +51,39 @@ data class WidgetSnapshot(
             // The body is deliberately not written to disk (see above).
             .putLong("at", lastAtMs)
             .putLong("updated", updatedAtMs)
+            // Public adverts, not messages: fine to keep for a redraw.
+            .putString("nearby", encodeNearby(nearby))
             .apply()
     }
 
     companion object {
         /** Twice the service's battery poll: past this the data is not live. */
         const val STALE_MS = 10L * 60 * 1000
+
+        /** The most the largest widget lists. */
+        const val MAX_NEARBY = 4
+
+        /**
+         * One repeater per line, tab-separated. A name is advert text, so
+         * tabs and line breaks in it are flattened rather than trusted.
+         */
+        fun encodeNearby(list: List<Nearby>): String =
+            list.take(MAX_NEARBY).joinToString("\n") { n ->
+                val name = n.name?.replace(Regex("[\t\r\n]"), " ").orEmpty()
+                listOf(n.hash, n.snr.toString(), n.bars.toString(), name).joinToString("\t")
+            }
+
+        /** Lenient: a malformed line is dropped, never a crash in the launcher. */
+        fun decodeNearby(text: String?): List<Nearby> =
+            text.orEmpty().lineSequence().mapNotNull { line ->
+                val f = line.split('\t')
+                if (f.size != 4) return@mapNotNull null
+                val hash = f[0].takeIf { h -> h.isNotEmpty() && h.length <= 16 && h.all { it.isLetterOrDigit() } }
+                    ?: return@mapNotNull null
+                val snr = f[1].toDoubleOrNull()?.takeIf { it.isFinite() } ?: return@mapNotNull null
+                val bars = f[2].toIntOrNull()?.takeIf { it in 0..4 } ?: return@mapNotNull null
+                Nearby(hash, f[3].ifBlank { null }, snr, bars)
+            }.take(MAX_NEARBY).toList()
 
         fun load(p: SharedPreferences): WidgetSnapshot = WidgetSnapshot(
             status = runCatching { Status.valueOf(p.getString("status", null) ?: "") }.getOrDefault(Status.Offline),
@@ -66,6 +98,7 @@ data class WidgetSnapshot(
             lastText = null,
             lastAtMs = p.getLong("at", 0),
             updatedAtMs = p.getLong("updated", 0),
+            nearby = decodeNearby(p.getString("nearby", null)),
         )
     }
 }

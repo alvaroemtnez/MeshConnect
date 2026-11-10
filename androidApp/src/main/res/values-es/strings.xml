@@ -98,6 +98,10 @@
     <string name="widget_add">Añadir widget a la pantalla de inicio</string>
     <string name="widget_not_running">La app no está abierta</string>
     <string name="widget_no_messages">Aún no hay mensajes</string>
+    <string name="widget_compact_description">Conexión, batería y señal en una fila.</string>
+    <string name="widget_nearby">Repetidores cercanos</string>
+    <string name="widget_nearby_none">Ninguno oído en los últimos 15 minutos</string>
+    <string name="widget_compact_label">MeshConnect compacto</string>
     <string name="widget_open_to_read">Abre la app para leerlo</string>
     <string name="setup_title">Configurar MeshConnect</string>
     <string name="setup_intro">Esta app habla con una radio LoRa MeshCore por Bluetooth o USB. Sin ella no hay con qué enviar mensajes: no hay alternativa por internet, a propósito.</string>

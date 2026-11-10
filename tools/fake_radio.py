@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 """A fake MeshCore companion radio on TCP, for driving the app without hardware.
 
-    python3 tools/fake_radio.py [--port 5000]
+    python3 tools/fake_radio.py [--port 5000] [--battery MV]
+
+--battery sets the millivolts the radio reports (default 3870, ~72%);
+3200 (~16%) or 3100 (~8%) shows the low-battery alert.
 
 Then in the app (emulator): Settings → Transports → enable TCP, and connect
 to 10.0.2.2:5000 (the host as the emulator sees it).
@@ -157,6 +160,9 @@ def signed_advert(name: str, typ: int, lat, lon):
     return bytes([PUSH_LOG_RX, int(5.5 * 4) & 0xFF, (-90) & 0xFF]) + pkt
 
 
+BATTERY_MV = 3870
+
+
 class Session:
     def __init__(self, conn):
         self.conn = conn
@@ -210,7 +216,7 @@ class Session:
         elif cmd == CMD_SYNC_NEXT_MESSAGE:
             self.send(self.queue.pop(0) if self.queue else bytes([RESP_NO_MORE]))
         elif cmd == CMD_GET_BATT:
-            self.send(bytes([RESP_BATT]) + struct.pack("<HII", 3870, 512, 4096))
+            self.send(bytes([RESP_BATT]) + struct.pack("<HII", BATTERY_MV, 512, 4096))
         elif cmd == CMD_GET_CUSTOM_VAR:
             self.send(bytes([RESP_CUSTOM_VARS]) + b"gps:0\0")
         elif cmd in (CMD_SEND_TXT_MSG, CMD_SEND_CHANNEL_TXT_MSG):
@@ -282,9 +288,12 @@ class Session:
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--port", type=int, default=5000)
+    ap.add_argument("--battery", type=int, default=3870, help="reported millivolts")
     args = ap.parse_args()
     srv = socket.socket()
     srv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    global BATTERY_MV
+    BATTERY_MV = args.battery
     srv.bind(("0.0.0.0", args.port))
     srv.listen(1)
     print(f"fake radio on :{args.port}")

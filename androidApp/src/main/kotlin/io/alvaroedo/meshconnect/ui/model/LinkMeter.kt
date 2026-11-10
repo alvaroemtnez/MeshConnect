@@ -76,6 +76,18 @@ object LinkMeter {
             .take(MAX_ENTRIES)
     }
 
+    /**
+     * The name of the repeater behind a hop hash, only on a unique match
+     * among repeaters and rooms: a short hash can belong to several nodes,
+     * and guessing would name the wrong one.
+     */
+    fun nameFor(prefixHex: String, contacts: Collection<io.github.thatsfguy.meshcore.model.Contact>): String? =
+        contacts.filter {
+            (it.type == io.github.thatsfguy.meshcore.protocol.Codes.ADV_TYPE_REPEATER ||
+                it.type == io.github.thatsfguy.meshcore.protocol.Codes.ADV_TYPE_ROOM) &&
+                it.publicKeyHex.startsWith(prefixHex, ignoreCase = true)
+        }.singleOrNull()?.name?.ifBlank { null }
+
     /** Repeaters heard within [STALE_MS], strongest first. */
     fun fresh(all: List<DirectRepeater>, nowMs: Long): List<DirectRepeater> =
         all.filter { nowMs - it.lastHeardMs <= STALE_MS }.sortedByDescending { it.snr }

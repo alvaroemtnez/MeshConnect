@@ -82,7 +82,6 @@ import io.alvaroedo.meshconnect.ui.theme.ExtraColors
 import io.alvaroedo.meshconnect.ui.theme.MonoFontFamily
 import io.github.thatsfguy.meshcore.engine.EngineState
 import io.github.thatsfguy.meshcore.presentation.BatteryLevel
-import io.github.thatsfguy.meshcore.protocol.Codes
 import kotlin.math.hypot
 import kotlin.math.max
 
@@ -591,13 +590,8 @@ private fun LinkSheet(vm: MeshCoreViewModel, onDismiss: () -> Unit) {
                 )
             }
             for (r in fresh) {
-                // A name only on a unique match: a short hash can belong to
-                // several nodes, and guessing would name the wrong one.
-                val matches = contacts.values.filter {
-                    (it.type == Codes.ADV_TYPE_REPEATER || it.type == Codes.ADV_TYPE_ROOM) &&
-                        it.publicKeyHex.startsWith(r.prefixHex, ignoreCase = true)
-                }
-                val name = matches.singleOrNull()?.name ?: stringResource(R.string.link_unknown_repeater)
+                val name = LinkMeter.nameFor(r.prefixHex, contacts.values)
+                    ?: stringResource(R.string.link_unknown_repeater)
                 ListItem(
                     headlineContent = { Text(name, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                     supportingContent = {

@@ -98,6 +98,10 @@
     <string name="widget_add">Afegir giny a la pantalla d\'inici</string>
     <string name="widget_not_running">L\'aplicació no està oberta</string>
     <string name="widget_no_messages">Encara no hi ha missatges</string>
+    <string name="widget_compact_description">Connexió, bateria i senyal en una fila.</string>
+    <string name="widget_nearby">Repetidors pròxims</string>
+    <string name="widget_nearby_none">Cap escoltat en els últims 15 minuts</string>
+    <string name="widget_compact_label">MeshConnect compacte</string>
     <string name="widget_open_to_read">Obri l\'aplicació per a llegir-lo</string>
     <string name="setup_title">Configurar MeshConnect</string>
     <string name="setup_intro">Esta aplicació parla amb una ràdio LoRa MeshCore per Bluetooth o USB. Sense ella no hi ha amb què enviar missatges: no hi ha alternativa per internet, a propòsit.</string>

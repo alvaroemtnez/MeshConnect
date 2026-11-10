@@ -154,6 +154,10 @@ S = {
 "widget_add": ("Add widget to home screen", "Añadir widget a la pantalla de inicio", "Afegir giny a la pantalla d'inici"),
 "widget_not_running": ("App not running", "La app no está abierta", "L'aplicació no està oberta"),
 "widget_no_messages": ("No messages yet", "Aún no hay mensajes", "Encara no hi ha missatges"),
+"widget_compact_description": ("Connection, battery and signal in one row.", "Conexión, batería y señal en una fila.", "Connexió, bateria i senyal en una fila."),
+"widget_nearby": ("Nearby repeaters", "Repetidores cercanos", "Repetidors pròxims"),
+"widget_nearby_none": ("None heard in the last 15 minutes", "Ninguno oído en los últimos 15 minutos", "Cap escoltat en els últims 15 minuts"),
+"widget_compact_label": ("MeshConnect compact", "MeshConnect compacto", "MeshConnect compacte"),
 "widget_open_to_read": ("Open the app to read it", "Abre la app para leerlo", "Obri l'aplicació per a llegir-lo"),
 
 # Setup

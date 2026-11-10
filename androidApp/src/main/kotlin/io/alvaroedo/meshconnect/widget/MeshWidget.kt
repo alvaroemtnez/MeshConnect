@@ -46,13 +46,17 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
- * The home-screen widget: this radio at a glance. Resizable from 2×2;
- * wider adds the latest message, taller adds the signal reading in full.
+ * The home-screen widget: this radio at a glance. One Glance widget behind
+ * two picker entries — the 2×2 one and a 2×1 "compact" one — that chooses
+ * its layout from its size: one row (status and gauges only), the 2×2 card,
+ * wider adds the latest message, and tallest adds the nearby repeaters.
  * Colours are the launcher's Material You palette (GlanceTheme).
  */
 class MeshWidget : GlanceAppWidget() {
 
-    override val sizeMode = SizeMode.Responsive(setOf(SMALL, NARROW_TALL, WIDE, TALL))
+    override val sizeMode = SizeMode.Responsive(
+        setOf(ROW, WIDE_ROW, SMALL, NARROW_TALL, WIDE, TALL, LARGE),
+    )
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val snapshot = WidgetState.current(context)
@@ -62,14 +66,36 @@ class MeshWidget : GlanceAppWidget() {
     }
 
     companion object {
-        val SMALL = DpSize(110.dp, 110.dp)
+        /**
+         * 2×1 and 4×1: a single row, no message. Launchers disagree wildly
+         * on what one row is (about 60 dp on a Pixel, 123 dp on AOSP's
+         * Launcher3), so the card sizes start at 150 dp: anything shorter
+         * than that is one row, whatever the launcher calls it.
+         */
+        val ROW = DpSize(110.dp, 40.dp)
+        val WIDE_ROW = DpSize(250.dp, 40.dp)
+        val SMALL = DpSize(110.dp, 150.dp)
         val NARROW_TALL = DpSize(110.dp, 180.dp)
-        val WIDE = DpSize(250.dp, 110.dp)
+        val WIDE = DpSize(250.dp, 150.dp)
         val TALL = DpSize(250.dp, 180.dp)
+        /** Tall enough for the nearby-repeaters card under the rest. */
+        val LARGE = DpSize(250.dp, 270.dp)
+
+        /** Both picker entries, so a redraw reaches every placed widget. */
+        suspend fun updateEverywhere(context: Context) = MeshWidget().updateAll(context)
     }
 }
 
 class MeshWidgetReceiver : GlanceAppWidgetReceiver() {
+    override val glanceAppWidget: GlanceAppWidget = MeshWidget()
+}
+
+/**
+ * The 2×1 picker entry. Same widget (Glance maps both receivers to
+ * [MeshWidget], so one updateAll redraws both); only the provider info,
+ * with its one-row default, differs.
+ */
+class MeshWidgetCompactReceiver : GlanceAppWidgetReceiver() {
     override val glanceAppWidget: GlanceAppWidget = MeshWidget()
 }
 
@@ -99,7 +125,7 @@ object WidgetState {
         pending?.cancel()
         pending = scope.launch {
             delay(1500)
-            runCatching { MeshWidget().updateAll(app) }
+            runCatching { MeshWidget.updateEverywhere(app) }
         }
     }
 }
@@ -115,6 +141,11 @@ private fun Content(s: WidgetSnapshot) {
     val muted = GlanceTheme.colors.onSurfaceVariant
     val ink = if (stale) muted else GlanceTheme.colors.onSurface
 
+    if (size.height < MeshWidget.SMALL.height) {
+        RowContent(s, stale, wide, ink)
+        return
+    }
+
     Box(
         GlanceModifier.fillMaxSize()
             .background(GlanceTheme.colors.widgetBackground)
@@ -125,17 +156,9 @@ private fun Content(s: WidgetSnapshot) {
         Column(GlanceModifier.fillMaxSize()) {
             // Mark + node name
             Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    GlanceModifier.size(26.dp).cornerRadius(13.dp).background(GlanceTheme.colors.primary),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    // The launcher mark itself (white on the theme's primary):
-                    // a tinted evenOdd vector drew nothing in RemoteViews.
-                    Image(
-                        ImageProvider(R.drawable.ic_launcher_foreground), null,
-                        GlanceModifier.size(30.dp),
-                    )
-                }
+                // The launcher mark itself (white on the theme's primary):
+                // a tinted evenOdd vector drew nothing in RemoteViews.
+                Mark()
                 Spacer(GlanceModifier.width(8.dp))
                 Text(
                     s.nodeName ?: context.getString(R.string.app_name),
@@ -155,13 +178,18 @@ private fun Content(s: WidgetSnapshot) {
                 }
                 if (wide) {
                     Spacer(GlanceModifier.width(12.dp))
-                    Column(GlanceModifier.defaultWeight()) { Latest(s, ink, muted, now) }
+                    Column(GlanceModifier.defaultWeight()) { Latest(s, ink, muted, now, if (tall) 3 else 2) }
                 }
             }
             // Narrow but tall: the latest message goes underneath.
             if (!wide && size.height >= 170.dp) {
                 Spacer(GlanceModifier.height(10.dp))
-                Latest(s, ink, muted, now)
+                Latest(s, ink, muted, now, 3)
+            }
+            // Wide and tallest: the repeaters this radio hears directly.
+            if (wide && size.height >= MeshWidget.LARGE.height) {
+                Spacer(GlanceModifier.height(12.dp))
+                Nearby(s, ink, muted, stale)
             }
         }
     }
@@ -171,12 +199,13 @@ private fun Content(s: WidgetSnapshot) {
 private fun StatusLine(s: WidgetSnapshot, stale: Boolean) {
     val context = LocalContext.current
     val c = GlanceTheme.colors
-    val (dot, text) = when {
-        stale -> c.outline to context.getString(R.string.widget_not_running)
-        s.status == WidgetSnapshot.Status.Connected && s.plaintext -> c.error to context.getString(R.string.status_tcp_plain)
-        s.status == WidgetSnapshot.Status.Connected -> c.primary to context.getString(R.string.status_connected)
-        s.status == WidgetSnapshot.Status.Connecting -> c.tertiary to context.getString(R.string.status_connecting)
-        else -> c.outline to context.getString(R.string.status_offline)
+    val dot = statusDot(s, stale)
+    val text = when {
+        stale -> context.getString(R.string.widget_not_running)
+        s.status == WidgetSnapshot.Status.Connected && s.plaintext -> context.getString(R.string.status_tcp_plain)
+        s.status == WidgetSnapshot.Status.Connected -> context.getString(R.string.status_connected)
+        s.status == WidgetSnapshot.Status.Connecting -> context.getString(R.string.status_connecting)
+        else -> context.getString(R.string.status_offline)
     }
     Row(verticalAlignment = Alignment.CenterVertically) {
         Box(GlanceModifier.size(8.dp).cornerRadius(4.dp).background(dot)) {}
@@ -188,34 +217,9 @@ private fun StatusLine(s: WidgetSnapshot, stale: Boolean) {
 @Composable
 private fun Gauges(s: WidgetSnapshot, ink: ColorProvider, tall: Boolean) {
     Row(verticalAlignment = Alignment.CenterVertically) {
-        val bat = s.batteryPercent
-        Image(
-            ImageProvider(
-                when {
-                    bat == null -> R.drawable.ic_battery_alert
-                    bat >= 85 -> R.drawable.ic_battery_full
-                    bat >= 55 -> R.drawable.ic_battery_5
-                    bat >= 25 -> R.drawable.ic_battery_3
-                    else -> R.drawable.ic_battery_1
-                },
-            ),
-            null, GlanceModifier.size(18.dp),
-            colorFilter = ColorFilter.tint(if (bat != null && bat <= 15) GlanceTheme.colors.error else ink),
-        )
-        Text(bat?.let { "$it%" } ?: "–", style = TextStyle(color = ink, fontSize = 13.sp))
+        BatteryGauge(s, ink, 18.dp, 13)
         Spacer(GlanceModifier.width(10.dp))
-        Image(
-            ImageProvider(
-                when (s.signalBars) {
-                    null, 0 -> R.drawable.ic_signal_0
-                    1 -> R.drawable.ic_signal_1
-                    2, 3 -> R.drawable.ic_signal_2
-                    else -> R.drawable.ic_signal_4
-                },
-            ),
-            null, GlanceModifier.size(18.dp),
-            colorFilter = ColorFilter.tint(ink),
-        )
+        SignalGauge(s.signalBars, ink, 18.dp)
         s.repeaterHash?.let {
             Text(" " + it.uppercase(), maxLines = 1, style = TextStyle(color = ink, fontSize = 13.sp))
         }
@@ -246,7 +250,7 @@ private fun Unread(s: WidgetSnapshot, ink: ColorProvider) {
 }
 
 @Composable
-private fun Latest(s: WidgetSnapshot, ink: ColorProvider, muted: ColorProvider, now: Long) {
+private fun Latest(s: WidgetSnapshot, ink: ColorProvider, muted: ColorProvider, now: Long, lines: Int) {
     val context = LocalContext.current
     if (s.lastFrom == null) {
         Text(context.getString(R.string.widget_no_messages), style = TextStyle(color = muted, fontSize = 12.sp))
@@ -256,7 +260,7 @@ private fun Latest(s: WidgetSnapshot, ink: ColorProvider, muted: ColorProvider, 
     Text(
         // Only while the app is running; never stored (WidgetSnapshot).
         s.lastText ?: context.getString(R.string.widget_open_to_read),
-        maxLines = 3,
+        maxLines = lines,
         style = TextStyle(color = muted, fontSize = 12.sp),
     )
     if (s.lastAtMs > 0) {
@@ -265,4 +269,173 @@ private fun Latest(s: WidgetSnapshot, ink: ColorProvider, muted: ColorProvider, 
             style = TextStyle(color = muted, fontSize = 11.sp),
         )
     }
+}
+
+/** The launcher mark on the theme's primary, as in the card's header. */
+@Composable
+private fun Mark() {
+    Box(
+        GlanceModifier.size(26.dp).cornerRadius(13.dp).background(GlanceTheme.colors.primary),
+        contentAlignment = Alignment.Center,
+    ) {
+        Image(ImageProvider(R.drawable.ic_launcher_foreground), null, GlanceModifier.size(30.dp))
+    }
+}
+
+/**
+ * 2×1 / 4×1: name over a status dot and the gauges, no message. The dot
+ * carries the connection state on its own at 2×1; 4×1 spells it out too.
+ */
+@Composable
+private fun RowContent(s: WidgetSnapshot, stale: Boolean, wide: Boolean, ink: ColorProvider) {
+    val context = LocalContext.current
+    val c = GlanceTheme.colors
+    Box(
+        GlanceModifier.fillMaxSize()
+            .background(c.widgetBackground)
+            .cornerRadius(24.dp)
+            .clickable(actionStartActivity<MainActivity>())
+            .padding(horizontal = 12.dp, vertical = 6.dp),
+        contentAlignment = Alignment.CenterStart,
+    ) {
+        Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Mark()
+            Spacer(GlanceModifier.width(8.dp))
+            Column(GlanceModifier.defaultWeight()) {
+                Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        s.nodeName ?: context.getString(R.string.app_name),
+                        maxLines = 1,
+                        modifier = GlanceModifier.defaultWeight(),
+                        style = TextStyle(color = ink, fontSize = 14.sp, fontWeight = FontWeight.Medium),
+                    )
+                    // At 2×1 the gauges fill the second line; the count rides
+                    // beside the name, where it cannot be pushed off the edge.
+                    if (!wide && s.unread > 0) {
+                        Spacer(GlanceModifier.width(4.dp))
+                        Box(
+                            GlanceModifier.cornerRadius(9.dp).background(c.primary).padding(horizontal = 6.dp),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(
+                                if (s.unread > 99) "99+" else s.unread.toString(),
+                                maxLines = 1,
+                                style = TextStyle(color = c.onPrimary, fontSize = 11.sp, fontWeight = FontWeight.Medium),
+                            )
+                        }
+                    }
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(GlanceModifier.size(8.dp).cornerRadius(4.dp).background(statusDot(s, stale))) {}
+                    Spacer(GlanceModifier.width(6.dp))
+                    BatteryGauge(s, ink, 16.dp, 12)
+                    Spacer(GlanceModifier.width(6.dp))
+                    SignalGauge(s.signalBars, ink, 16.dp)
+                    if (wide) {
+                        s.repeaterHash?.let {
+                            Text(" " + it.uppercase(), maxLines = 1, style = TextStyle(color = ink, fontSize = 12.sp))
+                        }
+                    }
+                    if (wide && s.unread > 0) {
+                        Spacer(GlanceModifier.width(6.dp))
+                        Image(
+                            ImageProvider(R.drawable.ic_mark_unread), null, GlanceModifier.size(16.dp),
+                            colorFilter = ColorFilter.tint(c.primary),
+                        )
+                        Text(
+                            " " + context.resources.getQuantityString(R.plurals.widget_unread, s.unread, s.unread),
+                            maxLines = 1,
+                            style = TextStyle(color = ink, fontSize = 12.sp),
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun statusDot(s: WidgetSnapshot, stale: Boolean): ColorProvider {
+    val c = GlanceTheme.colors
+    return when {
+        stale -> c.outline
+        s.status == WidgetSnapshot.Status.Connected && s.plaintext -> c.error
+        s.status == WidgetSnapshot.Status.Connected -> c.primary
+        s.status == WidgetSnapshot.Status.Connecting -> c.tertiary
+        else -> c.outline
+    }
+}
+
+/** Up to four repeaters heard directly, strongest first, named only when unambiguous. */
+@Composable
+private fun Nearby(s: WidgetSnapshot, ink: ColorProvider, muted: ColorProvider, stale: Boolean) {
+    val context = LocalContext.current
+    Column(
+        GlanceModifier.fillMaxWidth()
+            .background(GlanceTheme.colors.secondaryContainer)
+            .cornerRadius(16.dp)
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+    ) {
+        Text(
+            context.getString(R.string.widget_nearby),
+            style = TextStyle(color = GlanceTheme.colors.onSecondaryContainer, fontSize = 13.sp, fontWeight = FontWeight.Medium),
+        )
+        // A stale snapshot's repeaters are history, not "nearby".
+        val list = if (stale) emptyList() else s.nearby
+        if (list.isEmpty()) {
+            Text(context.getString(R.string.widget_nearby_none), style = TextStyle(color = muted, fontSize = 12.sp))
+        }
+        for (r in list) {
+            Row(GlanceModifier.fillMaxWidth().padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                SignalGauge(r.bars, ink, 16.dp)
+                Spacer(GlanceModifier.width(6.dp))
+                Text(
+                    r.name ?: r.hash.uppercase(),
+                    maxLines = 1,
+                    modifier = GlanceModifier.defaultWeight(),
+                    style = TextStyle(color = ink, fontSize = 13.sp),
+                )
+                Text(
+                    String.format(java.util.Locale.ROOT, "%.0f dB", r.snr),
+                    maxLines = 1,
+                    style = TextStyle(color = muted, fontSize = 12.sp),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun BatteryGauge(s: WidgetSnapshot, ink: ColorProvider, icon: androidx.compose.ui.unit.Dp, textSp: Int) {
+    val bat = s.batteryPercent
+    Image(
+        ImageProvider(
+            when {
+                bat == null -> R.drawable.ic_battery_alert
+                bat >= 85 -> R.drawable.ic_battery_full
+                bat >= 55 -> R.drawable.ic_battery_5
+                bat >= 25 -> R.drawable.ic_battery_3
+                else -> R.drawable.ic_battery_1
+            },
+        ),
+        null, GlanceModifier.size(icon),
+        colorFilter = ColorFilter.tint(if (bat != null && bat <= 15) GlanceTheme.colors.error else ink),
+    )
+    Text(bat?.let { "$it%" } ?: "–", maxLines = 1, style = TextStyle(color = ink, fontSize = textSp.sp))
+}
+
+@Composable
+private fun SignalGauge(bars: Int?, ink: ColorProvider, icon: androidx.compose.ui.unit.Dp) {
+    Image(
+        ImageProvider(
+            when (bars) {
+                null, 0 -> R.drawable.ic_signal_0
+                1 -> R.drawable.ic_signal_1
+                2, 3 -> R.drawable.ic_signal_2
+                else -> R.drawable.ic_signal_4
+            },
+        ),
+        null, GlanceModifier.size(icon),
+        colorFilter = ColorFilter.tint(ink),
+    )
 }

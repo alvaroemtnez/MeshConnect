@@ -289,16 +289,17 @@ class MeshCoreService : Service() {
                 combine(engine.state, engine.selfInfo, engine.battery, engine.plaintextLink) { st, me, b, pl ->
                     WidgetCore(st, me, b, pl)
                 },
-                directRepeaters,
+                combine(directRepeaters, engine.contacts) { r, c -> r to c },
                 inbox,
                 tick,
-            ) { core, reps, box, _ ->
+            ) { core, (reps, contacts), box, _ ->
                 val state = core.state
                 val self = core.self
                 val batt = core.battery
                 val plain = core.plaintext
                 val now = System.currentTimeMillis()
-                val best = LinkMeter.fresh(reps, now).firstOrNull()
+                val fresh = LinkMeter.fresh(reps, now)
+                val best = fresh.firstOrNull()
                 val (unread, from, last) = box
                 io.alvaroedo.meshconnect.widget.WidgetSnapshot(
                     status = when (state) {
@@ -320,6 +321,15 @@ class MeshCoreService : Service() {
                     },
                     lastAtMs = (last?.timestamp ?: 0L) * 1000,
                     updatedAtMs = now,
+                    nearby = fresh.take(io.alvaroedo.meshconnect.widget.WidgetSnapshot.MAX_NEARBY).map { r ->
+                        io.alvaroedo.meshconnect.widget.WidgetSnapshot.Nearby(
+                            hash = r.prefixHex,
+                            name = LinkMeter.nameFor(r.prefixHex, contacts.values),
+                            // Rounded so a 0.25 dB wobble does not redraw the home screen.
+                            snr = kotlin.math.round(r.snr),
+                            bars = LinkMeter.bars(r.snr, self?.sf),
+                        )
+                    },
                 )
             }.collect { io.alvaroedo.meshconnect.widget.WidgetState.publish(this@MeshCoreService, it) }
         }
