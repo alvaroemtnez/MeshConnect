@@ -139,10 +139,7 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
     private val db = MeshCoreDatabase.get(
         app,
         kotlinx.coroutines.runBlocking {
-            io.alvaroedo.meshconnect.storage.DatabaseKey.passphrase(
-                prefs,
-                io.alvaroedo.meshconnect.storage.KeystoreSecretVault(),
-            )
+            io.alvaroedo.meshconnect.storage.DatabaseKey.passphrase(prefs)
         },
     )
 
@@ -3016,6 +3013,7 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
             io.alvaroedo.meshconnect.storage.SecretsRepository(
                 prefs,
                 io.alvaroedo.meshconnect.storage.KeystoreSecretVault(),
+                io.alvaroedo.meshconnect.storage.KeystoreSecretVault.afterFirstUnlock(),
             ),
             db,
             crypto,

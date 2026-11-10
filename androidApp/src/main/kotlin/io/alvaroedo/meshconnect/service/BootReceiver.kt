@@ -1,6 +1,5 @@
 package io.alvaroedo.meshconnect.service
 
-import android.app.KeyguardManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -15,19 +14,17 @@ import io.alvaroedo.meshconnect.storage.Preferences
  * Only when there is a radio to go back to: with nothing remembered, the service would sit in
  * the notification bar connecting to nothing.
  *
- * Not while the device is locked. The database key is sealed by a Keystore key that requires
- * an unlocked device, so a service started behind the lock screen could not open the message
- * history and would run on an empty stand-in database for the whole session. BOOT_COMPLETED
- * arrives once the user has unlocked, so in practice this is the normal path; if it was
- * delivered late and the phone is locked again, the next app open starts the service instead.
+ * The lock screen does not matter. BOOT_COMPLETED arrives after the first unlock since boot,
+ * and the database key works from then on whether the screen is locked or not (see
+ * DatabaseKey). Until 2026-11-10 it needed an unlocked screen, and this receiver refused to
+ * start behind one rather than run on an empty stand-in database.
  */
 class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action !in ACTIONS) return
         val prefs = Preferences(context)
-        val locked = context.getSystemService(KeyguardManager::class.java)?.isDeviceLocked == true
-        if (!shouldStart(prefs.startAtBoot, prefs.setupComplete, prefs.resolveReconnect() != null, locked)) {
-            Log.i(TAG, "Not starting on ${intent.action} (setting, setup, radio or lock)")
+        if (!shouldStart(prefs.startAtBoot, prefs.setupComplete, prefs.resolveReconnect() != null)) {
+            Log.i(TAG, "Not starting on ${intent.action} (setting, setup or radio)")
             return
         }
         runCatching { MeshCoreService.start(context) }
@@ -39,7 +36,7 @@ class BootReceiver : BroadcastReceiver() {
         val ACTIONS = setOf(Intent.ACTION_BOOT_COMPLETED, Intent.ACTION_MY_PACKAGE_REPLACED)
 
         /** Pure, so the rule is tested without a device. */
-        fun shouldStart(enabled: Boolean, setupComplete: Boolean, hasRadio: Boolean, locked: Boolean): Boolean =
-            enabled && setupComplete && hasRadio && !locked
+        fun shouldStart(enabled: Boolean, setupComplete: Boolean, hasRadio: Boolean): Boolean =
+            enabled && setupComplete && hasRadio
     }
 }

@@ -16,6 +16,14 @@ import android.util.Base64
 class SecretsRepository(
     private val prefs: Preferences,
     private val vault: SecretVault,
+    /**
+     * Seals the channel PSK cache. The service syncs channels whenever it
+     * connects, which can be behind the lock screen; under the strict
+     * [vault] every sync while locked replaced the cached PSKs with empty
+     * blobs. Channel keys sit beside the messages they open, in a database
+     * keyed the same way (see [DatabaseKey]), so they share its key.
+     */
+    private val pskVault: SecretVault = vault,
 ) {
 
     // --- Repeater/room login passwords (per repeater pubkey) ---
@@ -65,10 +73,12 @@ class SecretsRepository(
     // --- Channel PSK sealing for the DB cache ---
 
     suspend fun sealPsk(psk: ByteArray): ByteArray? =
-        runCatching { vault.seal(psk) }.getOrNull()
+        runCatching { pskVault.seal(psk) }.getOrNull()
 
+    /** Tries [vault] too: a row cached before 2026-11-10 was sealed by it, until the next sync. */
     suspend fun unsealPsk(sealed: ByteArray): ByteArray? =
-        runCatching { vault.unseal(sealed) }.getOrNull()
+        runCatching { pskVault.unseal(sealed) }.getOrNull()
+            ?: if (pskVault !== vault) runCatching { vault.unseal(sealed) }.getOrNull() else null
 
     private suspend fun putSecret(key: String, value: ByteArray): Boolean =
         runCatching {

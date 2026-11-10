@@ -130,7 +130,7 @@ class MeshCoreService : Service() {
         scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
         prefs = Preferences(this)
         diagnostics = DiagnosticsLog(prefs)
-        secrets = SecretsRepository(prefs, KeystoreSecretVault())
+        secrets = SecretsRepository(prefs, KeystoreSecretVault(), KeystoreSecretVault.afterFirstUnlock())
         engine = MeshCoreEngine(
             scope = scope,
             crypto = androidCryptoProvider(),
@@ -156,9 +156,8 @@ class MeshCoreService : Service() {
         // The DB is opened encrypted with a Keystore-sealed passphrase.
         // Blocking here is deliberate and brief (one Keystore unseal):
         // nothing may touch the database before the key is resolved.
-        val vault = KeystoreSecretVault()
         val dbKey = kotlinx.coroutines.runBlocking {
-            io.alvaroedo.meshconnect.storage.DatabaseKey.passphrase(prefs, vault)
+            io.alvaroedo.meshconnect.storage.DatabaseKey.passphrase(prefs)
         }
         val db = MeshCoreDatabase.get(this, dbKey)
         repository = MessageRepository(db, secrets, scope)

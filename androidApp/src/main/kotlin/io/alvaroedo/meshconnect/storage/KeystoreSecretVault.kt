@@ -29,7 +29,8 @@ import javax.crypto.spec.GCMParameterSpec
  *   supports it (Pixel 3+, Galaxy S20+, etc.); falls back to the
  *   TEE on older / cheaper hardware. Either way the raw key bytes
  *   are non-extractable.
- * - **Authorisation**: `setUnlockedDeviceRequired(true)` (API 28+).
+ * - **Authorisation**: `setUnlockedDeviceRequired(true)` (API 28+) for the
+ *   default vault; [afterFirstUnlock] is the exception, see there.
  *   The key is usable only while the device is unlocked. A
  *   forensic kit imaging a powered-on-but-locked phone cannot
  *   decrypt the rows. No per-decrypt biometric prompt — the UX
@@ -61,7 +62,15 @@ import javax.crypto.spec.GCMParameterSpec
  * shape as a backup passphrase: if you lose the key, you lose
  * what it sealed.
  */
-class KeystoreSecretVault : SecretVault {
+class KeystoreSecretVault(
+    private val alias: String = KEY_ALIAS,
+    /**
+     * False for [afterFirstUnlock]: the key is then usable whenever the
+     * app's own storage is (after the first unlock since boot), not only
+     * while the screen is unlocked.
+     */
+    private val requireUnlocked: Boolean = true,
+) : SecretVault {
 
     override suspend fun seal(plaintext: ByteArray): ByteArray {
         val key = getOrCreateKey()
@@ -93,7 +102,7 @@ class KeystoreSecretVault : SecretVault {
 
         val key = getKeyOrNull()
             ?: error(
-                "Android Keystore alias '$KEY_ALIAS' missing — was the key " +
+                "Android Keystore alias '$alias' missing — was the key " +
                 "invalidated (biometric enrollment, device wipe)? Anything " +
                 "sealed with it is unrecoverable; restore a config backup."
             )
@@ -138,7 +147,7 @@ class KeystoreSecretVault : SecretVault {
         // Tier 1: full strict spec. StrongBox + unlocked-device-required.
         tiers += {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                setUnlockedDeviceRequired(true)
+                setUnlockedDeviceRequired(requireUnlocked)
                 setIsStrongBoxBacked(true)
             }
         }
@@ -147,7 +156,7 @@ class KeystoreSecretVault : SecretVault {
         // Keep unlocked-device-required.
         tiers += {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                setUnlockedDeviceRequired(true)
+                setUnlockedDeviceRequired(requireUnlocked)
             }
         }
         // Tier 3: drop unlocked-device-required. Some Samsung
@@ -171,7 +180,7 @@ class KeystoreSecretVault : SecretVault {
             // and whatever provider state it holds, to the next tier.
             val kg = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, KEYSTORE_PROVIDER)
             val spec = KeyGenParameterSpec.Builder(
-                KEY_ALIAS,
+                alias,
                 KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT,
             )
                 .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
@@ -187,6 +196,9 @@ class KeystoreSecretVault : SecretVault {
                 // locked-device property SILENTLY — the alias then persists,
                 // so it never retries a stricter tier and the user has no
                 // indication. Tier 3 = no setUnlockedDeviceRequired.
+                // Only the strict vault reports a tier: the after-first-unlock
+                // key has no locked-device property to lose.
+                if (!requireUnlocked) return key
                 lastAchievedTier = tierIndex
                 if (tierIndex >= 2) {
                     android.util.Log.w(
@@ -231,10 +243,31 @@ class KeystoreSecretVault : SecretVault {
 
     private fun getKeyOrNull(): SecretKey? {
         val ks = KeyStore.getInstance(KEYSTORE_PROVIDER).apply { load(null) }
-        return ks.getKey(KEY_ALIAS, null) as? SecretKey
+        return ks.getKey(alias, null) as? SecretKey
     }
 
     companion object {
+        /**
+         * The vault for what the radio service needs while the phone is
+         * locked: the message database's passphrase and the channel PSK
+         * cache. Same model as Signal's database key — a TEE-resident key
+         * with no unlocked-device requirement, so it works from the first
+         * unlock after boot until power-off. Before that first unlock the
+         * app's own storage is not readable either, so nothing is lost by
+         * not asking for more.
+         *
+         * Why not the strict key: Android restarts the service whenever it
+         * likes, including behind the lock screen. GrapheneOS enforces
+         * setUnlockedDeviceRequired to the letter, and a service started
+         * locked could not open the history — it ran on an empty stand-in
+         * database (or, on a first run, created an unencrypted one), and
+         * messages received then never reached the real history.
+         */
+        fun afterFirstUnlock(): KeystoreSecretVault =
+            KeystoreSecretVault(alias = AFU_KEY_ALIAS, requireUnlocked = false)
+
+        const val AFU_KEY_ALIAS = "io.alvaroedo.meshconnect.afu-vault.v1"
+
         /** 0-based index of the KeyGenParameterSpec tier the current key was
          *  created at (0/1 = setUnlockedDeviceRequired active, 2 = minimal /
          *  no locked-device protection, -1 = not yet created this process).
