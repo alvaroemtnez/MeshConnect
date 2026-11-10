@@ -1032,7 +1032,6 @@ internal fun formatDrift(seconds: Long, words: DriftWords = DriftWords()): Strin
 @Composable
 private fun RadioShareDialog(uri: String?, region: String?, onDismiss: () -> Unit) {
     val qr = remember(uri) { uri?.let { runCatching { io.alvaroedo.meshconnect.platform.Qr.encode(it) }.getOrNull() } }
-    val clipboard = androidx.compose.ui.platform.LocalClipboardManager.current
     androidx.compose.material3.AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.rshare_title)) },
@@ -1061,12 +1060,6 @@ private fun RadioShareDialog(uri: String?, region: String?, onDismiss: () -> Uni
             }
         },
         confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.setup_done)) } },
-        dismissButton = {
-            if (uri != null) {
-                TextButton(onClick = {
-                    clipboard.setText(androidx.compose.ui.text.AnnotatedString(uri))
-                }) { Text(stringResource(R.string.copy_link)) }
-            }
-        },
+        dismissButton = { if (uri != null) QrLinkActions(uri) },
     )
 }

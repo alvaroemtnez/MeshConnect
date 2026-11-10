@@ -779,7 +779,6 @@
     <string name="rshare_no_width">La ràdio encara no ha informat de l\'amplada del hash de salt, així que el codi no pot incloure-la. Reconnecta i torna-ho a provar.</string>
     <string name="rshare_region">Freqüència, amplada de banda, SF, CR, amplada del hash i regió #%1$s. No la potència: eixe és el límit legal de qui escaneja.</string>
     <string name="rshare_no_region">Freqüència, amplada de banda, SF, CR i amplada del hash; sense regió. No la potència: eixe és el límit legal de qui escaneja.</string>
-    <string name="copy_link">Copiar l\'enllaç</string>
     <string name="rs_no_status">Sense resposta d\'estat. Has iniciat sessió i estàs a l\'abast?</string>
     <string name="rs_refresh">Actualitzar l\'estat</string>
     <string name="rs_fetch_tele">Demanar telemetria</string>
@@ -1289,6 +1288,8 @@
     <string name="newchat_scan">Escanejar un codi QR</string>
     <string name="newchat_scan_sub">Un contacte, canal o comunitat que et mostren.</string>
     <string name="chats_new_chat">Xat nou</string>
+    <string name="qr_share_link">Compartir</string>
+    <string name="qr_share_chooser">Compartir enllaç</string>
     <plurals name="vm_restored_settings">
         <item quantity="one">Restaurat: %1$d ajust</item>
         <item quantity="many">Restaurats: %1$d ajustos</item>

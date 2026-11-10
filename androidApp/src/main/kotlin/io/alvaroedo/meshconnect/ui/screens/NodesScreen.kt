@@ -1501,7 +1501,6 @@ private fun ShareQrDialog(
     var qr by remember { mutableStateOf<Bitmap?>(null) }
     var uri by remember { mutableStateOf<String?>(null) }
     var failed by remember { mutableStateOf(false) }
-    val clipboard = androidx.compose.ui.platform.LocalClipboardManager.current
     LaunchedEffect(Unit) {
         val text = load()
         if (text != null) {
@@ -1541,14 +1540,7 @@ private fun ShareQrDialog(
             }
         },
         confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.setup_done)) } },
-        dismissButton = {
-            TextButton(
-                enabled = uri != null,
-                onClick = {
-                    uri?.let { clipboard.setText(androidx.compose.ui.text.AnnotatedString(it)) }
-                },
-            ) { Text(stringResource(R.string.ch_copy_link)) }
-        },
+        dismissButton = { QrLinkActions(uri) },
     )
 }
 

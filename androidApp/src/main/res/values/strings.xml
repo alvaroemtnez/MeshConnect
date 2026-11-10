@@ -782,7 +782,6 @@
     <string name="rshare_no_width">The radio hasn\'t reported its hop-hash width yet, so a code can\'t include it. Reconnect and try again.</string>
     <string name="rshare_region">Frequency, bandwidth, SF, CR, hop-hash width and region #%1$s. Not TX power: that\'s the scanner\'s legal limit.</string>
     <string name="rshare_no_region">Frequency, bandwidth, SF, CR and hop-hash width; no region. Not TX power: that\'s the scanner\'s legal limit.</string>
-    <string name="copy_link">Copy link</string>
     <string name="rs_no_status">No status reply. Are you signed in and in range?</string>
     <string name="rs_refresh">Refresh status</string>
     <string name="rs_fetch_tele">Fetch telemetry</string>
@@ -1292,6 +1291,8 @@
     <string name="newchat_scan">Scan a QR code</string>
     <string name="newchat_scan_sub">A contact, channel or community someone shows you.</string>
     <string name="chats_new_chat">New chat</string>
+    <string name="qr_share_link">Share</string>
+    <string name="qr_share_chooser">Share link</string>
     <plurals name="vm_restored_settings">
         <item quantity="one">Restored: %1$d setting</item>
         <item quantity="other">Restored: %1$d settings</item>

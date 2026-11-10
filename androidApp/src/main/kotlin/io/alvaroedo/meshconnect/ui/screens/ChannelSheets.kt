@@ -501,7 +501,6 @@ private fun ChannelQrDialog(
         ShareUri.encodeChannel(name, pskHex, regionScope)
     }
     val qr = remember(uri) { runCatching { Qr.encode(uri) }.getOrNull() }
-    val clipboard = androidx.compose.ui.platform.LocalClipboardManager.current
     androidx.compose.material3.AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.ch_share_named, name), maxLines = 2) },
@@ -522,10 +521,6 @@ private fun ChannelQrDialog(
             }
         },
         confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.setup_done)) } },
-        dismissButton = {
-            TextButton(onClick = {
-                clipboard.setText(androidx.compose.ui.text.AnnotatedString(uri))
-            }) { Text(stringResource(R.string.ch_copy_link)) }
-        },
+        dismissButton = { QrLinkActions(uri) },
     )
 }

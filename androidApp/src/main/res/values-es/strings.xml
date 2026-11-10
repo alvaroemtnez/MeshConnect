@@ -779,7 +779,6 @@
     <string name="rshare_no_width">La radio aún no ha informado del ancho del hash de salto, así que el código no puede incluirlo. Reconecta y vuelve a intentarlo.</string>
     <string name="rshare_region">Frecuencia, ancho de banda, SF, CR, ancho del hash y región #%1$s. No la potencia: ese es el límite legal de quien escanea.</string>
     <string name="rshare_no_region">Frecuencia, ancho de banda, SF, CR y ancho del hash; sin región. No la potencia: ese es el límite legal de quien escanea.</string>
-    <string name="copy_link">Copiar enlace</string>
     <string name="rs_no_status">Sin respuesta de estado. ¿Has iniciado sesión y estás en alcance?</string>
     <string name="rs_refresh">Actualizar estado</string>
     <string name="rs_fetch_tele">Pedir telemetría</string>
@@ -1289,6 +1288,8 @@
     <string name="newchat_scan">Escanear un código QR</string>
     <string name="newchat_scan_sub">Un contacto, canal o comunidad que te enseñen.</string>
     <string name="chats_new_chat">Nuevo chat</string>
+    <string name="qr_share_link">Compartir</string>
+    <string name="qr_share_chooser">Compartir enlace</string>
     <plurals name="vm_restored_settings">
         <item quantity="one">Restaurado: %1$d ajuste</item>
         <item quantity="many">Restaurados: %1$d ajustes</item>

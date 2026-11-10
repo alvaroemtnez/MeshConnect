@@ -889,7 +889,6 @@ S = {
 "rshare_no_width": ("The radio hasn't reported its hop-hash width yet, so a code can't include it. Reconnect and try again.", 'La radio aún no ha informado del ancho del hash de salto, así que el código no puede incluirlo. Reconecta y vuelve a intentarlo.', "La ràdio encara no ha informat de l'amplada del hash de salt, així que el codi no pot incloure-la. Reconnecta i torna-ho a provar."),
 "rshare_region": ("Frequency, bandwidth, SF, CR, hop-hash width and region #%1$s. Not TX power: that's the scanner's legal limit.", 'Frecuencia, ancho de banda, SF, CR, ancho del hash y región #%1$s. No la potencia: ese es el límite legal de quien escanea.', 'Freqüència, amplada de banda, SF, CR, amplada del hash i regió #%1$s. No la potència: eixe és el límit legal de qui escaneja.'),
 "rshare_no_region": ("Frequency, bandwidth, SF, CR and hop-hash width; no region. Not TX power: that's the scanner's legal limit.", 'Frecuencia, ancho de banda, SF, CR y ancho del hash; sin región. No la potencia: ese es el límite legal de quien escanea.', 'Freqüència, amplada de banda, SF, CR i amplada del hash; sense regió. No la potència: eixe és el límit legal de qui escaneja.'),
-"copy_link": ('Copy link', 'Copiar enlace', "Copiar l'enllaç"),
 
 "rs_no_status": ('No status reply. Are you signed in and in range?', 'Sin respuesta de estado. ¿Has iniciado sesión y estás en alcance?', "Sense resposta d'estat. Has iniciat sessió i estàs a l'abast?"),
 "rs_refresh": ('Refresh status', 'Actualizar estado', "Actualitzar l'estat"),
@@ -1494,6 +1493,8 @@ S = {
 "newchat_scan": ("Scan a QR code", "Escanear un código QR", "Escanejar un codi QR"),
 "newchat_scan_sub": ("A contact, channel or community someone shows you.", "Un contacto, canal o comunidad que te enseñen.", "Un contacte, canal o comunitat que et mostren."),
 "chats_new_chat": ("New chat", "Nuevo chat", "Xat nou"),
+"qr_share_link": ("Share", "Compartir", "Compartir"),
+"qr_share_chooser": ("Share link", "Compartir enlace", "Compartir enllaç"),
 }
 
 # key -> ((one, other) en, (one, other) es, (one, other) ca)
