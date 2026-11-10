@@ -49,6 +49,11 @@ class Preferences(context: Context) {
         get() = prefs.getBoolean("auto_reconnect", true)
         set(v) { prefs.edit().putBoolean("auto_reconnect", v).apply() }
 
+    /** Start the radio service when the phone boots (BootReceiver). On by default. */
+    var startAtBoot: Boolean
+        get() = prefs.getBoolean("start_at_boot", true)
+        set(v) { prefs.edit().putBoolean("start_at_boot", v).apply() }
+
     /**
      * Flood on the final retry of a direct message, resetting the dead
      * path first. MeshCore's documented default is ON, and its own FAQ

@@ -105,6 +105,12 @@ internal fun ConnectionSection(vm: MeshCoreViewModel, onAddNode: () -> Unit) {
         autoReconnect = it
         vm.prefs.autoReconnect = it
     }
+    var startAtBoot by remember { mutableStateOf(vm.prefs.startAtBoot) }
+    SettingRow(stringResource(R.string.set_start_at_boot), startAtBoot) {
+        startAtBoot = it
+        vm.prefs.startAtBoot = it
+    }
+    HintText(stringResource(R.string.set_start_at_boot_hint))
 }
 
 @Composable

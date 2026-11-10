@@ -440,6 +440,8 @@ S = {
 "set_add_node": ('Add / connect a radio', 'Añadir / conectar una radio', 'Afegir / connectar una ràdio'),
 "set_disconnect": ('Disconnect', 'Desconectar', 'Desconnectar'),
 "set_auto_reconnect": ('Reconnect when the app starts', 'Reconectar al abrir la app', "Reconnectar en obrir l'aplicació"),
+"set_start_at_boot": ("Start with the phone", "Iniciar con el teléfono", "Iniciar amb el telèfon"),
+"set_start_at_boot_hint": ("Reconnects to your radio after the phone restarts or the app updates, so messages arrive without opening the app.", "Vuelve a conectar con tu radio tras reiniciar el teléfono o actualizar la app, para que lleguen mensajes sin abrirla.", "Torna a connectar amb la teua ràdio després de reiniciar el telèfon o actualitzar l'aplicació, perquè arriben missatges sense obrir-la."),
 "set_tcp": ('TCP (unencrypted)', 'TCP (sin cifrar)', 'TCP (sense xifrar)'),
 "set_usb": ('USB serial', 'USB serie', 'USB sèrie'),
 "set_tcp_warning": ('⚠ TCP links are unencrypted and unauthenticated: message text and repeater login passwords cross the network in the clear.', '⚠ Los enlaces TCP no van cifrados ni autenticados: el texto de los mensajes y las contraseñas de los repetidores cruzan la red en claro.', '⚠ Els enllaços TCP no van xifrats ni autenticats: el text dels missatges i les contrasenyes dels repetidors creuen la xarxa en clar.'),

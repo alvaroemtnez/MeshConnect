@@ -29,6 +29,8 @@
          reticulum-mobile-app issue #35). -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Start the radio service with the phone (BootReceiver; a setting). -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <!-- Network: TCP transport (off by default) + map tiles — the only
          outbound-HTTP feature (SCOPE.md). -->
@@ -86,6 +88,17 @@
             android:name=".service.MeshCoreService"
             android:foregroundServiceType="connectedDevice|dataSync"
             android:exported="false" />
+
+        <!-- Boot and app-update start. Both are system broadcasts, which reach
+             a non-exported receiver. -->
+        <receiver
+            android:name=".service.BootReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
 
         <!-- Home-screen widget (Glance). -->
         <receiver

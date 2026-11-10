@@ -350,6 +350,8 @@
     <string name="set_add_node">Afegir / connectar una ràdio</string>
     <string name="set_disconnect">Desconnectar</string>
     <string name="set_auto_reconnect">Reconnectar en obrir l\'aplicació</string>
+    <string name="set_start_at_boot">Iniciar amb el telèfon</string>
+    <string name="set_start_at_boot_hint">Torna a connectar amb la teua ràdio després de reiniciar el telèfon o actualitzar l\'aplicació, perquè arriben missatges sense obrir-la.</string>
     <string name="set_tcp">TCP (sense xifrar)</string>
     <string name="set_usb">USB sèrie</string>
     <string name="set_tcp_warning">⚠ Els enllaços TCP no van xifrats ni autenticats: el text dels missatges i les contrasenyes dels repetidors creuen la xarxa en clar.</string>
