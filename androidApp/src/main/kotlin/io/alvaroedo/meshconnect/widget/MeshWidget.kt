@@ -54,9 +54,8 @@ import kotlinx.coroutines.launch
  */
 class MeshWidget : GlanceAppWidget() {
 
-    override val sizeMode = SizeMode.Responsive(
-        setOf(ROW, ROW_ROOMY, WIDE_ROW, SMALL, NARROW_TALL, WIDE, TALL, LARGE),
-    )
+    // The real size, not the nearest of a few breakpoints: see WidgetLayout.
+    override val sizeMode = SizeMode.Exact
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val snapshot = WidgetState.current(context)
@@ -66,23 +65,6 @@ class MeshWidget : GlanceAppWidget() {
     }
 
     companion object {
-        /**
-         * 2×1 and 4×1: a single row, no message. Launchers disagree wildly
-         * on what one row is (about 60 dp on a Pixel, 123 dp on AOSP's
-         * Launcher3), so the card sizes start at 150 dp: anything shorter
-         * than that is one row, whatever the launcher calls it.
-         */
-        val ROW = DpSize(110.dp, 40.dp)
-        /** A 2×1 with room for a third line (Launcher3's rows are ~120 dp, a Pixel's ~60). */
-        val ROW_ROOMY = DpSize(110.dp, 80.dp)
-        val WIDE_ROW = DpSize(250.dp, 40.dp)
-        val SMALL = DpSize(110.dp, 150.dp)
-        val NARROW_TALL = DpSize(110.dp, 180.dp)
-        val WIDE = DpSize(250.dp, 150.dp)
-        val TALL = DpSize(250.dp, 180.dp)
-        /** Tall enough for the nearby-repeaters card under the rest. */
-        val LARGE = DpSize(250.dp, 270.dp)
-
         /** Both picker entries, so a redraw reaches every placed widget. */
         suspend fun updateEverywhere(context: Context) = MeshWidget().updateAll(context)
     }
@@ -138,13 +120,13 @@ private fun Content(s: WidgetSnapshot) {
     val size = LocalSize.current
     val now = System.currentTimeMillis()
     val stale = s.isStale(now)
-    val wide = size.width >= MeshWidget.WIDE.width
-    val tall = size.height >= MeshWidget.TALL.height
+    val plan = WidgetLayout.plan(size.width.value, size.height.value)
+    val wide = plan.wide
     val muted = GlanceTheme.colors.onSurfaceVariant
     val ink = if (stale) muted else GlanceTheme.colors.onSurface
 
-    if (size.height < MeshWidget.SMALL.height) {
-        RowContent(s, stale, wide, ink, roomy = size.height >= MeshWidget.ROW_ROOMY.height)
+    if (plan.row) {
+        RowContent(s, stale, wide, ink, roomy = plan.roomyRow, large = plan.largeRow)
         return
     }
 
@@ -174,24 +156,24 @@ private fun Content(s: WidgetSnapshot) {
 
             Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
                 Column(GlanceModifier.defaultWeight()) {
-                    Gauges(s, ink, tall)
+                    Gauges(s, ink, plan.snrLine)
                     Spacer(GlanceModifier.height(6.dp))
                     Unread(s, ink)
                 }
                 if (wide) {
                     Spacer(GlanceModifier.width(12.dp))
-                    Column(GlanceModifier.defaultWeight()) { Latest(s, ink, muted, now, if (tall) 3 else 2) }
+                    Column(GlanceModifier.defaultWeight()) { Latest(s, ink, muted, now, plan.messageLines) }
                 }
             }
-            // Narrow but tall: the latest message goes underneath.
-            if (!wide && size.height >= 170.dp) {
+            // Narrow: the latest message goes underneath, as many lines as fit.
+            if (!wide && plan.messageLines > 0) {
                 Spacer(GlanceModifier.height(10.dp))
-                Latest(s, ink, muted, now, 3)
+                Latest(s, ink, muted, now, plan.messageLines)
             }
-            // Wide and tallest: the repeaters this radio hears directly.
-            if (wide && size.height >= MeshWidget.LARGE.height) {
+            // Whatever height is left: the repeaters this radio hears directly.
+            if (plan.nearbyRows > 0) {
                 Spacer(GlanceModifier.height(12.dp))
-                Nearby(s, ink, muted, stale)
+                Nearby(s, ink, muted, stale, plan.nearbyRows)
             }
         }
     }
@@ -217,7 +199,7 @@ private fun StatusLine(s: WidgetSnapshot, stale: Boolean) {
 }
 
 @Composable
-private fun Gauges(s: WidgetSnapshot, ink: ColorProvider, tall: Boolean) {
+private fun Gauges(s: WidgetSnapshot, ink: ColorProvider, snrLine: Boolean) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         BatteryGauge(s, ink, 18.dp, 13)
         Spacer(GlanceModifier.width(10.dp))
@@ -226,7 +208,7 @@ private fun Gauges(s: WidgetSnapshot, ink: ColorProvider, tall: Boolean) {
             Text(" " + it.uppercase(), maxLines = 1, style = TextStyle(color = ink, fontSize = 13.sp))
         }
     }
-    if (tall && s.repeaterSnr != null) {
+    if (snrLine && s.repeaterSnr != null) {
         Text(
             String.format(java.util.Locale.ROOT, "SNR %.1f dB", s.repeaterSnr),
             style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 12.sp),
@@ -293,7 +275,19 @@ private fun Mark() {
  * the card's, where it cannot be pushed off the edge by the gauges.
  */
 @Composable
-private fun RowContent(s: WidgetSnapshot, stale: Boolean, wide: Boolean, ink: ColorProvider, roomy: Boolean = false) {
+private fun RowContent(
+    s: WidgetSnapshot,
+    stale: Boolean,
+    wide: Boolean,
+    ink: ColorProvider,
+    roomy: Boolean = false,
+    large: Boolean = false,
+) {
+    // A tall row (a 2×1 on a launcher with big cells) a size up throughout, so it fills
+    // its cell instead of sitting small in the middle of it.
+    val nameSp = if (large) 17 else 14
+    val textSp = if (large) 14 else 12
+    val icon = if (large) 20.dp else 16.dp
     // Narrow but tall enough: the repeater gets its own line, where its hash and SNR
     // both fit. A 2×1 is about four items wide, and the gauge line already holds three.
     val ownLine = !wide && roomy
@@ -318,12 +312,14 @@ private fun RowContent(s: WidgetSnapshot, stale: Boolean, wide: Boolean, ink: Co
                         s.nodeName ?: context.getString(R.string.app_name),
                         maxLines = 1,
                         modifier = GlanceModifier.defaultWeight(),
-                        style = TextStyle(color = ink, fontSize = 14.sp, fontWeight = FontWeight.Medium),
+                        style = TextStyle(color = ink, fontSize = nameSp.sp, fontWeight = FontWeight.Medium),
                     )
-                    if (!wide) {
+                    // Beside the name at every width: at the end of the gauge line a
+                    // 4×1 pushed the number off the edge and showed a bare icon.
+                    run {
                         Spacer(GlanceModifier.width(4.dp))
                         Image(
-                            ImageProvider(R.drawable.ic_mark_unread), null, GlanceModifier.size(14.dp),
+                            ImageProvider(R.drawable.ic_mark_unread), null, GlanceModifier.size(icon - 2.dp),
                             colorFilter = ColorFilter.tint(if (s.unread > 0) c.primary else ink),
                         )
                         Text(
@@ -331,34 +327,24 @@ private fun RowContent(s: WidgetSnapshot, stale: Boolean, wide: Boolean, ink: Co
                             maxLines = 1,
                             style = TextStyle(
                                 color = if (s.unread > 0) c.primary else ink,
-                                fontSize = 12.sp,
+                                fontSize = textSp.sp,
                                 fontWeight = FontWeight.Medium,
                             ),
                         )
                     }
                 }
+                if (large) Spacer(GlanceModifier.height(2.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(GlanceModifier.size(8.dp).cornerRadius(4.dp).background(statusDot(s, stale))) {}
                     Spacer(GlanceModifier.width(6.dp))
-                    BatteryGauge(s, ink, 16.dp, 12)
+                    BatteryGauge(s, ink, icon, textSp)
                     Spacer(GlanceModifier.width(6.dp))
-                    SignalGauge(s.signalBars, ink, 16.dp)
-                    if (!ownLine) RepeaterReading(s, ink)
-                    if (wide) {
-                        Spacer(GlanceModifier.width(6.dp))
-                        Image(
-                            ImageProvider(R.drawable.ic_mark_unread), null, GlanceModifier.size(16.dp),
-                            colorFilter = ColorFilter.tint(if (s.unread > 0) c.primary else ink),
-                        )
-                        Text(
-                            " " + context.resources.getQuantityString(R.plurals.widget_unread, s.unread, s.unread),
-                            maxLines = 1,
-                            style = TextStyle(color = ink, fontSize = 12.sp),
-                        )
-                    }
+                    SignalGauge(s.signalBars, ink, icon)
+                    if (!ownLine) RepeaterReading(s, ink, textSp = textSp)
                 }
                 if (ownLine && s.repeaterHash != null) {
-                    Row(verticalAlignment = Alignment.CenterVertically) { RepeaterReading(s, ink, lead = "") }
+                    if (large) Spacer(GlanceModifier.height(2.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) { RepeaterReading(s, ink, lead = "", textSp = textSp) }
                 }
             }
         }
@@ -367,14 +353,14 @@ private fun RowContent(s: WidgetSnapshot, stale: Boolean, wide: Boolean, ink: Co
 
 /** The repeater heard best: its hash, then its SNR in a lighter ink. */
 @Composable
-private fun RepeaterReading(s: WidgetSnapshot, ink: ColorProvider, lead: String = " ") {
+private fun RepeaterReading(s: WidgetSnapshot, ink: ColorProvider, lead: String = " ", textSp: Int = 12) {
     val hash = s.repeaterHash ?: return
-    Text(lead + hash.uppercase(), maxLines = 1, style = TextStyle(color = ink, fontSize = 12.sp))
+    Text(lead + hash.uppercase(), maxLines = 1, style = TextStyle(color = ink, fontSize = textSp.sp))
     s.repeaterSnr?.let {
         Text(
             String.format(java.util.Locale.ROOT, " %.1f dB", it),
             maxLines = 1,
-            style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 11.sp),
+            style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = (textSp - 1).sp),
         )
     }
 }
@@ -393,7 +379,7 @@ private fun statusDot(s: WidgetSnapshot, stale: Boolean): ColorProvider {
 
 /** Up to four repeaters heard directly, strongest first, named only when unambiguous. */
 @Composable
-private fun Nearby(s: WidgetSnapshot, ink: ColorProvider, muted: ColorProvider, stale: Boolean) {
+private fun Nearby(s: WidgetSnapshot, ink: ColorProvider, muted: ColorProvider, stale: Boolean, maxRows: Int) {
     val context = LocalContext.current
     Column(
         GlanceModifier.fillMaxWidth()
@@ -406,7 +392,7 @@ private fun Nearby(s: WidgetSnapshot, ink: ColorProvider, muted: ColorProvider, 
             style = TextStyle(color = GlanceTheme.colors.onSecondaryContainer, fontSize = 13.sp, fontWeight = FontWeight.Medium),
         )
         // A stale snapshot's repeaters are history, not "nearby".
-        val list = if (stale) emptyList() else s.nearby
+        val list = if (stale) emptyList() else s.nearby.take(maxRows)
         if (list.isEmpty()) {
             Text(context.getString(R.string.widget_nearby_none), style = TextStyle(color = muted, fontSize = 12.sp))
         }

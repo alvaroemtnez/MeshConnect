@@ -19,14 +19,14 @@ class WidgetRowTest {
     fun `the hash and SNR are not gated on width`() {
         // On the gauge line when there's no room below, on its own line when there is —
         // never behind `wide`.
-        assertTrue(row.contains("if (!ownLine) RepeaterReading(s, ink)"))
+        assertTrue(row.contains("if (!ownLine) RepeaterReading(s, ink, textSp = textSp)"))
         assertTrue(row.contains("if (ownLine && s.repeaterHash != null)"))
         assertTrue(row.contains("val ownLine = !wide && roomy"))
     }
 
     @Test
-    fun `2x1 shows the unread count, at zero as well`() {
-        val narrow = row.substringAfter("if (!wide) {").substringBefore("Row(verticalAlignment")
+    fun `the row shows the unread count beside the name, at zero as well`() {
+        val narrow = row.substringAfter("// Beside the name at every width").substringBefore("Row(verticalAlignment")
         assertTrue(narrow.contains("R.drawable.ic_mark_unread"))
         assertFalse("shown at 0 too, like the card", narrow.contains("s.unread > 0) {"))
     }
