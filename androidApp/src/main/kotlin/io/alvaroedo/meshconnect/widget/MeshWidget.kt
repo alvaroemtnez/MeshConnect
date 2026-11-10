@@ -283,8 +283,12 @@ private fun Mark() {
 }
 
 /**
- * 2×1 / 4×1: name over a status dot and the gauges, no message. The dot
- * carries the connection state on its own at 2×1; 4×1 spells it out too.
+ * 2×1 / 4×1: name over a status dot and the gauges, no message text.
+ *
+ * At 2×1 the app mark is left out: it cost a third of the width, and that width is what
+ * the heard repeater's hash and its SNR need (reported 2026-11-10: the hash showed at 3×1
+ * and vanished at 2×1). The unread count rides beside the name, as icon and number like
+ * the card's, where it cannot be pushed off the edge by the gauges.
  */
 @Composable
 private fun RowContent(s: WidgetSnapshot, stale: Boolean, wide: Boolean, ink: ColorProvider) {
@@ -299,8 +303,10 @@ private fun RowContent(s: WidgetSnapshot, stale: Boolean, wide: Boolean, ink: Co
         contentAlignment = Alignment.CenterStart,
     ) {
         Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Mark()
-            Spacer(GlanceModifier.width(8.dp))
+            if (wide) {
+                Mark()
+                Spacer(GlanceModifier.width(8.dp))
+            }
             Column(GlanceModifier.defaultWeight()) {
                 Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Text(
@@ -309,20 +315,21 @@ private fun RowContent(s: WidgetSnapshot, stale: Boolean, wide: Boolean, ink: Co
                         modifier = GlanceModifier.defaultWeight(),
                         style = TextStyle(color = ink, fontSize = 14.sp, fontWeight = FontWeight.Medium),
                     )
-                    // At 2×1 the gauges fill the second line; the count rides
-                    // beside the name, where it cannot be pushed off the edge.
-                    if (!wide && s.unread > 0) {
+                    if (!wide) {
                         Spacer(GlanceModifier.width(4.dp))
-                        Box(
-                            GlanceModifier.cornerRadius(9.dp).background(c.primary).padding(horizontal = 6.dp),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Text(
-                                if (s.unread > 99) "99+" else s.unread.toString(),
-                                maxLines = 1,
-                                style = TextStyle(color = c.onPrimary, fontSize = 11.sp, fontWeight = FontWeight.Medium),
-                            )
-                        }
+                        Image(
+                            ImageProvider(R.drawable.ic_mark_unread), null, GlanceModifier.size(14.dp),
+                            colorFilter = ColorFilter.tint(if (s.unread > 0) c.primary else ink),
+                        )
+                        Text(
+                            " " + if (s.unread > 99) "99+" else s.unread.toString(),
+                            maxLines = 1,
+                            style = TextStyle(
+                                color = if (s.unread > 0) c.primary else ink,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Medium,
+                            ),
+                        )
                     }
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -331,16 +338,21 @@ private fun RowContent(s: WidgetSnapshot, stale: Boolean, wide: Boolean, ink: Co
                     BatteryGauge(s, ink, 16.dp, 12)
                     Spacer(GlanceModifier.width(6.dp))
                     SignalGauge(s.signalBars, ink, 16.dp)
-                    if (wide) {
-                        s.repeaterHash?.let {
-                            Text(" " + it.uppercase(), maxLines = 1, style = TextStyle(color = ink, fontSize = 12.sp))
-                        }
+                    s.repeaterHash?.let {
+                        Text(" " + it.uppercase(), maxLines = 1, style = TextStyle(color = ink, fontSize = 12.sp))
                     }
-                    if (wide && s.unread > 0) {
+                    s.repeaterSnr?.takeIf { s.repeaterHash != null }?.let {
+                        Text(
+                            String.format(java.util.Locale.ROOT, " %.1f dB", it),
+                            maxLines = 1,
+                            style = TextStyle(color = c.onSurfaceVariant, fontSize = 11.sp),
+                        )
+                    }
+                    if (wide) {
                         Spacer(GlanceModifier.width(6.dp))
                         Image(
                             ImageProvider(R.drawable.ic_mark_unread), null, GlanceModifier.size(16.dp),
-                            colorFilter = ColorFilter.tint(c.primary),
+                            colorFilter = ColorFilter.tint(if (s.unread > 0) c.primary else ink),
                         )
                         Text(
                             " " + context.resources.getQuantityString(R.plurals.widget_unread, s.unread, s.unread),
