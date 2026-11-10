@@ -327,6 +327,8 @@ S = {
 "info_unauthenticated": ("%1$s (unauthenticated)", "%1$s (sin autenticar)", "%1$s (sense autenticar)"),
 "info_reaction_id": ("Reaction id", "Id de reacción", "Id de reacció"),
 "info_length": ("Length", "Longitud", "Longitud"),
+"conv_heard_via": ("via %1$s", "vía %1$s", "via %1$s"),
+"conv_heard_via_desc": ("Route this message took. Tap to see it on the map.", "Ruta que siguió este mensaje. Toca para verla en el mapa.", "Ruta que va seguir este missatge. Toca per a vore-la en el mapa."),
 "info_arrived_via": ("Arrived via", "Llegó por", "Va arribar per"),
 "info_sender": ("sender", "remitente", "remitent"),
 "info_this_radio": ("this radio", "esta radio", "esta ràdio"),

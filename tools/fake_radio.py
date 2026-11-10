@@ -120,9 +120,9 @@ def channel_msg(idx, sender, text, hops=2) -> bytes:
     )
 
 
-def contact_msg(sender, text) -> bytes:
+def contact_msg(sender, text, path_len=1) -> bytes:
     return (
-        bytes([RESP_CONTACT_MSG_V3, 24, 0, 0]) + key(sender)[:6] + bytes([1, 0])
+        bytes([RESP_CONTACT_MSG_V3, 24, 0, 0]) + key(sender)[:6] + bytes([path_len, 0])
         + struct.pack("<I", int(time.time())) + text.encode() + b"\0"
     )
 
@@ -135,6 +135,18 @@ def rx_log(repeater: str, snr_db: float, rssi: int) -> bytes:
     header = (5 << 2) | 1  # payload GRP_TXT, route FLOOD (Packet.h:15)
     pkt = bytes([header, ((HASH_WIDTH - 1) << 6) | hops]) + b"".join(relays) + random.randbytes(24)
     return bytes([PUSH_LOG_RX, int(snr_db * 4) & 0xFF, rssi & 0xFF]) + pkt
+
+
+def dm_route(sender: str, relays: list) -> tuple:
+    """A flooded TXT_MSG from [sender] over [relays] as the RX log shows it, and the
+    path_len its CONTACT_MSG must state, so the app's HeardVia correlation credits the
+    route to the message (same src hash, same hop count, inside the window)."""
+    path_len = ((HASH_WIDTH - 1) << 6) | len(relays)
+    header = (2 << 2) | 1  # payload TXT_MSG, route FLOOD (Packet.h:15)
+    path = b"".join(key(r)[:HASH_WIDTH] for r in relays)
+    payload = bytes([0x00, key(sender)[0]]) + random.randbytes(20)  # dest, src, MAC+cipher
+    pkt = bytes([header, path_len]) + path + payload
+    return bytes([PUSH_LOG_RX, int(4.25 * 4) & 0xFF, (-96) & 0xFF]) + pkt, path_len
 
 
 def signed_advert(name: str, typ: int, lat, lon):
@@ -187,6 +199,10 @@ class Session:
             contact_msg("Marta", f"<{key('Pau EA5ABC').hex()}:1:Pau EA5ABC>"),
             contact_msg("Marta", "39.46990,-0.37630"),
         ]
+        # One DM with a known route, for the "heard via" chip: its RX-log copy first.
+        rx, plen = dm_route("Marta", ["Port Rpt", "Hilltop Rpt"])
+        self.send(rx)
+        self.queue.append(contact_msg("Marta", "Made it home, the Port link is back up", plen))
         self.send(bytes([PUSH_MSG_WAITING]))
         # Signed adverts from nodes not in the contact list, so the Nodes tab's "heard, not
         # added" section has something in it (only with the `cryptography` package).

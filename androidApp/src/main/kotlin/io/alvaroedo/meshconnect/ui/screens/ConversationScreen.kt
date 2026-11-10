@@ -70,6 +70,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -183,6 +185,14 @@ fun ConversationScreen(
     var pendingUrl by remember { mutableStateOf<String?>(null) }
     var reactingTo by remember { mutableStateOf<MessageEntity?>(null) }
     var details by remember { mutableStateOf<MessageEntity?>(null) }
+    // The "heard via" chip's sheet: the route alone, map first.
+    var routeOf by remember { mutableStateOf<MessageEntity?>(null) }
+    // Full key hex -> name, for naming the hops on route chips. One map for
+    // the whole thread; each bubble only splits its own path.
+    val liveForRoutes by vm.liveContacts.collectAsState()
+    val routeNames = remember(liveForRoutes) {
+        liveForRoutes.values.associate { it.publicKeyHex to it.name }
+    }
     var attachOpen by remember { mutableStateOf(false) }
     var pickContact by remember { mutableStateOf(false) }
     var pickChannel by remember { mutableStateOf(false) }
@@ -321,6 +331,8 @@ fun ConversationScreen(
                     onMoreEmoji = { reactingTo = m },
                     onReply = { replyingTo = m },
                     onInfo = { details = m },
+                    routeLabel = if (m.outgoing) null else routeChipLabel(m, routeNames),
+                    onRoute = { routeOf = m },
                     onDelete = { vm.deleteMessage(m.id) },
                     onResend = { vm.resendMessage(m.id) },
                     onHttpLink = { pendingUrl = it },
@@ -430,6 +442,17 @@ fun ConversationScreen(
             // contact list, and a route redraws on every arrival.
             metresAway = remember(details) { vm.metresFromThisRadio() },
             onDismiss = { details = null },
+        )
+    }
+
+    routeOf?.let { m ->
+        RouteSheet(
+            m,
+            vm = vm,
+            senderLabel = m.senderName?.ifBlank { null } ?: title,
+            contactNames = routeNames,
+            metresAway = remember(routeOf) { vm.metresFromThisRadio() },
+            onDismiss = { routeOf = null },
         )
     }
 
@@ -736,6 +759,9 @@ private fun MessageBubble(
     onMoreEmoji: () -> Unit = {},
     onReply: () -> Unit = {},
     onInfo: () -> Unit = {},
+    /** "via A › B" when the arrival route is known (RouteChip), else null. */
+    routeLabel: String? = null,
+    onRoute: () -> Unit = {},
     onDelete: () -> Unit = {},
     onResend: () -> Unit = {},
     onHttpLink: (String) -> Unit = {},
@@ -843,6 +869,7 @@ private fun MessageBubble(
                     )
                 }
                 if (reactions.isNotEmpty()) ReactionChips(reactions)
+                routeLabel?.let { HeardViaChip(it, onRoute) }
                 MessageFooter(m)
             }
         }
@@ -1240,6 +1267,73 @@ private fun ReactionPicker(onPick: (String) -> Unit, onDismiss: () -> Unit) {
     )
 }
 
+
+/**
+ * The words for a received message's route chip, or null when no route
+ * is known — then the footer's hop count is all there is to say.
+ */
+internal fun routeChipLabel(m: MessageEntity, contactNames: Map<String, String>): String? {
+    val width = m.arrivalHashWidth?.takeIf { it in 1..4 } ?: return null
+    val bytes = m.arrivalPathHex?.takeIf { it.isNotEmpty() }
+        ?.let { io.github.thatsfguy.meshcore.util.hexToBytesOrNull(it) }
+        ?.takeIf { it.size % width == 0 }
+        ?: return null
+    return io.alvaroedo.meshconnect.ui.model.RouteChip.label(PathCodec.resolveHops(bytes, width, contactNames))
+}
+
+/** "via Hilltop › Port": a small tonal pill inside the bubble. Tap for the map. */
+@Composable
+private fun HeardViaChip(label: String, onClick: () -> Unit) {
+    val desc = stringResource(R.string.conv_heard_via_desc)
+    Row(
+        Modifier
+            .padding(top = 4.dp)
+            .clip(RoundedCornerShape(50))
+            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.6f))
+            .clickable(onClick = onClick)
+            .semantics { contentDescription = desc }
+            .padding(horizontal = 8.dp, vertical = 3.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            painterResource(R.drawable.ic_route), null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(14.dp),
+        )
+        Spacer(Modifier.width(4.dp))
+        Text(
+            stringResource(R.string.conv_heard_via, label),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
+}
+
+/** The route a message arrived on, alone: the map, then the ordered hops. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun RouteSheet(
+    m: MessageEntity,
+    vm: MeshCoreViewModel,
+    senderLabel: String,
+    contactNames: Map<String, String>,
+    metresAway: (String) -> Double?,
+    onDismiss: () -> Unit,
+) {
+    ModalBottomSheet(onDismissRequest = onDismiss) {
+        Column(
+            Modifier
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 24.dp)
+                .padding(bottom = 32.dp),
+        ) {
+            MessagePathMap(vm, m, senderLabel)
+            ArrivalRoute(m, contactNames, metresAway)
+        }
+    }
+}
 
 /** Everything known about one message, on its own sheet. */
 @OptIn(ExperimentalMaterial3Api::class)

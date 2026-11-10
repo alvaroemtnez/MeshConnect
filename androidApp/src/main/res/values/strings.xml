@@ -242,6 +242,8 @@
     <string name="info_unauthenticated">%1$s (unauthenticated)</string>
     <string name="info_reaction_id">Reaction id</string>
     <string name="info_length">Length</string>
+    <string name="conv_heard_via">via %1$s</string>
+    <string name="conv_heard_via_desc">Route this message took. Tap to see it on the map.</string>
     <string name="info_arrived_via">Arrived via</string>
     <string name="info_sender">sender</string>
     <string name="info_this_radio">this radio</string>

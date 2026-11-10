@@ -239,6 +239,8 @@
     <string name="info_unauthenticated">%1$s (sense autenticar)</string>
     <string name="info_reaction_id">Id de reacció</string>
     <string name="info_length">Longitud</string>
+    <string name="conv_heard_via">via %1$s</string>
+    <string name="conv_heard_via_desc">Ruta que va seguir este missatge. Toca per a vore-la en el mapa.</string>
     <string name="info_arrived_via">Va arribar per</string>
     <string name="info_sender">remitent</string>
     <string name="info_this_radio">esta ràdio</string>
