@@ -16,13 +16,22 @@ import kotlin.math.roundToInt
  * sensor and companion siblings), and `RESP_CODE_BATT_AND_STORAGE`.
  * Checked against firmware `main` at a366955 (2026-09-30).
  *
- * The number shown here is the one the node draws on its own screen:
- * `renderBatteryIndicator` in `examples/companion_radio/ui-new/UITask.cpp`
- * is a straight line from `BATT_MIN_MILLIVOLTS` 3000 to
- * `BATT_MAX_MILLIVOLTS` 4200, integer-truncated and clamped. Matching it
- * exactly means the phone and the OLED agree, which matters more than a
- * cleverer curve that would disagree with the device in your hand. It is
- * still a single-cell Li-ion assumption, so the UI marks it with `~`.
+ * **The estimate is a discharge curve, not a line** (MeshConnect, 2026-11-10). The node's own
+ * screen draws a straight line from 3000 to 4200 mV (`renderBatteryIndicator` in
+ * `examples/companion_radio/ui-new/UITask.cpp`), and this used to copy it so the two agreed.
+ * But a Li-ion cell is not linear: it spends most of its charge between about 3.6 and 4.0 V
+ * and falls off a cliff below 3.5 V. The line read 3.70 V as 58% when the cell holds under
+ * half, and its "20%" was 3.24 V, nearly flat — so the low-battery alert came too late to act
+ * on. Agreeing with the device's screen is worth less than being right about the cell.
+ *
+ * The curve is Meshtastic's default 1S Li-ion/LiPo open-circuit table (`OCV_ARRAY` in
+ * meshtastic/firmware `src/power.h`), field-tested on the same ESP32/nRF52 LoRa boards and
+ * cells MeshCore runs on, linearly interpolated between its 10% points. The radio reports
+ * its voltage under its own light load, a little below open-circuit, so the estimate leans
+ * low — the safe side for a battery warning. Firmwares that gauge the pack themselves
+ * (inw-mesh on the T-Pager counts charge with its fuel gauge) still send only millivolts
+ * over the companion protocol, so their screen and this can differ; this is the better
+ * reading of the voltage the app is given. It is still an estimate, marked with `~`.
  *
  * Outside a plausible single-cell window there is no percentage at all.
  * The firmware itself overrides the range to 6000–8400 for a 2S board
@@ -32,9 +41,11 @@ import kotlin.math.roundToInt
  */
 object BatteryLevel {
 
-    /** Firmware defaults (`UITask.cpp`, `BATT_MIN/MAX_MILLIVOLTS`). */
-    const val EMPTY_MV = 3000
-    const val FULL_MV = 4200
+    /**
+     * Millivolts at 100%, 90%, … 0% (Meshtastic `OCV_ARRAY`, `src/power.h`). Strictly
+     * descending; [percent] interpolates between neighbours.
+     */
+    val CURVE_MV = intArrayOf(4190, 4050, 3990, 3890, 3800, 3720, 3630, 3530, 3420, 3300, 3100)
 
     /**
      * The window in which a reading is believed to be one Li-ion cell.
@@ -52,9 +63,14 @@ object BatteryLevel {
     /** 0–100, or null when the voltage does not look like one cell. */
     fun percent(millivolts: Int): Int? {
         if (millivolts < PLAUSIBLE_MIN_MV || millivolts > PLAUSIBLE_MAX_MV) return null
-        // Same integer arithmetic as the firmware, truncation included.
-        val p = ((millivolts - EMPTY_MV) * 100) / (FULL_MV - EMPTY_MV)
-        return p.coerceIn(0, 100)
+        if (millivolts >= CURVE_MV.first()) return 100
+        if (millivolts <= CURVE_MV.last()) return 0
+        // CURVE_MV[i] is (10 - i) * 10 percent; find the step the reading falls in.
+        val i = CURVE_MV.indexOfFirst { millivolts >= it } // 1..10
+        val hi = CURVE_MV[i - 1]
+        val lo = CURVE_MV[i]
+        val base = (10 - i) * 10
+        return (base + 10.0 * (millivolts - lo) / (hi - lo)).roundToInt().coerceIn(0, 100)
     }
 
     /** "3.92 V · ~76%", or "3.92 V" when no estimate is believable. */

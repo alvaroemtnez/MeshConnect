@@ -3,8 +3,8 @@
 
     python3 tools/fake_radio.py [--port 5000] [--battery MV]
 
---battery sets the millivolts the radio reports (default 3870, ~72%);
-3200 (~16%) or 3100 (~8%) shows the low-battery alert.
+--battery sets the millivolts the radio reports (default 3870, ~68%);
+3400 (~19%) or 3250 (~8%) shows the low-battery alert.
 
 Then in the app (emulator): Settings → Transports → enable TCP, and connect
 to 10.0.2.2:5000 (the host as the emulator sees it).

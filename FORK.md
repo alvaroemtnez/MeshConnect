@@ -58,6 +58,9 @@ $ git merge upstream/main
 Then resolve:
 
 - **`shared/`**: take upstream's side; re-check the four MeshConnect additions still compile.
+  One deliberate *change* rather than addition: `presentation/BatteryLevel.percent` uses a
+  Li-ion discharge curve instead of upstream's 3000–4200 mV line (2026-11-10, see its KDoc).
+  If upstream touches that file, keep our `percent` and `CURVE_MV`.
 - **`androidApp/`**: git's rename detection maps upstream's old paths onto ours, so many hunks
   apply cleanly. Where they don't, keep our version and port the change by hand. Strings go
   through `scripts/strings_table.py`, icons through `scripts/gen_icons.py`. Watch for upstream
@@ -68,6 +71,9 @@ Then resolve:
   `tools/fake_radio.py`), and describe the upstream range in the merge commit.
 
 ## Things to offer upstream
+
+- `BatteryLevel` on a discharge curve: the straight line reads 3.70 V as 58% and puts 20% at
+  3.24 V, so a low-battery warning arrives with nothing left to act on.
 
 - `RadioStats` + `MeshCoreEngine.radioStats()`: live noise floor, RSSI and SNR (their issue #6).
 - The trace round trip (`androidApp/.../ui/model/TraceRoutes.kt`): upstream sends the stored
