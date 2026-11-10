@@ -267,7 +267,7 @@ internal fun IdentitySection(vm: MeshCoreViewModel, onShowSelfQr: () -> Unit) {
     Row(horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)) {
         FilledTonalButton(onClick = { vm.sendSelfAdvert(flood = false) }, modifier = Modifier.weight(1f)) {
             androidx.compose.material3.Icon(
-                androidx.compose.ui.res.painterResource(R.drawable.ic_cell_tower), null, modifier = Modifier.size(18.dp),
+                androidx.compose.ui.res.painterResource(R.drawable.ic_sensors), null, modifier = Modifier.size(18.dp),
             )
             Spacer(Modifier.width(6.dp))
             Text(stringResource(R.string.set_announce_near))

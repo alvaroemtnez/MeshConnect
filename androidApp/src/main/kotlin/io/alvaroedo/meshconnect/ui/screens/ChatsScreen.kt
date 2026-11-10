@@ -129,7 +129,7 @@ fun ChatsScreen(vm: MeshCoreViewModel, nav: NavController, archivedView: Boolean
                     MenuAction(stringResource(R.string.chats_advert_zero_hop), icon = R.drawable.ic_sensors) {
                         vm.sendSelfAdvert(flood = false)
                     },
-                    MenuAction(stringResource(R.string.chats_advert_flood), icon = R.drawable.ic_radar) {
+                    MenuAction(stringResource(R.string.chats_advert_flood), icon = R.drawable.ic_campaign) {
                         vm.sendSelfAdvert(flood = true)
                     },
                     MenuAction(stringResource(R.string.chats_new_chat), icon = R.drawable.ic_add_comment) { showChannelSheet = true },

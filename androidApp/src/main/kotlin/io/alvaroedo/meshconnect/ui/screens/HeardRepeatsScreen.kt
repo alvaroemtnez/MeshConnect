@@ -71,7 +71,7 @@ fun HeardRepeatsScreen(vm: MeshCoreViewModel, nav: NavController) {
                 vm = vm,
                 nav = nav,
                 menuActions = listOf(
-                    MenuAction(stringResource(R.string.chats_advert_flood)) { vm.sendSelfAdvert(flood = true) },
+                    MenuAction(stringResource(R.string.chats_advert_flood), icon = R.drawable.ic_campaign) { vm.sendSelfAdvert(flood = true) },
                     MenuAction(stringResource(R.string.clear), destructive = true) { vm.clearHeardRepeats() },
                 ),
             )
