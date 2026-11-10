@@ -154,6 +154,15 @@ private const val SLIDE_MS = 250
 private const val TAB_FADE_MS = 120
 private val TAB_ROUTES = setOf("chats", "nodes", "map", "settings")
 
+/**
+ * Screens that show one radio's conversation or one of its nodes, which mean nothing once
+ * another radio is connected. Settings screens follow whichever radio is connected, and stay.
+ */
+internal fun leavesOnRadioSwitch(route: String?): Boolean =
+    route != null && (
+        route.startsWith("conversation/") || route.startsWith("repeater/") || route.startsWith("trace/")
+        )
+
 /** Both ends are bottom-bar tabs: switching tabs, not drilling in. */
 internal fun isTabSwitch(from: String?, to: String?): Boolean =
     from in TAB_ROUTES && to in TAB_ROUTES
@@ -187,6 +196,23 @@ private fun AppShell(
             launchSingleTop = true
         }
         openThread.value = null
+    }
+
+    // Another radio took over (the top bar's switcher, or roaming between saved radios):
+    // a conversation or a node's admin screen belongs to the radio it was opened on, and
+    // left open it shows an empty thread under a bare key. Back to Chats instead. The same
+    // radio reconnecting is not a switch.
+    LaunchedEffect(Unit) {
+        var last: String? = null
+        vm.selfInfo.collect { info ->
+            val key = info?.publicKeyHex ?: return@collect
+            if (last != null && key != last && leavesOnRadioSwitch(nav.currentDestination?.route)) {
+                if (!nav.popBackStack("chats", inclusive = false)) {
+                    nav.navigate("chats") { popUpTo(nav.graph.startDestinationId) { inclusive = true } }
+                }
+            }
+            last = key
+        }
     }
 
     val transient by vm.transientMessage.collectAsStateWithLifecycle()
