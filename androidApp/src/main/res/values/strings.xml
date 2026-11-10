@@ -1271,6 +1271,8 @@
     <string name="about_this_licence">MeshConnect\'s licence</string>
     <string name="about_licences">Open-source licences</string>
     <string name="about_endorsement">MeshConnect is an independent project. It is not affiliated with or endorsed by the MeshCore project or the MeshCore Hardened author.</string>
+    <string name="telemetry_board">Board · channel %1$d</string>
+    <string name="telemetry_sensor">Sensor · channel %1$d</string>
     <plurals name="vm_restored_settings">
         <item quantity="one">Restored: %1$d setting</item>
         <item quantity="other">Restored: %1$d settings</item>

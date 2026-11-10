@@ -1268,6 +1268,8 @@
     <string name="about_this_licence">Llicència de MeshConnect</string>
     <string name="about_licences">Llicències de codi obert</string>
     <string name="about_endorsement">MeshConnect és un projecte independent. No està afiliat ni avalat pel projecte MeshCore ni per l\'autor de MeshCore Hardened.</string>
+    <string name="telemetry_board">Placa · canal %1$d</string>
+    <string name="telemetry_sensor">Sensor · canal %1$d</string>
     <plurals name="vm_restored_settings">
         <item quantity="one">Restaurat: %1$d ajust</item>
         <item quantity="many">Restaurats: %1$d ajustos</item>

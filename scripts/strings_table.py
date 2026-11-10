@@ -1473,6 +1473,8 @@ S = {
     "MeshConnect es un proyecto independiente. No está afiliado ni respaldado por el proyecto MeshCore ni por el autor de MeshCore Hardened.",
     "MeshConnect és un projecte independent. No està afiliat ni avalat pel projecte MeshCore ni per l'autor de MeshCore Hardened.",
 ),
+"telemetry_board": ("Board · channel %1$d", "Placa · canal %1$d", "Placa · canal %1$d"),
+"telemetry_sensor": ("Sensor · channel %1$d", "Sensor · canal %1$d", "Sensor · canal %1$d"),
 }
 
 # key -> ((one, other) en, (one, other) es, (one, other) ca)

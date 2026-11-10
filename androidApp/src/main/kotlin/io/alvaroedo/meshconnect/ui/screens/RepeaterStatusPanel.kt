@@ -139,19 +139,7 @@ fun RepeaterStatusPanel(vm: MeshCoreViewModel, keyHex: String) {
         if (telemetry.isNotEmpty()) {
             HorizontalDivider(Modifier.padding(vertical = 6.dp))
             Text(stringResource(R.string.rs_telemetry), style = MaterialTheme.typography.titleSmall)
-            for (t in telemetry) {
-                // Converted for display only; the reading keeps the
-                // unit the sensor encoded.
-                val (value, unit) = Units.reading(t.value, t.unit, units)
-                StatField(
-                    "${t.label} (ch ${t.channel})",
-                    when {
-                        BatteryLevel.isSelfBattery(t) -> BatteryLevel.label(BatteryLevel.millivolts(t))
-                        unit.isEmpty() -> "%.2f".format(value)
-                        else -> "%.2f %s".format(value, unit)
-                    },
-                )
-            }
+            TelemetryList(telemetry, units, Modifier.padding(top = 4.dp))
         }
 
         if (status == null && telemetry.isEmpty() && !loading) {

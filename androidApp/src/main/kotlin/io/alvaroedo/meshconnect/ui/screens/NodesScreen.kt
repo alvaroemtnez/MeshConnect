@@ -1346,7 +1346,7 @@ private fun ContactTelemetryDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.telemetry_title), maxLines = 1) },
         text = {
-            Column {
+            Column(Modifier.verticalScroll(rememberScrollState())) {
                 Text(
                     contact.name.ifBlank { contact.keyHex.take(12) },
                     style = MaterialTheme.typography.labelLarge,
@@ -1362,28 +1362,7 @@ private fun ContactTelemetryDialog(
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                    else -> for (r in readings!!) {
-                        Row(Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
-                            Text(
-                                r.label,
-                                style = MaterialTheme.typography.bodySmall,
-                                modifier = Modifier.weight(1f),
-                            )
-                            Text(
-                                // Converted here and only here: the reading
-                                // keeps the unit the sensor encoded.
-                                if (BatteryLevel.isSelfBattery(r)) {
-                                    BatteryLevel.label(BatteryLevel.millivolts(r))
-                                } else {
-                                    Units.reading(r.value, r.unit, units).let { (v, u) ->
-                                        formatReading(v) + (if (u.isBlank()) "" else " $u")
-                                    }
-                                },
-                                style = MaterialTheme.typography.bodySmall,
-                                fontFamily = FontFamily.Monospace,
-                            )
-                        }
-                    }
+                    else -> TelemetryList(readings!!, units)
                 }
             }
         },
@@ -1397,10 +1376,6 @@ private fun ContactTelemetryDialog(
         },
     )
 }
-
-/** Trim trailing zeros: "23.0" reads better than "23.000000". */
-private fun formatReading(value: Double): String =
-    if (value == value.toLong().toDouble()) value.toLong().toString() else "%.2f".format(value)
 
 /** Self-share QR dialog (used from Settings). */
 @Composable
