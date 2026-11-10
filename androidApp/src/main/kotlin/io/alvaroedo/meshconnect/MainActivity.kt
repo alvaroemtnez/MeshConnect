@@ -302,11 +302,16 @@ private fun AppShell(
             }
         },
     ) { padding ->
+        // Decided once. Read on every recomposition, it changed from "setup" to "chats"
+        // when setup finished, and the next recomposition (the first message sent, which
+        // updates the chat list) handed NavHost a different graph: it reset the back stack
+        // to the new start and threw the user out of the chat (reproduced 2026-11-10).
+        val startDestination = remember { if (vm.prefs.setupComplete) "chats" else "setup" }
         NavHost(
             navController = nav,
             // First run lands on setup rather than an empty Chats list
             // with no hint that a radio is required (PARITY §1).
-            startDestination = if (vm.prefs.setupComplete) "chats" else "setup",
+            startDestination = startDestination,
             modifier = Modifier.padding(padding).consumeWindowInsets(padding),
             // Push: the new screen slides in from the right over the old
             // one; back: it slides out to the right, uncovering the one

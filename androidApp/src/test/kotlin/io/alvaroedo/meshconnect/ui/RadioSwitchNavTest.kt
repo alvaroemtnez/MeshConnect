@@ -30,4 +30,15 @@ class RadioSwitchNavTest {
         // A disconnect (null) in between does not reset what "last" was.
         assertTrue(shell.contains("val key = info?.publicKeyHex ?: return@collect"))
     }
+
+    @Test
+    fun `the start destination is decided once, not on every recomposition`() {
+        // Re-read each time, it flipped from setup to chats when setup finished, and the next
+        // recomposition (the first message sent) gave NavHost a new graph, which reset the
+        // back stack and threw the user out of the chat. Reproduced on the emulator.
+        val shell = File("src/main/kotlin/io/alvaroedo/meshconnect/MainActivity.kt").readText()
+        assertTrue(shell.contains("val startDestination = remember { if (vm.prefs.setupComplete) \"chats\" else \"setup\" }"))
+        assertTrue(shell.contains("startDestination = startDestination,"))
+        assertFalse(shell.contains("startDestination = if (vm.prefs.setupComplete)"))
+    }
 }
