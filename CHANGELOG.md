@@ -30,16 +30,38 @@ First MeshConnect release, forked from MeshCore Hardened 0.10.15.
   location, or a point picked on the map. These arrive as cards: a map preview that opens your
   maps app, a contact card you can add, a channel card you can join.
 - **Nodes:** filter by kind (all, contacts, repeaters, rooms, sensors) with icons instead of
-  tabs; the heard-adverts list appears on pull-down; "Dismiss all" asks first; scanning a QR
-  code is the floating button.
+  tabs, and the same icons on map pins and list rows. Nodes heard but not added fold out from
+  a "Heard, not added" row at the top of the list (the pull-to-refresh that did nothing is
+  gone); "Dismiss all" asks first; scanning a QR code is the floating button.
 - **Map on MapLibre** (OpenFreeMap tiles) instead of osmdroid, light or dark with the phone,
   with my-node, whole-network and zoom buttons.
 - **Ping and trace on a map:** trace a route to a node and back, with each leg coloured by
   its SNR (upstream issue #5).
-- **Home-screen widget** in four sizes: connection, battery, nearby repeaters, unread count.
+- **Home-screen widget** from 2×1 to 4×3: a one-row compact entry (status, battery, signal,
+  unread), the card with the latest message, and at the largest size the repeaters your radio
+  hears directly.
+- **Connecting without Settings.** A three-step first run (welcome, find your radio, name and
+  preset), a "Connect a radio" button where there is no radio, and the top-bar card connects,
+  switches between saved radios or disconnects. Bluetooth permission is asked when scanning.
+- **Settings reworked** into grouped cards with an icon per item, one field style, tonal
+  buttons and segmented choices. Reboot radio moved into This node, with a red confirm.
+- **Messages:** long-press the Signal way (blurred background, reactions above, actions
+  below); swipe a chat right for read/unread and left to archive, with archived chats behind
+  one row and kept in backups; a "via …" chip on received messages whose route is known,
+  opening the route on a map.
+- **Radio battery alerts** at 20% and 10%, from the reading the app already takes, so they
+  cost the phone nothing. Their own notification channel and a switch in Notifications.
+- **Node sign-in** opens over the current screen and leads to the node only once it accepts.
+- **Regional presets** re-synced with MeshCore Open's list.
+- **Hop labels** in the top bar are cut to your mesh's hop width, so a repeater no longer
+  shows 4 digits one moment and 6 the next.
+- **Map attribution** drawn by the app instead of a misplaced ⓘ.
+- **Valencian:** "escoltat" instead of "oït".
 - **About screen** with credits, licences you can read offline, and the privacy promises.
 - **Long node names in the top bar** are ellipsised instead of wrapping (upstream issue #8).
 - **Keystore hardening from upstream PR #10:** each key-generation fallback tier gets its own
   `KeyGenerator`.
 - **Build and release** through `build.sh` and Forgejo Actions, with signed releases published
   on Forgejo and the GitHub mirror.
+- **Android only.** The unbuilt iOS skeleton and its CI are gone. Kotlin 2.3, AGP 8.13,
+  MapLibre 13.7, compile SDK 36.
