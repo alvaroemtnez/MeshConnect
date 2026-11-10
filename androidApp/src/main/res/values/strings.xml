@@ -1232,8 +1232,10 @@
     <string name="link_battery">Battery</string>
     <string name="link_connection">Connection</string>
     <string name="link_radio">This radio</string>
-    <string name="link_radio_values">Noise %1$d dBm · last RSSI %2$d dBm · last SNR %3$s dB</string>
-    <string name="link_airtime">Airtime: sent %1$s · received %2$s</string>
+    <string name="link_noise">Noise floor</string>
+    <string name="link_last_rssi">Last RSSI</string>
+    <string name="link_last_snr">Last SNR</string>
+    <string name="link_airtime_label">Airtime sent / received</string>
     <string name="link_repeaters">Repeaters heard directly</string>
     <string name="link_repeaters_hint">The last relay of each flooded packet your radio received, strongest first. Only the last 15 minutes count.</string>
     <string name="link_no_repeaters">No repeater heard in the last 15 minutes.</string>

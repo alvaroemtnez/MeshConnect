@@ -1384,8 +1384,10 @@ S = {
 "link_battery": ("Battery", "Batería", "Bateria"),
 "link_connection": ("Connection", "Conexión", "Connexió"),
 "link_radio": ("This radio", "Esta radio", "Esta ràdio"),
-"link_radio_values": ("Noise %1$d dBm · last RSSI %2$d dBm · last SNR %3$s dB", "Ruido %1$d dBm · último RSSI %2$d dBm · último SNR %3$s dB", "Soroll %1$d dBm · últim RSSI %2$d dBm · últim SNR %3$s dB"),
-"link_airtime": ("Airtime: sent %1$s · received %2$s", "Tiempo en el aire: enviado %1$s · recibido %2$s", "Temps en l'aire: enviat %1$s · rebut %2$s"),
+"link_noise": ("Noise floor", "Ruido de fondo", "Soroll de fons"),
+"link_last_rssi": ("Last RSSI", "Último RSSI", "Últim RSSI"),
+"link_last_snr": ("Last SNR", "Último SNR", "Últim SNR"),
+"link_airtime_label": ("Airtime sent / received", "Tiempo en el aire enviado / recibido", "Temps en l'aire enviat / rebut"),
 "link_repeaters": ("Repeaters heard directly", "Repetidores oídos directamente", "Repetidors escoltats directament"),
 "link_repeaters_hint": (
     "The last relay of each flooded packet your radio received, strongest first. Only the last 15 minutes count.",

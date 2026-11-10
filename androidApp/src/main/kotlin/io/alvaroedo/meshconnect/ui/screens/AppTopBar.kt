@@ -502,11 +502,18 @@ private fun LinkSheet(vm: MeshCoreViewModel, onDismiss: () -> Unit) {
                 .verticalScroll(androidx.compose.foundation.rememberScrollState())
                 .padding(bottom = 16.dp),
         ) {
-            Text(
-                self?.name ?: stringResource(R.string.link_title),
-                style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.padding(horizontal = 24.dp),
-            )
+            // Header: which radio, and on what settings. 16 dp, the rows' and
+            // tiles' left edge, so the sheet reads down one line.
+            Column(Modifier.padding(horizontal = 16.dp)) {
+                Text(self?.name ?: stringResource(R.string.link_title), style = MaterialTheme.typography.titleLarge)
+                if (engineState == EngineState.Ready) {
+                    Text(
+                        io.github.thatsfguy.meshcore.presentation.radioSubtitle(self?.freqKhz, self?.sf, self?.txPowerDbm),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
             if (engineState != EngineState.Ready) {
                 // Not connected: the card is where you connect. Saved radios are one tap.
                 Column(Modifier.padding(horizontal = 24.dp, vertical = 8.dp)) {
@@ -515,19 +522,26 @@ private fun LinkSheet(vm: MeshCoreViewModel, onDismiss: () -> Unit) {
                 return@Column
             }
             val plaintext by vm.plaintextLink.collectAsStateWithLifecycle()
+            // Every row carries a leading icon in the same 24 dp slot, so the text
+            // lines up; without one on Battery it started further left than Connection.
             label?.let {
                 ListItem(
                     headlineContent = { Text(stringResource(R.string.link_connection)) },
                     supportingContent = {
-                        Text(
-                            it,
-                            color = if (plaintext) MaterialTheme.colorScheme.error else Color.Unspecified,
-                        )
+                        Text(it, color = if (plaintext) MaterialTheme.colorScheme.error else Color.Unspecified)
                     },
-                    leadingContent = if (plaintext) {
-                        { Icon(painterResource(R.drawable.ic_warning), null, tint = MaterialTheme.colorScheme.error) }
-                    } else {
-                        null
+                    leadingContent = {
+                        Icon(
+                            painterResource(
+                                when {
+                                    plaintext -> R.drawable.ic_warning
+                                    it.startsWith("USB") -> R.drawable.ic_usb
+                                    else -> R.drawable.ic_bluetooth
+                                },
+                            ),
+                            null,
+                            tint = if (plaintext) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
                     },
                     colors = rows,
                 )
@@ -536,7 +550,11 @@ private fun LinkSheet(vm: MeshCoreViewModel, onDismiss: () -> Unit) {
                 ListItem(
                     headlineContent = { Text(stringResource(R.string.link_battery)) },
                     supportingContent = { Text(BatteryLevel.label(b.batteryMillivolts)) },
-                    trailingContent = { BatteryGlyph(BatteryLevel.percent(b.batteryMillivolts)) },
+                    leadingContent = {
+                        Box(Modifier.size(24.dp), contentAlignment = Alignment.Center) {
+                            BatteryGlyph(BatteryLevel.percent(b.batteryMillivolts))
+                        }
+                    },
                     colors = rows,
                 )
             }
@@ -549,33 +567,34 @@ private fun LinkSheet(vm: MeshCoreViewModel, onDismiss: () -> Unit) {
                 }
             }
             stats?.let { st ->
-                ListItem(
-                    headlineContent = { Text(stringResource(R.string.link_radio)) },
-                    supportingContent = {
-                        Text(
-                            stringResource(
-                                R.string.link_radio_values,
-                                st.noiseFloorDbm,
-                                st.lastRssiDbm,
-                                String.format(java.util.Locale.ROOT, "%.2f", st.lastSnrDb),
-                            ) + "\n" + stringResource(
-                                R.string.link_airtime,
-                                android.text.format.DateUtils.formatElapsedTime(st.txAirSecs),
-                                android.text.format.DateUtils.formatElapsedTime(st.rxAirSecs),
-                            ),
-                            fontFamily = MonoFontFamily,
+                // Readings as labelled tiles, two to a row: the paragraph they were
+                // wrapped mid-phrase on a phone ("last / SNR 8.00 dB").
+                SheetSection(stringResource(R.string.link_radio))
+                Column(
+                    Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        StatTile(stringResource(R.string.link_noise), "${st.noiseFloorDbm} dBm", Modifier.weight(1f))
+                        StatTile(stringResource(R.string.link_last_rssi), "${st.lastRssiDbm} dBm", Modifier.weight(1f))
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        StatTile(
+                            stringResource(R.string.link_last_snr),
+                            String.format(java.util.Locale.ROOT, "%.1f dB", st.lastSnrDb),
+                            Modifier.weight(1f),
                         )
-                    },
-                    colors = rows,
-                )
+                        StatTile(
+                            stringResource(R.string.link_airtime_label),
+                            android.text.format.DateUtils.formatElapsedTime(st.txAirSecs) + " / " +
+                                android.text.format.DateUtils.formatElapsedTime(st.rxAirSecs),
+                            Modifier.weight(1f),
+                        )
+                    }
+                }
             }
-            HorizontalDivider(Modifier.padding(vertical = 4.dp))
-            Text(
-                stringResource(R.string.link_repeaters),
-                style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(start = 24.dp, top = 8.dp, end = 24.dp),
-            )
+            HorizontalDivider(Modifier.padding(top = 12.dp, bottom = 4.dp))
+            SheetSection(stringResource(R.string.link_repeaters))
             Text(
                 stringResource(R.string.link_repeaters_hint),
                 style = MaterialTheme.typography.bodySmall,
@@ -625,6 +644,37 @@ private fun LinkSheet(vm: MeshCoreViewModel, onDismiss: () -> Unit) {
                     RadioPicker(vm, onPicked = onDismiss)
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun SheetSection(title: String) {
+    Text(
+        title,
+        style = MaterialTheme.typography.titleSmall,
+        color = MaterialTheme.colorScheme.primary,
+        modifier = Modifier.padding(start = 16.dp, top = 8.dp, end = 16.dp),
+    )
+}
+
+/** One reading: a small label over its value, on a tinted rounded tile. */
+@Composable
+private fun StatTile(label: String, value: String, modifier: Modifier = Modifier) {
+    Surface(
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerHighest,
+        modifier = modifier,
+    ) {
+        Column(Modifier.padding(horizontal = 14.dp, vertical = 10.dp)) {
+            Text(
+                label,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(value, style = MaterialTheme.typography.titleMedium, fontFamily = MonoFontFamily, maxLines = 1)
         }
     }
 }
