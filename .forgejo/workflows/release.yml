@@ -1,4 +1,4 @@
-# Push a tag `vX.Y.Z` to build a signed APK + AAB and publish them as a
+# Push a tag `vX.Y.Z` to build a signed APK + AAB (+ the Accrescent APK set) and publish them as a
 # release on this Forgejo AND on the GitHub push mirror.
 #
 # versionName = X.Y.Z, versionCode = X*10000 + Y*100 + Z. Release notes are
@@ -78,9 +78,11 @@ jobs:
           KS="$RUNNER_TEMP/release.jks"
           echo "$KEYSTORE_BASE64" | base64 -d > "$KS"
           MESHCONNECT_KEYSTORE="$KS" ./build.sh release
+          # The APK set Accrescent's console takes (docs/releasing.md).
+          MESHCONNECT_KEYSTORE="$KS" ./build.sh accrescent
           rm -f "$KS"
           ls -la dist/
-          cd dist && sha256sum MeshConnect-*-release.apk MeshConnect-*-release.aab > SHA256SUMS
+          cd dist && sha256sum MeshConnect-*-release.apk MeshConnect-*-release.aab MeshConnect-*.apks > SHA256SUMS
 
       - name: Forgejo release
         env:
@@ -92,7 +94,7 @@ jobs:
             --rawfile body notes.md '{tag_name:$tag, name:$name, body:$body}')
           ID=$(curl -fsS -X POST -H "Authorization: token $TOKEN" -H 'Content-Type: application/json' \
             -d "$BODY" "$API/releases" | jq -r .id)
-          for f in dist/MeshConnect-*-release.apk dist/MeshConnect-*-release.aab dist/SHA256SUMS; do
+          for f in dist/MeshConnect-*-release.apk dist/MeshConnect-*-release.aab dist/MeshConnect-*.apks dist/SHA256SUMS; do
             curl -fsS -X POST -H "Authorization: token $TOKEN" \
               -F "attachment=@$f" "$API/releases/$ID/assets?name=$(basename "$f")" > /dev/null
             echo "uploaded $(basename "$f")"
@@ -124,7 +126,7 @@ jobs:
             --rawfile body notes.md '{tag_name:$tag, target_commitish:$sha, name:$name, body:$body}')
           ID=$(curl -fsS -X POST -H "$AUTH" -H 'Accept: application/vnd.github+json' \
             -d "$BODY" "$GH/releases" | jq -r .id)
-          for f in dist/MeshConnect-*-release.apk dist/MeshConnect-*-release.aab dist/SHA256SUMS; do
+          for f in dist/MeshConnect-*-release.apk dist/MeshConnect-*-release.aab dist/MeshConnect-*.apks dist/SHA256SUMS; do
             curl -fsS -X POST -H "$AUTH" -H 'Content-Type: application/octet-stream' \
               --data-binary "@$f" \
               "https://uploads.github.com/repos/$GH_REPO/releases/$ID/assets?name=$(basename "$f")" > /dev/null

@@ -1,0 +1,1 @@
+Missatgeria sense cobertura amb ràdios LoRa MeshCore. Sense servidors ni comptes

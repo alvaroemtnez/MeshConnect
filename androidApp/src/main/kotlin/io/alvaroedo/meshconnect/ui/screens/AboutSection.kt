@@ -279,7 +279,7 @@ private fun AboutGroup(title: String) {
  * fork is in docs/upstream/CHANGELOG-MeshCoreHardened.md.
  */
 private val CHANGELOG: List<Pair<String, List<String>>> = listOf(
-    "0.1.0" to listOf(
+    "1.0.0" to listOf(
         "First MeshConnect release, forked from MeshCore Hardened 0.10.15.",
         "New name and app id: it installs alongside MeshCore Hardened, with its own database.",
         "Material You colours and icons, edge-to-edge bars, quick transitions and a new icon.",
@@ -305,6 +305,9 @@ private val CHANGELOG: List<Pair<String, List<String>>> = listOf(
         "New chat: message a contact, add a channel or scan any code.",
         "Public and hashtag channel keys can no longer be edited by accident.",
         "Share QR links through Android's share sheet.",
+        "meshcore:// links open the app; New chat can paste a code from the clipboard.",
+        "Settings polish: spacing, a regrouped Identity screen and radio value pickers.",
+        "Fixes for switching radios from a chat and for the first message after setup.",
         "Repeater Settings, Status, Regions and Identity redesigned as cards.",
         "The message database opens while the phone is locked, after the first unlock.",
         "No jump when long-pressing a message with the keyboard up.",

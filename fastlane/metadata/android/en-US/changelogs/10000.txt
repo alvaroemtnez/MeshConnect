@@ -1,0 +1,1 @@
+First MeshConnect release, forked from MeshCore Hardened 0.10.15: a new look in Material You, Spanish and Valencian, a node card for every node, a MapLibre map, route tracing on the map, a home-screen widget, battery alerts, start with the phone, roaming between saved radios, per-radio settings, meshcore:// links, and the message database readable while the phone is locked.

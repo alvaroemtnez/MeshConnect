@@ -2,6 +2,10 @@
 
 <h1 align="center">MeshConnect</h1>
 
+<p align="center">
+  <a href="https://apps.obtainium.imranr.dev/redirect?r=obtainium://add/https://github.com/alvaroemtnez/MeshCore"><img src="https://raw.githubusercontent.com/ImranR98/Obtainium/main/assets/graphics/badge_obtainium.png" height="56" alt="Get it on Obtainium"></a>
+</p>
+
 Off-grid encrypted LoRa messaging for **MeshCore** radios, on Android. No servers, no accounts, no
 Google Play Services, no analytics, no crash reporting.
 
@@ -103,7 +107,9 @@ $ ./build.sh install && adb shell screencap -p > shot.png
 
 CI runs on the self-hosted Forgejo (`.forgejo/workflows/`). Pushing a tag `vX.Y.Z` builds a signed
 APK + AAB and publishes the release, with the `## X.Y.Z` section of [CHANGELOG.md](CHANGELOG.md)
-as notes, on Forgejo and on the GitHub mirror. `versionCode` is `X*10000 + Y*100 + Z`.
+as notes, on Forgejo and on the GitHub mirror. `versionCode` is `X*10000 + Y*100 + Z`. Signing keys,
+secrets, F-Droid and Accrescent: [docs/releasing.md](docs/releasing.md); checking a download is
+really ours: [docs/verifying.md](docs/verifying.md).
 
 ## Project docs
 

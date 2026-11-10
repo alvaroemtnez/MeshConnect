@@ -5,6 +5,7 @@
 #
 #   debug       build the debug APK -> dist/MeshConnect-debug.apk
 #   release     build the release APK (+ AAB), signed if MESHCONNECT_KEYSTORE is set
+#   accrescent  build the signed APK set (.apks) Accrescent takes (needs MESHCONNECT_KEYSTORE)
 #   install     build the debug APK and install it on the connected phone
 #   run         install, then launch the app and follow its log
 #   logcat      follow the log of the running app
@@ -41,6 +42,10 @@ JDK_VERSION=17
 # https://developer.android.com/studio#command-line-tools-only
 CMDLINE_TOOLS_VERSION=16111833
 CMDLINE_TOOLS_SHA256=0877a1d048fe4a24efe2eff536ca4223f7adeb58648bb81909d33c446918cfa8
+
+# Accrescent takes an APK set built from the bundle: https://github.com/google/bundletool
+BUNDLETOOL_VERSION=1.18.3
+BUNDLETOOL_SHA256=a099cfa1543f55593bc2ed16a70a7c67fe54b1747bb7301f37fdfd6d91028e29
 
 JDK_DIR="$TOOLS_DIR/jdk-$JDK_VERSION"
 SDK_DIR="$TOOLS_DIR/android-sdk"
@@ -225,6 +230,42 @@ build_release() {
     info "Done: $out"
 }
 
+# The APK set for Accrescent: the release bundle split by bundletool and signed with the
+# release key (v2 and v3 signatures, one signer). Accrescent never takes a debug-signed app.
+build_accrescent() {
+    [ -n "${MESHCONNECT_KEYSTORE:-}" ] || die "Accrescent never takes a debug-signed app: set MESHCONNECT_KEYSTORE (docs/releasing.md)."
+    setup
+    local jar="$TOOLS_DIR/bundletool-$BUNDLETOOL_VERSION.jar"
+    if [ ! -f "$jar" ]; then
+        info "Downloading bundletool $BUNDLETOOL_VERSION"
+        fetch_verified "https://github.com/google/bundletool/releases/download/$BUNDLETOOL_VERSION/bundletool-all-$BUNDLETOOL_VERSION.jar" "$jar" "$BUNDLETOOL_SHA256"
+    fi
+    info "Building the app bundle"
+    gradle :androidApp:bundleRelease
+    local ver out pass
+    ver="${VERSION_NAME:-dev}"
+    out="$DIST_DIR/$APP_NAME-$ver.apks"
+    mkdir -p "$DIST_DIR"
+    rm -f "$out"
+    # bundletool reads passwords from files, never the command line.
+    pass="$(mktemp)"
+    trap 'rm -f "$pass" "$pass.key"' RETURN
+    chmod 600 "$pass"
+    local args=(build-apks --bundle "$ROOT_DIR/androidApp/build/outputs/bundle/release/androidApp-release.aab"
+                --output "$out" --ks "$MESHCONNECT_KEYSTORE" --ks-key-alias "${MESHCONNECT_KEY_ALIAS:-meshconnect}")
+    if [ -n "${MESHCONNECT_KEYSTORE_PASS:-}" ]; then
+        printf '%s' "$MESHCONNECT_KEYSTORE_PASS" >"$pass"
+        args+=(--ks-pass "file:$pass")
+    fi
+    local keypass="${MESHCONNECT_KEY_PASS:-${MESHCONNECT_KEYSTORE_PASS:-}}"
+    if [ -n "$keypass" ]; then
+        printf '%s' "$keypass" >"$pass.key"
+        args+=(--key-pass "file:$pass.key")
+    fi
+    "$JDK_DIR/bin/java" -jar "$jar" "${args[@]}"
+    info "APK set for the Accrescent console: $out"
+}
+
 install_debug() {
     build_debug
     info "Installing on connected device"
@@ -287,6 +328,7 @@ distclean() {
 case "${1:-debug}" in
     debug) build_debug ;;
     release) build_release ;;
+    accrescent) build_accrescent ;;
     install) install_debug ;;
     run) run_app ;;
     logcat) logcat ;;
@@ -296,6 +338,6 @@ case "${1:-debug}" in
     setup) setup ;;
     clean) clean ;;
     distclean) distclean ;;
-    -h|--help|help) sed -n '2,28p' "$0" | sed 's/^# \{0,1\}//' ;;
+    -h|--help|help) sed -n '2,29p' "$0" | sed 's/^# \{0,1\}//' ;;
     *) die "Unknown command '$1'. Run ./build.sh help." ;;
 esac

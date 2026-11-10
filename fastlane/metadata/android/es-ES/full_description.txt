@@ -1,0 +1,14 @@
+<p>MeshConnect se comunica con una radio de compañía <b>MeshCore</b> por Bluetooth LE, USB o TCP, y te permite enviar mensajes a través de una malla LoRa sin internet, sin red móvil y sin cuentas.</p>
+
+<ul>
+<li>Mensajes directos y canales: públicos, hashtag y privados, a los que te unes con un código QR o un enlace.</li>
+<li>Nodos y mapa: contactos, repetidores, salas y sensores, los nodos que oye tu radio y un mapa MapLibre con teselas de OpenFreeMap.</li>
+<li>Administración de repetidores y salas: estado, telemetría, ajustes, regiones, vecinos y consola.</li>
+<li>Traza y ping de una ruta en el mapa, coloreada por la señal.</li>
+<li>Ajustes de radio, perfiles regionales y códigos de ajustes, alertas de batería y un widget.</li>
+<li>Inglés, español y valenciano.</li>
+</ul>
+
+<p>Privacidad: sin analíticas, sin informes de errores, sin Google Play Services. La base de datos de mensajes está cifrada con una clave guardada en el Android Keystore. El único uso de red son las teselas del mapa, que se pueden desactivar, y TCP hacia una radio, desactivado por defecto y marcado como no cifrado. Los canales de MeshCore están ofuscados, no son seguros: cualquiera con la clave del canal puede leerlo.</p>
+
+<p>MeshConnect es un fork de MeshCore Hardened, de thatSFguy. Necesita una radio con firmware de compañía MeshCore.</p>

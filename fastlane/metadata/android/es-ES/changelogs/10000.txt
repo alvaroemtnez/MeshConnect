@@ -1,0 +1,1 @@
+Primera versión de MeshConnect, fork de MeshCore Hardened 0.10.15: nuevo aspecto Material You, español y valenciano, una ficha para cada nodo, mapa MapLibre, traza de rutas en el mapa, widget, alertas de batería, inicio con el teléfono, cambio entre radios guardadas, ajustes por radio, enlaces meshcore:// y base de datos legible con el teléfono bloqueado.

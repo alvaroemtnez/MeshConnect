@@ -1,0 +1,1 @@
+Off-grid messaging over MeshCore LoRa radios. No servers, no accounts

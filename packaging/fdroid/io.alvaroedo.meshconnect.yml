@@ -1,0 +1,33 @@
+# Draft build recipe for F-Droid's fdroiddata repository
+# (https://gitlab.com/fdroid/fdroiddata, metadata/io.alvaroedo.meshconnect.yml).
+# Copy it there in a merge request; see docs/releasing.md, "F-Droid".
+# The store text, icon and per-version changelogs are read from fastlane/ in this repo.
+Categories:
+  - Internet
+  - Phone & SMS
+License: AGPL-3.0-only
+AuthorName: Álvaro Edo Martínez
+WebSite: https://code.alvaroedo.io/alvaroemtnez/MeshConnect
+SourceCode: https://code.alvaroedo.io/alvaroemtnez/MeshConnect
+IssueTracker: https://code.alvaroedo.io/alvaroemtnez/MeshConnect/issues
+Changelog: https://code.alvaroedo.io/alvaroemtnez/MeshConnect/src/branch/main/CHANGELOG.md
+
+AutoName: MeshConnect
+
+RepoType: git
+Repo: https://code.alvaroedo.io/alvaroemtnez/MeshConnect.git
+
+Builds:
+  - versionName: 1.0.0
+    # vX.Y.Z -> X*10000 + Y*100 + Z (androidApp/build.gradle.kts).
+    versionCode: 10000
+    commit: v1.0.0
+    subdir: androidApp
+    # versionName/versionCode come from the tag the commit sits on (git describe).
+    gradle:
+      - yes
+
+AutoUpdateMode: Version
+UpdateCheckMode: Tags ^v[0-9.]+$
+CurrentVersion: 1.0.0
+CurrentVersionCode: 10000

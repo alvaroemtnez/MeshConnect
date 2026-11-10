@@ -11,7 +11,7 @@ MeshConnect is a fork of [MeshCore Hardened](https://github.com/thatSFguy/meshco
 Its history up to the fork point (0.10.15) is in
 [docs/upstream/CHANGELOG-MeshCoreHardened.md](docs/upstream/CHANGELOG-MeshCoreHardened.md).
 
-## 0.1.0
+## 1.0.0
 
 First MeshConnect release, forked from MeshCore Hardened 0.10.15.
 
@@ -73,6 +73,14 @@ First MeshConnect release, forked from MeshCore Hardened 0.10.15.
 - **Channel editor:** fields no longer crowd each other, and the Public and hashtag channels'
   keys are locked (a hashtag channel's name too, since its key is made from it).
 - **QR codes** can be shared as a link through Android's share sheet.
+- **meshcore:// links open MeshConnect**, from a camera app's QR scan, a browser or a message,
+  with the same confirmations as the in-app scanner; New chat can also take a code from the
+  clipboard.
+- **Settings polish:** no field touches its button; Identity regrouped (the key with a QR button,
+  name, position, announcing); Radio offers bandwidth, spreading factor and coding rate as
+  pickers of the values the chip takes.
+- **Switching radios from a chat** goes back to Chats, and the first message sent after setup no
+  longer throws you out of the chat.
 - **Repeater admin screens** (Settings, Status, Regions, Identity) as cards with icons; Settings
   sections still ask the node only when opened.
 - **The message database opens while the phone is locked** (after the first unlock since
