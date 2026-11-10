@@ -27,4 +27,11 @@ class MessageFocusWiringTest {
         assertTrue(s.contains("canReact = !m.outgoing,"))
         assertTrue(s.contains("MenuRow(R.drawable.ic_delete, stringResource(R.string.delete), onDelete, destructive = true)"))
     }
+
+    @Test
+    fun `the overlay's limits ignore the keyboard it makes slide away`() {
+        val overlay = s.substringAfter("private fun MessageFocusOverlay(").substringBefore("private fun ReactionPill(")
+        assertFalse("safeDrawing includes the IME; the bubble jumped as it hid", overlay.contains("WindowInsets.safeDrawing"))
+        assertTrue(overlay.contains("WindowInsets.systemBars"))
+    }
 }

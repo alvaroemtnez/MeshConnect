@@ -37,6 +37,9 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.union
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.horizontalScroll
@@ -1183,7 +1186,12 @@ private fun MessageFocusOverlay(
         val density = LocalDensity.current
         val margin = with(density) { 12.dp.roundToPx() }
         val gap = with(density) { 8.dp.roundToPx() }
-        val insets = androidx.compose.foundation.layout.WindowInsets.safeDrawing
+        // Bars and cutout, NOT the keyboard (safeDrawing includes it). Opening this takes
+        // focus from the composer, so the keyboard slides away underneath; a limit that
+        // followed it shrank every frame while the message's real position moved down, and a
+        // bubble near the bottom was pushed up and let go again — a jump (2026-11-10).
+        val insets = androidx.compose.foundation.layout.WindowInsets.systemBars
+            .union(androidx.compose.foundation.layout.WindowInsets.displayCutout)
         val top = insets.getTop(density) + margin
         val bottomInset = insets.getBottom(density) + margin
         androidx.compose.ui.layout.Layout(
