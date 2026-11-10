@@ -127,6 +127,37 @@ def contact_msg(sender, text, path_len=1) -> bytes:
     )
 
 
+# What a repeater answers to `get <x>` (simple_repeater's CommonCLI replies "> value"), so
+# the repeater Settings screen has values to show. `set` answers "OK".
+CLI_VALUES = {
+    "name": "Hilltop Rpt", "owner.info": "Club repeater|ea5abc@example.org",
+    "radio": "869.618,62.5,8,8", "tx": "22", "path.hash.mode": "1",
+    "lat": "39.5098", "lon": "-0.4205", "advert.interval": "0", "flood.advert.interval": "12",
+    "repeat": "on", "flood.max": "64", "rxdelay": "0", "txdelay": "0.5", "direct.txdelay": "0.3",
+    "allow.read.only": "off", "multi.acks": "1", "radio.rxgain": "on", "dutycycle": "50%",
+    "int.thresh": "14", "loop.detect": "minimal", "ver": "v1.16.0 (Build: 2026-10-01)",
+    "board": "RAK 4631",
+}
+
+
+def cli_reply(command: str) -> str:
+    if command.startswith("get "):
+        key_ = command[4:].strip()
+        return "> " + CLI_VALUES[key_] if key_ in CLI_VALUES else "Error: unknown config"
+    if command.startswith("set "):
+        parts = command[4:].split(" ", 1)
+        if len(parts) == 2:
+            CLI_VALUES[parts[0]] = parts[1]
+        return "OK"
+    if command == "clock":
+        return time.strftime("%H:%M - %d/%m/%Y UTC", time.gmtime())
+    if command == "ver":
+        return CLI_VALUES["ver"]
+    if command == "board":
+        return CLI_VALUES["board"]
+    return "OK"
+
+
 def rx_log(repeater: str, snr_db: float, rssi: int) -> bytes:
     """A flooded GRP_TXT packet whose last relay is [repeater]."""
     hops = random.randint(1, 3)
@@ -235,6 +266,36 @@ class Session:
             self.send(bytes([RESP_BATT]) + struct.pack("<HII", BATTERY_MV, 512, 4096))
         elif cmd == CMD_GET_CUSTOM_VAR:
             self.send(bytes([RESP_CUSTOM_VARS]) + b"gps:0\0")
+        elif cmd == 27 and len(frame) >= 33:  # CMD_SEND_STATUS_REQ: [27][pubkey 32]
+            # SENT, then PUSH_CODE_STATUS_RESPONSE [0x87][reserved][prefix 6][stats 52]
+            # (RepeaterStatus.kt's StatusCodec reads them in this order).
+            prefix = frame[1:7]
+            self.send(bytes([RESP_SENT, 0]) + struct.pack("<II", random.getrandbits(32), 4000))
+            stats = struct.pack("<HHhhIIIIIIIIHhHHI", 4020, 0, -112, -84, 18234, 6120, 1830,
+                                3 * 86400 + 4 * 3600 + 720, 4100, 2020, 12950, 5284, 3, 26, 40, 912, 9150)
+            threading.Timer(1.0, lambda: self.send(bytes([0x87, 0]) + prefix + stats)).start()
+        elif cmd == 50 and len(frame) >= 34 and frame[33] == 0x03:  # CMD_SEND_BINARY_REQ, telemetry
+            # SENT carries the tag the BINARY_RESPONSE echoes: [0x8C][reserved][tag u32][LPP].
+            # Board on channel 1 (voltage, MCU temperature), a T/H sensor on channel 2, as
+            # simple_repeater/MyMesh.cpp and EnvironmentSensorManager lay them out.
+            tag = random.getrandbits(32)
+            self.send(bytes([RESP_SENT, 0]) + struct.pack("<II", tag, 4000))
+            lpp = (bytes([1, 0x74]) + struct.pack(">H", 402) + bytes([1, 0x67]) + struct.pack(">h", 271)
+                   + bytes([2, 0x67]) + struct.pack(">h", 215) + bytes([2, 0x68, 96]))
+            threading.Timer(1.0, lambda: self.send(bytes([0x8C, 0]) + struct.pack("<I", tag) + lpp)).start()
+        elif cmd == CMD_SEND_TXT_MSG and len(frame) > 13 and frame[1] == 1:  # TXT_TYPE_CLI_DATA
+            # [2][txt_type][attempt][ts u32][prefix 6][command]\0 → SENT, then the node's
+            # reply as a CLI-typed contact message from that prefix.
+            prefix = frame[7:13]
+            command = frame[13:].split(b"\0")[0].decode(errors="replace")
+            self.send(bytes([RESP_SENT, 0]) + struct.pack("<II", random.getrandbits(32), 4000))
+            reply = (bytes([RESP_CONTACT_MSG_V3, 24, 0, 0]) + prefix + bytes([1, 1])
+                     + struct.pack("<I", int(time.time())) + cli_reply(command).encode() + b"\0")
+
+            def deliver():
+                self.queue.append(reply)
+                self.send(bytes([PUSH_MSG_WAITING]))
+            threading.Timer(0.5, deliver).start()
         elif cmd in (CMD_SEND_TXT_MSG, CMD_SEND_CHANNEL_TXT_MSG):
             ack = random.getrandbits(32)
             self.send(bytes([RESP_SENT, 1]) + struct.pack("<II", ack, 8000))

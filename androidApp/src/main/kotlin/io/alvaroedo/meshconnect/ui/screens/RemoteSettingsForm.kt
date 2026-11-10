@@ -192,8 +192,11 @@ fun RemoteSettingsForm(
         Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp),
+            .padding(horizontal = 16.dp)
+            .padding(top = 8.dp, bottom = 24.dp),
+        verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(12.dp),
     ) {
+        HintText(stringResource(R.string.rsf_asks_on_open))
         if (!isReady) {
             HintText(stringResource(R.string.rsf_connect))
         }
@@ -207,6 +210,8 @@ fun RemoteSettingsForm(
 
         RemoteSection(
             title = stringResource(R.string.rsf_basic),
+            subtitle = stringResource(R.string.rsf_basic_sub),
+            icon = R.drawable.ic_badge,
             isReady = isReady,
             fetchIds = listOf(CliIds.NAME, CliIds.OWNER_INFO),
             fetch = ::fetch,
@@ -229,6 +234,8 @@ fun RemoteSettingsForm(
 
         RemoteSection(
             title = stringResource(R.string.hub_radio),
+            subtitle = stringResource(R.string.rsf_radio_sub),
+            icon = R.drawable.ic_antenna,
             isReady = isReady,
             fetchIds = listOf(CliIds.RADIO, CliIds.TX, CliIds.PATH_HASH_MODE),
             fetch = ::fetch,
@@ -334,6 +341,8 @@ fun RemoteSettingsForm(
 
         RemoteSection(
             title = stringResource(R.string.rsf_position),
+            subtitle = stringResource(R.string.rsf_position_sub),
+            icon = R.drawable.ic_location_on,
             isReady = isReady,
             fetchIds = listOf(CliIds.LAT, CliIds.LON),
             fetch = ::fetch,
@@ -364,6 +373,8 @@ fun RemoteSettingsForm(
 
         RemoteSection(
             title = stringResource(R.string.rsf_adverts),
+            subtitle = stringResource(R.string.rsf_adverts_sub),
+            icon = R.drawable.ic_campaign,
             isReady = isReady,
             fetchIds = listOf(CliIds.ADVERT_INTERVAL, CliIds.FLOOD_ADVERT_INTERVAL),
             fetch = ::fetch,
@@ -413,6 +424,8 @@ fun RemoteSettingsForm(
         if (role != NodeRole.Companion) {
             RemoteSection(
                 title = stringResource(R.string.rsf_forwarding),
+                subtitle = stringResource(R.string.rsf_forwarding_sub),
+                icon = R.drawable.ic_repeat,
                 isReady = isReady,
                 fetchIds = listOf(
                     CliIds.REPEAT,
@@ -475,6 +488,8 @@ fun RemoteSettingsForm(
 
         RemoteSection(
             title = stringResource(R.string.rsf_access),
+            subtitle = stringResource(R.string.rsf_access_sub),
+            icon = R.drawable.ic_password,
             isReady = isReady,
             fetchIds = if (role == NodeRole.Room) listOf(CliIds.ALLOW_READ_ONLY) else emptyList(),
             fetch = ::fetch,
@@ -515,6 +530,8 @@ fun RemoteSettingsForm(
 
         RemoteSection(
             title = stringResource(R.string.rsf_advanced),
+            subtitle = stringResource(R.string.rsf_advanced_sub),
+            icon = R.drawable.ic_tune,
             isReady = isReady,
             fetchIds = listOf(
                 CliIds.RADIO_RXGAIN,
@@ -588,7 +605,7 @@ fun RemoteSettingsForm(
             }
         }
 
-        ExpandableSection(stringResource(R.string.rsf_maintenance)) {
+        CardSection(stringResource(R.string.rsf_maintenance), stringResource(R.string.rsf_maintenance_sub), R.drawable.ic_build) {
             HintText(stringResource(R.string.rsf_console_hint))
             ButtonFlowRow {
                 for ((label, command) in buildList {
@@ -926,6 +943,8 @@ fun RemoteSettingsForm(
 @Composable
 private fun RemoteSection(
     title: String,
+    subtitle: String? = null,
+    @androidx.annotation.DrawableRes icon: Int? = null,
     isReady: Boolean,
     fetchIds: List<String>,
     fetch: suspend (List<String>) -> Int,
@@ -936,7 +955,7 @@ private fun RemoteSection(
     extraActions: (@Composable (setStatus: (String) -> Unit) -> Unit)? = null,
     content: @Composable () -> Unit,
 ) {
-    ExpandableSection(title) {
+    CardSection(title, subtitle, icon) {
         val ctx = androidx.compose.ui.platform.LocalContext.current
         val scope = rememberCoroutineScope()
         var status by remember { mutableStateOf<String?>(null) }
@@ -950,8 +969,25 @@ private fun RemoteSection(
             },
         ) {
             content()
-            ButtonFlowRow {
-                extraActions?.invoke { status = it }
+            extraActions?.let { extra ->
+                Spacer(Modifier.height(4.dp))
+                ButtonFlowRow { extra { status = it } }
+            }
+            if (busy) SectionSpinner(stringResource(R.string.id_talking))
+            status?.let {
+                Text(
+                    it,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(top = 8.dp),
+                )
+            }
+            // Refresh asks again; Save sends only what changed.
+            Row(
+                Modifier.fillMaxWidth().padding(top = 12.dp),
+                horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp, Alignment.End),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
                 TextButton(
                     enabled = isReady && fetchIds.isNotEmpty() && !busy,
                     onClick = {
@@ -963,8 +999,16 @@ private fun RemoteSection(
                             busy = false
                         }
                     },
-                ) { Text(stringResource(R.string.rsf_refresh)) }
-                TextButton(
+                ) {
+                    androidx.compose.material3.Icon(
+                        androidx.compose.ui.res.painterResource(R.drawable.ic_refresh),
+                        null,
+                        modifier = Modifier.size(18.dp),
+                    )
+                    Spacer(Modifier.width(6.dp))
+                    Text(stringResource(R.string.rsf_refresh))
+                }
+                androidx.compose.material3.Button(
                     enabled = saveEnabled && !busy,
                     onClick = {
                         scope.launch {
@@ -982,14 +1026,6 @@ private fun RemoteSection(
                         }
                     },
                 ) { Text(stringResource(R.string.rsf_save)) }
-            }
-            if (busy) SectionSpinner(stringResource(R.string.id_talking))
-            status?.let {
-                Text(
-                    it,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.primary,
-                )
             }
         }
     }

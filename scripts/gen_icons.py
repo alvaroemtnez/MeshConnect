@@ -61,6 +61,13 @@ ICONS = [
     ("ic_notifications_off", "notifications_off", False),
     ("ic_alt_route", "alt_route", False),
     ("ic_add_comment", "add_comment", False),
+    ("ic_campaign", "campaign", False),
+    ("ic_repeat", "repeat", False),
+    ("ic_build", "build", False),
+    ("ic_monitoring", "monitoring", False),
+    ("ic_graphic_eq", "graphic_eq", False),
+    ("ic_admin_panel", "admin_panel_settings", False),
+    ("ic_key", "key", False),
     # Map
     ("ic_my_location", "my_location", False),
     ("ic_location_on", "location_on", False),

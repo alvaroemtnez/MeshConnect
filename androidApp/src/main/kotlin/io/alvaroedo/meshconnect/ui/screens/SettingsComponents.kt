@@ -43,6 +43,8 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.background
+import androidx.compose.ui.graphics.graphicsLayer
 
 /**
  * Shared settings-screen building blocks, used by BOTH the local
@@ -84,6 +86,125 @@ fun ExpandableSection(
             Column(Modifier.padding(bottom = 8.dp)) { content() }
         }
         HorizontalDivider()
+    }
+}
+
+/**
+ * A folding section drawn as a card (2026-11-10): an icon, a title and a line saying what is
+ * inside, then the content when opened. The repeater admin screens use it, so their sections
+ * look like the rest of Settings rather than a plain header over a divider. Content composes
+ * only while open, which is what makes [QueryOnExpand] ask the node on open and not before.
+ */
+@Composable
+fun CardSection(
+    title: String,
+    subtitle: String? = null,
+    @androidx.annotation.DrawableRes icon: Int? = null,
+    initiallyExpanded: Boolean = false,
+    content: @Composable () -> Unit,
+) {
+    var expanded by rememberSaveable(title) { mutableStateOf(initiallyExpanded) }
+    val turn by androidx.compose.animation.core.animateFloatAsState(if (expanded) 180f else 0f, label = "chevron")
+    androidx.compose.material3.Surface(
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column {
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .clickable { expanded = !expanded }
+                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                if (icon != null) {
+                    androidx.compose.foundation.layout.Box(
+                        Modifier
+                            .size(40.dp)
+                            .clip(androidx.compose.foundation.shape.CircleShape)
+                            .then(
+                                Modifier.background(
+                                    if (expanded) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondaryContainer,
+                                ),
+                            ),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            androidx.compose.ui.res.painterResource(icon),
+                            null,
+                            tint = if (expanded) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSecondaryContainer,
+                            modifier = Modifier.size(22.dp),
+                        )
+                    }
+                }
+                Column(Modifier.weight(1f)) {
+                    Text(title, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface)
+                    subtitle?.let {
+                        Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+                Icon(
+                    androidx.compose.ui.res.painterResource(R.drawable.ic_expand_more),
+                    contentDescription = stringResource(if (expanded) R.string.collapse else R.string.expand),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.graphicsLayer { rotationZ = turn },
+                )
+            }
+            AnimatedVisibility(visible = expanded) {
+                Column(Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp)) {
+                    HorizontalDivider(Modifier.padding(bottom = 12.dp), color = MaterialTheme.colorScheme.outlineVariant)
+                    content()
+                }
+            }
+        }
+    }
+}
+
+/**
+ * A card that is always open: icon and title in its header, an optional action at the
+ * header's end (a refresh, a fetch), and its content below. [CardSection]'s look, for
+ * panels whose content is fetched by a button rather than on opening.
+ */
+@Composable
+fun PanelCard(
+    title: String,
+    @androidx.annotation.DrawableRes icon: Int,
+    modifier: Modifier = Modifier,
+    action: (@Composable () -> Unit)? = null,
+    content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit,
+) {
+    androidx.compose.material3.Surface(
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        modifier = modifier.fillMaxWidth(),
+    ) {
+        Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 16.dp)) {
+            Row(
+                Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                androidx.compose.foundation.layout.Box(
+                    Modifier
+                        .size(36.dp)
+                        .clip(androidx.compose.foundation.shape.CircleShape)
+                        .background(MaterialTheme.colorScheme.secondaryContainer),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        androidx.compose.ui.res.painterResource(icon),
+                        null,
+                        tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
+                Text(title, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+                action?.invoke()
+            }
+            content()
+        }
     }
 }
 

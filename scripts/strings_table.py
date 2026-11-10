@@ -1495,6 +1495,18 @@ S = {
 "chats_new_chat": ("New chat", "Nuevo chat", "Xat nou"),
 "qr_share_link": ("Share", "Compartir", "Compartir"),
 "qr_share_chooser": ("Share link", "Compartir enlace", "Compartir enllaç"),
+"rsf_basic_sub": ("Name and owner info", "Nombre e información del propietario", "Nom i informació del propietari"),
+"rsf_position_sub": ("Where this node says it is", "Dónde dice este nodo que está", "On diu este node que està"),
+"rsf_adverts_sub": ("How often it announces itself", "Cada cuánto se anuncia", "Cada quant s'anuncia"),
+"rsf_forwarding_sub": ("Repeating, flood limit and delays", "Repetición, límite de inundación y retardos", "Repetició, límit d'inundació i retards"),
+"rsf_access_sub": ("Passwords and guest access", "Contraseñas y acceso de invitados", "Contrasenyes i accés de convidats"),
+"rsf_advanced_sub": ("Acks, gain, duty cycle and loop detection", "ACK, ganancia, ciclo de trabajo y detección de bucles", "ACK, guany, cicle de treball i detecció de bucles"),
+"rsf_maintenance_sub": ("Clock, version, board and other reads", "Reloj, versión, placa y otras lecturas", "Rellotge, versió, placa i altres lectures"),
+"rsf_asks_on_open": ("Each section asks the node only when you open it, to keep the mesh quiet.", "Cada sección pregunta al nodo solo al abrirla, para no cargar la malla.", "Cada secció pregunta al node només en obrir-la, per a no carregar la malla."),
+"collapse": ("Collapse", "Contraer", "Plegar"),
+"expand": ("Expand", "Desplegar", "Desplegar"),
+"rs_tele_hint": ("The board's battery and temperature, and any sensors fitted to it.", "La batería y la temperatura de la placa, y los sensores que tenga.", "La bateria i la temperatura de la placa, i els sensors que tinga."),
+"rsf_radio_sub": ("Frequency, power and hash width", "Frecuencia, potencia y ancho del hash", "Freqüència, potència i amplada del hash"),
 }
 
 # key -> ((one, other) en, (one, other) es, (one, other) ca)
