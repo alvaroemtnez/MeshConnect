@@ -39,8 +39,6 @@ S = {
 "search": ("Search", "Buscar", "Cercar"),
 "clear": ("Clear", "Borrar", "Esborrar"),
 "copy": ("Copy", "Copiar", "Copiar"),
-"copied": ("Copied", "Copiado", "Copiat"),
-"share": ("Share", "Compartir", "Compartir"),
 "send": ("Send", "Enviar", "Enviar"),
 "join": ("Join", "Unirse", "Unir-se"),
 "add": ("Add", "Añadir", "Afegir"),
@@ -161,41 +159,11 @@ S = {
 "widget_open_to_read": ("Open the app to read it", "Abre la app para leerlo", "Obri l'aplicació per a llegir-lo"),
 
 # Setup
-"setup_title": ("Set up MeshConnect", "Configurar MeshConnect", "Configurar MeshConnect"),
-"setup_intro": (
-    "This app talks to a MeshCore LoRa radio over Bluetooth or USB. Without one there is nothing to send messages with: there is no internet fallback, by design.",
-    "Esta app habla con una radio LoRa MeshCore por Bluetooth o USB. Sin ella no hay con qué enviar mensajes: no hay alternativa por internet, a propósito.",
-    "Esta aplicació parla amb una ràdio LoRa MeshCore per Bluetooth o USB. Sense ella no hi ha amb què enviar missatges: no hi ha alternativa per internet, a propòsit.",
-),
-"setup_step_connect": ("Connect a radio", "Conecta una radio", "Connecta una ràdio"),
 "setup_connected_to": ("Connected to %1$s.", "Conectado a %1$s.", "Connectat a %1$s."),
-"setup_connect_detail": ("Pair over Bluetooth, or plug one in over USB.", "Empareja por Bluetooth o conecta una por USB.", "Emparella per Bluetooth o connecta'n una per USB."),
-"setup_connect_hint": ("Open Settings → Connection to pair or plug in a radio.", "Abre Ajustes → Conexión para emparejar o conectar una radio.", "Obri Configuració → Connexió per a emparellar o connectar una ràdio."),
-"setup_step_name": ("Name this node", "Ponle nombre a este nodo", "Posa-li nom a este node"),
-"setup_name_detail": (
-    "Your name is broadcast in every advert: the whole mesh sees it. Pick something you're happy being known by out there.",
-    "Tu nombre se difunde en cada anuncio: lo ve toda la malla. Elige uno con el que te guste que te conozcan.",
-    "El teu nom es difon en cada anunci: el veu tota la malla. Tria'n un amb què t'agrade que et coneguen.",
-),
 "setup_node_name": ("Node name", "Nombre del nodo", "Nom del node"),
-"setup_set_name": ("Set name", "Guardar nombre", "Guardar nom"),
-"setup_step_radio": ("Match your local radio settings", "Ajusta la radio a tu zona", "Ajusta la ràdio a la teua zona"),
 "setup_radio_current": ("Currently on %1$s.", "Ahora en %1$s.", "Ara en %1$s."),
-"setup_radio_detail": (
-    "Every node on a mesh must share the same frequency, bandwidth, spreading factor and coding rate. Mismatched, you'll see an empty app rather than an error.",
-    "Todos los nodos de una malla deben compartir frecuencia, ancho de banda, factor de dispersión y tasa de codificación. Si no coinciden, verás la app vacía, no un error.",
-    "Tots els nodes d'una malla han de compartir freqüència, amplada de banda, factor de dispersió i taxa de codificació. Si no coincidixen, voràs l'aplicació buida, no un error.",
-),
 "setup_pick_preset": ("Pick a regional preset…", "Elegir un perfil regional…", "Triar un perfil regional…"),
-"setup_step_protects": ("Know what this app protects", "Qué protege esta app", "Què protegix esta aplicació"),
-"setup_protects_detail": (
-    "Direct messages are end-to-end encrypted. Channels are only obfuscated (AES-ECB with a 2-byte MAC and a key that never changes), so treat a channel as a room with an unlocked door, not a sealed one.",
-    "Los mensajes directos van cifrados de extremo a extremo. Los canales solo están ofuscados (AES-ECB con MAC de 2 bytes y una clave que nunca cambia): trata un canal como una sala con la puerta abierta, no cerrada.",
-    "Els missatges directes van xifrats d'extrem a extrem. Els canals només estan ofuscats (AES-ECB amb MAC de 2 bytes i una clau que no canvia mai): tracta un canal com una sala amb la porta oberta, no tancada.",
-),
-"setup_protects_hint": ("The full list is in Settings → About.", "La lista completa está en Ajustes → Acerca de.", "La llista completa està en Configuració → Quant a."),
 "setup_done": ("Done", "Hecho", "Fet"),
-"setup_skip": ("Skip for now", "Omitir por ahora", "Ometre de moment"),
 
 # Settings hub
 "hub_group_link": ("Radio link", "Enlace de radio", "Enllaç de ràdio"),
@@ -517,14 +485,11 @@ S = {
 "tcp_accept": ('I understand the risk, enable it', 'Entiendo el riesgo, activar', 'Entenc el risc, activar'),
 "add_ble_nearby": ('Bluetooth radios nearby', 'Radios Bluetooth cercanas', 'Ràdios Bluetooth pròximes'),
 "add_scanning": ('Scanning… make sure the radio is on and advertising.', 'Buscando… comprueba que la radio está encendida y anunciándose.', 'Buscant… comprova que la ràdio està encesa i anunciant-se.'),
-"add_ble_off": ('The Bluetooth transport is off in Settings → Transports.', 'El transporte Bluetooth está desactivado en Ajustes → Transportes.', 'El transport Bluetooth està desactivat en Configuració → Transports.'),
 "add_usb": ('USB radios attached', 'Radios USB conectadas', 'Ràdios USB connectades'),
-"add_usb_none": ('No supported USB serial device attached (CDC-ACM / CP210x).', 'No hay ningún dispositivo USB serie compatible (CDC-ACM / CP210x).', 'No hi ha cap dispositiu USB sèrie compatible (CDC-ACM / CP210x).'),
 "add_tcp": ('Network radio (TCP, unencrypted)', 'Radio en red (TCP, sin cifrar)', 'Ràdio en xarxa (TCP, sense xifrar)'),
 "add_host": ('Host', 'Host', 'Host'),
 "add_port": ('Port', 'Puerto', 'Port'),
 "add_tcp_connect": ('Connect (unencrypted)', 'Conectar (sin cifrar)', 'Connectar (sense xifrar)'),
-"add_tcp_off": ("The TCP transport is off. Turn it on in Settings → Transports (you'll be asked to accept the plaintext warning).", 'El transporte TCP está desactivado. Actívalo en Ajustes → Transportes (tendrás que aceptar el aviso de texto plano).', "El transport TCP està desactivat. Activa'l en Configuració → Transports (hauràs d'acceptar l'avís de text pla)."),
 
 "mapnode_last_heard": ('Last heard %1$s', 'Oído por última vez %1$s', 'Escoltat per última vegada %1$s'),
 "mapnode_open": ('Open this node', 'Abrir este nodo', 'Obrir este node'),
@@ -631,7 +596,6 @@ S = {
 "senders_warning": ('Anyone with the channel key can post under any name, including one you recognise.', 'Cualquiera con la clave del canal puede escribir con cualquier nombre, incluso uno que conozcas.', 'Qualsevol amb la clau del canal pot escriure amb qualsevol nom, fins i tot un que conegues.'),
 "senders_hint": ('These are names, not identities.', 'Son nombres, no identidades.', 'Són noms, no identitats.'),
 "senders_detail": ("A channel message carries a name, not a key, so nothing here can be verified. The list is built from the messages this phone kept: it isn't a membership list, and it can't tell you who anyone is.", 'Un mensaje de canal lleva un nombre, no una clave, así que nada de esto se puede verificar. La lista sale de los mensajes que guardó este teléfono: no es una lista de miembros ni dice quién es nadie.', "Un missatge de canal porta un nom, no una clau, així que res d'açò es pot verificar. La llista ix dels missatges que va guardar este telèfon: no és una llista de membres ni diu qui és ningú."),
-"senders_reading": ('Reading history…', 'Leyendo el historial…', "Llegint l'historial…"),
 "senders_none": ("No incoming messages kept for this channel yet. Retention settings affect what's here.", 'Aún no hay mensajes recibidos guardados en este canal. Los ajustes de conservación influyen en lo que aparece.', 'Encara no hi ha missatges rebuts guardats en este canal. La configuració de conservació influïx en el que apareix.'),
 
 "preset_title": ('Radio presets', 'Perfiles de radio', 'Perfils de ràdio'),
@@ -1181,7 +1145,6 @@ S = {
 "scan_bad_tree": ('It also lists regions "%1$s", which isn\'t a list this app can use (up to %2$d valid names, each once, including the default), so it\'s ignored.', 'También lista las regiones «%1$s», que no es una lista que esta app pueda usar (hasta %2$d nombres válidos, sin repetir, incluida la de por defecto), así que se ignora.', "També llista les regions «%1$s», que no és una llista que esta aplicació puga usar (fins a %2$d noms vàlids, sense repetir, inclosa la per defecte), així que s'ignora."),
 "scan_bad_region": ('It also names region "%1$s", which isn\'t a valid region name (lowercase letters, digits and dashes), so it won\'t be set.', 'También nombra la región «%1$s», que no es un nombre válido (minúsculas, dígitos y guiones), así que no se aplicará.', "També nomena la regió «%1$s», que no és un nom vàlid (minúscules, dígits i guions), així que no s'aplicarà."),
 
-"setup_connect_first": ('Connect a radio first.', 'Conecta primero una radio.', 'Connecta primer una ràdio.'),
 
 "stale_removing": ('Removing…', 'Eliminando…', 'Eliminant…'),
 "stale_nothing": ('Nothing to remove', 'Nada que eliminar', 'Res a eliminar'),
@@ -1306,11 +1269,6 @@ S = {
     "Aún no hay conversaciones.\nAñade un canal con +, o escribe a un contacto desde Nodos.",
     "Encara no hi ha converses.\nAfig un canal amb +, o escriu a un contacte des de Nodes.",
 ),
-"chats_empty_offline": (
-    "Not connected to a radio.\nConnect in Settings → Connection.",
-    "No hay ninguna radio conectada.\nConecta en Ajustes → Conexión.",
-    "No hi ha cap ràdio connectada.\nConnecta en Configuració → Connexió.",
-),
 "chats_pinned": ("Pinned", "Fijados", "Fixats"),
 "chats_recent": ("Recent", "Recientes", "Recents"),
 "chats_archive": ("Archive", "Archivar", "Arxivar"),
@@ -1373,7 +1331,6 @@ S = {
 "filter_active_day": ("Heard in last 24 h", "Oídos en las últimas 24 h", "Escoltats en les últimes 24 h"),
 "heard_header": ("Heard, not added · %1$d", "Oídos, no añadidos · %1$d", "Escoltats, no afegits · %1$d"),
 "heard_hide": ("Hide", "Ocultar", "Amagar"),
-"heard_pull_hint": ("Pull down to see nodes heard but not added", "Desliza hacia abajo para ver los nodos oídos y no añadidos", "Llisca cap avall per a veure els nodes escoltats i no afegits"),
 "dismiss": ("Dismiss", "Descartar", "Descartar"),
 "dismiss_all": ("Dismiss all", "Descartar todos", "Descartar-los tots"),
 "dismiss_all_body": (
@@ -1429,7 +1386,6 @@ S = {
 "link_snr_rssi": ("SNR %1$s dB · RSSI %2$d dBm", "SNR %1$s dB · RSSI %2$d dBm", "SNR %1$s dB · RSSI %2$d dBm"),
 "link_not_connected": ("Not connected to a radio.", "No hay ninguna radio conectada.", "No hi ha cap ràdio connectada."),
 "search_close": ("Close search", "Cerrar búsqueda", "Tancar la cerca"),
-"menu": ("Menu", "Menú", "Menú"),
 
 # About
 "about_title": ("About", "Acerca de", "Quant a"),
