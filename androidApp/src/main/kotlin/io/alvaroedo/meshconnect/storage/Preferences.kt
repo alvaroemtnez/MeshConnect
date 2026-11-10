@@ -341,6 +341,11 @@ class Preferences(context: Context) {
         get() = prefs.getBoolean("notify_channels", true)
         set(v) { prefs.edit().putBoolean("notify_channels", v).apply() }
 
+    /** Tell the user when the radio's battery runs low (MeshConnect). */
+    var notifyLowBattery: Boolean
+        get() = prefs.getBoolean("notify_low_battery", true)
+        set(v) { prefs.edit().putBoolean("notify_low_battery", v).apply() }
+
     fun isChannelMuted(idx: Int): Boolean = idx in mutedChannels
 
     fun setChannelMuted(idx: Int, muted: Boolean) {

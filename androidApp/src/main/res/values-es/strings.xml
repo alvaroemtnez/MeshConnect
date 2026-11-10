@@ -383,6 +383,14 @@
     <string name="set_notif_messages">Notificaciones de mensajes</string>
     <string name="set_notif_direct">Mensajes directos</string>
     <string name="set_notif_channels">Mensajes de canales</string>
+    <string name="set_notif_low_battery">Batería de la radio baja</string>
+    <string name="set_notif_low_battery_hint">Usa la lectura que la app ya hace cada pocos minutos, así que no gasta batería del teléfono.</string>
+    <string name="svc_channel_radio">Avisos de la radio</string>
+    <string name="svc_channel_radio_desc">La batería de tu radio se está agotando.</string>
+    <string name="svc_batt_low_title">Batería de la radio baja</string>
+    <string name="svc_batt_low_body">%1$s está a un %2$d%% aproximadamente. Cárgala pronto.</string>
+    <string name="svc_batt_critical_title">Batería de la radio casi agotada</string>
+    <string name="svc_batt_critical_body">%1$s está a un %2$d%% aproximadamente y se apagará pronto.</string>
     <string name="set_notif_mute_hint">Silencia una conversación desde su propio menú.</string>
     <string name="set_notif_mute_detail">Una conversación silenciada sigue contando los no leídos: silenciar evita interrupciones, no oculta que haya llegado algo.</string>
     <string name="set_diag_log">Registro de diagnóstico</string>

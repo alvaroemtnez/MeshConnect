@@ -218,6 +218,8 @@ class MeshCoreService : Service() {
             }
         }
 
+        watchRadioBattery()
+
         repository.log = { diagnostics.log("Inbox", it) }
         repository.repeaterRules = {
             io.github.thatsfguy.meshcore.presentation.RepeaterSignals.Rules(
@@ -321,6 +323,74 @@ class MeshCoreService : Service() {
                 )
             }.collect { io.alvaroedo.meshconnect.widget.WidgetState.publish(this@MeshCoreService, it) }
         }
+    }
+
+    /**
+     * Low-battery alerts for the radio, from the readings the poll above
+     * already takes — nothing here asks the radio for anything. The state
+     * belongs to one radio: switching radios starts it afresh and takes
+     * back an alert about the previous one.
+     */
+    private fun watchRadioBattery() {
+        scope.launch {
+            var radio: String? = null
+            var alert = io.alvaroedo.meshconnect.ui.model.LowBatteryAlert.State()
+            combine(engine.selfInfo, engine.battery) { me, b -> me to b }.collect { (me, b) ->
+                val key = me?.publicKeyHex ?: return@collect
+                if (key != radio) {
+                    radio = key
+                    alert = io.alvaroedo.meshconnect.ui.model.LowBatteryAlert.State()
+                    cancelBatteryNotification()
+                }
+                val percent = b?.let { io.github.thatsfguy.meshcore.presentation.BatteryLevel.percent(it.batteryMillivolts) }
+                val step = io.alvaroedo.meshconnect.ui.model.LowBatteryAlert.step(alert, percent)
+                alert = step.state
+                when (step.notice) {
+                    null -> Unit
+                    io.alvaroedo.meshconnect.ui.model.LowBatteryAlert.Notice.Recovered -> cancelBatteryNotification()
+                    else -> postBatteryNotification(
+                        critical = step.notice == io.alvaroedo.meshconnect.ui.model.LowBatteryAlert.Notice.Critical,
+                        name = me.name.ifBlank { getString(R.string.app_name) },
+                        percent = percent ?: 0,
+                    )
+                }
+            }
+        }
+    }
+
+    private fun postBatteryNotification(critical: Boolean, name: String, percent: Int) {
+        if (!prefs.notifyLowBattery) {
+            diagnostics.log("Battery", "radio at ~$percent%, alert off in the app")
+            return
+        }
+        if (Build.VERSION.SDK_INT >= 33 &&
+            checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) !=
+            PackageManager.PERMISSION_GRANTED
+        ) {
+            diagnostics.log("Battery", "radio at ~$percent%, notification permission not granted")
+            return
+        }
+        val intent = PendingIntent.getActivity(
+            this, BATTERY_NOTIF_ID, Intent(this, MainActivity::class.java),
+            PendingIntent.FLAG_IMMUTABLE,
+        )
+        val title = getString(if (critical) R.string.svc_batt_critical_title else R.string.svc_batt_low_title)
+        val body = getString(if (critical) R.string.svc_batt_critical_body else R.string.svc_batt_low_body, name, percent)
+        val notification = NotificationCompat.Builder(this, RADIO_CHANNEL)
+            .setSmallIcon(R.drawable.ic_battery_alert)
+            .setContentTitle(title)
+            .setContentText(body)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(body))
+            .setContentIntent(intent)
+            .setAutoCancel(true)
+            .setCategory(NotificationCompat.CATEGORY_STATUS)
+            .build()
+        (getSystemService(NOTIFICATION_SERVICE) as NotificationManager)
+            .notify(BATTERY_NOTIF_ID, notification)
+    }
+
+    private fun cancelBatteryNotification() {
+        (getSystemService(NOTIFICATION_SERVICE) as NotificationManager).cancel(BATTERY_NOTIF_ID)
     }
 
     private data class WidgetCore(
@@ -600,6 +670,11 @@ class MeshCoreService : Service() {
                 MSG_CHANNEL, getString(R.string.svc_channel_messages), NotificationManager.IMPORTANCE_HIGH,
             ).apply { description = getString(R.string.svc_channel_messages_desc) },
         )
+        manager.createNotificationChannel(
+            NotificationChannel(
+                RADIO_CHANNEL, getString(R.string.svc_channel_radio), NotificationManager.IMPORTANCE_DEFAULT,
+            ).apply { description = getString(R.string.svc_channel_radio_desc) },
+        )
         val notification = buildNotification(getString(R.string.hub_not_connected))
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             // Declare only the FGS types whose runtime permissions are
@@ -764,7 +839,9 @@ class MeshCoreService : Service() {
         /** Created with badges on, before 0.10.2; deleted on start. */
         private const val LEGACY_NOTIF_CHANNEL = "meshcore_connection"
         private const val MSG_CHANNEL = "meshcore_messages"
+        private const val RADIO_CHANNEL = "meshconnect_radio"
         private const val NOTIF_ID = 1
+        private const val BATTERY_NOTIF_ID = 2
         private const val MSG_NOTIF_BASE = 1000
 
         /**

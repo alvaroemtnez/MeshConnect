@@ -386,6 +386,14 @@
     <string name="set_notif_messages">Message notifications</string>
     <string name="set_notif_direct">Direct messages</string>
     <string name="set_notif_channels">Channel messages</string>
+    <string name="set_notif_low_battery">Radio battery low</string>
+    <string name="set_notif_low_battery_hint">Uses the reading the app already takes every few minutes, so it costs your phone nothing.</string>
+    <string name="svc_channel_radio">Radio alerts</string>
+    <string name="svc_channel_radio_desc">Your radio\'s battery running low.</string>
+    <string name="svc_batt_low_title">Radio battery low</string>
+    <string name="svc_batt_low_body">%1$s is at about %2$d%%. Charge it soon.</string>
+    <string name="svc_batt_critical_title">Radio battery almost empty</string>
+    <string name="svc_batt_critical_body">%1$s is at about %2$d%% and will switch off soon.</string>
     <string name="set_notif_mute_hint">Mute a single conversation from its own menu.</string>
     <string name="set_notif_mute_detail">A muted conversation still counts unread messages: muting stops interruptions, it doesn\'t hide that something arrived.</string>
     <string name="set_diag_log">Diagnostics log</string>

@@ -765,6 +765,17 @@ internal fun NotificationsSection(vm: MeshCoreViewModel) {
             )
         }
     }
+    // Not under the message switch: it is about the radio, not messages.
+    var lowBattery by remember { mutableStateOf(vm.prefs.notifyLowBattery) }
+    SettingRow(stringResource(R.string.set_notif_low_battery), lowBattery) {
+        lowBattery = it
+        vm.prefs.notifyLowBattery = it
+    }
+    Text(
+        stringResource(R.string.set_notif_low_battery_hint),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
 }
 
 @Composable
