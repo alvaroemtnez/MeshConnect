@@ -278,27 +278,26 @@ fun ConversationScreen(
         topBar = {
             val picked = selection
             if (picked != null) {
-                SelectionTopBar(
-                    count = picked.size,
-                    canReply = MessageSelection.canReply(picked),
-                    onClose = { selection = null },
-                    onReply = {
-                        replyingTo = messages.firstOrNull { it.id == picked.single() }
-                        selection = null
-                    },
-                    onCopy = {
+                SelectionTopBar(count = picked.size, onClose = { selection = null }) {
+                    if (MessageSelection.canReply(picked)) {
+                        IconButton(onClick = {
+                            replyingTo = messages.firstOrNull { it.id == picked.single() }
+                            selection = null
+                        }) { Icon(painterResource(R.drawable.ic_reply), stringResource(R.string.conv_reply)) }
+                    }
+                    IconButton(onClick = {
                         clipboard.setText(AnnotatedString(MessageSelection.copyText(messages, picked, showSenders)))
                         selection = null
-                    },
-                    onDelete = {
+                    }) { Icon(painterResource(R.drawable.ic_content_copy), stringResource(R.string.copy)) }
+                    SelectionDeleteAction {
                         if (picked.size == 1) {
                             vm.deleteMessage(picked.single())
                             selection = null
                         } else {
                             confirmDeleteMany = picked
                         }
-                    },
-                )
+                    }
+                }
             } else AppTopBar(
                 title = title,
                 vm = vm,
@@ -1056,16 +1055,13 @@ private fun MessageBubble(
     }
 }
 
-/** Replaces the thread's top bar while messages are being selected. */
+/** Replaces a screen's top bar while items are being selected (messages, chats). */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun SelectionTopBar(
+internal fun SelectionTopBar(
     count: Int,
-    canReply: Boolean,
     onClose: () -> Unit,
-    onReply: () -> Unit,
-    onCopy: () -> Unit,
-    onDelete: () -> Unit,
+    actions: @Composable androidx.compose.foundation.layout.RowScope.() -> Unit,
 ) {
     val barColor = MaterialTheme.colorScheme.surfaceContainer
     androidx.compose.material3.TopAppBar(
@@ -1079,24 +1075,16 @@ private fun SelectionTopBar(
             }
         },
         title = { Text(stringResource(R.string.conv_selected_count, count)) },
-        actions = {
-            if (canReply) {
-                IconButton(onClick = onReply) {
-                    Icon(painterResource(R.drawable.ic_reply), stringResource(R.string.conv_reply))
-                }
-            }
-            IconButton(onClick = onCopy) {
-                Icon(painterResource(R.drawable.ic_content_copy), stringResource(R.string.copy))
-            }
-            IconButton(onClick = onDelete) {
-                Icon(
-                    painterResource(R.drawable.ic_delete),
-                    stringResource(R.string.delete),
-                    tint = MaterialTheme.colorScheme.error,
-                )
-            }
-        },
+        actions = actions,
     )
+}
+
+/** The red Delete at the end of a selection bar. */
+@Composable
+internal fun SelectionDeleteAction(onClick: () -> Unit) {
+    IconButton(onClick = onClick) {
+        Icon(painterResource(R.drawable.ic_delete), stringResource(R.string.delete), tint = MaterialTheme.colorScheme.error)
+    }
 }
 
 /**

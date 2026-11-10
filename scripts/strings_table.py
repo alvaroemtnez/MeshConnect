@@ -1284,6 +1284,9 @@ S = {
 "chats_pinned": ("Pinned", "Fijados", "Fixats"),
 "chats_recent": ("Recent", "Recientes", "Recents"),
 "chats_archive": ("Archive", "Archivar", "Arxivar"),
+"chats_mark_read": ("Mark read", "Marcar como leído", "Marcar com a llegit"),
+"chats_delete_body": ("Their messages are removed from this phone. Nothing is sent to the mesh, and contacts stay on the radio.", "Sus mensajes se borran de este teléfono. No se envía nada a la malla y los contactos siguen en la radio.", "Els seus missatges s'esborren d'este telèfon. No s'envia res a la malla i els contactes continuen en la ràdio."),
+"chats_delete_body_channels": ("Their messages are removed from this phone, and the channels are removed from the radio. Joining one again needs its key or name.", "Sus mensajes se borran de este teléfono y los canales se quitan de la radio. Para volver a unirte a uno necesitas su clave o su nombre.", "Els seus missatges s'esborren d'este telèfon i els canals es lleven de la ràdio. Per a tornar a unir-te a un necessites la seua clau o el seu nom."),
 "chats_unarchive": ("Unarchive", "Desarchivar", "Desarxivar"),
 "chats_archived_title": ("Archived", "Archivados", "Arxivats"),
 "chats_archived_count": ("Archived · %1$d", "Archivados · %1$d", "Arxivats · %1$d"),
@@ -1502,6 +1505,7 @@ P = {
 "hub_channels": (("%1$d channel", "%1$d channels"), ("%1$d canal", "%1$d canales"), ("%1$d canal", "%1$d canals")),
 "hub_blocked": (("%1$d sender blocked", "%1$d senders blocked"), ("%1$d remitente bloqueado", "%1$d remitentes bloqueados"), ("%1$d remitent blocat", "%1$d remitents blocats")),
 "widget_unread": (("%1$d unread", "%1$d unread"), ("%1$d sin leer", "%1$d sin leer"), ("%1$d sense llegir", "%1$d sense llegir")),
+"chats_delete_title": (("Delete %1$d chat?", "Delete %1$d chats?"), ("¿Eliminar %1$d chat?", "¿Eliminar %1$d chats?"), ("Eliminar %1$d xat?", "Eliminar %1$d xats?")),
 "dismiss_all_title": (("Dismiss %1$d node?", "Dismiss %1$d nodes?"), ("¿Descartar %1$d nodo?", "¿Descartar %1$d nodos?"), ("Descartar %1$d node?", "Descartar %1$d nodes?")),
 }
 

@@ -1156,6 +1156,9 @@
     <string name="chats_pinned">Pinned</string>
     <string name="chats_recent">Recent</string>
     <string name="chats_archive">Archive</string>
+    <string name="chats_mark_read">Mark read</string>
+    <string name="chats_delete_body">Their messages are removed from this phone. Nothing is sent to the mesh, and contacts stay on the radio.</string>
+    <string name="chats_delete_body_channels">Their messages are removed from this phone, and the channels are removed from the radio. Joining one again needs its key or name.</string>
     <string name="chats_unarchive">Unarchive</string>
     <string name="chats_archived_title">Archived</string>
     <string name="chats_archived_count">Archived · %1$d</string>
@@ -1356,6 +1359,10 @@
     <plurals name="widget_unread">
         <item quantity="one">%1$d unread</item>
         <item quantity="other">%1$d unread</item>
+    </plurals>
+    <plurals name="chats_delete_title">
+        <item quantity="one">Delete %1$d chat?</item>
+        <item quantity="other">Delete %1$d chats?</item>
     </plurals>
     <plurals name="dismiss_all_title">
         <item quantity="one">Dismiss %1$d node?</item>

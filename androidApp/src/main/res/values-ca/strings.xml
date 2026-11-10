@@ -1153,6 +1153,9 @@
     <string name="chats_pinned">Fixats</string>
     <string name="chats_recent">Recents</string>
     <string name="chats_archive">Arxivar</string>
+    <string name="chats_mark_read">Marcar com a llegit</string>
+    <string name="chats_delete_body">Els seus missatges s\'esborren d\'este telèfon. No s\'envia res a la malla i els contactes continuen en la ràdio.</string>
+    <string name="chats_delete_body_channels">Els seus missatges s\'esborren d\'este telèfon i els canals es lleven de la ràdio. Per a tornar a unir-te a un necessites la seua clau o el seu nom.</string>
     <string name="chats_unarchive">Desarxivar</string>
     <string name="chats_archived_title">Arxivats</string>
     <string name="chats_archived_count">Arxivats · %1$d</string>
@@ -1378,6 +1381,11 @@
         <item quantity="one">%1$d sense llegir</item>
         <item quantity="many">%1$d sense llegir</item>
         <item quantity="other">%1$d sense llegir</item>
+    </plurals>
+    <plurals name="chats_delete_title">
+        <item quantity="one">Eliminar %1$d xat?</item>
+        <item quantity="many">Eliminar %1$d xats?</item>
+        <item quantity="other">Eliminar %1$d xats?</item>
     </plurals>
     <plurals name="dismiss_all_title">
         <item quantity="one">Descartar %1$d node?</item>

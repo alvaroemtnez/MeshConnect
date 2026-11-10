@@ -37,6 +37,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import io.alvaroedo.meshconnect.R
@@ -69,6 +70,15 @@ fun ChatsScreen(vm: MeshCoreViewModel, nav: NavController, archivedView: Boolean
     val pinned = remember(listRevision) { vm.prefs.pinnedThreads }
     val archivedKeys = remember(listRevision) { vm.prefs.archivedThreads }
     var nicknameFor by remember { mutableStateOf<ConversationRow?>(null) }
+    var editChannel by remember { mutableStateOf<Int?>(null) }
+    // Multi-select, by thread key; null when off.
+    var selection by remember { mutableStateOf<Set<String>?>(null) }
+    var confirmDelete by remember { mutableStateOf<List<ConversationRow>?>(null) }
+    androidx.activity.compose.BackHandler(enabled = selection != null) { selection = null }
+    fun toggle(k: String) {
+        selection = selection?.let { if (k in it) it - k else it + k }?.ifEmpty { null }
+    }
+    val channels by vm.dbChannels.collectAsState()
 
     val communityScanLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
         com.journeyapps.barcodescanner.ScanContract(),
@@ -78,7 +88,26 @@ fun ChatsScreen(vm: MeshCoreViewModel, nav: NavController, archivedView: Boolean
 
     Scaffold(
         topBar = {
-            AppTopBar(
+            val picked = selection
+            if (picked != null) {
+                val rows = conversations.filter { io.alvaroedo.meshconnect.ui.model.ChatListModel.key(it) in picked }
+                SelectionTopBar(count = picked.size, onClose = { selection = null }) {
+                    androidx.compose.material3.IconButton(onClick = {
+                        rows.forEach { vm.markRead(it.kind, it.key) }
+                        selection = null
+                    }) { Icon(painterResource(R.drawable.ic_mark_read), stringResource(R.string.chats_mark_read)) }
+                    androidx.compose.material3.IconButton(onClick = {
+                        rows.forEach { vm.prefs.setThreadArchived(io.alvaroedo.meshconnect.ui.model.ChatListModel.key(it), !archivedView) }
+                        selection = null
+                    }) {
+                        Icon(
+                            painterResource(if (archivedView) R.drawable.ic_unarchive else R.drawable.ic_archive),
+                            stringResource(if (archivedView) R.string.chats_unarchive else R.string.chats_archive),
+                        )
+                    }
+                    SelectionDeleteAction { confirmDelete = rows }
+                }
+            } else AppTopBar(
                 title = stringResource(if (archivedView) R.string.chats_archived_title else R.string.nav_chats),
                 vm = vm,
                 nav = if (archivedView) nav else null,
@@ -153,10 +182,20 @@ fun ChatsScreen(vm: MeshCoreViewModel, nav: NavController, archivedView: Boolean
                         channelKind = if (row.isChannel) kinds[row.key.toIntOrNull()] else null,
                         pinned = isPinned,
                         archived = isArchived,
-                        onClick = { nav.navigate(conversationRoute(row.kind, row.key)) },
+                        selecting = selection != null,
+                        selected = selection?.contains(k) == true,
+                        onClick = {
+                            if (selection != null) toggle(k) else nav.navigate(conversationRoute(row.kind, row.key))
+                        },
                         onTogglePin = { vm.prefs.setThreadPinned(k, !isPinned) },
                         onToggleArchive = { vm.prefs.setThreadArchived(k, !isArchived) },
-                        onNickname = { nicknameFor = row },
+                        onToggleRead = {
+                            if (row.unread > 0 || row.markedUnread) vm.markRead(row.kind, row.key) else vm.markUnread(row.kind, row.key)
+                        },
+                        onEdit = { if (row.isChannel) editChannel = row.key.toIntOrNull() else nicknameFor = row },
+                        onSelect = { selection = setOf(k) },
+                        onToggleSelected = { toggle(k) },
+                        onDelete = { confirmDelete = listOf(row) },
                     )
                 }
             }
@@ -195,6 +234,45 @@ fun ChatsScreen(vm: MeshCoreViewModel, nav: NavController, archivedView: Boolean
         ChannelAddSheet(vm, onDismiss = { showChannelSheet = false })
     }
 
+    editChannel?.let { idx ->
+        channels.firstOrNull { it.idx == idx }?.let { ch ->
+            ChannelEditSheet(vm, ch, onDismiss = { editChannel = null })
+        } ?: run { editChannel = null }
+    }
+
+    confirmDelete?.let { rows ->
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { confirmDelete = null },
+            icon = { Icon(painterResource(R.drawable.ic_delete), null) },
+            title = {
+                Text(androidx.compose.ui.res.pluralStringResource(R.plurals.chats_delete_title, rows.size, rows.size))
+            },
+            text = {
+                Text(
+                    stringResource(
+                        if (rows.any { it.isChannel }) R.string.chats_delete_body_channels else R.string.chats_delete_body,
+                    ),
+                )
+            },
+            confirmButton = {
+                androidx.compose.material3.Button(
+                    onClick = {
+                        vm.deleteChats(rows)
+                        confirmDelete = null
+                        selection = null
+                    },
+                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error,
+                        contentColor = MaterialTheme.colorScheme.onError,
+                    ),
+                ) { Text(stringResource(R.string.delete)) }
+            },
+            dismissButton = {
+                androidx.compose.material3.TextButton(onClick = { confirmDelete = null }) { Text(stringResource(R.string.cancel)) }
+            },
+        )
+    }
+
     nicknameFor?.let { row ->
         NicknameDialog(
             current = vm.nicknameFor(row.key).orEmpty(),
@@ -215,20 +293,43 @@ private fun ConversationRowItem(
     channelKind: io.github.thatsfguy.meshcore.protocol.ChannelKind? = null,
     pinned: Boolean = false,
     archived: Boolean = false,
+    selecting: Boolean = false,
+    selected: Boolean = false,
     onClick: () -> Unit,
     onTogglePin: () -> Unit = {},
     onToggleArchive: () -> Unit = {},
-    onNickname: () -> Unit = {},
+    onToggleRead: () -> Unit = {},
+    onEdit: () -> Unit = {},
+    onSelect: () -> Unit = {},
+    onToggleSelected: () -> Unit = {},
+    onDelete: () -> Unit = {},
 ) {
     var menuOpen by remember { mutableStateOf(false) }
     val markedLabel = stringResource(R.string.vm_marked_unread)
+    val tint = MaterialTheme.colorScheme.primary
     Row(
         Modifier
             .fillMaxWidth()
-            .combinedClickable(onClick = onClick, onLongClick = { menuOpen = true })
+            .background(if (selected) tint.copy(alpha = 0.12f) else androidx.compose.ui.graphics.Color.Transparent)
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = { if (selecting) onToggleSelected() else menuOpen = true },
+            )
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        androidx.compose.animation.AnimatedVisibility(
+            visible = selecting,
+            enter = androidx.compose.animation.expandHorizontally() + androidx.compose.animation.fadeIn(),
+            exit = androidx.compose.animation.shrinkHorizontally() + androidx.compose.animation.fadeOut(),
+        ) {
+            Icon(
+                painterResource(if (selected) R.drawable.ic_check_circle else R.drawable.ic_circle),
+                null,
+                tint = if (selected) tint else MaterialTheme.colorScheme.outline,
+                modifier = Modifier.padding(end = 12.dp).size(24.dp),
+            )
+        }
         NodeAvatar(
             // Channels seed from a stable per-slot tag (PSKs stay in the
             // vault); DMs seed from the contact pubkey.
@@ -291,28 +392,60 @@ private fun ConversationRowItem(
                 )
             }
         }
-        DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+        // The message long-press card's look (rounded, raised), as a plain popup:
+        // no blur here, the list stays readable behind it.
+        DropdownMenu(
+            expanded = menuOpen,
+            onDismissRequest = { menuOpen = false },
+            shape = androidx.compose.foundation.shape.RoundedCornerShape(20.dp),
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            shadowElevation = 6.dp,
+            modifier = Modifier.widthIn(min = 232.dp),
+        ) {
+            val unread = row.unread > 0 || row.markedUnread
+            ChatMenuRow(
+                if (unread) R.drawable.ic_mark_read else R.drawable.ic_mark_unread,
+                stringResource(if (unread) R.string.chats_mark_read else R.string.conv_mark_unread),
+            ) { menuOpen = false; onToggleRead() }
             if (!archived) {
-                DropdownMenuItem(
-                    text = { Text(stringResource(if (pinned) R.string.chats_unpin else R.string.chats_pin)) },
-                    leadingIcon = { Icon(painterResource(if (pinned) R.drawable.ic_keep_off else R.drawable.ic_push_pin), null) },
-                    onClick = { menuOpen = false; onTogglePin() },
-                )
+                ChatMenuRow(
+                    if (pinned) R.drawable.ic_keep_off else R.drawable.ic_push_pin,
+                    stringResource(if (pinned) R.string.chats_unpin else R.string.chats_pin),
+                ) { menuOpen = false; onTogglePin() }
             }
-            DropdownMenuItem(
-                text = { Text(stringResource(if (archived) R.string.chats_unarchive else R.string.chats_archive)) },
-                leadingIcon = { Icon(painterResource(if (archived) R.drawable.ic_unarchive else R.drawable.ic_archive), null) },
-                onClick = { menuOpen = false; onToggleArchive() },
-            )
-            if (!row.isChannel) {
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.chats_nickname_menu)) },
-                    leadingIcon = { Icon(painterResource(R.drawable.ic_edit), null) },
-                    onClick = { menuOpen = false; onNickname() },
-                )
+            ChatMenuRow(
+                if (archived) R.drawable.ic_unarchive else R.drawable.ic_archive,
+                stringResource(if (archived) R.string.chats_unarchive else R.string.chats_archive),
+            ) { menuOpen = false; onToggleArchive() }
+            // A channel edits the way Settings → Channels does; a DM has only its
+            // private nickname to edit.
+            ChatMenuRow(
+                R.drawable.ic_edit,
+                stringResource(if (row.isChannel) R.string.conv_channel_settings else R.string.chats_nickname_menu),
+            ) { menuOpen = false; onEdit() }
+            ChatMenuRow(R.drawable.ic_select, stringResource(R.string.conv_select)) { menuOpen = false; onSelect() }
+            ChatMenuRow(R.drawable.ic_delete, stringResource(R.string.delete), destructive = true) {
+                menuOpen = false
+                onDelete()
             }
         }
     }
+}
+
+@Composable
+private fun ChatMenuRow(
+    @androidx.annotation.DrawableRes icon: Int,
+    label: String,
+    destructive: Boolean = false,
+    onClick: () -> Unit,
+) {
+    val color = if (destructive) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
+    DropdownMenuItem(
+        text = { Text(label, style = MaterialTheme.typography.bodyLarge, color = color) },
+        leadingIcon = { Icon(painterResource(icon), null, tint = color, modifier = Modifier.size(22.dp)) },
+        onClick = onClick,
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 18.dp, vertical = 4.dp),
+    )
 }
 
 @Composable

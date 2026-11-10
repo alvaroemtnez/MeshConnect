@@ -1763,6 +1763,10 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
             val ok = runCatching { svc.engine.clearChannel(index) }.getOrDefault(false)
             if (ok) {
                 db.channels().delete(selfKey.value, index)
+                // The slot's messages go too: the radio hands this slot to the next
+                // channel joined, and its old posts would show under the new name.
+                db.messages().clearThread(selfKey.value, MessageRepository.KIND_CHANNEL, index.toString())
+                prefs.setThreadMarkedUnread(Inbox.threadKey(MessageRepository.KIND_CHANNEL, index.toString()), false)
                 // Everything keyed by SLOT goes with the slot — the
                 // radio hands it straight back to the next join. See
                 // Preferences.forgetChannelSlot for why that is one
@@ -3313,6 +3317,26 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
         return runCatching {
             svc.engine.sendChannelDatagram(channelIndex, dataType, payload)
         }.getOrDefault(false)
+    }
+
+    /**
+     * Delete chats from the Chats list. A DM's messages are removed from the phone (the
+     * contact stays on the radio); a channel is removed from the radio, messages and all
+     * ([deleteChannel]). Pins, archive and unread marks for them go too.
+     */
+    fun deleteChats(rows: List<ConversationRow>) {
+        for (row in rows) {
+            val key = Inbox.threadKey(row.kind, row.key)
+            prefs.setThreadPinned(key, false)
+            prefs.setThreadArchived(key, false)
+            prefs.setThreadMarkedUnread(key, false)
+            if (row.isChannel) {
+                row.key.toIntOrNull()?.let { deleteChannel(it) }
+            } else {
+                markRead(row.kind, row.key)
+                clearThread(row.kind, row.key)
+            }
+        }
     }
 
     fun clearThread(kind: String, peerKey: String) {
