@@ -1274,6 +1274,11 @@
     <string name="discover_found">Oídos directamente, el más fuerte primero. Una respuesta trae un prefijo de clave, que no prueba la identidad.</string>
     <string name="discover_signal">SNR %1$s dB aquí · %2$s dB allí</string>
     <string name="discover_unknown">No está en tus contactos · %1$s</string>
+    <string name="ch_key_locked_public">Todas las radios MeshCore comparten la clave del canal Public, así que no se puede cambiar aquí.</string>
+    <string name="ch_key_locked_hashtag">La clave de un canal hashtag sale de su nombre, así que no se puede cambiar ninguno de los dos. Para usar otro hashtag, únete a él como canal nuevo.</string>
+    <string name="ch_kind_public">Canal público</string>
+    <string name="ch_kind_hashtag">Canal hashtag</string>
+    <string name="ch_kind_private">Canal privado</string>
     <plurals name="vm_restored_settings">
         <item quantity="one">Restaurado: %1$d ajuste</item>
         <item quantity="many">Restaurados: %1$d ajustes</item>

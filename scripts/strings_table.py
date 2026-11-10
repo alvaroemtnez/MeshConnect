@@ -1479,6 +1479,11 @@ S = {
 "discover_found": ("Heard directly, strongest first. A reply carries a key prefix, which is not proof of identity.", "Oídos directamente, el más fuerte primero. Una respuesta trae un prefijo de clave, que no prueba la identidad.", "Escoltats directament, el més fort primer. Una resposta porta un prefix de clau, que no prova la identitat."),
 "discover_signal": ("SNR %1$s dB here · %2$s dB there", "SNR %1$s dB aquí · %2$s dB allí", "SNR %1$s dB ací · %2$s dB allà"),
 "discover_unknown": ("Not in your contacts · %1$s", "No está en tus contactos · %1$s", "No està en els teus contactes · %1$s"),
+"ch_key_locked_public": ("Every MeshCore radio shares the Public channel's key, so it can't be changed here.", "Todas las radios MeshCore comparten la clave del canal Public, así que no se puede cambiar aquí.", "Totes les ràdios MeshCore compartixen la clau del canal Public, així que no es pot canviar ací."),
+"ch_key_locked_hashtag": ("A hashtag channel's key is made from its name, so neither can change. To use another hashtag, join it as a new channel.", "La clave de un canal hashtag sale de su nombre, así que no se puede cambiar ninguno de los dos. Para usar otro hashtag, únete a él como canal nuevo.", "La clau d'un canal hashtag ix del seu nom, així que no es pot canviar cap dels dos. Per a usar un altre hashtag, unix-te a ell com a canal nou."),
+"ch_kind_public": ("Public channel", "Canal público", "Canal públic"),
+"ch_kind_hashtag": ("Hashtag channel", "Canal hashtag", "Canal hashtag"),
+"ch_kind_private": ("Private channel", "Canal privado", "Canal privat"),
 }
 
 # key -> ((one, other) en, (one, other) es, (one, other) ca)

@@ -34,6 +34,20 @@ import io.github.thatsfguy.meshcore.protocol.ShareUri
 import io.alvaroedo.meshconnect.ui.MeshCoreViewModel
 import io.github.thatsfguy.meshcore.presentation.ChannelSetup
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
+import androidx.compose.runtime.collectAsState
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextOverflow
+import io.alvaroedo.meshconnect.ui.model.ChannelEditRules
+import io.github.thatsfguy.meshcore.protocol.ChannelKind
 
 /** The add sheet's choices, in the order Liam's MeshCore app offers them. */
 private enum class AddChannelChoice { Public, CreatePrivate, JoinPrivate, Hashtag }
@@ -250,15 +264,60 @@ fun ChannelEditSheet(vm: MeshCoreViewModel, channel: ChannelEntity, onDismiss: (
         pskLoaded = true
     }
 
+    val kind = vm.channelKinds.collectAsState().value[channel.idx]
+    val keyLocked = ChannelEditRules.keyLocked(kind)
+    val nameLocked = ChannelEditRules.nameLocked(kind)
+
     ModalBottomSheet(onDismissRequest = onDismiss) {
-        Column(Modifier.padding(horizontal = 24.dp).padding(bottom = 32.dp)) {
-            Text(stringResource(R.string.ch_numbered, channel.idx), style = MaterialTheme.typography.headlineSmall)
-            Spacer(Modifier.height(12.dp))
+        Column(
+            Modifier
+                .padding(horizontal = 16.dp)
+                .padding(bottom = 32.dp)
+                .verticalScroll(rememberScrollState())
+                .imePadding(),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                NodeAvatar(
+                    seed = "ch${channel.idx}",
+                    label = name.ifBlank { "#" },
+                    isChannel = true,
+                    channelKind = kind,
+                    size = 48.dp,
+                )
+                Spacer(Modifier.width(16.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        name.ifBlank { stringResource(R.string.ch_numbered, channel.idx) },
+                        style = MaterialTheme.typography.headlineSmall,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Text(
+                        listOfNotNull(
+                            kind?.let {
+                                stringResource(
+                                    when (it) {
+                                        ChannelKind.Public -> R.string.ch_kind_public
+                                        ChannelKind.Hashtag -> R.string.ch_kind_hashtag
+                                        ChannelKind.Private -> R.string.ch_kind_private
+                                    },
+                                )
+                            },
+                            stringResource(R.string.ch_numbered, channel.idx),
+                        ).joinToString(" · "),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
             FormField(
                 value = name,
                 onValueChange = { name = it },
                 label = { Text(stringResource(R.string.ch_name)) },
                 singleLine = true,
+                readOnly = nameLocked,
+                trailingIcon = if (nameLocked) { { Icon(painterResource(R.drawable.ic_lock), null) } } else null,
                 modifier = Modifier.fillMaxWidth(),
             )
             FormField(
@@ -266,32 +325,43 @@ fun ChannelEditSheet(vm: MeshCoreViewModel, channel: ChannelEntity, onDismiss: (
                 onValueChange = { pskHex = it },
                 label = { Text(stringResource(if (pskLoaded) R.string.ch_secret_key else R.string.ch_loading_key)) },
                 singleLine = true,
+                readOnly = keyLocked,
+                textStyle = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Monospace),
+                trailingIcon = if (keyLocked) { { Icon(painterResource(R.drawable.ic_lock), null) } } else null,
+                supportingText = {
+                    Text(
+                        stringResource(
+                            when (kind) {
+                                ChannelKind.Public -> R.string.ch_key_locked_public
+                                ChannelKind.Hashtag -> R.string.ch_key_locked_hashtag
+                                else -> R.string.ch_key_stored
+                            },
+                        ),
+                    )
+                },
                 modifier = Modifier.fillMaxWidth(),
             )
-            Text(
-                stringResource(R.string.ch_key_stored),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontFamily = FontFamily.Default,
-            )
-            Spacer(Modifier.height(12.dp))
             // The region is local-only routing state (PARITY §8): it
             // scopes which repeaters carry this channel's traffic and is
             // never written to the radio's channel slot.
             ChannelRegionPicker(vm, channel.idx)
-            Spacer(Modifier.height(8.dp))
-            TextButton(onClick = {
-                vm.editChannel(channel.idx, name.trim(), pskHex.trim())
-                onDismiss()
-            }) { Text(stringResource(R.string.save)) }
-            TextButton(
-                onClick = { shareConfirm = true },
-                enabled = pskLoaded && pskHex.isNotBlank(),
-            ) { Text(stringResource(R.string.ch_share_qr)) }
-            TextButton(onClick = {
-                vm.deleteChannel(channel.idx)
-                onDismiss()
-            }) { Text(stringResource(R.string.ch_remove), color = MaterialTheme.colorScheme.error) }
+            Button(
+                onClick = {
+                    vm.editChannel(channel.idx, (if (nameLocked) channel.name else name).trim(), pskHex.trim())
+                    onDismiss()
+                },
+                enabled = pskLoaded,
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text(stringResource(R.string.save)) }
+            Column {
+                SheetActionRow(R.drawable.ic_qr_code, stringResource(R.string.ch_share_qr)) {
+                    if (pskLoaded && pskHex.isNotBlank()) shareConfirm = true
+                }
+                SheetActionRow(R.drawable.ic_delete, stringResource(R.string.ch_remove), destructive = true) {
+                    vm.deleteChannel(channel.idx)
+                    onDismiss()
+                }
+            }
         }
     }
 

@@ -1274,6 +1274,11 @@
     <string name="discover_found">Escoltats directament, el més fort primer. Una resposta porta un prefix de clau, que no prova la identitat.</string>
     <string name="discover_signal">SNR %1$s dB ací · %2$s dB allà</string>
     <string name="discover_unknown">No està en els teus contactes · %1$s</string>
+    <string name="ch_key_locked_public">Totes les ràdios MeshCore compartixen la clau del canal Public, així que no es pot canviar ací.</string>
+    <string name="ch_key_locked_hashtag">La clau d\'un canal hashtag ix del seu nom, així que no es pot canviar cap dels dos. Per a usar un altre hashtag, unix-te a ell com a canal nou.</string>
+    <string name="ch_kind_public">Canal públic</string>
+    <string name="ch_kind_hashtag">Canal hashtag</string>
+    <string name="ch_kind_private">Canal privat</string>
     <plurals name="vm_restored_settings">
         <item quantity="one">Restaurat: %1$d ajust</item>
         <item quantity="many">Restaurats: %1$d ajustos</item>

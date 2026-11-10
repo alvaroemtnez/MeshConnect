@@ -1277,6 +1277,11 @@
     <string name="discover_found">Heard directly, strongest first. A reply carries a key prefix, which is not proof of identity.</string>
     <string name="discover_signal">SNR %1$s dB here · %2$s dB there</string>
     <string name="discover_unknown">Not in your contacts · %1$s</string>
+    <string name="ch_key_locked_public">Every MeshCore radio shares the Public channel\'s key, so it can\'t be changed here.</string>
+    <string name="ch_key_locked_hashtag">A hashtag channel\'s key is made from its name, so neither can change. To use another hashtag, join it as a new channel.</string>
+    <string name="ch_kind_public">Public channel</string>
+    <string name="ch_kind_hashtag">Hashtag channel</string>
+    <string name="ch_kind_private">Private channel</string>
     <plurals name="vm_restored_settings">
         <item quantity="one">Restored: %1$d setting</item>
         <item quantity="other">Restored: %1$d settings</item>
