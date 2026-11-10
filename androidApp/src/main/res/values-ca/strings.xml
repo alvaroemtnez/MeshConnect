@@ -1311,6 +1311,8 @@
     <string name="radio_power_heading">Potència de transmissió</string>
     <string name="radio_sf">Dispersió</string>
     <string name="radio_cr">Codificació</string>
+    <string name="newchat_paste">Obtindre del porta-retalls</string>
+    <string name="newchat_paste_sub">Un enllaç meshcore:// que hages copiat: un contacte o un canal.</string>
     <plurals name="vm_restored_settings">
         <item quantity="one">Restaurat: %1$d ajust</item>
         <item quantity="many">Restaurats: %1$d ajustos</item>

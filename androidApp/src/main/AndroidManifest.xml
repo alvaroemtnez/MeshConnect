@@ -74,6 +74,15 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <!-- meshcore:// links (contact cards, channels, radio settings) from a camera
+                 app's QR scan, a browser or a message. They go through the same decoder
+                 and confirmations as the in-app scanner; nothing is applied unasked. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="meshcore" />
+            </intent-filter>
         </activity>
 
         <!-- QR scanner pinned to portrait (zxing-android-embedded). -->

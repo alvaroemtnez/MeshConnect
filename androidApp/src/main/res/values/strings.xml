@@ -1314,6 +1314,8 @@
     <string name="radio_power_heading">Transmit power</string>
     <string name="radio_sf">Spreading</string>
     <string name="radio_cr">Coding rate</string>
+    <string name="newchat_paste">Get from clipboard</string>
+    <string name="newchat_paste_sub">A meshcore:// link you copied: a contact or a channel.</string>
     <plurals name="vm_restored_settings">
         <item quantity="one">Restored: %1$d setting</item>
         <item quantity="other">Restored: %1$d settings</item>

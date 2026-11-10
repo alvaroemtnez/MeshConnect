@@ -68,6 +68,7 @@ ICONS = [
     ("ic_graphic_eq", "graphic_eq", False),
     ("ic_admin_panel", "admin_panel_settings", False),
     ("ic_key", "key", False),
+    ("ic_content_paste", "content_paste", False),
     # Map
     ("ic_my_location", "my_location", False),
     ("ic_location_on", "location_on", False),

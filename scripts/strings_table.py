@@ -1516,6 +1516,8 @@ S = {
 "radio_power_heading": ("Transmit power", "Potencia de transmisión", "Potència de transmissió"),
 "radio_sf": ("Spreading", "Dispersión", "Dispersió"),
 "radio_cr": ("Coding rate", "Codificación", "Codificació"),
+"newchat_paste": ("Get from clipboard", "Obtener del portapapeles", "Obtindre del porta-retalls"),
+"newchat_paste_sub": ("A meshcore:// link you copied: a contact or a channel.", "Un enlace meshcore:// que hayas copiado: un contacto o un canal.", "Un enllaç meshcore:// que hages copiat: un contacte o un canal."),
 }
 
 # key -> ((one, other) en, (one, other) es, (one, other) ca)

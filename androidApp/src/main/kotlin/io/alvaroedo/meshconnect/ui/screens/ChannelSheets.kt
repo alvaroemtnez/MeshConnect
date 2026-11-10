@@ -78,6 +78,7 @@ fun ChannelAddSheet(
 ) {
     var choice by remember { mutableStateOf<AddChannelChoice?>(null) }
     var pickingContact by remember { mutableStateOf(false) }
+    val clipboard = androidx.compose.ui.platform.LocalClipboardManager.current
     val newChat = onMessageContact != null
 
     val communityScanLauncher = rememberLauncherForActivityResult(ScanContract()) { result ->
@@ -134,6 +135,17 @@ fun ChannelAddSheet(
                         stringResource(if (newChat) R.string.newchat_scan_sub else R.string.ch_scan_sub),
                     ) {
                         communityScanLauncher.launch(meshScanOptions(scanPrompt))
+                    }
+                    // A link that arrived somewhere it could not be tapped, copied instead.
+                    if (newChat) {
+                        ChoiceRow(
+                            R.drawable.ic_content_paste,
+                            stringResource(R.string.newchat_paste),
+                            stringResource(R.string.newchat_paste_sub),
+                        ) {
+                            vm.importPastedText(clipboard.getText()?.text)
+                            onDismiss()
+                        }
                     }
                     Spacer(Modifier.height(8.dp))
                     Text(

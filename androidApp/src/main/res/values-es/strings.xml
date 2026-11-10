@@ -1311,6 +1311,8 @@
     <string name="radio_power_heading">Potencia de transmisión</string>
     <string name="radio_sf">Dispersión</string>
     <string name="radio_cr">Codificación</string>
+    <string name="newchat_paste">Obtener del portapapeles</string>
+    <string name="newchat_paste_sub">Un enlace meshcore:// que hayas copiado: un contacto o un canal.</string>
     <plurals name="vm_restored_settings">
         <item quantity="one">Restaurado: %1$d ajuste</item>
         <item quantity="many">Restaurados: %1$d ajustes</item>

@@ -102,6 +102,9 @@ class MainActivity : ComponentActivity() {
      */
     private val openThread = MutableStateFlow<Pair<String, String>?>(null)
 
+    /** A meshcore:// link the app was opened with, until the shell imports it. */
+    private val openLink = MutableStateFlow<String?>(null)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         // Transparent system bars; the app's top bar and bottom navigation
@@ -115,6 +118,7 @@ class MainActivity : ComponentActivity() {
         // MapLibre needs its singleton before any MapView exists.
         io.alvaroedo.meshconnect.ui.map.MapStyles.init(this)
         openThread.value = threadFrom(intent)
+        if (savedInstanceState == null) openLink.value = linkFrom(intent)
         setContent {
             val vm: MeshCoreViewModel = viewModel()
             val theme by vm.prefs.themeFlow.collectAsStateWithLifecycle()
@@ -125,7 +129,7 @@ class MainActivity : ComponentActivity() {
                     else -> androidx.compose.foundation.isSystemInDarkTheme()
                 },
             ) {
-                AppShell(vm, openThread)
+                AppShell(vm, openThread, openLink)
             }
         }
     }
@@ -136,7 +140,12 @@ class MainActivity : ComponentActivity() {
         // replays whichever notification started the activity.
         setIntent(intent)
         openThread.value = threadFrom(intent)
+        linkFrom(intent)?.let { openLink.value = it }
     }
+
+    private fun linkFrom(intent: Intent?): String? =
+        intent?.takeIf { it.action == Intent.ACTION_VIEW }?.dataString
+            ?.takeIf { it.startsWith("meshcore:", ignoreCase = true) }
 
     private fun threadFrom(intent: Intent?): Pair<String, String>? {
         val kind = intent?.getStringExtra(EXTRA_THREAD_KIND)?.takeIf { it.isNotBlank() }
@@ -180,6 +189,7 @@ private data class Tab(
 private fun AppShell(
     vm: MeshCoreViewModel,
     openThread: MutableStateFlow<Pair<String, String>?>,
+    openLink: MutableStateFlow<String?> = MutableStateFlow(null),
 ) {
     val nav = rememberNavController()
     val snackbar = remember { SnackbarHostState() }
@@ -213,6 +223,18 @@ private fun AppShell(
             }
             last = key
         }
+    }
+
+    // A meshcore:// link from outside, imported once the radio service is bound (a link
+    // that starts the app arrives before it is, and the import needs it). Through the
+    // scanner's path, so it gets the scanner's confirmations.
+    val link by openLink.collectAsStateWithLifecycle()
+    val service by vm.service.collectAsStateWithLifecycle()
+    LaunchedEffect(link, service) {
+        val text = link ?: return@LaunchedEffect
+        if (service == null) return@LaunchedEffect
+        openLink.value = null
+        vm.importScannedCode(text)
     }
 
     val transient by vm.transientMessage.collectAsStateWithLifecycle()
