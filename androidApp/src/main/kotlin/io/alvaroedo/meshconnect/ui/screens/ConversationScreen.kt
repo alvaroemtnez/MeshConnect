@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Surface
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.ui.res.painterResource
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -1518,62 +1519,116 @@ private fun MessageInfoSheet(
                 .padding(horizontal = 24.dp)
                 .padding(bottom = 32.dp),
         ) {
+            // The node card's layout (2026-11-10): what the message said, then its
+            // facts as tiles, then how it travelled, then the fine print.
             Text(stringResource(R.string.info_title), style = MaterialTheme.typography.titleLarge)
             Spacer(Modifier.height(12.dp))
-            InfoRow(stringResource(R.string.info_direction), stringResource(if (m.outgoing) R.string.conv_sent else R.string.info_received))
-            InfoRow(
-                stringResource(R.string.info_time),
-                DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM)
-                    .format(Date(m.timestamp * 1000)),
-            )
-            if (m.outgoing) {
-                InfoRow(
-                    stringResource(R.string.info_state),
-                    stringResource(
-                        when (m.status) {
-                            MessageStatus.Delivered.ordinal -> R.string.info_state_delivered
-                            MessageStatus.Sent.ordinal -> R.string.info_state_sent
-                            MessageStatus.Failed.ordinal -> R.string.conv_failed
-                            else -> R.string.conv_pending
-                        },
-                    ),
+            Surface(
+                shape = RoundedCornerShape(20.dp),
+                color = if (m.outgoing) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(
+                    m.text,
+                    style = MaterialTheme.typography.bodyMedium,
+                    maxLines = 6,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                    color = if (m.outgoing) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
                 )
-                if (m.attempts > 0) InfoRow(stringResource(R.string.info_attempts), m.attempts.toString())
-                m.ackHash?.let { InfoRow("Ack hash", "%08x".format(it), mono = true) }
             }
-            m.snr?.let { InfoRow("SNR", "%.1f dB".format(it)) }
+            Spacer(Modifier.height(12.dp))
+            TileRow {
+                InfoTile(
+                    stringResource(R.string.info_direction),
+                    stringResource(if (m.outgoing) R.string.conv_sent else R.string.info_received),
+                    Modifier.weight(1f).fillMaxHeight(),
+                )
+                InfoTile(
+                    stringResource(R.string.info_time),
+                    DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM)
+                        .format(Date(m.timestamp * 1000)),
+                    Modifier.weight(1.6f).fillMaxHeight(),
+                )
+            }
+            if (m.outgoing) {
+                Spacer(Modifier.height(8.dp))
+                TileRow {
+                    InfoTile(
+                        stringResource(R.string.info_state),
+                        stringResource(
+                            when (m.status) {
+                                MessageStatus.Delivered.ordinal -> R.string.info_state_delivered
+                                MessageStatus.Sent.ordinal -> R.string.info_state_sent
+                                MessageStatus.Failed.ordinal -> R.string.conv_failed
+                                else -> R.string.conv_pending
+                            },
+                        ),
+                        Modifier.weight(1f).fillMaxHeight(),
+                    )
+                    if (m.attempts > 0) {
+                        InfoTile(stringResource(R.string.info_attempts), m.attempts.toString(), Modifier.weight(1f).fillMaxHeight())
+                    }
+                }
+            }
             // A COUNT, not a path. The inbound message frame carries
             // path_len only (MESHCORE_PROTOCOL §9) — the radio keeps the
             // route to itself — so calling it "Path" implied we knew
             // which repeaters carried it. We don't. And on a routed
             // arrival there is not even a count: see arrivalLabel.
-            io.alvaroedo.meshconnect.ui.model.SharedText.arrival(LocalContext.current, m.hops)?.let { InfoRow(stringResource(R.string.info_arrival), it) }
+            val arrival = io.alvaroedo.meshconnect.ui.model.SharedText.arrival(LocalContext.current, m.hops)
+            if (arrival != null || m.snr != null) {
+                Spacer(Modifier.height(8.dp))
+                TileRow {
+                    arrival?.let { InfoTile(stringResource(R.string.info_arrival), it, Modifier.weight(1f).fillMaxHeight()) }
+                    m.snr?.let { InfoTile("SNR", "%.1f dB".format(it), Modifier.weight(1f).fillMaxHeight()) }
+                }
+            }
             copiesLabel(m.copies)?.let {
-                InfoRow(stringResource(R.string.info_copies), pluralStringResource(R.plurals.info_delivered_times, m.copies, m.copies))
+                Spacer(Modifier.height(8.dp))
+                InfoTile(
+                    stringResource(R.string.info_copies),
+                    pluralStringResource(R.plurals.info_delivered_times, m.copies, m.copies),
+                    Modifier.fillMaxWidth(),
+                )
                 Text(
                     stringResource(R.string.info_copies_body),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp),
                 )
             }
             if (!m.outgoing) {
-                MessagePathMap(vm, m, senderLabel)
                 ArrivalRoute(m, contactNames, metresAway)
+                Spacer(Modifier.height(8.dp))
+                MessagePathMap(vm, m, senderLabel)
             } else {
                 RepeatedBy(m, contactNames)
             }
+
+            SheetHeading(stringResource(R.string.node_more))
             if (showSender) {
-                InfoRow(
+                InfoTile(
                     stringResource(R.string.info_sender_name),
                     stringResource(R.string.info_unauthenticated, m.senderName?.takeIf { it.isNotBlank() } ?: "–"),
+                    Modifier.fillMaxWidth(),
                 )
+                Spacer(Modifier.height(8.dp))
             }
-            InfoRow(stringResource(R.string.info_reaction_id), Reactions.targetHash(
-                m.timestamp,
-                if (isChannel) m.senderName.orEmpty() else null,
-                m.text,
-            ), mono = true)
-            InfoRow(stringResource(R.string.info_length), pluralStringResource(R.plurals.bytes, m.text.encodeToByteArray().size, m.text.encodeToByteArray().size))
+            val bytes = m.text.encodeToByteArray().size
+            TileRow {
+                InfoTile(
+                    stringResource(R.string.info_reaction_id),
+                    Reactions.targetHash(m.timestamp, if (isChannel) m.senderName.orEmpty() else null, m.text),
+                    Modifier.weight(1f).fillMaxHeight(),
+                    mono = true,
+                )
+                InfoTile(stringResource(R.string.info_length), pluralStringResource(R.plurals.bytes, bytes, bytes), Modifier.weight(1f).fillMaxHeight())
+            }
+            m.ackHash?.let {
+                Spacer(Modifier.height(8.dp))
+                InfoTile("Ack hash", "%08x".format(it), Modifier.fillMaxWidth(), mono = true)
+            }
         }
     }
 }
@@ -1596,8 +1651,7 @@ private fun ArrivalRoute(
 ) {
     val width = m.arrivalHashWidth?.takeIf { it in 1..4 }
     val path = m.arrivalPathHex?.takeIf { it.isNotEmpty() && width != null }
-    Spacer(Modifier.height(8.dp))
-    Text(stringResource(R.string.info_arrived_via), style = MaterialTheme.typography.titleSmall)
+    SheetHeading(stringResource(R.string.info_arrived_via))
     if (path == null || width == null) {
         Text(
             io.alvaroedo.meshconnect.ui.model.SharedText.heardVia(LocalContext.current, m.hops, null, 1),
@@ -1613,20 +1667,34 @@ private fun ArrivalRoute(
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
-    Spacer(Modifier.height(4.dp))
+    Spacer(Modifier.height(8.dp))
     // The sender first, then each repeater in the order it carried the
     // message, then us. Reading it top-to-bottom IS the journey.
-    RouteStep("↑", stringResource(R.string.info_sender), dim = true)
-    hops.forEachIndexed { i, hop ->
-        // An ambiguous hop names every node it could be, nearest
-        // first, and never picks one. A 2-byte hop is 16 bits: nodes
-        // share one honestly and a collision is cheap to manufacture, so
-        // naming a winner would be a guess presented as a fact (PARITY
-        // §12) — but naming the whole set is just the truth, and it is
-        // what the reader came to the sheet for.
-        RouteStep("${i + 1}.", hop.label)
+    StepsCard {
+        RouteStep("↑", stringResource(R.string.info_sender), dim = true)
+        hops.forEachIndexed { i, hop ->
+            // An ambiguous hop names every node it could be, nearest
+            // first, and never picks one. A 2-byte hop is 16 bits: nodes
+            // share one honestly and a collision is cheap to manufacture, so
+            // naming a winner would be a guess presented as a fact (PARITY
+            // §12) — but naming the whole set is just the truth, and it is
+            // what the reader came to the sheet for.
+            RouteStep("${i + 1}.", hop.label)
+        }
+        RouteStep("↓", stringResource(R.string.info_this_radio), dim = true)
     }
-    RouteStep("↓", stringResource(R.string.info_this_radio), dim = true)
+}
+
+/** Route steps on one tinted card, the tiles' surface. */
+@Composable
+private fun StepsCard(content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit) {
+    Surface(
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerHighest,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column(Modifier.padding(horizontal = 14.dp, vertical = 10.dp), content = content)
+    }
 }
 
 /**
@@ -1644,17 +1712,16 @@ private fun ArrivalRoute(
 @Composable
 private fun RepeatedBy(m: MessageEntity, contactNames: Map<String, String>) {
     val relays = MessageRepeats.relays(m.repeatHopsHex, m.repeatHashWidth)
-    Spacer(Modifier.height(8.dp))
-    Text(stringResource(R.string.info_repeated_by), style = MaterialTheme.typography.titleSmall)
+    SheetHeading(stringResource(R.string.info_repeated_by))
     Text(
         MessageRepeats.summary(m.repeatHopsHex, m.repeatHashWidth),
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
     if (relays.isEmpty()) return
-    Spacer(Modifier.height(4.dp))
+    Spacer(Modifier.height(8.dp))
     val width = m.repeatHashWidth ?: return
-    for ((i, hash) in relays.withIndex()) {
+    StepsCard { for ((i, hash) in relays.withIndex()) {
         // Named through the shared resolver, so an ambiguous hash stays
         // "(N matches)" here exactly as it does everywhere else. A
         // 2-byte hop is 16 bits; naming a winner would be a guess
@@ -1664,7 +1731,7 @@ private fun RepeatedBy(m: MessageEntity, contactNames: Map<String, String>) {
             ?.let { PathCodec.resolveHops(it, width, contactNames).singleOrNull()?.label }
             ?: hash
         RouteStep("${i + 1}.", label)
-    }
+    } }
 }
 
 @Composable
@@ -1689,22 +1756,6 @@ private fun RouteStep(marker: String, label: String, dim: Boolean = false) {
     }
 }
 
-@Composable
-private fun InfoRow(label: String, value: String, mono: Boolean = false) {
-    Row(Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-        Text(
-            label,
-            style = MaterialTheme.typography.labelLarge,
-            modifier = Modifier.width(120.dp),
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Text(
-            value,
-            style = MaterialTheme.typography.bodyMedium,
-            fontFamily = if (mono) androidx.compose.ui.text.font.FontFamily.Monospace else null,
-        )
-    }
-}
 
 
 /**
