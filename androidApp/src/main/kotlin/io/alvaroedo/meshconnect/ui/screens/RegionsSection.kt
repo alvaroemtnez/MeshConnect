@@ -5,6 +5,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -78,6 +79,7 @@ fun RegionsSection(vm: MeshCoreViewModel) {
             isError = newRegion.isNotBlank() && !Regions.isValid(newRegion),
             modifier = Modifier.weight(1f),
         )
+        Spacer(Modifier.width(8.dp))
         FilledTonalButton(
             onClick = { vm.addRegion(newRegion); newRegion = "" },
             enabled = Regions.isValid(newRegion),

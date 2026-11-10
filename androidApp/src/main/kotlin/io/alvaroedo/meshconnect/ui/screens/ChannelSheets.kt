@@ -281,6 +281,7 @@ private fun AddChannelForm(
     }
 
     if (choice != AddChannelChoice.Public) {
+        Spacer(Modifier.height(8.dp))
         FormField(
             value = name,
             onValueChange = { name = it },
@@ -293,6 +294,7 @@ private fun AddChannelForm(
         )
     }
     if (choice == AddChannelChoice.JoinPrivate) {
+        Spacer(Modifier.height(12.dp))
         FormField(
             value = key,
             onValueChange = { key = it },

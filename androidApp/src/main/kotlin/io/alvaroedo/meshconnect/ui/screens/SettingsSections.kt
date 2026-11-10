@@ -169,12 +169,28 @@ internal fun IdentitySection(vm: MeshCoreViewModel, onShowSelfQr: () -> Unit) {
         mutableStateOf(if (fixed) info.longitude.toString() else "")
     }
 
-    Text(
-        info.publicKeyHex,
-        style = MaterialTheme.typography.bodySmall,
-        fontFamily = FontFamily.Monospace,
-    )
-    Spacer(Modifier.height(4.dp))
+    // Who this radio is (key, with its QR beside it), what it is called, where it is, and
+    // telling the mesh: one block each, rather than a row of unrelated buttons (2026-11-10).
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        InfoTile(
+            stringResource(R.string.set_public_key),
+            info.publicKeyHex,
+            Modifier.weight(1f),
+            mono = true,
+        )
+        Spacer(Modifier.width(8.dp))
+        androidx.compose.material3.FilledTonalIconButton(
+            onClick = onShowSelfQr,
+            modifier = Modifier.size(56.dp),
+        ) {
+            androidx.compose.material3.Icon(
+                androidx.compose.ui.res.painterResource(R.drawable.ic_qr_code),
+                stringResource(R.string.my_qr),
+            )
+        }
+    }
+
+    SheetHeading(stringResource(R.string.set_name_heading), Modifier.padding(top = 0.dp))
     Row(verticalAlignment = Alignment.CenterVertically) {
         FormField(
             value = name,
@@ -183,6 +199,7 @@ internal fun IdentitySection(vm: MeshCoreViewModel, onShowSelfQr: () -> Unit) {
             singleLine = true,
             modifier = Modifier.weight(1f),
         )
+        Spacer(Modifier.width(8.dp))
         FilledTonalButton(
             onClick = { vm.setAdvertName(name.trim()) },
             enabled = name.trim() != info.name && name.isNotBlank(),
@@ -202,6 +219,24 @@ internal fun IdentitySection(vm: MeshCoreViewModel, onShowSelfQr: () -> Unit) {
             onDismiss = { pickPosition = false },
         )
     }
+    // Picking on the map fills the two fields, so it sits on their heading.
+    Row(Modifier.padding(top = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            stringResource(R.string.node_position),
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.weight(1f),
+        )
+        TextButton(onClick = { pickPosition = true }) {
+            androidx.compose.material3.Icon(
+                androidx.compose.ui.res.painterResource(R.drawable.ic_add_location),
+                null,
+                modifier = Modifier.size(18.dp),
+            )
+            Spacer(Modifier.width(6.dp))
+            Text(stringResource(R.string.set_pick_on_map))
+        }
+    }
     Row(verticalAlignment = Alignment.CenterVertically) {
         FormField(
             value = lat, onValueChange = { lat = it },
@@ -212,6 +247,7 @@ internal fun IdentitySection(vm: MeshCoreViewModel, onShowSelfQr: () -> Unit) {
             value = lon, onValueChange = { lon = it },
             label = { Text(stringResource(R.string.set_longitude)) }, singleLine = true, modifier = Modifier.weight(1f),
         )
+        Spacer(Modifier.width(8.dp))
         FilledTonalButton(onClick = {
             val la = lat.toDoubleOrNull()
             val lo = lon.toDoubleOrNull()
@@ -225,11 +261,24 @@ internal fun IdentitySection(vm: MeshCoreViewModel, onShowSelfQr: () -> Unit) {
             stringResource(R.string.set_no_position),
         )
     }
-    ButtonFlowRow {
-        FilledTonalButton(onClick = { pickPosition = true }) { Text(stringResource(R.string.set_pick_on_map)) }
-        FilledTonalButton(onClick = { vm.sendSelfAdvert(flood = false) }) { Text(stringResource(R.string.chats_advert_zero_hop)) }
-        FilledTonalButton(onClick = { vm.sendSelfAdvert(flood = true) }) { Text(stringResource(R.string.chats_advert_flood)) }
-        FilledTonalButton(onClick = onShowSelfQr) { Text(stringResource(R.string.my_qr)) }
+
+    SheetHeading(stringResource(R.string.set_announce), Modifier.padding(top = 0.dp))
+    HintText(stringResource(R.string.set_announce_hint))
+    Row(horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)) {
+        FilledTonalButton(onClick = { vm.sendSelfAdvert(flood = false) }, modifier = Modifier.weight(1f)) {
+            androidx.compose.material3.Icon(
+                androidx.compose.ui.res.painterResource(R.drawable.ic_cell_tower), null, modifier = Modifier.size(18.dp),
+            )
+            Spacer(Modifier.width(6.dp))
+            Text(stringResource(R.string.set_announce_near))
+        }
+        FilledTonalButton(onClick = { vm.sendSelfAdvert(flood = true) }, modifier = Modifier.weight(1f)) {
+            androidx.compose.material3.Icon(
+                androidx.compose.ui.res.painterResource(R.drawable.ic_campaign), null, modifier = Modifier.size(18.dp),
+            )
+            Spacer(Modifier.width(6.dp))
+            Text(stringResource(R.string.set_announce_mesh))
+        }
     }
 }
 
@@ -281,15 +330,6 @@ internal fun RadioSection(vm: MeshCoreViewModel) {
     val scanLauncher = rememberLauncherForActivityResult(ScanContract()) { result ->
         result.contents?.let { vm.importScannedCode(it) }
     }
-    ButtonFlowRow {
-        FilledTonalButton(onClick = { presetSheet = true }) { Text(stringResource(R.string.setup_pick_preset)) }
-        FilledTonalButton(onClick = {
-            scanLauncher.launch(
-                meshScanOptions(ctx.getString(R.string.radio_scan_prompt)),
-            )
-        }) { Text(stringResource(R.string.radio_scan)) }
-        FilledTonalButton(onClick = { shareSettings = true }) { Text(stringResource(R.string.radio_share)) }
-    }
     if (presetSheet) {
         RadioPresetSheet(vm, onDismiss = { presetSheet = false })
     }
@@ -308,46 +348,83 @@ internal fun RadioSection(vm: MeshCoreViewModel) {
         )
     }
 
+    // The values first, as pickers where the chip only takes a fixed set (RadioChoices);
+    // then where else they can come from (a preset, a code) or go to (share); then Apply.
     Row(verticalAlignment = Alignment.CenterVertically) {
         FormField(
             value = freq, onValueChange = { freq = it },
-            label = { Text(stringResource(R.string.radio_freq)) }, singleLine = true, modifier = Modifier.weight(1.2f),
+            label = { Text(stringResource(R.string.radio_freq)) }, singleLine = true, modifier = Modifier.weight(1f),
         )
-        Spacer(Modifier.width(4.dp))
-        FormField(
-            value = bw, onValueChange = { bw = it },
-            label = { Text(stringResource(R.string.radio_bw)) }, singleLine = true, modifier = Modifier.weight(1f),
-        )
-        Spacer(Modifier.width(4.dp))
-        FormField(
-            value = sf, onValueChange = { sf = it },
-            label = { Text("SF") }, singleLine = true, modifier = Modifier.weight(0.5f),
-        )
-        Spacer(Modifier.width(4.dp))
-        FormField(
-            value = cr, onValueChange = { cr = it },
-            label = { Text("CR") }, singleLine = true, modifier = Modifier.weight(0.5f),
-        )
+        Spacer(Modifier.width(8.dp))
+        val bwHz = RadioUnits.khzTextToHz(bw)
+        DropdownField(
+            label = stringResource(R.string.radio_bw),
+            value = bwHz,
+            options = io.alvaroedo.meshconnect.ui.model.RadioChoices.bandwidths(bwHz)
+                .map { it to RadioUnits.hzToKhzText(it) },
+            modifier = Modifier.weight(1f),
+        ) { bw = RadioUnits.hzToKhzText(it!!) }
     }
-    FilledTonalButton(onClick = {
-        // Typed in MHz/kHz, sent in kHz/Hz. The bounds stay in wire
-        // units so they keep meaning the same thing as the radio's:
-        // 300_000..2_500_000 kHz is 300..2500 MHz. An earlier upper
-        // bound of 2_500_000_000 was that range read as Hz, so BOTH
-        // interpretations passed and the check caught nothing.
-        val f = RadioUnits.mhzTextToKhz(freq)
-        val b = RadioUnits.khzTextToHz(bw)
-        val s = sf.toIntOrNull()
-        val c = cr.toIntOrNull()
-        if (f != null && f in 300_000..2_500_000 && b != null && b in 7_000..500_000 &&
-            s != null && s in 5..12 && c != null && c in 5..8
-        ) {
-            vm.setRadioParams(f, b, s, c)
-        } else {
-            vm.transientMessage.value = ctx.getString(R.string.radio_bad_params)
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        DropdownField(
+            label = stringResource(R.string.radio_sf),
+            value = sf.toIntOrNull(),
+            options = io.alvaroedo.meshconnect.ui.model.RadioChoices.spreadingFactors(sf.toIntOrNull())
+                .map { it to "SF$it" },
+            modifier = Modifier.weight(1f),
+        ) { sf = it.toString() }
+        Spacer(Modifier.width(8.dp))
+        DropdownField(
+            label = stringResource(R.string.radio_cr),
+            value = cr.toIntOrNull(),
+            options = io.alvaroedo.meshconnect.ui.model.RadioChoices.codingRates(cr.toIntOrNull())
+                .map { it to io.alvaroedo.meshconnect.ui.model.RadioChoices.codingRateLabel(it) },
+            modifier = Modifier.weight(1f),
+        ) { cr = it.toString() }
+    }
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        FilledTonalButton(onClick = { presetSheet = true }, modifier = Modifier.weight(1f)) {
+            Text(stringResource(R.string.setup_pick_preset), maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
         }
-    }) { Text(stringResource(R.string.radio_apply_params)) }
+        Spacer(Modifier.width(8.dp))
+        androidx.compose.material3.FilledTonalIconButton(onClick = {
+            scanLauncher.launch(meshScanOptions(ctx.getString(R.string.radio_scan_prompt)))
+        }) {
+            androidx.compose.material3.Icon(
+                androidx.compose.ui.res.painterResource(R.drawable.ic_qr_code_scanner),
+                stringResource(R.string.radio_scan),
+            )
+        }
+        androidx.compose.material3.FilledTonalIconButton(onClick = { shareSettings = true }) {
+            androidx.compose.material3.Icon(
+                androidx.compose.ui.res.painterResource(R.drawable.ic_share),
+                stringResource(R.string.radio_share),
+            )
+        }
+    }
+    Button(
+        modifier = Modifier.fillMaxWidth(),
+        onClick = {
+            // Typed in MHz/kHz, sent in kHz/Hz. The bounds stay in wire
+            // units so they keep meaning the same thing as the radio's:
+            // 300_000..2_500_000 kHz is 300..2500 MHz. An earlier upper
+            // bound of 2_500_000_000 was that range read as Hz, so BOTH
+            // interpretations passed and the check caught nothing.
+            val f = RadioUnits.mhzTextToKhz(freq)
+            val b = RadioUnits.khzTextToHz(bw)
+            val s = sf.toIntOrNull()
+            val c = cr.toIntOrNull()
+            if (f != null && f in 300_000..2_500_000 && b != null && b in 7_000..500_000 &&
+                s != null && s in 5..12 && c != null && c in 5..8
+            ) {
+                vm.setRadioParams(f, b, s, c)
+            } else {
+                vm.transientMessage.value = ctx.getString(R.string.radio_bad_params)
+            }
+        },
+    ) { Text(stringResource(R.string.radio_apply_params)) }
 
+    SheetHeading(stringResource(R.string.radio_power_heading), Modifier.padding(top = 4.dp))
     Row(verticalAlignment = Alignment.CenterVertically) {
         FormField(
             value = tx, onValueChange = { tx = it },
@@ -355,6 +432,7 @@ internal fun RadioSection(vm: MeshCoreViewModel) {
             singleLine = true,
             modifier = Modifier.weight(1f),
         )
+        Spacer(Modifier.width(8.dp))
         FilledTonalButton(onClick = {
             tx.toIntOrNull()?.takeIf { it in 1..info.maxTxPowerDbm }?.let { vm.setTxPower(it) }
         }) { Text(stringResource(R.string.set)) }
@@ -505,6 +583,7 @@ internal fun PoliciesSection(vm: MeshCoreViewModel) {
             isError = region.isNotBlank() && !Regions.isValid(region),
             modifier = Modifier.weight(1f),
         )
+        Spacer(Modifier.width(8.dp))
         FilledTonalButton(
             onClick = { vm.setFloodScope(region.trim()) },
             enabled = Regions.isValid(region),
@@ -616,6 +695,7 @@ internal fun CustomVarsSection(vm: MeshCoreViewModel) {
             value = value, onValueChange = { value = it },
             label = { Text(stringResource(R.string.vars_value)) }, singleLine = true, modifier = Modifier.weight(1f),
         )
+        Spacer(Modifier.width(8.dp))
         FilledTonalButton(
             onClick = {
                 vm.setCustomVar(key.trim(), value.trim())
@@ -933,10 +1013,11 @@ internal fun SavedNodesList(vm: MeshCoreViewModel) {
                 // the app's list entry. Sharing the word sent someone
                 // looking for the first one to this button, and their new
                 // BLE PIN went untested because the bond was still in place.
-                FilledTonalButton(onClick = {
+                Spacer(Modifier.width(4.dp))
+                TextButton(onClick = {
                     vm.forgetNode(node)
                     refresh++
-                }) { Text(stringResource(R.string.node_remove_confirm)) }
+                }) { Text(stringResource(R.string.node_remove_confirm), color = MaterialTheme.colorScheme.error) }
             }
         }
     }

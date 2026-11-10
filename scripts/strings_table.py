@@ -1507,6 +1507,15 @@ S = {
 "expand": ("Expand", "Desplegar", "Desplegar"),
 "rs_tele_hint": ("The board's battery and temperature, and any sensors fitted to it.", "La batería y la temperatura de la placa, y los sensores que tenga.", "La bateria i la temperatura de la placa, i els sensors que tinga."),
 "rsf_radio_sub": ("Frequency, power and hash width", "Frecuencia, potencia y ancho del hash", "Freqüència, potència i amplada del hash"),
+"set_announce": ("Announce this radio", "Anunciar esta radio", "Anunciar esta ràdio"),
+"set_announce_hint": ("Tells others this radio exists, with its name and position. Nearby reaches radios in direct range; the whole mesh floods through repeaters.", "Avisa a los demás de que esta radio existe, con su nombre y posición. Cerca llega a las radios al alcance directo; toda la malla se inunda a través de los repetidores.", "Avisa els altres que esta ràdio existix, amb el seu nom i posició. A prop arriba a les ràdios a l'abast directe; tota la malla s'inunda a través dels repetidors."),
+"set_announce_near": ("Nearby", "Cerca", "A prop"),
+"set_announce_mesh": ("Whole mesh", "Toda la malla", "Tota la malla"),
+"set_name_heading": ("Name", "Nombre", "Nom"),
+"set_public_key": ("Public key", "Clave pública", "Clau pública"),
+"radio_power_heading": ("Transmit power", "Potencia de transmisión", "Potència de transmissió"),
+"radio_sf": ("Spreading", "Dispersión", "Dispersió"),
+"radio_cr": ("Coding rate", "Codificación", "Codificació"),
 }
 
 # key -> ((one, other) en, (one, other) es, (one, other) ca)

@@ -1305,6 +1305,15 @@
     <string name="expand">Expand</string>
     <string name="rs_tele_hint">The board\'s battery and temperature, and any sensors fitted to it.</string>
     <string name="rsf_radio_sub">Frequency, power and hash width</string>
+    <string name="set_announce">Announce this radio</string>
+    <string name="set_announce_hint">Tells others this radio exists, with its name and position. Nearby reaches radios in direct range; the whole mesh floods through repeaters.</string>
+    <string name="set_announce_near">Nearby</string>
+    <string name="set_announce_mesh">Whole mesh</string>
+    <string name="set_name_heading">Name</string>
+    <string name="set_public_key">Public key</string>
+    <string name="radio_power_heading">Transmit power</string>
+    <string name="radio_sf">Spreading</string>
+    <string name="radio_cr">Coding rate</string>
     <plurals name="vm_restored_settings">
         <item quantity="one">Restored: %1$d setting</item>
         <item quantity="other">Restored: %1$d settings</item>

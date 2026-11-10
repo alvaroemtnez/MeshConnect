@@ -209,6 +209,54 @@ fun PanelCard(
 }
 
 /**
+ * A field whose value is picked from a list: the app's text field, read-only, opening a menu.
+ * [options] are (value, label) pairs; [value] is matched against the values.
+ */
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+@Composable
+fun <T> DropdownField(
+    label: String,
+    value: T,
+    options: List<Pair<T, String>>,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    onSelect: (T) -> Unit,
+) {
+    var open by remember { mutableStateOf(false) }
+    androidx.compose.material3.ExposedDropdownMenuBox(
+        expanded = open,
+        onExpandedChange = { if (enabled) open = it },
+        modifier = modifier,
+    ) {
+        FormField(
+            value = options.firstOrNull { it.first == value }?.second ?: value.toString(),
+            onValueChange = {},
+            readOnly = true,
+            enabled = enabled,
+            singleLine = true,
+            label = { Text(label, maxLines = 1) },
+            trailingIcon = { androidx.compose.material3.ExposedDropdownMenuDefaults.TrailingIcon(expanded = open) },
+            modifier = Modifier
+                .menuAnchor(androidx.compose.material3.ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled)
+                .fillMaxWidth(),
+        )
+        ExposedDropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+            for ((v, text) in options) {
+                androidx.compose.material3.DropdownMenuItem(
+                    text = { Text(text) },
+                    onClick = { open = false; onSelect(v) },
+                    trailingIcon = if (v == value) {
+                        { Icon(androidx.compose.ui.res.painterResource(R.drawable.ic_check), null) }
+                    } else {
+                        null
+                    },
+                )
+            }
+        }
+    }
+}
+
+/**
  * Query-on-expand: runs [query] when the section's content enters
  * composition (i.e. on every expand — AnimatedVisibility disposes
  * collapsed content) and shows a spinner until it answers. [enabled]

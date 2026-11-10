@@ -147,11 +147,6 @@ fun SettingsIdentityScreen(vm: MeshCoreViewModel, nav: NavController) {
         stringResource(R.string.hub_identity),
         vm,
         nav,
-        menuActions = listOf(
-            MenuAction(stringResource(R.string.chats_advert_zero_hop)) { vm.sendSelfAdvert(flood = false) },
-            MenuAction(stringResource(R.string.chats_advert_flood)) { vm.sendSelfAdvert(flood = true) },
-            MenuAction(stringResource(R.string.my_qr)) { showSelfQr = true },
-        ),
     ) {
         QueryOnEntry(vm, query = { vm.querySelfInfo() }) {
             IdentitySection(vm, onShowSelfQr = { showSelfQr = true })

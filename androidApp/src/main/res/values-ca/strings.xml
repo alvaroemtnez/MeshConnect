@@ -1302,6 +1302,15 @@
     <string name="expand">Desplegar</string>
     <string name="rs_tele_hint">La bateria i la temperatura de la placa, i els sensors que tinga.</string>
     <string name="rsf_radio_sub">Freqüència, potència i amplada del hash</string>
+    <string name="set_announce">Anunciar esta ràdio</string>
+    <string name="set_announce_hint">Avisa els altres que esta ràdio existix, amb el seu nom i posició. A prop arriba a les ràdios a l\'abast directe; tota la malla s\'inunda a través dels repetidors.</string>
+    <string name="set_announce_near">A prop</string>
+    <string name="set_announce_mesh">Tota la malla</string>
+    <string name="set_name_heading">Nom</string>
+    <string name="set_public_key">Clau pública</string>
+    <string name="radio_power_heading">Potència de transmissió</string>
+    <string name="radio_sf">Dispersió</string>
+    <string name="radio_cr">Codificació</string>
     <plurals name="vm_restored_settings">
         <item quantity="one">Restaurat: %1$d ajust</item>
         <item quantity="many">Restaurats: %1$d ajustos</item>

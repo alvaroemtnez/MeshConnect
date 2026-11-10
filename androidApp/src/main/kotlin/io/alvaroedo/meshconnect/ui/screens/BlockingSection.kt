@@ -5,6 +5,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -96,6 +97,7 @@ fun BlockingSection(vm: MeshCoreViewModel) {
             singleLine = true,
             modifier = Modifier.weight(1f),
         )
+        Spacer(Modifier.width(8.dp))
         FilledTonalButton(
             onClick = { vm.setChannelNameFiltered(newName.trim(), true); newName = "" },
             enabled = BlockList.canonicalName(newName) != null,
