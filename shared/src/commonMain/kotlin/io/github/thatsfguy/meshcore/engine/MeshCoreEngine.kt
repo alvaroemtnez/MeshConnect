@@ -2472,15 +2472,21 @@ class MeshCoreEngine(
     suspend fun discoverNodePrefixes(
         nodeType: Int = Codes.ADV_TYPE_REPEATER,
         timeoutMs: Long = 10_000,
-    ): Set<String> = coroutineScope {
+    ): Set<String> = discoverNodes(nodeType, timeoutMs).mapTo(LinkedHashSet()) { it.prefixHex }
+
+    /** [discoverNodePrefixes] with each answer's signal, one per responder, in arrival order. */
+    suspend fun discoverNodes(
+        nodeType: Int = Codes.ADV_TYPE_REPEATER,
+        timeoutMs: Long = 10_000,
+    ): List<NodeDiscovery.Reply> = coroutineScope {
         val tag = nextControlTag()
-        val found = CoroutineChannel<String>(CoroutineChannel.UNLIMITED)
+        val found = CoroutineChannel<NodeDiscovery.Reply>(CoroutineChannel.UNLIMITED)
         // Subscribe before sending: a 0-hop neighbour can answer before
         // send() has even returned.
         val pump = launch(start = CoroutineStart.UNDISPATCHED) {
             events.collect { ev ->
                 if (ev is DeviceEvent.ControlData) {
-                    NodeDiscovery.parseDiscoveryResponse(ev.payload, tag, nodeType)
+                    NodeDiscovery.parseDiscoveryReply(ev.payload, tag, nodeType)
                         ?.let { found.trySend(it) }
                 }
             }
@@ -2490,18 +2496,19 @@ class MeshCoreEngine(
                 Frames.discoveryRequestPayload(tag, typeMask = 1 shl nodeType),
             ),
         )
-        val prefixes = LinkedHashSet<String>()
+        val replies = LinkedHashMap<String, NodeDiscovery.Reply>()
         withTimeoutOrNull(timeoutMs) {
-            for (prefix in found) {
-                prefixes += prefix
+            for (reply in found) {
+                // First answer per prefix wins; a repeat is the same node.
+                replies.getOrPut(reply.prefixHex) { reply }
                 // A hostile node can answer at line rate; stop listening
                 // rather than let one flood the picker.
-                if (prefixes.size >= MAX_DISCOVERY_REPLIES) break
+                if (replies.size >= MAX_DISCOVERY_REPLIES) break
             }
         }
         pump.cancel()
         found.close()
-        prefixes
+        replies.values.toList()
     }
 
     /**

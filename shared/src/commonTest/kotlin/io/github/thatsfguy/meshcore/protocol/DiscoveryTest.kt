@@ -252,4 +252,39 @@ class DiscoveryTest {
             }
         }
     }
+
+    // ------------------------------------------------------------------
+    // Signal readings (2026-11-10)
+    // ------------------------------------------------------------------
+
+    @Test
+    fun theReplyCarriesTheSignalBothWaysInQuarterDb() {
+        // response(): SNR byte 10, RSSI 0xB0, inbound SNR 12 — as the companion writes
+        // (int8_t)(snr*4) and (int8_t)rssi, and the repeater echoes packet->_snr (×4).
+        val r = NodeDiscovery.parseDiscoveryReply(response(), tag)!!
+        assertEquals("aabbccdd", r.prefixHex)
+        assertEquals(2.5, r.snr)
+        assertEquals(-80, r.rssi)
+        assertEquals(3.0, r.theirSnr)
+    }
+
+    @Test
+    fun negativeSnrIsSigned() {
+        val p = response()
+        p[0] = (-30).toByte()   // -7.5 dB
+        p[4] = (-6).toByte()    // -1.5 dB
+        val r = NodeDiscovery.parseDiscoveryReply(p, tag)!!
+        assertEquals(-7.5, r.snr)
+        assertEquals(-1.5, r.theirSnr)
+    }
+
+    @Test
+    fun theReplyParserRefusesWhatThePrefixParserRefuses() {
+        assertNull(NodeDiscovery.parseDiscoveryReply(response(tag = tag + 1), tag))
+        assertNull(NodeDiscovery.parseDiscoveryReply(response(subtype = 0), tag))
+        assertNull(NodeDiscovery.parseDiscoveryReply(response(prefix = ByteArray(0)), tag))
+        for (n in 0 until MIN_RESPONSE_BYTES) {
+            assertNull(NodeDiscovery.parseDiscoveryReply(response().copyOfRange(0, n), tag))
+        }
+    }
 }

@@ -5,13 +5,15 @@ drawables into androidApp/src/main/res/drawable/.
     python3 scripts/gen_icons.py          # (re)generate every icon below
 
 Add an icon: append (drawable name, symbol name, mirror in RTL) to ICONS and
-run the script. Browse names at https://fonts.google.com/icons. Use them from
+run the script; a fourth element "fill1" takes the filled glyph (a favourite's
+star when it is on). `gen_icons.py ic_a ic_b` regenerates only those. Browse names at https://fonts.google.com/icons. Use them from
 Compose with painterResource(R.drawable.ic_x). Adapted from Skypost.
 """
 
 from __future__ import annotations
 
 import re
+import sys
 import urllib.request
 from pathlib import Path
 
@@ -55,6 +57,7 @@ ICONS = [
     ("ic_lock", "lock", False),
     ("ic_push_pin", "push_pin", False),
     ("ic_star", "star", False),
+    ("ic_star_filled", "star", False, "fill1"),
     # Map
     ("ic_my_location", "my_location", False),
     ("ic_location_on", "location_on", False),
@@ -136,7 +139,7 @@ ICONS = [
     ("ic_power", "power_settings_new", False),
 ]
 
-URL = "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/{}/default/24px.svg"
+URL = "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/{}/{}/24px.svg"
 OUT = Path(__file__).resolve().parents[1] / "androidApp" / "src" / "main" / "res" / "drawable"
 LONG_PATH = 800
 
@@ -159,8 +162,11 @@ TEMPLATE = """<?xml version="1.0" encoding="utf-8"?>
 
 def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
-    for name, symbol, mirror in ICONS:
-        svg = urllib.request.urlopen(URL.format(symbol), timeout=30).read().decode()
+    only = set(sys.argv[1:])
+    for name, symbol, mirror, *style in ICONS:
+        if only and name not in only:
+            continue
+        svg = urllib.request.urlopen(URL.format(symbol, style[0] if style else "default"), timeout=30).read().decode()
         if 'viewBox="0 -960 960 960"' not in svg:
             raise SystemExit(f"{symbol}: unexpected viewBox")
         paths = re.findall(r'<path d="([^"]+)"', svg)

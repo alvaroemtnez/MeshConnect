@@ -560,8 +560,6 @@ S = {
 "perm_policy_deny": ('Global policy is Nobody: nobody can read this, switch or not.', 'La política global es «Nadie»: nadie puede leerlo, con o sin interruptor.', 'La política global és «Ningú»: ningú no pot llegir-ho, amb interruptor o sense.'),
 "discover_title": ('Nearby repeaters', 'Repetidores cercanos', 'Repetidors pròxims'),
 "discover_listening": ('Listening for answers…', 'Esperando respuestas…', 'Esperant respostes…'),
-"discover_none": ('Nothing answered. That can mean none are in range, that they answered with a key prefix matching no contact you hold, or that they run firmware without discovery.', 'Nadie ha respondido. Puede que no haya ninguno al alcance, que respondieran con un prefijo que no coincide con tus contactos, o que su firmware no tenga descubrimiento.', "Ningú no ha respost. Pot ser que no n'hi haja cap a l'abast, que respongueren amb un prefix que no coincidix amb els teus contactes, o que el seu firmware no tinga descobriment."),
-"discover_found": ("Answered within range. These are contacts you already hold whose key matched a responder's prefix: a prefix is not proof of identity.", 'Respondieron al alcance. Son contactos que ya tienes cuya clave coincide con el prefijo de quien respondió: un prefijo no prueba la identidad.', "Van respondre a l'abast. Són contactes que ja tens la clau dels quals coincidix amb el prefix de qui va respondre: un prefix no prova la identitat."),
 
 "conv_link_body": ('This opens in your browser and leaves the mesh. The site, chosen by the sender and not by you, will see your real IP address and network.\n\n%1$s', 'Esto se abre en el navegador y sale de la malla. El sitio, elegido por quien lo envió y no por ti, verá tu dirección IP real y tu red.\n\n%1$s', "Açò s'obri en el navegador i ix de la malla. El lloc, triat per qui l'ha enviat i no per tu, vorà la teua adreça IP real i la teua xarxa.\n\n%1$s"),
 "conv_open_browser": ('Open in browser', 'Abrir en el navegador', 'Obrir en el navegador'),
@@ -1475,6 +1473,12 @@ S = {
 ),
 "telemetry_board": ("Board · channel %1$d", "Placa · canal %1$d", "Placa · canal %1$d"),
 "telemetry_sensor": ("Sensor · channel %1$d", "Sensor · canal %1$d", "Sensor · canal %1$d"),
+"node_qa_add": ("Add", "Añadir", "Afegir"),
+"node_qa_forget": ("Forget", "Olvidar", "Oblidar"),
+"discover_none": ("Nothing answered. None may be in range, or they run firmware without discovery.", "Nadie ha respondido. Puede que no haya ninguno al alcance, o que su firmware no tenga descubrimiento.", "Ningú no ha respost. Pot ser que no n'hi haja cap a l'abast, o que el seu firmware no tinga descobriment."),
+"discover_found": ("Heard directly, strongest first. A reply carries a key prefix, which is not proof of identity.", "Oídos directamente, el más fuerte primero. Una respuesta trae un prefijo de clave, que no prueba la identidad.", "Escoltats directament, el més fort primer. Una resposta porta un prefix de clau, que no prova la identitat."),
+"discover_signal": ("SNR %1$s dB here · %2$s dB there", "SNR %1$s dB aquí · %2$s dB allí", "SNR %1$s dB ací · %2$s dB allà"),
+"discover_unknown": ("Not in your contacts · %1$s", "No está en tus contactos · %1$s", "No està en els teus contactes · %1$s"),
 }
 
 # key -> ((one, other) en, (one, other) es, (one, other) ca)

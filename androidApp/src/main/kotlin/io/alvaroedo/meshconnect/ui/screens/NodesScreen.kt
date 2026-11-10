@@ -24,12 +24,17 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.ui.draw.clip
+import androidx.compose.material3.Surface
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.width
+import io.alvaroedo.meshconnect.ui.model.LinkMeter
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -344,22 +349,10 @@ fun NodesScreen(vm: MeshCoreViewModel, nav: NavController) {
                         }
                     }
                     items(listed, key = { it.keyHex }) { c ->
-                        // Infrastructure rows go straight to administration;
-                        // long-press opens the sheet (routing, rename, QR).
-                        // A room opens its conversation, signing in first.
-                        val adminable = c.type == Codes.ADV_TYPE_REPEATER ||
-                            c.type == Codes.ADV_TYPE_SENSOR
-                        ContactRow(
-                            c = c,
-                            onClick = {
-                                when {
-                                    c.type == Codes.ADV_TYPE_ROOM -> openRoom(c)
-                                    adminable -> openAdmin(c.keyHex)
-                                    else -> detail = c
-                                }
-                            },
-                            onLongClick = { detail = c },
-                        )
+                        // Every kind opens its card, tap or hold (2026-11-10): a repeater
+                        // went straight to sign-in, which is one of several things you
+                        // might want from it. Manage, Room and Message are one tap on the card.
+                        ContactRow(c = c, onClick = { detail = c }, onLongClick = { detail = c })
                     }
                     item(key = "fab_clearance") { Spacer(Modifier.height(88.dp)) }
                 }
@@ -396,7 +389,12 @@ fun NodesScreen(vm: MeshCoreViewModel, nav: NavController) {
         SelfQrDialog(vm, onDismiss = { showSelfQr = false })
     }
     if (discovering) {
-        DiscoverNodesDialog(vm, nav, onDismiss = { discovering = false })
+        DiscoverNodesDialog(
+            vm,
+            onDismiss = { discovering = false },
+            onOpenContact = { discovering = false; detail = it },
+            onOpenHeard = { discovering = false; heardDetail = it },
+        )
     }
     if (staleOpen) {
         StaleNodesDialog(vm, onDismiss = { staleOpen = false })
@@ -457,6 +455,10 @@ fun NodesScreen(vm: MeshCoreViewModel, nav: NavController) {
             onTrace = {
                 detail = null
                 nav.navigate(traceRoute(contact.keyHex))
+            },
+            onShowOnMap = {
+                detail = null
+                showOnMap(vm, nav, contact.keyHex)
             },
             // Straight to the transfer, using the address the node
             // announced: a node in update mode has left the mesh.
@@ -834,26 +836,6 @@ private fun ContactRow(
 }
 
 /**
- * Position and distance, for either node sheet. One copy on purpose: the
- * two rows once used different rules and contradicted each other in the
- * same sheet (a node a few microdegrees from Null Island printed
- * "0.00000, 0.00000" over a Distance of "Unknown"; reported 2026-09-07).
- */
-@Composable
-private fun PositionRows(
-    lat: Double?,
-    lon: Double?,
-    selfLat: Double?,
-    selfLon: Double?,
-    units: io.github.thatsfguy.meshcore.presentation.UnitSystem,
-) {
-    val distance = nodeDistance(lat, lon, selfLat, selfLon, units) ?: return
-    Spacer(Modifier.height(8.dp))
-    DetailRow(stringResource(R.string.node_position), "%.5f, %.5f".format(java.util.Locale.ROOT, lat, lon))
-    DetailRow(stringResource(R.string.node_distance), distance)
-}
-
-/**
  * How far a node is, for every sheet that shows one — null when it has no real position.
  * `isPlausiblePosition`, not a null check: a node a few microdegrees from Null Island is
  * non-null, and two sheets once disagreed about it (2026-09-07).
@@ -895,54 +877,98 @@ private fun HeardDetailSheet(
     onForget: () -> Unit,
 ) {
     val clipboard = androidx.compose.ui.platform.LocalClipboardManager.current
+    val context = LocalContext.current
     val self = vm.selfInfo.collectAsState().value
     val units by vm.unitSystem.collectAsState()
     val stamp = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT)
+    // The contact card's layout (2026-11-10), with what a heard node has: no stored
+    // path, no favourite, nothing the radio would have to look up by key.
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(
             Modifier
-                .padding(horizontal = 24.dp)
+                .padding(horizontal = 16.dp)
                 .padding(bottom = 32.dp)
                 .verticalScroll(rememberScrollState()),
         ) {
-            Text(node.name.ifBlank { stringResource(R.string.node_unnamed) }, style = MaterialTheme.typography.headlineSmall)
-            Text(
-                stringResource(R.string.node_heard_not_added, SharedText.kind(LocalContext.current, node.type)),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.primary,
-            )
-            Spacer(Modifier.height(12.dp))
-
             Row(verticalAlignment = Alignment.CenterVertically) {
+                NodeAvatar(
+                    seed = node.keyHex,
+                    label = node.name.ifBlank { node.keyHex },
+                    type = node.type,
+                    typeIcon = true,
+                    size = 56.dp,
+                )
+                Spacer(Modifier.size(16.dp))
                 Column(Modifier.weight(1f)) {
-                    Text(stringResource(R.string.add_contact_key), style = MaterialTheme.typography.labelLarge)
-                    Text(node.keyHex, style = MaterialTheme.typography.bodySmall, fontFamily = FontFamily.Monospace)
+                    Text(
+                        node.name.ifBlank { stringResource(R.string.node_unnamed) },
+                        style = MaterialTheme.typography.headlineSmall,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Text(
+                        stringResource(R.string.node_heard_not_added, SharedText.kind(context, node.type)),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
-                TextButton(onClick = {
-                    clipboard.setText(androidx.compose.ui.text.AnnotatedString(node.keyHex))
-                }) { Text(stringResource(R.string.copy)) }
             }
 
-            PositionRows(node.latitude, node.longitude, self?.latitude, self?.longitude, units)
+            Row(Modifier.fillMaxWidth().padding(top = 16.dp)) {
+                QuickAction(R.drawable.ic_person_add, stringResource(R.string.node_qa_add), on = true, onClick = onAdd)
+                QuickAction(R.drawable.ic_delete, stringResource(R.string.node_qa_forget), onClick = onForget)
+            }
 
-            // Local arrival times — never the advert's own timestamp,
-            // which is the node's clock (see LastHeard).
-            DetailRow(
-                stringResource(R.string.node_last_heard),
-                relativeAge(node.lastHeardAt / 1000) + " · " + stamp.format(Date(node.lastHeardAt)),
+            Spacer(Modifier.height(12.dp))
+            InfoTile(
+                stringResource(R.string.add_contact_key),
+                node.keyHex,
+                Modifier.fillMaxWidth(),
+                mono = true,
+                trailing = {
+                    IconButton(onClick = {
+                        clipboard.setText(androidx.compose.ui.text.AnnotatedString(node.keyHex))
+                    }) { Icon(painterResource(R.drawable.ic_content_copy), stringResource(R.string.copy)) }
+                },
             )
-            if (node.firstHeardAt in 1 until node.lastHeardAt) {
-                DetailRow(stringResource(R.string.node_first_heard), stamp.format(Date(node.firstHeardAt)))
+            // Hops, and the node's own signal only when heard direct: after a relay
+            // the latest SNR is the last repeater's (HeardReach). Local arrival times,
+            // never the advert's own timestamp, which is the node's clock (LastHeard).
+            val reach = SharedText.heardReach(context, node.minHops, node.directSnr)
+            Spacer(Modifier.height(8.dp))
+            TileRow {
+                reach?.let {
+                    InfoTile(stringResource(R.string.node_hops_away), it, Modifier.weight(1f).fillMaxHeight())
+                }
+                InfoTile(
+                    stringResource(R.string.node_last_heard),
+                    relativeAge(node.lastHeardAt / 1000),
+                    Modifier.weight(1f).fillMaxHeight(),
+                )
             }
-            // Hops, and the node's own signal only when heard direct: after
-            // a relay the latest SNR is the last repeater's (HeardReach).
-            SharedText.heardReach(LocalContext.current, node.minHops, node.directSnr)
-                ?.let { DetailRow(stringResource(R.string.node_hops_away), it) }
+            nodeDistance(node.latitude, node.longitude, self?.latitude, self?.longitude, units)?.let { distance ->
+                Spacer(Modifier.height(8.dp))
+                TileRow {
+                    InfoTile(
+                        stringResource(R.string.node_position),
+                        "%.5f, %.5f".format(java.util.Locale.ROOT, node.latitude, node.longitude),
+                        Modifier.weight(1f).fillMaxHeight(),
+                        mono = true,
+                    )
+                    InfoTile(stringResource(R.string.node_distance), distance, Modifier.weight(1f).fillMaxHeight())
+                }
+            }
+            if (node.firstHeardAt in 1 until node.lastHeardAt) {
+                Spacer(Modifier.height(8.dp))
+                InfoTile(stringResource(R.string.node_first_heard), stamp.format(Date(node.firstHeardAt)), Modifier.fillMaxWidth())
+            }
             signals?.let {
                 (if (node.type == Codes.ADV_TYPE_REPEATER) it else it.copy(relayed = 0))
                     .copy(heardDirect = false)
-            }?.let { SharedText.signals(LocalContext.current, it) }
-                ?.let { DetailRow(stringResource(R.string.node_why_add), it) }
+            }?.let { SharedText.signals(context, it) }?.let {
+                Spacer(Modifier.height(8.dp))
+                InfoTile(stringResource(R.string.node_why_add), it, Modifier.fillMaxWidth())
+            }
 
             Spacer(Modifier.height(12.dp))
             Text(
@@ -951,11 +977,8 @@ private fun HeardDetailSheet(
                 ),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 4.dp),
             )
-            TextButton(onClick = onAdd) { Text(stringResource(R.string.node_add_to_contacts)) }
-            TextButton(onClick = onForget) {
-                Text(stringResource(R.string.node_forget), color = MaterialTheme.colorScheme.error)
-            }
         }
     }
 }
@@ -973,7 +996,13 @@ fun ContactDetailSheet(
     onTrace: (() -> Unit)? = null,
     /** Extra section under the facts — the map puts a repeater's neighbour links here. */
     extra: (@Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit)? = null,
+    /** Tapping Position: centre the map on this node. */
+    onShowOnMap: (() -> Unit)? = null,
 ) {
+    // The row as the database has it NOW, not as it was when the sheet opened: a
+    // favourite, a rename or a new path shows without closing and reopening.
+    @Suppress("NAME_SHADOWING")
+    val contact = vm.dbContacts.collectAsState().value.firstOrNull { it.keyHex == contact.keyHex } ?: contact
     var renameOpen by remember { mutableStateOf(false) }
     var routingOpen by remember { mutableStateOf(false) }
     var removeConfirm by remember { mutableStateOf(false) }
@@ -1028,8 +1057,14 @@ fun ContactDetailSheet(
             }
 
             // ---- What you came to do, one tap each.
-            val isFav = contact.flags and Codes.CONTACT_FLAG_FAVORITE != 0
+            // Flipped on tap: the radio's answer arrives a moment later, and the star
+            // used to stay as it was until the sheet was opened again.
+            val savedFav = contact.flags and Codes.CONTACT_FLAG_FAVORITE != 0
+            var favPending by remember(contact.keyHex) { mutableStateOf<Boolean?>(null) }
+            LaunchedEffect(savedFav) { favPending = null }
+            val isFav = favPending ?: savedFav
             // One row of equal shares: wrapping left a lone button on a second line.
+            // The kind's own action first, then trace, telemetry, share, favourite.
             Row(Modifier.fillMaxWidth().padding(top = 16.dp)) {
                 // A room is where you read and post, so that comes first — but it is
                 // also a node someone configures, so its owner keeps a way in too.
@@ -1049,14 +1084,20 @@ fun ContactDetailSheet(
                         onClick = trace,
                     )
                 }
-                QuickAction(R.drawable.ic_qr_code, stringResource(R.string.node_qa_share)) { shareQrOpen = true }
                 QuickAction(R.drawable.ic_sensors, stringResource(R.string.node_qa_telemetry)) { telemetryOpen = true }
-                QuickAction(R.drawable.ic_star, stringResource(R.string.node_qa_favourite), on = isFav) {
+                QuickAction(R.drawable.ic_qr_code, stringResource(R.string.node_qa_share)) { shareQrOpen = true }
+                QuickAction(
+                    if (isFav) R.drawable.ic_star_filled else R.drawable.ic_star,
+                    stringResource(R.string.node_qa_favourite),
+                    on = isFav,
+                ) {
+                    favPending = !isFav
                     vm.setFavourite(contact.keyHex, !isFav)
                 }
             }
 
-            // ---- Facts, as tiles: two to a row where they are short.
+            // ---- Facts, as tiles, two to a row: route (hops, hash width), then place
+            // (position, distance) — the order a companion's own card uses.
             Spacer(Modifier.height(12.dp))
             InfoTile(
                 stringResource(R.string.add_contact_key),
@@ -1074,32 +1115,32 @@ fun ContactDetailSheet(
             // setting only applies to new paths.
             val width = if (pathInfo.isFlood) hashWidth else pathInfo.hashWidth
             val distance = nodeDistance(contact.latitude, contact.longitude, self?.latitude, self?.longitude, units)
-            val placed = distance != null
             Spacer(Modifier.height(8.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            TileRow {
                 InfoTile(
                     stringResource(R.string.node_hops_away),
                     SharedText.pathHops(LocalContext.current, pathInfo.isFlood, pathInfo.hops),
-                    Modifier.weight(1f),
+                    Modifier.weight(1f).fillMaxHeight(),
                 )
-                if (distance != null) {
-                    InfoTile(stringResource(R.string.node_distance), distance, Modifier.weight(1f))
-                } else if (width != null) {
-                    InfoTile(stringResource(R.string.node_hash_size), pluralStringResource(R.plurals.node_hash_bytes, width, width), Modifier.weight(1f))
+                if (width != null) {
+                    InfoTile(
+                        stringResource(R.string.node_hash_size),
+                        pluralStringResource(R.plurals.node_hash_bytes, width, width),
+                        Modifier.weight(1f).fillMaxHeight(),
+                    )
                 }
             }
-            if (placed) {
+            if (distance != null) {
                 Spacer(Modifier.height(8.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                TileRow {
                     InfoTile(
                         stringResource(R.string.node_position),
                         "%.5f, %.5f".format(java.util.Locale.ROOT, contact.latitude, contact.longitude),
-                        Modifier.weight(1f),
+                        Modifier.weight(1f).fillMaxHeight(),
                         mono = true,
+                        onClick = onShowOnMap,
                     )
-                    if (width != null) {
-                        InfoTile(stringResource(R.string.node_hash_size), pluralStringResource(R.plurals.node_hash_bytes, width, width), Modifier.weight(1f))
-                    }
+                    InfoTile(stringResource(R.string.node_distance), distance, Modifier.weight(1f).fillMaxHeight())
                 }
             }
             if (LastHeard.seconds(contact) > 0) {
@@ -1572,18 +1613,21 @@ private fun ContactPermissions(
 @Composable
 private fun DiscoverNodesDialog(
     vm: MeshCoreViewModel,
-    nav: NavController,
     onDismiss: () -> Unit,
+    onOpenContact: (ContactEntity) -> Unit,
+    onOpenHeard: (io.alvaroedo.meshconnect.storage.DiscoveredEntity) -> Unit,
 ) {
-    var found by remember { mutableStateOf<List<ContactEntity>?>(null) }
+    var found by remember { mutableStateOf<List<MeshCoreViewModel.DiscoveryHit>?>(null) }
     LaunchedEffect(Unit) { found = vm.discoverNodes() }
+    val sf = vm.selfInfo.collectAsState().value?.sf
 
     AlertDialog(
         onDismissRequest = onDismiss,
+        icon = { Icon(painterResource(R.drawable.ic_radar), null) },
         title = { Text(stringResource(R.string.discover_title)) },
         text = {
             val list = found
-            Column {
+            Column(Modifier.verticalScroll(rememberScrollState())) {
                 when {
                     list == null -> SectionSpinner(stringResource(R.string.discover_listening))
                     list.isEmpty() -> Text(
@@ -1596,13 +1640,18 @@ private fun DiscoverNodesDialog(
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
-                        Spacer(Modifier.height(8.dp))
-                        for (contact in list) {
-                            TextButton(onClick = {
-                                onDismiss()
-                                nav.navigate("repeater/${contact.keyHex}")
-                            }) {
-                                Text(contact.name.ifBlank { contact.keyHex.take(12) })
+                        Spacer(Modifier.height(12.dp))
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            for (hit in list) {
+                                DiscoveryCard(
+                                    hit,
+                                    sf,
+                                    onClick = when {
+                                        hit.contact != null -> { { onOpenContact(hit.contact) } }
+                                        hit.heard != null -> { { onOpenHeard(hit.heard) } }
+                                        else -> null
+                                    },
+                                )
                             }
                         }
                     }
@@ -1611,4 +1660,72 @@ private fun DiscoverNodesDialog(
         },
         confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.close)) } },
     )
+}
+
+/** One answer: who it is (or its prefix), the link both ways, and its card on tap. */
+@Composable
+private fun DiscoveryCard(hit: MeshCoreViewModel.DiscoveryHit, sf: Int?, onClick: (() -> Unit)?) {
+    val context = LocalContext.current
+    val key = hit.contact?.keyHex ?: hit.heard?.keyHex ?: hit.reply.prefixHex
+    val name = hit.contact?.name ?: hit.heard?.name
+    val fmt = { v: Double -> String.format(java.util.Locale.ROOT, "%.1f", v) }
+    Surface(
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerHighest,
+        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp))
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier),
+    ) {
+        Row(Modifier.padding(horizontal = 12.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+            NodeAvatar(seed = key, label = name?.ifBlank { null } ?: key, type = Codes.ADV_TYPE_REPEATER, size = 36.dp)
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
+                Text(
+                    name?.ifBlank { null } ?: hit.reply.prefixHex.take(8).uppercase(),
+                    style = MaterialTheme.typography.titleSmall,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    when {
+                        hit.contact != null -> SharedText.kind(context, hit.contact.type)
+                        hit.heard != null -> stringResource(R.string.node_heard_not_added, SharedText.kind(context, hit.heard.type))
+                        else -> stringResource(R.string.discover_unknown, hit.reply.prefixHex.take(8).uppercase())
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    stringResource(R.string.discover_signal, fmt(hit.reply.snr), fmt(hit.reply.theirSnr)),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Spacer(Modifier.width(8.dp))
+            SignalBars(LinkMeter.bars(minOf(hit.reply.snr, hit.reply.theirSnr), sf), live = true)
+        }
+    }
+}
+
+/** Tiles side by side at the height of the tallest, so a value that wraps (a long word in
+ *  Valencian) does not leave its neighbour short. */
+@Composable
+internal fun TileRow(content: @Composable androidx.compose.foundation.layout.RowScope.() -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().height(androidx.compose.foundation.layout.IntrinsicSize.Min),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        content = content,
+    )
+}
+
+/** Open the Map tab centred on [keyHex], the way the bottom bar opens it. */
+internal fun showOnMap(vm: MeshCoreViewModel, nav: NavController, keyHex: String) {
+    vm.mapFocus.value = keyHex
+    if (nav.currentDestination?.route == "map") return
+    nav.navigate("map") {
+        popUpTo(nav.graph.startDestinationId) { saveState = true }
+        launchSingleTop = true
+        restoreState = true
+    }
 }

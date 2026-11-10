@@ -661,6 +661,10 @@ fun ConversationScreen(
                     showContact = false
                     nav.navigate(traceRoute(peerKey))
                 },
+                onShowOnMap = {
+                    showContact = false
+                    showOnMap(vm, nav, peerKey)
+                },
             )
         } ?: run { showContact = false }
     }

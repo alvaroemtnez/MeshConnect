@@ -25,6 +25,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import io.alvaroedo.meshconnect.R
 import io.alvaroedo.meshconnect.ui.theme.MonoFontFamily
 
 /*
@@ -77,12 +78,18 @@ internal fun InfoTile(
     value: String,
     modifier: Modifier = Modifier,
     mono: Boolean = false,
-    trailing: (@Composable () -> Unit)? = null,
+    /** A tile that leads somewhere (Position opens the map) says so with a chevron. */
+    onClick: (() -> Unit)? = null,
+    trailing: (@Composable () -> Unit)? = onClick?.let {
+        { Icon(painterResource(R.drawable.ic_chevron_right), null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(end = 6.dp)) }
+    },
 ) {
     Surface(
         shape = RoundedCornerShape(16.dp),
         color = MaterialTheme.colorScheme.surfaceContainerHighest,
-        modifier = modifier,
+        modifier = modifier.clip(RoundedCornerShape(16.dp)).then(
+            if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier,
+        ),
     ) {
         Row(Modifier.padding(start = 14.dp, end = 4.dp, top = 10.dp, bottom = 10.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f).padding(end = 10.dp)) {

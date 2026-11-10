@@ -19,6 +19,26 @@ import io.github.thatsfguy.meshcore.util.toHex
 object NodeDiscovery {
 
     /**
+     * One answer to a discovery request, with the signal both ways.
+     *
+     * From the firmware (meshcore-dev/MeshCore): `companion_radio/MyMesh.cpp`
+     * `onControlDataRecv` writes `(int8_t)(getLastSNR() * 4)` and
+     * `(int8_t)getLastRSSI()` ahead of the payload, and
+     * `simple_repeater/MyMesh.cpp` puts `packet->_snr` (also ×4) in the
+     * response's second byte, "to let sender know the inbound SNR".
+     * Discovery is zero-hop, so both are a direct link.
+     */
+    data class Reply(
+        val prefixHex: String,
+        /** How well our radio heard the reply, dB. */
+        val snr: Double,
+        /** dBm, as our radio heard the reply. */
+        val rssi: Int,
+        /** How well the responder heard our request, dB. */
+        val theirSnr: Double,
+    )
+
+    /**
      * Parse a PUSH_CODE_CONTROL_DATA payload (push code already
      * stripped) as a discovery response, returning the responder's
      * public-key prefix in hex, or null when the frame is not a
@@ -31,20 +51,29 @@ object NodeDiscovery {
         payload: ByteArray,
         expectedTag: Long,
         expectedType: Int = Codes.ADV_TYPE_REPEATER,
-    ): String? {
+    ): String? = parseDiscoveryReply(payload, expectedTag, expectedType)?.prefixHex
+
+    /** [parseDiscoveryResponse], keeping the signal readings. */
+    fun parseDiscoveryReply(
+        payload: ByteArray,
+        expectedTag: Long,
+        expectedType: Int = Codes.ADV_TYPE_REPEATER,
+    ): Reply? {
         // 3 header bytes + type byte + snr + u32 tag, then at least one
         // prefix byte. Anything shorter can't be a response.
         if (payload.size < 10) return null
         val r = BufferReader(payload)
         return try {
-            r.readBytes(3) // SNR, RSSI, path_len as seen by the companion radio
+            val snr = r.readByte().toByte() / 4.0
+            val rssi = r.readByte().toByte().toInt()
+            r.readByte() // path_len: discovery is zero-hop
             val typeByte = r.readByte()
             if ((typeByte shr 4) and 0x0F != Codes.CONTROL_SUBTYPE_DISCOVER_RESP) return null
             if (typeByte and 0x0F != expectedType) return null
-            r.readByte() // inbound SNR reported by the responder
+            val theirSnr = r.readByte().toByte() / 4.0
             if (r.readUInt32LE() != expectedTag) return null
             val prefix = r.readRemainingBytes()
-            if (prefix.isEmpty()) null else prefix.toHex()
+            if (prefix.isEmpty()) null else Reply(prefix.toHex(), snr, rssi, theirSnr)
         } catch (_: Throwable) {
             // Guarded reads throw on truncation; a malformed frame is
             // just not a discovery response.

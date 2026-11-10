@@ -466,8 +466,6 @@
     <string name="perm_policy_deny">La política global és «Ningú»: ningú no pot llegir-ho, amb interruptor o sense.</string>
     <string name="discover_title">Repetidors pròxims</string>
     <string name="discover_listening">Esperant respostes…</string>
-    <string name="discover_none">Ningú no ha respost. Pot ser que no n\'hi haja cap a l\'abast, que respongueren amb un prefix que no coincidix amb els teus contactes, o que el seu firmware no tinga descobriment.</string>
-    <string name="discover_found">Van respondre a l\'abast. Són contactes que ja tens la clau dels quals coincidix amb el prefix de qui va respondre: un prefix no prova la identitat.</string>
     <string name="conv_link_body">Açò s\'obri en el navegador i ix de la malla. El lloc, triat per qui l\'ha enviat i no per tu, vorà la teua adreça IP real i la teua xarxa.\n\n%1$s</string>
     <string name="conv_open_browser">Obrir en el navegador</string>
     <string name="conv_replying_to">Responent a %1$s</string>
@@ -1270,6 +1268,12 @@
     <string name="about_endorsement">MeshConnect és un projecte independent. No està afiliat ni avalat pel projecte MeshCore ni per l\'autor de MeshCore Hardened.</string>
     <string name="telemetry_board">Placa · canal %1$d</string>
     <string name="telemetry_sensor">Sensor · canal %1$d</string>
+    <string name="node_qa_add">Afegir</string>
+    <string name="node_qa_forget">Oblidar</string>
+    <string name="discover_none">Ningú no ha respost. Pot ser que no n\'hi haja cap a l\'abast, o que el seu firmware no tinga descobriment.</string>
+    <string name="discover_found">Escoltats directament, el més fort primer. Una resposta porta un prefix de clau, que no prova la identitat.</string>
+    <string name="discover_signal">SNR %1$s dB ací · %2$s dB allà</string>
+    <string name="discover_unknown">No està en els teus contactes · %1$s</string>
     <plurals name="vm_restored_settings">
         <item quantity="one">Restaurat: %1$d ajust</item>
         <item quantity="many">Restaurats: %1$d ajustos</item>

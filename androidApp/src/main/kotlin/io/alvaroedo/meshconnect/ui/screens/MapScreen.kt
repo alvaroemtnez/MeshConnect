@@ -153,6 +153,20 @@ fun MapScreen(vm: MeshCoreViewModel, nav: NavController) {
         LaunchedEffect(fitRequest) {
             if (fitRequest > 0) cameraRequest = CameraRequest(fitRequest + 1, fit = allPoints)
         }
+        // Position on a node's card: centre on it, close in.
+        val focus by vm.mapFocus.collectAsState()
+        LaunchedEffect(focus, contacts) {
+            val key = focus ?: return@LaunchedEffect
+            val c = contacts.firstOrNull { it.keyHex == key } ?: return@LaunchedEffect
+            if (isPlausiblePosition(c.latitude, c.longitude)) {
+                cameraRequest = CameraRequest(
+                    (cameraRequest?.token ?: 0) + 1000,
+                    centre = c.latitude!! to c.longitude!!,
+                    zoom = 15.0,
+                )
+            }
+            vm.mapFocus.value = null
+        }
 
         val markers = buildList {
             // Links' reading chips are centred markers; MeshMap draws them
@@ -259,6 +273,10 @@ fun MapScreen(vm: MeshCoreViewModel, nav: NavController) {
                 onTrace = {
                     selectedKey = null
                     nav.navigate(traceRoute(key))
+                },
+                onShowOnMap = {
+                    selectedKey = null
+                    showOnMap(vm, nav, key)
                 },
                 extra = {
                     NeighbourSection(

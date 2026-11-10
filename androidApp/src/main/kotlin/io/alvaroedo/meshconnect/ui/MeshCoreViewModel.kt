@@ -445,6 +445,9 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
     /** Login results etc. surfaced as one-shot UI messages. */
     val transientMessage = MutableStateFlow<String?>(null)
 
+    /** A node the Map should centre on when it next shows; it clears it once done. */
+    val mapFocus = MutableStateFlow<String?>(null)
+
     init {
         viewModelScope.launch {
             _service.flatMapLatest { it?.engine?.meshEvents ?: flowOf() }.collect { ev ->
@@ -2952,19 +2955,35 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     /**
-     * Broadcast a discovery request and report which known repeaters
-     * answered (PARITY §2 active discovery). Returns their contact
-     * entries; a prefix that matches more than one contact yields all
-     * of them, and the caller shows the ambiguity rather than picking.
+     * One repeater that answered a discovery request: the contact its prefix matches,
+     * else the heard-not-added node it matches, else neither (a stranger, shown by prefix).
      */
-    suspend fun discoverNodes(): List<ContactEntity> {
+    data class DiscoveryHit(
+        val reply: NodeDiscovery.Reply,
+        val contact: ContactEntity? = null,
+        val heard: io.alvaroedo.meshconnect.storage.DiscoveredEntity? = null,
+    )
+
+    /**
+     * Broadcast a discovery request and report who answered (PARITY §2 active
+     * discovery), strongest first. A prefix that matches more than one contact
+     * yields all of them; the caller shows the ambiguity rather than picking.
+     */
+    suspend fun discoverNodes(): List<DiscoveryHit> {
         val svc = _service.value ?: return emptyList()
         if (engineState.value != EngineState.Ready) return emptyList()
         return runCatching {
-            val prefixes = svc.engine.discoverNodePrefixes()
+            val replies = svc.engine.discoverNodes()
             val known = dbContacts.value
-            prefixes.flatMap { p -> NodeDiscovery.matching(p, known) { it.keyHex } }
-                .distinctBy { it.keyHex }
+            val heard = discovered.value
+            replies.flatMap { r ->
+                val contacts = NodeDiscovery.matching(r.prefixHex, known) { it.keyHex }
+                if (contacts.isNotEmpty()) return@flatMap contacts.map { DiscoveryHit(r, contact = it) }
+                val nodes = NodeDiscovery.matching(r.prefixHex, heard) { it.keyHex }
+                if (nodes.isNotEmpty()) nodes.map { DiscoveryHit(r, heard = it) } else listOf(DiscoveryHit(r))
+            }
+                .distinctBy { it.contact?.keyHex ?: it.heard?.keyHex ?: it.reply.prefixHex }
+                .sortedByDescending { it.reply.snr }
         }.getOrDefault(emptyList())
     }
 

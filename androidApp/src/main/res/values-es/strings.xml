@@ -466,8 +466,6 @@
     <string name="perm_policy_deny">La política global es «Nadie»: nadie puede leerlo, con o sin interruptor.</string>
     <string name="discover_title">Repetidores cercanos</string>
     <string name="discover_listening">Esperando respuestas…</string>
-    <string name="discover_none">Nadie ha respondido. Puede que no haya ninguno al alcance, que respondieran con un prefijo que no coincide con tus contactos, o que su firmware no tenga descubrimiento.</string>
-    <string name="discover_found">Respondieron al alcance. Son contactos que ya tienes cuya clave coincide con el prefijo de quien respondió: un prefijo no prueba la identidad.</string>
     <string name="conv_link_body">Esto se abre en el navegador y sale de la malla. El sitio, elegido por quien lo envió y no por ti, verá tu dirección IP real y tu red.\n\n%1$s</string>
     <string name="conv_open_browser">Abrir en el navegador</string>
     <string name="conv_replying_to">Respondiendo a %1$s</string>
@@ -1270,6 +1268,12 @@
     <string name="about_endorsement">MeshConnect es un proyecto independiente. No está afiliado ni respaldado por el proyecto MeshCore ni por el autor de MeshCore Hardened.</string>
     <string name="telemetry_board">Placa · canal %1$d</string>
     <string name="telemetry_sensor">Sensor · canal %1$d</string>
+    <string name="node_qa_add">Añadir</string>
+    <string name="node_qa_forget">Olvidar</string>
+    <string name="discover_none">Nadie ha respondido. Puede que no haya ninguno al alcance, o que su firmware no tenga descubrimiento.</string>
+    <string name="discover_found">Oídos directamente, el más fuerte primero. Una respuesta trae un prefijo de clave, que no prueba la identidad.</string>
+    <string name="discover_signal">SNR %1$s dB aquí · %2$s dB allí</string>
+    <string name="discover_unknown">No está en tus contactos · %1$s</string>
     <plurals name="vm_restored_settings">
         <item quantity="one">Restaurado: %1$d ajuste</item>
         <item quantity="many">Restaurados: %1$d ajustes</item>
