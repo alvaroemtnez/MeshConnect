@@ -202,13 +202,15 @@ fun MyLocationDialog(
                         }
                     }
                 }
+                // Present from the first frame, blank until there is a fix, so the
+                // dialog keeps its size instead of jumping when the map arrives.
+                Text(
+                    fix?.let { "%.5f, %.5f".format(it.first.first, it.first.second) } ?: "",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontFamily = FontFamily.Monospace,
+                    modifier = Modifier.padding(top = 8.dp),
+                )
                 if (fix != null) {
-                    Text(
-                        "%.5f, %.5f".format(fix.first.first, fix.first.second),
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontFamily = FontFamily.Monospace,
-                        modifier = Modifier.padding(top = 8.dp),
-                    )
                     if (fix.second == FixSource.Radio) {
                         Text(
                             stringResource(R.string.loc_from_radio),

@@ -71,6 +71,7 @@ import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
@@ -1036,9 +1037,14 @@ private fun MessageBubble(
     // While selecting, a tap anywhere on the row picks it — including on a
     // card or a link, which would otherwise open instead.
     if (selecting) {
+        // It covers the row, so it carries the row's meaning for TalkBack.
         Box(
             Modifier
                 .matchParentSize()
+                .semantics {
+                    contentDescription = m.text
+                    this.selected = selected
+                }
                 .combinedClickable(
                     interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
                     indication = null,
