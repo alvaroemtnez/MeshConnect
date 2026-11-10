@@ -86,7 +86,10 @@ First MeshConnect release, forked from MeshCore Hardened 0.10.15.
 - **Start with the phone:** reconnects after a restart or an app update, without opening the
   app. A setting, on by default.
 - **Switch to a saved radio in range:** when the current Bluetooth radio has been out of reach
-  for a while, the app connects to another saved one nearby (one at home, one at work).
+  for a while, the app connects to another saved one nearby (one at home, one at work). Each radio keeps its
+  own chats, and now its own settings too: muted channels, pinned, archived and unread-marked
+  chats, per-channel regions and retention, pinned routes and the flood scope. Before, "channel
+  1" on two radios shared them although they are different channels.
 - **Status card** shows the radio's frequency and settings, with readings laid out as tiles.
 - **QR codes** load inside a single dialog; the 2×1 widget shows the heard repeater and its SNR.
 - **Radio battery alerts** at 20% and 10%, from the reading the app already takes, so they

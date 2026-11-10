@@ -22,6 +22,56 @@ class Preferences(context: Context) {
     private val prefs: SharedPreferences =
         context.getSharedPreferences("meshcore_prefs", Context.MODE_PRIVATE)
 
+    // --- Per-radio settings (2026-11-10) ---
+    //
+    // Message history is kept per radio identity (every table is keyed by selfKey), so
+    // switching between a home and a work radio swaps the whole chat list. These settings
+    // were not: they were keyed by channel SLOT or thread key alone, so "channel 1" on two
+    // radios — two different channels — shared mute, pin, archive, region and retention,
+    // and a route pinned through one radio's contact record read as pinned on the other.
+    // They are stored as `key@<radio public key>` now. Which radio is active is shared by
+    // the service's and the ViewModel's Preferences (one process), set by [activateRadio].
+
+    /** The radio these settings currently read and write. Empty before any radio answers. */
+    val activeRadio: StateFlow<String> get() = ACTIVE_RADIO
+
+    private fun scoped(base: String): String = "$base@${ACTIVE_RADIO.value}"
+
+    /**
+     * Point the per-radio settings at [selfKey]. The first radio activated after the update
+     * that introduced them inherits the settings stored before it — they were made with the
+     * radio in use then, which is the one that answers first.
+     */
+    @Synchronized
+    fun activateRadio(selfKey: String) {
+        if (selfKey.isBlank() || ACTIVE_RADIO.value == selfKey) return
+        ACTIVE_RADIO.value = selfKey
+        if (!prefs.getBoolean(MIGRATED_FLAG, false)) {
+            val editor = prefs.edit()
+            for ((key, value) in prefs.all) {
+                if ('@' in key || !isRadioScoped(key)) continue
+                val target = "$key@$selfKey"
+                @Suppress("UNCHECKED_CAST")
+                when (value) {
+                    is String -> editor.putString(target, value)
+                    is Set<*> -> editor.putStringSet(target, value as Set<String>)
+                    else -> continue
+                }
+                editor.remove(key)
+            }
+            editor.putBoolean(MIGRATED_FLAG, true).apply()
+        }
+        threadListRevision.value++
+    }
+
+    /** Every radio's per-radio settings, for a full purge. */
+    fun clearAllRadioScoped() {
+        val editor = prefs.edit()
+        for (key in prefs.all.keys) if (isRadioScoped(key.substringBefore('@'))) editor.remove(key)
+        editor.apply()
+        threadListRevision.value++
+    }
+
     // --- Transport enable toggles (SCOPE.md: per-transport, disabled =
     // never started, never scans, never parses) ---
 
@@ -83,8 +133,8 @@ class Preferences(context: Context) {
      * repair a route someone chose on purpose.
      */
     var pinnedRoutes: Set<String>
-        get() = prefs.getStringSet("pinned_routes", emptySet()) ?: emptySet()
-        set(v) { prefs.edit().putStringSet("pinned_routes", v).apply() }
+        get() = prefs.getStringSet(scoped("pinned_routes"), emptySet()) ?: emptySet()
+        set(v) { prefs.edit().putStringSet(scoped("pinned_routes"), v).apply() }
 
     fun setRoutePinned(keyHex: String, pinned: Boolean) {
         val key = keyHex.lowercase()
@@ -323,10 +373,10 @@ class Preferences(context: Context) {
 
     /** Channel slots whose notifications are muted. */
     var mutedChannels: Set<Int>
-        get() = prefs.getStringSet("muted_channels", emptySet())!!
+        get() = prefs.getStringSet(scoped("muted_channels"), emptySet())!!
             .mapNotNull { it.toIntOrNull() }.toSet()
         set(v) {
-            prefs.edit().putStringSet("muted_channels", v.map { it.toString() }.toSet()).apply()
+            prefs.edit().putStringSet(scoped("muted_channels"), v.map { it.toString() }.toSet()).apply()
         }
 
     /** Contact keys whose notifications are muted (PARITY §3). */
@@ -367,8 +417,8 @@ class Preferences(context: Context) {
      * "kind|peerKey" keys. Local-only — nothing is sent to the radio.
      */
     var pinnedThreads: Set<String>
-        get() = prefs.getStringSet("pinned_threads", emptySet())!!
-        set(v) { prefs.edit().putStringSet("pinned_threads", v).apply() }
+        get() = prefs.getStringSet(scoped("pinned_threads"), emptySet())!!
+        set(v) { prefs.edit().putStringSet(scoped("pinned_threads"), v).apply() }
 
     fun setThreadPinned(key: String, pinned: Boolean) {
         pinnedThreads = if (pinned) pinnedThreads + key else pinnedThreads - key
@@ -380,8 +430,8 @@ class Preferences(context: Context) {
      * Archiving unpins (ChatListModel.archive). Both sets go into backups.
      */
     var archivedThreads: Set<String>
-        get() = prefs.getStringSet("archived_threads", emptySet())!!
-        set(v) { prefs.edit().putStringSet("archived_threads", v).apply() }
+        get() = prefs.getStringSet(scoped("archived_threads"), emptySet())!!
+        set(v) { prefs.edit().putStringSet(scoped("archived_threads"), v).apply() }
 
     fun setThreadArchived(key: String, archived: Boolean) {
         val (p, a) = io.alvaroedo.meshconnect.ui.model.ChatListModel.archive(key, archived, pinnedThreads, archivedThreads)
@@ -398,8 +448,8 @@ class Preferences(context: Context) {
      * the thread or marking it read. Local-only.
      */
     var markedUnreadThreads: Set<String>
-        get() = prefs.getStringSet("marked_unread_threads", emptySet())!!
-        set(v) { prefs.edit().putStringSet("marked_unread_threads", v).apply() }
+        get() = prefs.getStringSet(scoped("marked_unread_threads"), emptySet())!!
+        set(v) { prefs.edit().putStringSet(scoped("marked_unread_threads"), v).apply() }
 
     fun setThreadMarkedUnread(key: String, marked: Boolean) {
         val now = markedUnreadThreads
@@ -408,8 +458,11 @@ class Preferences(context: Context) {
         threadListRevision.value++
     }
 
-    /** Bumped whenever pins, archives or unread marks change, so lists showing them recompose. */
-    val threadListRevision = kotlinx.coroutines.flow.MutableStateFlow(0)
+    /**
+     * Bumped whenever pins, archives or unread marks change — or the radio does — so lists
+     * showing them recompose. Shared by every instance, like [activeRadio].
+     */
+    val threadListRevision: MutableStateFlow<Int> get() = THREAD_LIST_REVISION
 
     /**
      * Private per-contact nickname, keyed by pubkey hex.
@@ -441,14 +494,14 @@ class Preferences(context: Context) {
      * engine re-asserts it on every connect.
      */
     var floodScope: String?
-        get() = prefs.getString("floodScope", null)?.let { if (it.isEmpty()) "" else Regions.canonical(it) }
+        get() = prefs.getString(scoped("floodScope"), null)?.let { if (it.isEmpty()) "" else Regions.canonical(it) }
         set(v) {
             val clean = when {
                 v == null -> null
                 v.isBlank() -> ""
                 else -> Regions.canonical(v) ?: return
             }
-            prefs.edit().apply { if (clean == null) remove("floodScope") else putString("floodScope", clean) }.apply()
+            prefs.edit().apply { if (clean == null) remove(scoped("floodScope")) else putString(scoped("floodScope"), clean) }.apply()
         }
 
     /** Known region names, canonical and sorted. */
@@ -484,13 +537,13 @@ class Preferences(context: Context) {
 
     /** Region assigned to channel slot [idx], or null when unscoped. */
     fun channelRegion(idx: Int): String? =
-        Regions.canonical(prefs.getString("channel_region_$idx", null))
+        Regions.canonical(prefs.getString(scoped("channel_region_$idx"), null))
 
     fun setChannelRegion(idx: Int, region: String?) {
         val canonical = region?.let { Regions.canonical(it) }
         prefs.edit().apply {
-            if (canonical == null) remove("channel_region_$idx") else {
-                putString("channel_region_$idx", canonical)
+            if (canonical == null) remove(scoped("channel_region_$idx")) else {
+                putString(scoped("channel_region_$idx"), canonical)
             }
         }.apply()
     }
@@ -521,13 +574,13 @@ class Preferences(context: Context) {
      * list would be the same assumption twice.
      */
     fun slotKeyedPreferenceKeys(idx: Int): Set<String> =
-        prefs.all.keys.filter { it.endsWith("_$idx") }.toSet()
+        prefs.all.keys.filter { it.endsWith("_$idx@${ACTIVE_RADIO.value}") }.toSet()
 
     /** Every channel slot that carries a region, as slot → region. */
     fun channelRegions(): Map<Int, String> =
-        prefs.all.keys.filter { it.startsWith("channel_region_") }
+        prefs.all.keys.filter { it.startsWith("channel_region_") && it.endsWith("@${ACTIVE_RADIO.value}") }
             .mapNotNull { key ->
-                val idx = key.removePrefix("channel_region_").toIntOrNull() ?: return@mapNotNull null
+                val idx = key.removePrefix("channel_region_").substringBefore('@').toIntOrNull() ?: return@mapNotNull null
                 val region = channelRegion(idx) ?: return@mapNotNull null
                 idx to region
             }
@@ -610,24 +663,24 @@ class Preferences(context: Context) {
 
     /** Per-channel override; absent means "use the default". */
     fun channelRetention(idx: Int): Retention.Policy? =
-        prefs.getString("retention_ch_$idx", null)?.let { Retention.decode(it) }
+        prefs.getString(scoped("retention_ch_$idx"), null)?.let { Retention.decode(it) }
 
     // UNWIRED (audited 2026-08-06): the retention sweep reads per-channel
     // overrides, but nothing ever writes one — so the feature exists in
     // the data model with no way to reach it from the UI.
     fun setChannelRetention(idx: Int, policy: Retention.Policy?) {
         prefs.edit().apply {
-            if (policy == null) remove("retention_ch_$idx") else {
-                putString("retention_ch_$idx", policy.encode())
+            if (policy == null) remove(scoped("retention_ch_$idx")) else {
+                putString(scoped("retention_ch_$idx"), policy.encode())
             }
         }.apply()
     }
 
     /** Every channel slot carrying an override. */
     fun channelRetentions(): Map<Int, Retention.Policy> =
-        prefs.all.keys.filter { it.startsWith("retention_ch_") }
+        prefs.all.keys.filter { it.startsWith("retention_ch_") && it.endsWith("@${ACTIVE_RADIO.value}") }
             .mapNotNull { key ->
-                val idx = key.removePrefix("retention_ch_").toIntOrNull() ?: return@mapNotNull null
+                val idx = key.removePrefix("retention_ch_").substringBefore('@').toIntOrNull() ?: return@mapNotNull null
                 val policy = channelRetention(idx) ?: return@mapNotNull null
                 idx to policy
             }
@@ -672,9 +725,11 @@ class Preferences(context: Context) {
     fun exportableSettings(): Map<String, String> {
         val out = LinkedHashMap<String, String>()
         for (key in EXPORTABLE_KEYS) {
-            if (!prefs.contains(key)) continue
+            // Pins and archives are the connected radio's (see activateRadio).
+            val stored = if (key in SET_KEYS) scoped(key) else key
+            if (!prefs.contains(stored)) continue
             val value = when (key) {
-                in SET_KEYS -> io.alvaroedo.meshconnect.ui.model.ChatListModel.encodeKeys(prefs.getStringSet(key, emptySet())!!)
+                in SET_KEYS -> io.alvaroedo.meshconnect.ui.model.ChatListModel.encodeKeys(prefs.getStringSet(stored, emptySet())!!)
                 in BOOLEAN_KEYS -> prefs.getBoolean(key, false).toString()
                 in INT_KEYS -> prefs.getInt(key, 0).toString()
                 else -> prefs.getString(key, null) ?: continue
@@ -699,7 +754,7 @@ class Preferences(context: Context) {
         for ((key, value) in settings) {
             if (key !in EXPORTABLE_KEYS) continue
             when (key) {
-                in SET_KEYS -> editor.putStringSet(key, io.alvaroedo.meshconnect.ui.model.ChatListModel.parseKeys(value))
+                in SET_KEYS -> editor.putStringSet(scoped(key), io.alvaroedo.meshconnect.ui.model.ChatListModel.parseKeys(value))
                 in BOOLEAN_KEYS -> {
                     val bool = value.toBooleanStrictOrNull() ?: continue
                     if (key == "transport_tcp_enabled" && bool && !tcpWarningAccepted) continue
@@ -739,6 +794,25 @@ class Preferences(context: Context) {
         val editor = prefs.edit()
         for (key in prefs.all.keys.filter { it.startsWith("sealed_") }) editor.remove(key)
         editor.apply()
+    }
+
+    companion object {
+        private val ACTIVE_RADIO = MutableStateFlow("")
+        private val THREAD_LIST_REVISION = MutableStateFlow(0)
+        private const val MIGRATED_FLAG = "radio_scoped_migrated"
+
+        /** Keys stored per radio, by base name; slot-keyed ones by prefix. */
+        private val RADIO_SCOPED_KEYS = setOf(
+            "pinned_routes", "muted_channels", "pinned_threads", "archived_threads",
+            "marked_unread_threads", "floodScope",
+        )
+        private val RADIO_SCOPED_PREFIXES = listOf("channel_region_", "retention_ch_")
+
+        internal fun isRadioScoped(base: String): Boolean =
+            base in RADIO_SCOPED_KEYS || RADIO_SCOPED_PREFIXES.any { base.startsWith(it) }
+
+        /** Tests only: forget which radio is active. */
+        internal fun resetActiveRadioForTest() { ACTIVE_RADIO.value = "" }
     }
 }
 

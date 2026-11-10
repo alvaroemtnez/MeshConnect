@@ -43,6 +43,8 @@ class RadioQrWiringTest {
     fun `the phone's region is persisted and restored`() {
         val svc = File("src/main/kotlin/io/alvaroedo/meshconnect/service/MeshCoreService.kt").readText()
         assertTrue(svc.contains("engine.restoreFloodScope(prefs.floodScope)"))
+        // Per radio: restored once the radio has said who it is.
+        assertTrue(svc.substringAfter("prefs.activateRadio(info.publicKeyHex)").trimStart().startsWith("engine.restoreFloodScope(prefs.floodScope)"))
         assertTrue(svc.contains("prefs.floodScope = it"))
     }
 

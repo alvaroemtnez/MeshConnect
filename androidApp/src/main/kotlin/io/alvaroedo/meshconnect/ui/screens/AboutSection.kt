@@ -311,6 +311,7 @@ private val CHANGELOG: List<Pair<String, List<String>>> = listOf(
         "The widget uses all of its size on any launcher grid.",
         "Battery percentage follows a Li-ion discharge curve.",
         "Start with the phone, and switch to a saved radio in range.",
+        "Each radio keeps its own chat settings: mutes, pins, archives, channel regions.",
         "Radio battery alerts at 20% and 10%, at no cost to the phone's battery.",
         "Node sign-in opens over the current screen.",
         "Regional presets re-synced with MeshCore Open.",

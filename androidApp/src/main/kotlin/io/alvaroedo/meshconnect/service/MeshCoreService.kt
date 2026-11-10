@@ -148,8 +148,9 @@ class MeshCoreService : Service() {
             },
         )
         // The phone's region lives in the radio's RAM; restore it so the
-        // handshake re-asserts it, and keep what the user sets.
-        engine.restoreFloodScope(prefs.floodScope)
+        // handshake re-asserts it, and keep what the user sets. Restored when the
+        // radio says who it is (below), not here: it is that radio's setting, and
+        // the radio connecting may not be the one used last.
         scope.launch {
             engine.floodScopeRegion.collect { if (it != null) prefs.floodScope = it }
         }
@@ -169,9 +170,19 @@ class MeshCoreService : Service() {
         // them (see refreshBlockLists).
         refreshBlockLists()
 
+        var scopeRestoredFor: String? = null
         scope.launch {
             engine.selfInfo.collect { info ->
                 if (info == null) return@collect
+                // Per-radio settings follow the radio before anything reads them
+                // (Preferences.activateRadio), its flood scope included.
+                // Tracked here, not read back from prefs: the ViewModel may have
+                // activated the radio first, and the scope must still be restored.
+                if (scopeRestoredFor != info.publicKeyHex) {
+                    scopeRestoredFor = info.publicKeyHex
+                    prefs.activateRadio(info.publicKeyHex)
+                    engine.restoreFloodScope(prefs.floodScope)
+                }
                 val firstSight = repository.selfKey != info.publicKeyHex
                 repository.selfKey = info.publicKeyHex
                 // Retention runs when a radio's history first becomes

@@ -470,6 +470,11 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
     }.combine(MutableStateFlow(Unit)) { info, _ -> info?.publicKeyHex ?: "" }
         .stateIn(viewModelScope, SharingStarted.Eagerly, "")
 
+    init {
+        // The service does this too; whichever sees the radio first, settings follow it.
+        viewModelScope.launch { selfKey.collect { prefs.activateRadio(it) } }
+    }
+
     val dbContacts: StateFlow<List<ContactEntity>> = selfKey.flatMapLatest { key ->
         if (key.isEmpty()) flowOf(emptyList()) else db.contacts().all(key)
     }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
@@ -3007,9 +3012,8 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
             .getOrElse { return str(R.string.vm_purge_failed) }
 
         // Local-only preference state that mirrors the same history.
-        prefs.pinnedThreads = emptySet()
-        prefs.archivedThreads = emptySet()
-        prefs.mutedChannels = emptySet()
+        // Every radio's, not just the connected one's: the purge clears all history.
+        prefs.clearAllRadioScoped()
         for (region in prefs.regions) prefs.removeRegion(region)
         if (alsoSecrets) prefs.clearAllSealed()
         regionRevision.value++
