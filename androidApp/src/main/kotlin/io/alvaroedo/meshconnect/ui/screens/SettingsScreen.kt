@@ -191,7 +191,7 @@ internal fun settingsIcon(route: String): Int = when (route) {
     "policies" -> R.drawable.ic_policy
     "autoadd" -> R.drawable.ic_person_add
     "customvars" -> R.drawable.ic_tune
-    "firmware" -> R.drawable.ic_system_update
+    "firmware" -> R.drawable.ic_update
     "channels" -> R.drawable.ic_tag
     "blocking" -> R.drawable.ic_block
     "app" -> R.drawable.ic_palette

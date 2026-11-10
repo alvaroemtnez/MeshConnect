@@ -55,7 +55,7 @@ import kotlinx.coroutines.launch
 class MeshWidget : GlanceAppWidget() {
 
     override val sizeMode = SizeMode.Responsive(
-        setOf(ROW, WIDE_ROW, SMALL, NARROW_TALL, WIDE, TALL, LARGE),
+        setOf(ROW, ROW_ROOMY, WIDE_ROW, SMALL, NARROW_TALL, WIDE, TALL, LARGE),
     )
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
@@ -73,6 +73,8 @@ class MeshWidget : GlanceAppWidget() {
          * than that is one row, whatever the launcher calls it.
          */
         val ROW = DpSize(110.dp, 40.dp)
+        /** A 2×1 with room for a third line (Launcher3's rows are ~120 dp, a Pixel's ~60). */
+        val ROW_ROOMY = DpSize(110.dp, 80.dp)
         val WIDE_ROW = DpSize(250.dp, 40.dp)
         val SMALL = DpSize(110.dp, 150.dp)
         val NARROW_TALL = DpSize(110.dp, 180.dp)
@@ -142,7 +144,7 @@ private fun Content(s: WidgetSnapshot) {
     val ink = if (stale) muted else GlanceTheme.colors.onSurface
 
     if (size.height < MeshWidget.SMALL.height) {
-        RowContent(s, stale, wide, ink)
+        RowContent(s, stale, wide, ink, roomy = size.height >= MeshWidget.ROW_ROOMY.height)
         return
     }
 
@@ -291,7 +293,10 @@ private fun Mark() {
  * the card's, where it cannot be pushed off the edge by the gauges.
  */
 @Composable
-private fun RowContent(s: WidgetSnapshot, stale: Boolean, wide: Boolean, ink: ColorProvider) {
+private fun RowContent(s: WidgetSnapshot, stale: Boolean, wide: Boolean, ink: ColorProvider, roomy: Boolean = false) {
+    // Narrow but tall enough: the repeater gets its own line, where its hash and SNR
+    // both fit. A 2×1 is about four items wide, and the gauge line already holds three.
+    val ownLine = !wide && roomy
     val context = LocalContext.current
     val c = GlanceTheme.colors
     Box(
@@ -338,16 +343,7 @@ private fun RowContent(s: WidgetSnapshot, stale: Boolean, wide: Boolean, ink: Co
                     BatteryGauge(s, ink, 16.dp, 12)
                     Spacer(GlanceModifier.width(6.dp))
                     SignalGauge(s.signalBars, ink, 16.dp)
-                    s.repeaterHash?.let {
-                        Text(" " + it.uppercase(), maxLines = 1, style = TextStyle(color = ink, fontSize = 12.sp))
-                    }
-                    s.repeaterSnr?.takeIf { s.repeaterHash != null }?.let {
-                        Text(
-                            String.format(java.util.Locale.ROOT, " %.1f dB", it),
-                            maxLines = 1,
-                            style = TextStyle(color = c.onSurfaceVariant, fontSize = 11.sp),
-                        )
-                    }
+                    if (!ownLine) RepeaterReading(s, ink)
                     if (wide) {
                         Spacer(GlanceModifier.width(6.dp))
                         Image(
@@ -361,8 +357,25 @@ private fun RowContent(s: WidgetSnapshot, stale: Boolean, wide: Boolean, ink: Co
                         )
                     }
                 }
+                if (ownLine && s.repeaterHash != null) {
+                    Row(verticalAlignment = Alignment.CenterVertically) { RepeaterReading(s, ink, lead = "") }
+                }
             }
         }
+    }
+}
+
+/** The repeater heard best: its hash, then its SNR in a lighter ink. */
+@Composable
+private fun RepeaterReading(s: WidgetSnapshot, ink: ColorProvider, lead: String = " ") {
+    val hash = s.repeaterHash ?: return
+    Text(lead + hash.uppercase(), maxLines = 1, style = TextStyle(color = ink, fontSize = 12.sp))
+    s.repeaterSnr?.let {
+        Text(
+            String.format(java.util.Locale.ROOT, " %.1f dB", it),
+            maxLines = 1,
+            style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 11.sp),
+        )
     }
 }
 

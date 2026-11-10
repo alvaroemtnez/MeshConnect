@@ -104,7 +104,6 @@ ICONS = [
     ("ic_antenna", "settings_input_antenna", False),
     ("ic_policy", "policy", False),
     ("ic_tune", "tune", False),
-    ("ic_system_update", "system_update", False),
     ("ic_palette", "palette", False),
     ("ic_backup", "backup", False),
     ("ic_database", "database", False),

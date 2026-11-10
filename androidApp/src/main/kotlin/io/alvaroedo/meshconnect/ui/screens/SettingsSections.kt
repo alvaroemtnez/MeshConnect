@@ -817,71 +817,74 @@ private fun ChannelDatagramTool(vm: MeshCoreViewModel) {
     val scope = rememberCoroutineScope()
     val ctx = androidx.compose.ui.platform.LocalContext.current
 
-    Text(stringResource(R.string.dg_title), style = MaterialTheme.typography.labelLarge)
-    ExpandableHint(stringResource(R.string.dg_hint)) {
-        Text(
-            stringResource(R.string.dg_detail),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-    }
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+    // Spaced: filled fields stacked with no gap read as one overlapping block.
+    Column(verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)) {
+        Text(stringResource(R.string.dg_title), style = MaterialTheme.typography.labelLarge)
+        ExpandableHint(stringResource(R.string.dg_hint)) {
+            Text(
+                stringResource(R.string.dg_detail),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            FormField(
+                value = channelIdx,
+                onValueChange = { channelIdx = it.filter(Char::isDigit).take(1) },
+                label = { Text(stringResource(R.string.dg_channel)) },
+                singleLine = true,
+                modifier = Modifier.weight(1f),
+            )
+            Spacer(Modifier.width(8.dp))
+            FormField(
+                value = dataType,
+                onValueChange = { dataType = it.filter { c -> c.isDigit() || c in "abcdefABCDEF" }.take(4) },
+                label = { Text(stringResource(R.string.dg_type)) },
+                singleLine = true,
+                modifier = Modifier.weight(1.4f),
+            )
+        }
         FormField(
-            value = channelIdx,
-            onValueChange = { channelIdx = it.filter(Char::isDigit).take(1) },
-            label = { Text(stringResource(R.string.dg_channel)) },
+            value = payloadHex,
+            onValueChange = { payloadHex = it.filter { c -> c.isDigit() || c in "abcdefABCDEF" } },
+            label = { Text(stringResource(R.string.dg_payload)) },
             singleLine = true,
-            modifier = Modifier.weight(1f),
+            modifier = Modifier.fillMaxWidth(),
         )
-        Spacer(Modifier.width(8.dp))
-        FormField(
-            value = dataType,
-            onValueChange = { dataType = it.filter { c -> c.isDigit() || c in "abcdefABCDEF" }.take(4) },
-            label = { Text(stringResource(R.string.dg_type)) },
-            singleLine = true,
-            modifier = Modifier.weight(1.4f),
-        )
-    }
-    FormField(
-        value = payloadHex,
-        onValueChange = { payloadHex = it.filter { c -> c.isDigit() || c in "abcdefABCDEF" } },
-        label = { Text(stringResource(R.string.dg_payload)) },
-        singleLine = true,
-        modifier = Modifier.fillMaxWidth(),
-    )
-    val idx = channelIdx.toIntOrNull()
-    val type = dataType.toIntOrNull(16)
-    val named = channels.firstOrNull { it.idx == idx }?.name?.takeIf { it.isNotBlank() }
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Button(
-            onClick = {
-                busy = true
-                note = null
-                scope.launch {
-                    val bytes = io.github.thatsfguy.meshcore.util.hexToBytesOrNull(payloadHex)
-                    note = when {
-                        bytes == null -> ctx.getString(R.string.dg_odd)
-                        else -> {
-                            val ok = vm.sendChannelDatagram(idx ?: -1, type ?: 0, bytes)
-                            if (ok) {
-                                ctx.getString(R.string.dg_sent, bytes.size, idx ?: -1)
-                            } else {
-                                ctx.getString(R.string.dg_refused)
+        val idx = channelIdx.toIntOrNull()
+        val type = dataType.toIntOrNull(16)
+        val named = channels.firstOrNull { it.idx == idx }?.name?.takeIf { it.isNotBlank() }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Button(
+                onClick = {
+                    busy = true
+                    note = null
+                    scope.launch {
+                        val bytes = io.github.thatsfguy.meshcore.util.hexToBytesOrNull(payloadHex)
+                        note = when {
+                            bytes == null -> ctx.getString(R.string.dg_odd)
+                            else -> {
+                                val ok = vm.sendChannelDatagram(idx ?: -1, type ?: 0, bytes)
+                                if (ok) {
+                                    ctx.getString(R.string.dg_sent, bytes.size, idx ?: -1)
+                                } else {
+                                    ctx.getString(R.string.dg_refused)
+                                }
                             }
                         }
+                        busy = false
                     }
-                    busy = false
-                }
-            },
-            enabled = !busy && connected == EngineState.Ready &&
-                idx != null && type != null && payloadHex.isNotBlank(),
-        ) { Text(stringResource(if (busy) R.string.dg_sending else R.string.dg_send)) }
-        if (named != null) {
-            Spacer(Modifier.width(8.dp))
-            Text("→ $named", style = MaterialTheme.typography.bodySmall)
+                },
+                enabled = !busy && connected == EngineState.Ready &&
+                    idx != null && type != null && payloadHex.isNotBlank(),
+            ) { Text(stringResource(if (busy) R.string.dg_sending else R.string.dg_send)) }
+            if (named != null) {
+                Spacer(Modifier.width(8.dp))
+                Text("→ $named", style = MaterialTheme.typography.bodySmall)
+            }
         }
+        note?.let { HintText(it) }
     }
-    note?.let { HintText(it) }
 }
 
 // ----------------------------------------------------------------------

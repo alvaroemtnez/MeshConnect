@@ -17,9 +17,11 @@ class WidgetRowTest {
 
     @Test
     fun `the hash and SNR are not gated on width`() {
-        val hash = row.substringBefore("s.repeaterHash?.let {").takeLast(200)
-        assertFalse("hash must show at 2x1 too", hash.contains("if (wide) {"))
-        assertTrue(row.contains("s.repeaterSnr?.takeIf { s.repeaterHash != null }"))
+        // On the gauge line when there's no room below, on its own line when there is —
+        // never behind `wide`.
+        assertTrue(row.contains("if (!ownLine) RepeaterReading(s, ink)"))
+        assertTrue(row.contains("if (ownLine && s.repeaterHash != null)"))
+        assertTrue(row.contains("val ownLine = !wide && roomy"))
     }
 
     @Test

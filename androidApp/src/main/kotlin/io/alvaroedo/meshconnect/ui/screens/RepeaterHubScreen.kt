@@ -472,7 +472,9 @@ private fun hubTileIcon(route: String): Int = when (route) {
     "settings" -> R.drawable.ic_settings
     "regions" -> R.drawable.ic_location_on
     "identity" -> R.drawable.ic_lock
-    "console" -> R.drawable.ic_send
+    "console" -> R.drawable.ic_terminal
+    "firmware" -> R.drawable.ic_update
+    "help" -> R.drawable.ic_help
     else -> R.drawable.ic_list
 }
 

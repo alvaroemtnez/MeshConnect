@@ -372,11 +372,17 @@ fun NodesScreen(vm: MeshCoreViewModel, nav: NavController) {
                     title = { Text(pluralStringResource(R.plurals.dismiss_all_title, keys.size, keys.size)) },
                     text = { Text(stringResource(R.string.dismiss_all_body)) },
                     confirmButton = {
-                        Button(onClick = {
-                            keys.forEach { vm.dismissDiscovered(it) }
-                            confirmDismiss = null
-                            heardRevealed = false
-                        }) { Text(stringResource(R.string.dismiss_all)) }
+                        Button(
+                            onClick = {
+                                keys.forEach { vm.dismissDiscovered(it) }
+                                confirmDismiss = null
+                                heardRevealed = false
+                            },
+                            colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.error,
+                                contentColor = MaterialTheme.colorScheme.onError,
+                            ),
+                        ) { Text(stringResource(R.string.dismiss_all)) }
                     },
                     dismissButton = {
                         TextButton(onClick = { confirmDismiss = null }) { Text(stringResource(R.string.cancel)) }
@@ -1466,30 +1472,43 @@ private fun ShareQrDialog(
             failed = true
         }
     }
+    // One dialog that never changes shape: the spinner and the code share one
+    // fixed box, the hint is there from the start, and Copy is present but off
+    // until there is something to copy. When the hint and the button arrived
+    // with the code, the window jumped to a new size and read as a second popup.
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(title, maxLines = 2, overflow = TextOverflow.Ellipsis) },
         text = {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                qr?.let {
-                    Image(
-                        it.asImageBitmap(),
-                        contentDescription = stringResource(R.string.qr_contact),
-                        modifier = Modifier.size(280.dp),
-                    )
-                    Text(hint, style = MaterialTheme.typography.bodySmall)
+                androidx.compose.animation.Crossfade(
+                    targetState = qr to failed,
+                    modifier = Modifier.size(280.dp),
+                    label = "qr",
+                ) { (bitmap, didFail) ->
+                    Box(Modifier.size(280.dp), contentAlignment = Alignment.Center) {
+                        when {
+                            bitmap != null -> Image(
+                                bitmap.asImageBitmap(),
+                                contentDescription = stringResource(R.string.qr_contact),
+                                modifier = Modifier.size(280.dp),
+                            )
+                            didFail -> Text(stringResource(R.string.qr_failed))
+                            else -> androidx.compose.material3.CircularProgressIndicator()
+                        }
+                    }
                 }
-                if (failed) Text(stringResource(R.string.qr_failed))
-                if (qr == null && !failed) LoadingBox(280.dp)
+                Text(hint, style = MaterialTheme.typography.bodySmall)
             }
         },
         confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.setup_done)) } },
         dismissButton = {
-            uri?.let { text ->
-                TextButton(onClick = {
-                    clipboard.setText(androidx.compose.ui.text.AnnotatedString(text))
-                }) { Text(stringResource(R.string.ch_copy_link)) }
-            }
+            TextButton(
+                enabled = uri != null,
+                onClick = {
+                    uri?.let { clipboard.setText(androidx.compose.ui.text.AnnotatedString(it)) }
+                },
+            ) { Text(stringResource(R.string.ch_copy_link)) }
         },
     )
 }
