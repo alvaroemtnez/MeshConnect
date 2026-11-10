@@ -26,6 +26,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
+import io.alvaroedo.meshconnect.ui.screens.backdropBlur
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -162,6 +163,7 @@ private data class Tab(
     val label: String,
     /** "" for no badge — [Inbox.badgeLabel] decides, not the caller. */
     val badge: String = "",
+    val dot: Boolean = false,
     val icon: @Composable () -> Unit,
 )
 
@@ -202,16 +204,23 @@ private fun AppShell(
     // was otherwise invisible until you happened to look.
     val conversations by vm.conversations.collectAsStateWithLifecycle()
     val unreadBadge = Inbox.badgeLabel(Inbox.unreadTotal(conversations.map { it.unread }))
+    // Nothing to count, but a chat marked unread by hand: a dot.
+    val unreadDot = unreadBadge.isEmpty() && conversations.any { it.markedUnread }
 
     val tabs = listOf(
-        Tab("chats", stringResource(R.string.nav_chats), unreadBadge) { Icon(painterResource(R.drawable.ic_chat), null) },
+        Tab("chats", stringResource(R.string.nav_chats), unreadBadge, dot = unreadDot) { Icon(painterResource(R.drawable.ic_chat), null) },
         Tab("nodes", stringResource(R.string.nav_nodes)) { Icon(painterResource(R.drawable.ic_hub), null) },
         Tab("map", stringResource(R.string.nav_map)) { Icon(painterResource(R.drawable.ic_map), null) },
         Tab("settings", stringResource(R.string.nav_settings)) { Icon(painterResource(R.drawable.ic_settings), null) },
     )
     val unreadLabel = stringResource(R.string.unread_count, unreadBadge)
+    val backdrop = remember { io.alvaroedo.meshconnect.ui.screens.BackdropBlur() }
 
+    androidx.compose.runtime.CompositionLocalProvider(
+        io.alvaroedo.meshconnect.ui.screens.LocalBackdropBlur provides backdrop,
+    ) {
     Scaffold(
+        modifier = Modifier.backdropBlur(backdrop),
         snackbarHost = { SnackbarHost(snackbar) },
         // Edge-to-edge: the shell adds no system-bar padding of its own.
         // Each screen's top bar pads for the status bar, the NavigationBar
@@ -234,7 +243,9 @@ private fun AppShell(
                                 }
                             },
                             icon = {
-                                if (tab.badge.isEmpty()) {
+                                if (tab.badge.isEmpty() && tab.dot) {
+                                    BadgedBox(badge = { Badge(containerColor = MaterialTheme.colorScheme.primary) }) { tab.icon() }
+                                } else if (tab.badge.isEmpty()) {
                                     tab.icon()
                                 } else {
                                     BadgedBox(
@@ -433,5 +444,6 @@ private fun AppShell(
         // flag set for a screen that was not listening — and it applies
         // to contact cards, channel shares and settings codes alike.
         ScanConfirmations(vm)
+    }
     }
 }

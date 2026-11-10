@@ -16,6 +16,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import io.alvaroedo.meshconnect.ui.MeshCoreViewModel
@@ -117,6 +118,114 @@ fun PositionPickerDialog(
         confirmButton = {
             TextButton(onClick = { onPick(centre.first, centre.second) }) {
                 Text(stringResource(if (forAdvert) R.string.picker_use else R.string.send))
+            }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
+    )
+}
+
+/** Where a "My location" fix came from — the radio's is a fallback and says so. */
+enum class FixSource { Phone, Radio }
+
+/**
+ * "My location": find the fix, show it, and send only once confirmed.
+ *
+ * It used to send as soon as a fix arrived, with a snackbar saying it was looking — so the
+ * first the user saw of the position was in the thread, already on the air. This is the
+ * place picker's dialog with the search in place of the crosshair: a spinner while the
+ * phone looks, then the map at the fix, fixed (it is the fix being confirmed, not a place
+ * being chosen — "Place on the map" is for that), with Cancel and Send.
+ */
+@Composable
+fun MyLocationDialog(
+    vm: MeshCoreViewModel,
+    locate: suspend () -> Pair<Pair<Double, Double>, FixSource>?,
+    onSend: (Double, Double) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val tilesEnabled = vm.prefs.mapTilesEnabled
+    // null = still looking; attempt bumps to retry.
+    var attempt by remember { mutableStateOf(0) }
+    var result by remember { mutableStateOf<Pair<Pair<Double, Double>, FixSource>?>(null) }
+    var failed by remember { mutableStateOf(false) }
+    androidx.compose.runtime.LaunchedEffect(attempt) {
+        result = null
+        failed = false
+        val r = locate()
+        if (r == null) failed = true else result = r
+    }
+    val fix = result
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.attach_my_location)) },
+        text = {
+            Column {
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(260.dp)
+                        .clip(androidx.compose.foundation.shape.RoundedCornerShape(12.dp)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    when {
+                        fix != null -> {
+                            val (lat, lon) = fix.first
+                            MeshMap(
+                                modifier = Modifier.fillMaxWidth().height(260.dp),
+                                tilesEnabled = tilesEnabled,
+                                initial = CameraPosition.Builder()
+                                    .target(LatLng(lat, lon)).zoom(15.0).build(),
+                                gesturesEnabled = false,
+                            )
+                            Icon(
+                                painterResource(R.drawable.ic_location_on),
+                                null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(40.dp).padding(bottom = 20.dp),
+                            )
+                        }
+                        failed -> Text(
+                            stringResource(R.string.attach_location_failed),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                            modifier = Modifier.padding(24.dp),
+                        )
+                        else -> Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            androidx.compose.material3.CircularProgressIndicator()
+                            Text(
+                                stringResource(R.string.attach_locating),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(top = 16.dp),
+                            )
+                        }
+                    }
+                }
+                if (fix != null) {
+                    Text(
+                        "%.5f, %.5f".format(fix.first.first, fix.first.second),
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontFamily = FontFamily.Monospace,
+                        modifier = Modifier.padding(top = 8.dp),
+                    )
+                    if (fix.second == FixSource.Radio) {
+                        Text(
+                            stringResource(R.string.loc_from_radio),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            when {
+                fix != null -> TextButton(onClick = { onSend(fix.first.first, fix.first.second) }) {
+                    Text(stringResource(R.string.send))
+                }
+                failed -> TextButton(onClick = { attempt++ }) { Text(stringResource(R.string.loc_retry)) }
+                else -> {}
             }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },

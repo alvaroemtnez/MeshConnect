@@ -92,6 +92,8 @@ data class ConversationRow(
     val unread: Int,
     val isChannel: Boolean,
     val contactType: Int?,
+    /** Marked unread by hand: a dot, not a count (Preferences.markedUnreadThreads). */
+    val markedUnread: Boolean = false,
 )
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -623,7 +625,9 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
         dbContacts,
         dbChannels,
         nicknameRevision,
-    ) { latest, contacts, channels, _ ->
+        prefs.threadListRevision,
+    ) { latest, contacts, channels, _, _ ->
+        val marked = prefs.markedUnreadThreads
         val contactByKey = contacts.associateBy { it.keyHex }
         val channelByIdx = channels.associateBy { it.idx }
         val rows = ArrayList<ConversationRow>()
@@ -682,7 +686,8 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
                 )
             }
         }
-        rows.sortedByDescending { it.timestamp }
+        rows.map { if (Inbox.threadKey(it.kind, it.key) in marked) it.copy(markedUnread = true) else it }
+            .sortedByDescending { it.timestamp }
     }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     fun thread(kind: String, peerKey: String): StateFlow<List<MessageEntity>> =
@@ -719,19 +724,14 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
             val key = selfKey.value
             if (key.isEmpty()) return@launch
             markThreadClosed()
-            if (kind == MessageRepository.KIND_CHANNEL) {
-                peerKey.toIntOrNull()?.let {
-                    db.channels().bumpUnread(key, it, System.currentTimeMillis())
-                }
-            } else {
-                db.contacts().bumpUnread(key, peerKey, System.currentTimeMillis())
-            }
+            prefs.setThreadMarkedUnread(Inbox.threadKey(kind, peerKey), true)
             transientMessage.value = str(R.string.vm_marked_unread)
         }
     }
 
     /** Clear a thread's unread count from the list (swipe), without opening it. */
     fun markRead(kind: String, peerKey: String) {
+        prefs.setThreadMarkedUnread(Inbox.threadKey(kind, peerKey), false)
         _service.value?.clearMessageNotification(kind, peerKey)
         viewModelScope.launch {
             val key = selfKey.value
@@ -747,6 +747,7 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
     fun markThreadOpen(kind: String, peerKey: String) {
         val svc = _service.value ?: return
         svc.repository.activeThread = Inbox.threadKey(kind, peerKey)
+        prefs.setThreadMarkedUnread(Inbox.threadKey(kind, peerKey), false)
         // Reading it IS dismissing it.
         svc.clearMessageNotification(kind, peerKey)
         viewModelScope.launch {

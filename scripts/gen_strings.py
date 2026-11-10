@@ -31,7 +31,27 @@ def esc(t: str) -> str:
     return t
 
 
+def duplicate_keys() -> list[str]:
+    """Keys written twice in one table. A Python dict keeps the last silently, which is how
+    the radio picker came to be headed "Pick a place" (picker_title, 2026-11-10)."""
+    import ast
+    tree = ast.parse((pathlib.Path(__file__).resolve().parent / "strings_table.py").read_text())
+    dups = []
+    for node in tree.body:
+        if isinstance(node, ast.Assign) and isinstance(node.value, ast.Dict):
+            seen = set()
+            for key in node.value.keys:
+                if isinstance(key, ast.Constant):
+                    if key.value in seen:
+                        dups.append(f"{node.targets[0].id}.{key.value}")
+                    seen.add(key.value)
+    return dups
+
+
 def main() -> None:
+    dups = duplicate_keys()
+    if dups:
+        raise SystemExit(f"duplicate keys in strings_table.py: {', '.join(dups)}")
     for k, v in S.items():
         if len(v) != 3:
             raise SystemExit(f"{k}: needs (en, es, ca)")

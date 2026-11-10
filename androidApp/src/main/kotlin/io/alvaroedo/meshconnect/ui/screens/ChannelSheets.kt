@@ -71,19 +71,19 @@ fun ChannelAddSheet(vm: MeshCoreViewModel, onDismiss: () -> Unit) {
                         style = MaterialTheme.typography.bodyMedium,
                     )
                     Spacer(Modifier.height(8.dp))
-                    ChoiceRow(stringResource(R.string.ch_public), stringResource(R.string.ch_public_sub)) {
+                    ChoiceRow(R.drawable.ic_public, stringResource(R.string.ch_public), stringResource(R.string.ch_public_sub)) {
                         choice = AddChannelChoice.Public
                     }
-                    ChoiceRow(stringResource(R.string.ch_create_private), stringResource(R.string.ch_create_private_sub)) {
+                    ChoiceRow(R.drawable.ic_lock, stringResource(R.string.ch_create_private), stringResource(R.string.ch_create_private_sub)) {
                         choice = AddChannelChoice.CreatePrivate
                     }
-                    ChoiceRow(stringResource(R.string.ch_join_private), stringResource(R.string.ch_join_private_sub)) {
+                    ChoiceRow(R.drawable.ic_password, stringResource(R.string.ch_join_private), stringResource(R.string.ch_join_private_sub)) {
                         choice = AddChannelChoice.JoinPrivate
                     }
-                    ChoiceRow(stringResource(R.string.ch_hashtag), stringResource(R.string.ch_hashtag_sub)) {
+                    ChoiceRow(R.drawable.ic_tag, stringResource(R.string.ch_hashtag), stringResource(R.string.ch_hashtag_sub)) {
                         choice = AddChannelChoice.Hashtag
                     }
-                    ChoiceRow(stringResource(R.string.ch_scan), stringResource(R.string.ch_scan_sub)) {
+                    ChoiceRow(R.drawable.ic_qr_code_scanner, stringResource(R.string.ch_scan), stringResource(R.string.ch_scan_sub)) {
                         communityScanLauncher.launch(meshScanOptions(scanPrompt))
                     }
                     Spacer(Modifier.height(8.dp))
@@ -100,7 +100,7 @@ fun ChannelAddSheet(vm: MeshCoreViewModel, onDismiss: () -> Unit) {
 }
 
 @Composable
-private fun ChoiceRow(title: String, description: String, onClick: () -> Unit) {
+private fun ChoiceRow(@androidx.annotation.DrawableRes icon: Int, title: String, description: String, onClick: () -> Unit) {
     androidx.compose.foundation.layout.Row(
         Modifier
             .fillMaxWidth()
@@ -108,6 +108,23 @@ private fun ChoiceRow(title: String, description: String, onClick: () -> Unit) {
             .padding(vertical = 12.dp),
         verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
     ) {
+        // The same glyphs the channel's avatar will carry in Chats, so the
+        // choice previews what it makes.
+        androidx.compose.material3.Surface(
+            shape = androidx.compose.foundation.shape.CircleShape,
+            color = MaterialTheme.colorScheme.secondaryContainer,
+            modifier = Modifier.size(40.dp),
+        ) {
+            androidx.compose.foundation.layout.Box(contentAlignment = androidx.compose.ui.Alignment.Center) {
+                androidx.compose.material3.Icon(
+                    androidx.compose.ui.res.painterResource(icon),
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                    modifier = Modifier.size(22.dp),
+                )
+            }
+        }
+        Spacer(Modifier.size(16.dp))
         Column(Modifier.weight(1f)) {
             Text(title, style = MaterialTheme.typography.bodyLarge)
             Text(

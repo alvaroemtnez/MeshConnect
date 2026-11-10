@@ -380,7 +380,25 @@ class Preferences(context: Context) {
         threadListRevision.value++
     }
 
-    /** Bumped whenever pins or archives change, so lists showing them recompose. */
+    /**
+     * Threads the user marked unread, same "kind|peerKey" keys. A flag, not a count: marking
+     * a chat unread used to add one to its unread counter, which showed a "1" for a message
+     * that does not exist — and did nothing at all for a DM whose node is not in the radio's
+     * contact table, since there was no row for the counter to live on. Cleared by opening
+     * the thread or marking it read. Local-only.
+     */
+    var markedUnreadThreads: Set<String>
+        get() = prefs.getStringSet("marked_unread_threads", emptySet())!!
+        set(v) { prefs.edit().putStringSet("marked_unread_threads", v).apply() }
+
+    fun setThreadMarkedUnread(key: String, marked: Boolean) {
+        val now = markedUnreadThreads
+        if ((key in now) == marked) return
+        markedUnreadThreads = if (marked) now + key else now - key
+        threadListRevision.value++
+    }
+
+    /** Bumped whenever pins, archives or unread marks change, so lists showing them recompose. */
     val threadListRevision = kotlinx.coroutines.flow.MutableStateFlow(0)
 
     /**

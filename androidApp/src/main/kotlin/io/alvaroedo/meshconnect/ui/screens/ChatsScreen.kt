@@ -1,6 +1,9 @@
 package io.alvaroedo.meshconnect.ui.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -139,10 +142,10 @@ fun ChatsScreen(vm: MeshCoreViewModel, nav: NavController, archivedView: Boolean
                 // Right: read/unread. Left: archive/unarchive (Skypost's archive pattern).
                 SwipeRow(
                     onStartSwipe = {
-                        if (row.unread > 0) vm.markRead(row.kind, row.key) else vm.markUnread(row.kind, row.key)
+                        if (row.unread > 0 || row.markedUnread) vm.markRead(row.kind, row.key) else vm.markUnread(row.kind, row.key)
                     },
                     onEndSwipe = { vm.prefs.setThreadArchived(k, !isArchived) },
-                    startIcon = if (row.unread > 0) R.drawable.ic_mark_read else R.drawable.ic_mark_unread,
+                    startIcon = if (row.unread > 0 || row.markedUnread) R.drawable.ic_mark_read else R.drawable.ic_mark_unread,
                     endIcon = if (isArchived) R.drawable.ic_unarchive else R.drawable.ic_archive,
                 ) {
                     ConversationRowItem(
@@ -218,6 +221,7 @@ private fun ConversationRowItem(
     onNickname: () -> Unit = {},
 ) {
     var menuOpen by remember { mutableStateOf(false) }
+    val markedLabel = stringResource(R.string.vm_marked_unread)
     Row(
         Modifier
             .fillMaxWidth()
@@ -242,7 +246,7 @@ private fun ConversationRowItem(
                 Text(
                     text = row.title,
                     style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = if (row.unread > 0) FontWeight.Bold else FontWeight.Normal,
+                    fontWeight = if (row.unread > 0 || row.markedUnread) FontWeight.Bold else FontWeight.Normal,
                     maxLines = 1,
                     overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                 )
@@ -276,6 +280,15 @@ private fun ConversationRowItem(
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary,
                 ) { Text(row.unread.toString()) }
+            } else if (row.markedUnread) {
+                // Marked by hand: the badge's circle with no number in it,
+                // since there is no unread message to count.
+                Box(
+                    Modifier
+                        .size(16.dp)
+                        .background(MaterialTheme.colorScheme.primary, androidx.compose.foundation.shape.CircleShape)
+                        .semantics { contentDescription = markedLabel },
+                )
             }
         }
         DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {

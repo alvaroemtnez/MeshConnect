@@ -127,6 +127,14 @@ ICONS = [
     ("ic_error", "error", False),
     ("ic_visibility", "visibility", False),
     ("ic_visibility_off", "visibility_off", False),
+    # Multi-select and admin tiles
+    ("ic_check_circle", "check_circle", False),
+    ("ic_circle", "radio_button_unchecked", False),
+    ("ic_select", "checklist", True),
+    ("ic_update", "update", False),
+    ("ic_help", "help", False),
+    ("ic_terminal", "terminal", False),
+    ("ic_power", "power_settings_new", False),
 ]
 
 URL = "https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/{}/default/24px.svg"

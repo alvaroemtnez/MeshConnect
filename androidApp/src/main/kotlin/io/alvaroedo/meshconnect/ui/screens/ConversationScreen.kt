@@ -85,6 +85,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import io.github.thatsfguy.meshcore.presentation.AdminSession
 import io.github.thatsfguy.meshcore.presentation.Inbox
+import io.alvaroedo.meshconnect.ui.model.MessageSelection
 import io.github.thatsfguy.meshcore.presentation.roomAccessAction
 import io.github.thatsfguy.meshcore.presentation.roomAccessNotice
 import io.github.thatsfguy.meshcore.presentation.Mentions
@@ -193,10 +194,20 @@ fun ConversationScreen(
     val routeNames = remember(liveForRoutes) {
         liveForRoutes.values.associate { it.publicKeyHex to it.name }
     }
+    // Multi-select: null when off, else the ids picked. Ending with
+    // nothing picked turns the mode off rather than leaving an empty bar.
+    var selection by remember(threadKey) { mutableStateOf<Set<Long>?>(null) }
+    var confirmDeleteMany by remember { mutableStateOf<Set<Long>?>(null) }
+    val clipboard = LocalClipboardManager.current
+    androidx.activity.compose.BackHandler(enabled = selection != null) { selection = null }
+    fun toggleSelected(id: Long) {
+        selection = selection?.let { MessageSelection.toggle(it, id).ifEmpty { null } }
+    }
     var attachOpen by remember { mutableStateOf(false) }
     var pickContact by remember { mutableStateOf(false) }
     var pickChannel by remember { mutableStateOf(false) }
     var pickOnMap by remember { mutableStateOf(false) }
+    var confirmMyLocation by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val selfName = vm.selfInfo.collectAsState().value?.name
@@ -264,7 +275,30 @@ fun ConversationScreen(
 
     Scaffold(
         topBar = {
-            AppTopBar(
+            val picked = selection
+            if (picked != null) {
+                SelectionTopBar(
+                    count = picked.size,
+                    canReply = MessageSelection.canReply(picked),
+                    onClose = { selection = null },
+                    onReply = {
+                        replyingTo = messages.firstOrNull { it.id == picked.single() }
+                        selection = null
+                    },
+                    onCopy = {
+                        clipboard.setText(AnnotatedString(MessageSelection.copyText(messages, picked, showSenders)))
+                        selection = null
+                    },
+                    onDelete = {
+                        if (picked.size == 1) {
+                            vm.deleteMessage(picked.single())
+                            selection = null
+                        } else {
+                            confirmDeleteMany = picked
+                        }
+                    },
+                )
+            } else AppTopBar(
                 title = title,
                 vm = vm,
                 nav = nav,
@@ -307,6 +341,10 @@ fun ConversationScreen(
             ) { m ->
                 MessageBubble(
                     m,
+                    selecting = selection != null,
+                    selected = selection?.contains(m.id) == true,
+                    onToggleSelected = { toggleSelected(m.id) },
+                    onStartSelecting = { selection = setOf(m.id) },
                     showSender = showSenders,
                     selfName = selfName,
                     // Only worth offering when there is a name to insert
@@ -485,7 +523,7 @@ fun ConversationScreen(
         ActivityResultContracts.RequestMultiplePermissions(),
     ) { granted ->
         if (granted.values.any { it }) {
-            scope.launch { shareMyLocation(vm, context) { sendAttachment(it) } }
+            confirmMyLocation = true
         } else {
             vm.transientMessage.value = context.getString(R.string.attach_location_denied)
         }
@@ -503,7 +541,7 @@ fun ConversationScreen(
                     Attachment.Channel -> pickChannel = true
                     Attachment.MyLocation ->
                         if (PhoneLocator.granted(context)) {
-                            scope.launch { shareMyLocation(vm, context) { sendAttachment(it) } }
+                            confirmMyLocation = true
                         } else {
                             locationPermission.launch(PhoneLocator.PERMISSIONS)
                         }
@@ -537,6 +575,17 @@ fun ConversationScreen(
             onDismiss = { pickChannel = false },
         )
     }
+    if (confirmMyLocation) {
+        MyLocationDialog(
+            vm = vm,
+            locate = { locateMe(vm, context) },
+            onSend = { lat, lon ->
+                confirmMyLocation = false
+                sendAttachment(RichMessage.locationText(lat, lon))
+            },
+            onDismiss = { confirmMyLocation = false },
+        )
+    }
     if (pickOnMap) {
         val me = vm.selfInfo.value
         PositionPickerDialog(
@@ -559,6 +608,24 @@ fun ConversationScreen(
             nodeName = title,
             isRoom = true,
             onDismiss = { roomSignIn = false },
+        )
+    }
+
+    confirmDeleteMany?.let { ids ->
+        AlertDialog(
+            onDismissRequest = { confirmDeleteMany = null },
+            title = { Text(stringResource(R.string.conv_delete_many_title, ids.size)) },
+            text = { Text(stringResource(R.string.conv_delete_many_body)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    ids.forEach { vm.deleteMessage(it) }
+                    confirmDeleteMany = null
+                    selection = null
+                }) { Text(stringResource(R.string.delete), color = MaterialTheme.colorScheme.error) }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmDeleteMany = null }) { Text(stringResource(R.string.cancel)) }
+            },
         )
     }
 
@@ -749,6 +816,10 @@ internal fun splitQuote(text: String): Pair<String?, String> = Quoting.split(tex
 @Composable
 private fun MessageBubble(
     m: MessageEntity,
+    selecting: Boolean = false,
+    selected: Boolean = false,
+    onToggleSelected: () -> Unit = {},
+    onStartSelecting: () -> Unit = {},
     showSender: Boolean,
     selfName: String? = null,
     canMention: Boolean = false,
@@ -859,7 +930,11 @@ private fun MessageBubble(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 } else if (richContent != null) {
-                    rich(richContent)
+                    // A long-press on the card's face opens this message's
+                    // actions (or toggles it while selecting), not nothing.
+                    androidx.compose.runtime.CompositionLocalProvider(
+                        LocalMessageLongPress provides { if (selecting) onToggleSelected() else showActions = true },
+                    ) { rich(richContent) }
                 } else {
                     MessageText(
                         body,
@@ -875,6 +950,12 @@ private fun MessageBubble(
         }
     }
 
+    val selectTint = MaterialTheme.colorScheme.primary
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .background(if (selected) selectTint.copy(alpha = 0.12f) else androidx.compose.ui.graphics.Color.Transparent),
+    ) {
     Row(
         Modifier
             .fillMaxWidth()
@@ -882,16 +963,36 @@ private fun MessageBubble(
             .draggable(
                 state = dragState,
                 orientation = Orientation.Horizontal,
+                enabled = !selecting,
                 onDragStopped = {
                     if (dragOffsetX >= thresholdPx) onSwipeReply()
                     dragOffsetX = 0f
                 },
             )
-            .combinedClickable(onClick = {}, onLongClick = { showActions = true })
+            .combinedClickable(
+                onClick = { if (selecting) onToggleSelected() },
+                onLongClick = { if (selecting) onToggleSelected() else showActions = true },
+            )
             .padding(horizontal = 8.dp),
         horizontalArrangement = if (outgoing) Arrangement.End else Arrangement.Start,
         verticalAlignment = Alignment.Bottom,
     ) {
+        // The selection circle. It pushes received bubbles right; sent
+        // ones stay against the right edge, so it sits at the far left.
+        androidx.compose.animation.AnimatedVisibility(
+            visible = selecting,
+            enter = androidx.compose.animation.expandHorizontally() + androidx.compose.animation.fadeIn(),
+            exit = androidx.compose.animation.shrinkHorizontally() + androidx.compose.animation.fadeOut(),
+            modifier = Modifier.align(Alignment.CenterVertically),
+        ) {
+            Icon(
+                painterResource(if (selected) R.drawable.ic_check_circle else R.drawable.ic_circle),
+                null,
+                tint = if (selected) selectTint else MaterialTheme.colorScheme.outline,
+                modifier = Modifier.padding(start = 4.dp, end = 10.dp).size(24.dp),
+            )
+        }
+        if (outgoing && selecting) Spacer(Modifier.weight(1f))
         // No name, no avatar: a "?" circle on every historical room post
         // (stored before authors were parsed) is noise, not information.
         if (showAvatar && !outgoing && !m.senderName.isNullOrBlank()) {
@@ -927,10 +1028,69 @@ private fun MessageBubble(
                 onInfo = { showActions = false; onInfo() },
                 onDelete = { showActions = false; onDelete() },
                 onResend = { showActions = false; onResend() },
+                onSelect = { showActions = false; onStartSelecting() },
                 onDismiss = { showActions = false },
             )
         }
     }
+    // While selecting, a tap anywhere on the row picks it — including on a
+    // card or a link, which would otherwise open instead.
+    if (selecting) {
+        Box(
+            Modifier
+                .matchParentSize()
+                .combinedClickable(
+                    interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+                    indication = null,
+                    onClick = onToggleSelected,
+                    onLongClick = onToggleSelected,
+                ),
+        )
+    }
+    }
+}
+
+/** Replaces the thread's top bar while messages are being selected. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SelectionTopBar(
+    count: Int,
+    canReply: Boolean,
+    onClose: () -> Unit,
+    onReply: () -> Unit,
+    onCopy: () -> Unit,
+    onDelete: () -> Unit,
+) {
+    val barColor = MaterialTheme.colorScheme.surfaceContainer
+    androidx.compose.material3.TopAppBar(
+        colors = androidx.compose.material3.TopAppBarDefaults.topAppBarColors(
+            containerColor = barColor,
+            scrolledContainerColor = barColor,
+        ),
+        navigationIcon = {
+            IconButton(onClick = onClose) {
+                Icon(painterResource(R.drawable.ic_close), stringResource(R.string.conv_select_close))
+            }
+        },
+        title = { Text(stringResource(R.string.conv_selected_count, count)) },
+        actions = {
+            if (canReply) {
+                IconButton(onClick = onReply) {
+                    Icon(painterResource(R.drawable.ic_reply), stringResource(R.string.conv_reply))
+                }
+            }
+            IconButton(onClick = onCopy) {
+                Icon(painterResource(R.drawable.ic_content_copy), stringResource(R.string.copy))
+            }
+            IconButton(onClick = onDelete) {
+                Icon(
+                    painterResource(R.drawable.ic_delete),
+                    stringResource(R.string.delete),
+                    tint = MaterialTheme.colorScheme.error,
+                )
+            }
+        },
+    )
 }
 
 /**
@@ -977,8 +1137,8 @@ private fun MentionPicker(names: List<String>, onPick: (String) -> Unit) {
  * message stays where it was, quick reactions sit above it and the actions are a list with
  * icons below it. It replaced a small popup of bare text labels.
  *
- * A full-screen dialog, so the blur covers the top bar and composer too. Window blur needs
- * Android 12 and a device that allows it; elsewhere the scrim alone dims the thread.
+ * A full-screen dialog over the app, which blurs itself behind it ([BlurBackdropWhileShown])
+ * so the top bar and composer blur too. Android 12+; below that the scrim alone dims it.
  */
 @Composable
 private fun MessageFocusOverlay(
@@ -996,8 +1156,10 @@ private fun MessageFocusOverlay(
     onInfo: () -> Unit,
     onDelete: () -> Unit,
     onResend: () -> Unit,
+    onSelect: () -> Unit,
     onDismiss: () -> Unit,
 ) {
+    BlurBackdropWhileShown()
     androidx.compose.ui.window.Dialog(
         onDismissRequest = onDismiss,
         properties = androidx.compose.ui.window.DialogProperties(
@@ -1007,13 +1169,10 @@ private fun MessageFocusOverlay(
     ) {
         val view = androidx.compose.ui.platform.LocalView.current
         androidx.compose.runtime.SideEffect {
-            (view.parent as? androidx.compose.ui.window.DialogWindowProvider)?.window?.let { w ->
-                w.setDimAmount(0f)
-                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
-                    w.addFlags(android.view.WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
-                    w.attributes = w.attributes.apply { blurBehindRadius = 48 }
-                }
-            }
+            // The blur is the app's own (BlurBackdropWhileShown), not the
+            // window's: window blur is switched off by the system whenever
+            // it likes, which is why it was seen once and then not again.
+            (view.parent as? androidx.compose.ui.window.DialogWindowProvider)?.window?.setDimAmount(0f)
         }
         val density = LocalDensity.current
         val margin = with(density) { 12.dp.roundToPx() }
@@ -1036,7 +1195,7 @@ private fun MessageFocusOverlay(
                 )
                 Box { if (canReact) ReactionPill(onReact, onMoreEmoji) }
                 Box { bubble() }
-                ActionMenu(canMention, canResend, onReply, onMention, onCopy, onInfo, onResend, onDelete)
+                ActionMenu(canMention, canResend, onReply, onMention, onCopy, onSelect, onInfo, onResend, onDelete)
             },
         ) { measurables, constraints ->
             val w = constraints.maxWidth
@@ -1104,6 +1263,7 @@ private fun ActionMenu(
     onReply: () -> Unit,
     onMention: () -> Unit,
     onCopy: () -> Unit,
+    onSelect: () -> Unit,
     onInfo: () -> Unit,
     onResend: () -> Unit,
     onDelete: () -> Unit,
@@ -1120,6 +1280,7 @@ private fun ActionMenu(
             // costs those bytes out of a ~150-byte frame; Mention costs only the name.
             if (canMention) MenuRow(R.drawable.ic_alternate_email, stringResource(R.string.conv_mention), onMention)
             MenuRow(R.drawable.ic_content_copy, stringResource(R.string.copy), onCopy)
+            MenuRow(R.drawable.ic_select, stringResource(R.string.conv_select), onSelect)
             MenuRow(R.drawable.ic_info, stringResource(R.string.conv_info), onInfo)
             if (canResend) MenuRow(R.drawable.ic_refresh, stringResource(R.string.conv_resend), onResend)
             MenuRow(R.drawable.ic_delete, stringResource(R.string.delete), onDelete, destructive = true)
@@ -1603,25 +1764,19 @@ private fun sendText(vm: io.alvaroedo.meshconnect.ui.MeshCoreViewModel, isChanne
 }
 
 /**
- * The phone's GPS fix, else the radio's own advertised position; says so
- * when there is neither rather than sending a made-up place.
+ * The phone's GPS fix, else the radio's own advertised position, saying which; null when
+ * there is neither, rather than a made-up place.
  */
-private suspend fun shareMyLocation(
+private suspend fun locateMe(
     vm: io.alvaroedo.meshconnect.ui.MeshCoreViewModel,
     context: android.content.Context,
-    send: (String) -> Unit,
-) {
-    vm.transientMessage.value = context.getString(R.string.attach_locating)
-    val fix = PhoneLocator.fix(context)
+): Pair<Pair<Double, Double>, FixSource>? =
+    PhoneLocator.fix(context)?.let { it to FixSource.Phone }
         ?: vm.selfInfo.value?.let { me ->
-            (me.latitude to me.longitude).takeIf { me.latitude != 0.0 || me.longitude != 0.0 }
+            (me.latitude to me.longitude)
+                .takeIf { io.github.thatsfguy.meshcore.util.isPlausiblePosition(me.latitude, me.longitude) }
+                ?.let { it to FixSource.Radio }
         }
-    if (fix == null) {
-        vm.transientMessage.value = context.getString(R.string.attach_location_failed)
-    } else {
-        send(RichMessage.locationText(fix.first, fix.second))
-    }
-}
 
 /** Picks the card for a [RichMessage.Content] and what tapping it does. */
 @Composable

@@ -76,21 +76,25 @@ fun NodeAvatar(
     val darkText = c.useDarkText
 
     val ink = if (darkText) Color.Black else Color.White
-    if (isChannel && channelKind != null && channelKind != io.github.thatsfguy.meshcore.protocol.ChannelKind.Hashtag) {
+    // A channel whose kind is known shows it as an icon: a lock for a private
+    // key, a globe for Public, a tag for a hashtag channel (whose key anyone
+    // can derive from its name). Unknown kind falls through to the initial.
+    if (isChannel && channelKind != null) {
+        val (icon, label) = when (channelKind) {
+            io.github.thatsfguy.meshcore.protocol.ChannelKind.Private -> R.drawable.ic_lock to R.string.cd_private_channel
+            io.github.thatsfguy.meshcore.protocol.ChannelKind.Hashtag -> R.drawable.ic_tag to R.string.cd_hashtag_channel
+            io.github.thatsfguy.meshcore.protocol.ChannelKind.Public -> R.drawable.ic_public to R.string.cd_public_channel
+        }
         Box(
             modifier = Modifier.size(size).background(background, CircleShape),
             contentAlignment = Alignment.Center,
         ) {
-            if (channelKind == io.github.thatsfguy.meshcore.protocol.ChannelKind.Private) {
-                androidx.compose.material3.Icon(
-                    androidx.compose.ui.res.painterResource(io.alvaroedo.meshconnect.R.drawable.ic_lock),
-                    contentDescription = stringResource(R.string.cd_private_channel),
-                    tint = ink,
-                    modifier = Modifier.size(size * 0.5f),
-                )
-            } else {
-                GlobeGlyph(ink, Modifier.size(size * 0.52f))
-            }
+            androidx.compose.material3.Icon(
+                androidx.compose.ui.res.painterResource(icon),
+                contentDescription = stringResource(label),
+                tint = ink,
+                modifier = Modifier.size(size * 0.55f),
+            )
         }
         return
     }
@@ -112,12 +116,8 @@ fun NodeAvatar(
         return
     }
 
-    val glyph = when {
-        isChannel && channelKind == io.github.thatsfguy.meshcore.protocol.ChannelKind.Hashtag -> "#"
-        // Not the first character: an emoji is two, and half of one drew
-        // "�". See AvatarGlyph.
-        else -> io.github.thatsfguy.meshcore.presentation.AvatarGlyph.of(label)
-    }
+    // Not the first character: an emoji is two, and half of one drew "�". See AvatarGlyph.
+    val glyph = io.github.thatsfguy.meshcore.presentation.AvatarGlyph.of(label)
 
     Box(
         modifier = Modifier
@@ -132,30 +132,6 @@ fun NodeAvatar(
             fontWeight = FontWeight.Bold,
             fontSize = (size.value * 0.42f).sp,
         )
-    }
-}
-
-/**
- * A globe for the Public channel, drawn rather than imported: the core
- * icon set has none, and the extended set is a large dependency for one
- * glyph.
- */
-@Composable
-private fun GlobeGlyph(color: Color, modifier: Modifier) {
-    val publicLabel = stringResource(R.string.cd_public_channel)
-    androidx.compose.foundation.Canvas(modifier.semantics { contentDescription = publicLabel }) {
-        val stroke = androidx.compose.ui.graphics.drawscope.Stroke(width = size.minDimension * 0.09f)
-        val r = size.minDimension / 2f - stroke.width / 2f
-        drawCircle(color, radius = r, style = stroke)
-        // Meridian and the equator.
-        drawOval(
-            color,
-            topLeft = androidx.compose.ui.geometry.Offset(center.x - r * 0.45f, center.y - r),
-            size = androidx.compose.ui.geometry.Size(r * 0.9f, r * 2f),
-            style = stroke,
-        )
-        drawLine(color, androidx.compose.ui.geometry.Offset(center.x - r, center.y),
-            androidx.compose.ui.geometry.Offset(center.x + r, center.y), strokeWidth = stroke.width)
     }
 }
 

@@ -15,7 +15,9 @@ class MessageFocusWiringTest {
 
     @Test
     fun `the overlay blurs what is behind and keeps the bubble in place`() {
-        assertTrue(s.contains("blurBehindRadius"))
+        // The app blurs itself (Backdrop.kt); window blur is switched off by the system at will.
+        assertTrue(s.contains("BlurBackdropWhileShown()"))
+        assertFalse(s.contains("blurBehindRadius"))
         assertTrue(s.contains("val y = bounds.top.toInt().coerceIn(minY, maxY)"))
         assertFalse("the old popup bar is gone", s.contains("private fun MessageActionBar("))
     }

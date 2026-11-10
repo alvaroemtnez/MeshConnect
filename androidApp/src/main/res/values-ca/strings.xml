@@ -5,7 +5,7 @@
     <string name="picker_allow_ble_hint">Android pregunta abans que una aplicació busque ràdios pròximes.</string>
     <string name="picker_connected">Connectada</string>
     <string name="picker_connecting_to">Connectant amb %1$s…</string>
-    <string name="picker_title">Tria un lloc</string>
+    <string name="radio_picker_title">Connectar una ràdio</string>
     <string name="picker_more">Afegir o canviar de ràdio</string>
     <string name="onb_welcome_title">Et donem la benvinguda a MeshConnect</string>
     <string name="onb_welcome_body">Envia missatges a través de ràdios LoRa MeshCore, sense internet, sense xarxa mòbil i sense comptes.</string>
@@ -66,7 +66,10 @@
     <string name="map_fit_all">Veure tota la xarxa</string>
     <string name="map_zoom_in">Apropar</string>
     <string name="map_zoom_out">Allunyar</string>
+    <string name="picker_title">Tria un lloc</string>
     <string name="picker_use">Usar este</string>
+    <string name="loc_from_radio">El telèfon encara no té posició, així que esta és la que anuncia la teua ràdio.</string>
+    <string name="loc_retry">Tornar a provar</string>
     <string name="picker_advert_warning">Esta posició es difon a tota la malla en els teus anuncis: qualsevol a l\'abast de ràdio, i a qui li ho retransmeten, la pot veure.</string>
     <string name="picker_tiles_off">Els mapes estan desactivats i el fons queda en blanc. Les coordenades seguixen el marcador.</string>
     <string name="join_title">Unir-te a este canal?</string>
@@ -460,6 +463,11 @@
     <string name="conv_more_reactions">Més reaccions</string>
     <string name="conv_mention">Mencionar</string>
     <string name="conv_info">Info</string>
+    <string name="conv_select">Seleccionar</string>
+    <string name="conv_selected_count">%1$d seleccionats</string>
+    <string name="conv_select_close">Acabar la selecció</string>
+    <string name="conv_delete_many_title">Eliminar %1$d missatges?</string>
+    <string name="conv_delete_many_body">S\'esborren només d\'este telèfon. No s\'envia res a la malla.</string>
     <string name="conv_resend">Reenviar</string>
     <string name="conv_react">Reaccionar</string>
     <string name="room_not_signed_in">Sense iniciar sessió. Una sala només accepta missatges de, i envia missatges nous a, qui ha iniciat sessió.</string>
@@ -1130,6 +1138,7 @@
     <string name="vm_hash_mode_set">Mode de hash de ruta: %1$d (%2$d B/salt)</string>
     <string name="cd_private_channel">Canal privat</string>
     <string name="cd_public_channel">Canal públic</string>
+    <string name="cd_hashtag_channel">Canal hashtag</string>
     <string name="hint_more">Més</string>
     <string name="hint_less">Menys</string>
     <string name="chats_search_hint">Cercar converses</string>

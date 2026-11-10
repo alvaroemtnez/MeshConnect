@@ -5,6 +5,7 @@ import android.content.Intent
 import android.net.Uri
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -408,14 +409,26 @@ fun openInMaps(context: android.content.Context, loc: RichMessage.Location, noAp
     }
 }
 
+/**
+ * What a long-press on a card inside a message does: open that message's actions.
+ *
+ * A card's own click handler consumes the whole gesture, long-press included, so without
+ * this a press on the card's face did nothing and only the bubble's thin margin around it
+ * opened the menu. Provided by the bubble; null outside one (pickers, previews).
+ */
+val LocalMessageLongPress = androidx.compose.runtime.compositionLocalOf<(() -> Unit)?> { null }
+
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 private fun CardShell(onClick: () -> Unit, padded: Boolean = true, content: @Composable ColumnScope.() -> Unit) {
+    val longPress = LocalMessageLongPress.current
     Surface(
         shape = RoundedCornerShape(12.dp),
         color = MaterialTheme.colorScheme.surface,
         tonalElevation = 1.dp,
         modifier = Modifier.widthIn(min = 220.dp, max = 280.dp).padding(vertical = 4.dp)
-            .clip(RoundedCornerShape(12.dp)).clickable(onClick = onClick),
+            .clip(RoundedCornerShape(12.dp))
+            .combinedClickable(onClick = onClick, onLongClick = longPress),
     ) {
         Column(if (padded) Modifier.padding(12.dp) else Modifier) { content() }
     }

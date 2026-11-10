@@ -215,7 +215,7 @@ fun RadioPickerSheet(vm: MeshCoreViewModel, onDismiss: () -> Unit) {
                 .padding(bottom = 32.dp)
                 .verticalScroll(rememberScrollState()),
         ) {
-            Text(stringResource(R.string.picker_title), style = MaterialTheme.typography.headlineSmall)
+            Text(stringResource(R.string.radio_picker_title), style = MaterialTheme.typography.headlineSmall)
             Spacer(Modifier.height(8.dp))
             RadioPicker(vm, onPicked = onDismiss)
         }

@@ -7,7 +7,7 @@
     <string name="picker_allow_ble_hint">Android asks before an app can look for nearby radios.</string>
     <string name="picker_connected">Connected</string>
     <string name="picker_connecting_to">Connecting to %1$s…</string>
-    <string name="picker_title">Pick a place</string>
+    <string name="radio_picker_title">Connect a radio</string>
     <string name="picker_more">Add or switch radio</string>
     <string name="onb_welcome_title">Welcome to MeshConnect</string>
     <string name="onb_welcome_body">Message people over MeshCore LoRa radios, with no internet, no phone network and no accounts.</string>
@@ -69,7 +69,10 @@
     <string name="map_zoom_in">Zoom in</string>
     <string name="map_attribution" translatable="false">© OpenMapTiles © OpenStreetMap</string>
     <string name="map_zoom_out">Zoom out</string>
+    <string name="picker_title">Pick a place</string>
     <string name="picker_use">Use this</string>
+    <string name="loc_from_radio">The phone has no fix yet, so this is the position your radio advertises.</string>
+    <string name="loc_retry">Try again</string>
     <string name="picker_advert_warning">This position is broadcast to the whole mesh in your adverts: anyone in radio range, and anyone they relay to, can see it.</string>
     <string name="picker_tiles_off">Map tiles are off, so the map stays blank. The coordinates still follow the pin.</string>
     <string name="join_title">Join this channel?</string>
@@ -463,6 +466,11 @@
     <string name="conv_more_reactions">More reactions</string>
     <string name="conv_mention">Mention</string>
     <string name="conv_info">Info</string>
+    <string name="conv_select">Select</string>
+    <string name="conv_selected_count">%1$d selected</string>
+    <string name="conv_select_close">End selection</string>
+    <string name="conv_delete_many_title">Delete %1$d messages?</string>
+    <string name="conv_delete_many_body">They are removed from this phone only. Nothing is sent to the mesh.</string>
     <string name="conv_resend">Resend</string>
     <string name="conv_react">React</string>
     <string name="room_not_signed_in">Not signed in. A room only accepts posts from, and sends new posts to, people who have signed in.</string>
@@ -1133,6 +1141,7 @@
     <string name="vm_hash_mode_set">Path hash mode set to %1$d (%2$d B/hop)</string>
     <string name="cd_private_channel">Private channel</string>
     <string name="cd_public_channel">Public channel</string>
+    <string name="cd_hashtag_channel">Hashtag channel</string>
     <string name="hint_more">More</string>
     <string name="hint_less">Less</string>
     <string name="chats_search_hint">Search conversations</string>

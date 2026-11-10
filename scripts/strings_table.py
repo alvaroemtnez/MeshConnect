@@ -12,7 +12,7 @@ S = {
 "picker_allow_ble_hint": ("Android asks before an app can look for nearby radios.", "Android pregunta antes de que una app busque radios cercanas.", "Android pregunta abans que una aplicació busque ràdios pròximes."),
 "picker_connected": ("Connected", "Conectada", "Connectada"),
 "picker_connecting_to": ("Connecting to %1$s…", "Conectando con %1$s…", "Connectant amb %1$s…"),
-"picker_title": ("Connect a radio", "Conectar una radio", "Connectar una ràdio"),
+"radio_picker_title": ("Connect a radio", "Conectar una radio", "Connectar una ràdio"),
 "picker_more": ("Add or switch radio", "Añadir o cambiar de radio", "Afegir o canviar de ràdio"),
 "onb_welcome_title": ("Welcome to MeshConnect", "Te damos la bienvenida a MeshConnect", "Et donem la benvinguda a MeshConnect"),
 "onb_welcome_body": ("Message people over MeshCore LoRa radios, with no internet, no phone network and no accounts.", "Envía mensajes a través de radios LoRa MeshCore, sin internet, sin red móvil y sin cuentas.", "Envia missatges a través de ràdios LoRa MeshCore, sense internet, sense xarxa mòbil i sense comptes."),
@@ -89,6 +89,8 @@ S = {
 "map_zoom_out": ("Zoom out", "Alejar", "Allunyar"),
 "picker_title": ("Pick a place", "Elige un lugar", "Tria un lloc"),
 "picker_use": ("Use this", "Usar este", "Usar este"),
+"loc_from_radio": ("The phone has no fix yet, so this is the position your radio advertises.", "El teléfono aún no tiene posición, así que esta es la que anuncia tu radio.", "El telèfon encara no té posició, així que esta és la que anuncia la teua ràdio."),
+"loc_retry": ("Try again", "Reintentar", "Tornar a provar"),
 "picker_advert_warning": (
     "This position is broadcast to the whole mesh in your adverts: anyone in radio range, and anyone they relay to, can see it.",
     "Esta posición se difunde a toda la malla en tus anuncios: cualquiera al alcance de radio, y a quien se lo retransmitan, puede verla.",
@@ -556,6 +558,11 @@ S = {
 "conv_more_reactions": ("More reactions", "Más reacciones", "Més reaccions"),
 "conv_mention": ('Mention', 'Mencionar', 'Mencionar'),
 "conv_info": ('Info', 'Info', 'Info'),
+"conv_select": ("Select", "Seleccionar", "Seleccionar"),
+"conv_selected_count": ("%1$d selected", "%1$d seleccionados", "%1$d seleccionats"),
+"conv_select_close": ("End selection", "Terminar la selección", "Acabar la selecció"),
+"conv_delete_many_title": ("Delete %1$d messages?", "¿Eliminar %1$d mensajes?", "Eliminar %1$d missatges?"),
+"conv_delete_many_body": ("They are removed from this phone only. Nothing is sent to the mesh.", "Se borran solo de este teléfono. No se envía nada a la malla.", "S'esborren només d'este telèfon. No s'envia res a la malla."),
 "conv_resend": ('Resend', 'Reenviar', 'Reenviar'),
 "conv_react": ('React', 'Reaccionar', 'Reaccionar'),
 "room_not_signed_in": ('Not signed in. A room only accepts posts from, and sends new posts to, people who have signed in.', 'Sin iniciar sesión. Una sala solo acepta mensajes de, y envía mensajes nuevos a, quien ha iniciado sesión.', 'Sense iniciar sessió. Una sala només accepta missatges de, i envia missatges nous a, qui ha iniciat sessió.'),
@@ -1254,6 +1261,7 @@ S = {
 
 "cd_private_channel": ('Private channel', 'Canal privado', 'Canal privat'),
 "cd_public_channel": ('Public channel', 'Canal público', 'Canal públic'),
+"cd_hashtag_channel": ("Hashtag channel", "Canal hashtag", "Canal hashtag"),
 
 
 "hint_more": ('More', 'Más', 'Més'),
