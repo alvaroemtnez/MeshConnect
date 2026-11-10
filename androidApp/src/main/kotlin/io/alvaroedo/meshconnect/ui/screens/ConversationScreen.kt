@@ -182,6 +182,7 @@ fun ConversationScreen(
     }
     var clearConfirm by remember { mutableStateOf(false) }
     var showContact by remember { mutableStateOf(false) }
+    var showRouting by remember { mutableStateOf(false) }
     var showChannelEditor by remember { mutableStateOf(false) }
     var showSendersSheet by remember { mutableStateOf(false) }
     var replyingTo by remember(kind, peerKey) { mutableStateOf<MessageEntity?>(null) }
@@ -247,31 +248,31 @@ fun ConversationScreen(
     val channelRegions by vm.channelRegions.collectAsState()
     val menu = if (isChannel) {
         listOf(
-            MenuAction(stringResource(R.string.conv_mute), checked = muted) {
+            MenuAction(stringResource(R.string.conv_mute), checked = muted, icon = R.drawable.ic_notifications_off) {
                 peerKey.toIntOrNull()?.let {
                     muted = !muted
                     vm.prefs.setChannelMuted(it, muted)
                 }
             },
-            MenuAction(stringResource(R.string.conv_mark_unread)) { vm.markUnread(kind, peerKey); nav.popBackStack() },
-            MenuAction(stringResource(R.string.conv_channel_settings)) { showChannelEditor = true },
-            MenuAction(stringResource(R.string.conv_names_seen)) { showSendersSheet = true },
-            MenuAction(stringResource(R.string.conv_clear), destructive = true) { clearConfirm = true },
+            MenuAction(stringResource(R.string.conv_mark_unread), icon = R.drawable.ic_mark_unread) { vm.markUnread(kind, peerKey); nav.popBackStack() },
+            MenuAction(stringResource(R.string.conv_channel_settings), icon = R.drawable.ic_tune) { showChannelEditor = true },
+            MenuAction(stringResource(R.string.conv_names_seen), icon = R.drawable.ic_group) { showSendersSheet = true },
+            MenuAction(stringResource(R.string.conv_clear), destructive = true, icon = R.drawable.ic_delete_sweep) { clearConfirm = true },
         )
     } else {
         listOfNotNull(
-            MenuAction(stringResource(R.string.conv_mark_unread)) { vm.markUnread(kind, peerKey); nav.popBackStack() },
+            MenuAction(stringResource(R.string.conv_mark_unread), icon = R.drawable.ic_mark_unread) { vm.markUnread(kind, peerKey); nav.popBackStack() },
             // A room's admin tools live inside the room: the hub, which
             // is gated on this same session.
             if (isRoom && roomSession.isAdmin) {
-                MenuAction(stringResource(R.string.conv_manage_room)) { nav.navigate("repeater/$peerKey") }
+                MenuAction(stringResource(R.string.conv_manage_room), icon = R.drawable.ic_tune) { nav.navigate("repeater/$peerKey") }
             } else {
                 null
             },
-            MenuAction(stringResource(R.string.conv_contact_details)) { showContact = true },
-            MenuAction(stringResource(R.string.conv_routing)) { showContact = true },
+            MenuAction(stringResource(R.string.conv_contact_details), icon = R.drawable.ic_person) { showContact = true },
+            MenuAction(stringResource(R.string.conv_routing), icon = R.drawable.ic_alt_route) { showRouting = true },
             MenuAction(stringResource(R.string.trace_route), icon = R.drawable.ic_route) { nav.navigate(traceRoute(peerKey)) },
-            MenuAction(stringResource(R.string.conv_clear), destructive = true) { clearConfirm = true },
+            MenuAction(stringResource(R.string.conv_clear), destructive = true, icon = R.drawable.ic_delete_sweep) { clearConfirm = true },
         )
     }
 
@@ -668,6 +669,12 @@ fun ConversationScreen(
                 },
             )
         } ?: run { showContact = false }
+    }
+
+    if (showRouting) {
+        contacts.firstOrNull { it.keyHex == peerKey }?.let { contact ->
+            RoutingSheet(vm, contact, onDismiss = { showRouting = false })
+        } ?: run { showRouting = false }
     }
 
     if (showChannelEditor) {

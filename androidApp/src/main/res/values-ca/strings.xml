@@ -1279,6 +1279,16 @@
     <string name="ch_kind_public">Canal públic</string>
     <string name="ch_kind_hashtag">Canal hashtag</string>
     <string name="ch_kind_private">Canal privat</string>
+    <string name="newchat_title">Xat nou</string>
+    <string name="newchat_people">Persones</string>
+    <string name="newchat_channels">Canals</string>
+    <string name="newchat_contact">Escriure a un contacte</string>
+    <string name="newchat_contact_sub">Tria algú dels contactes de la teua ràdio.</string>
+    <string name="newchat_search">Buscar contactes</string>
+    <string name="newchat_none">Encara no hi ha contactes a qui escriure. Afig persones des de Nodes o escaneja el seu codi.</string>
+    <string name="newchat_scan">Escanejar un codi QR</string>
+    <string name="newchat_scan_sub">Un contacte, canal o comunitat que et mostren.</string>
+    <string name="chats_new_chat">Xat nou</string>
     <plurals name="vm_restored_settings">
         <item quantity="one">Restaurat: %1$d ajust</item>
         <item quantity="many">Restaurats: %1$d ajustos</item>

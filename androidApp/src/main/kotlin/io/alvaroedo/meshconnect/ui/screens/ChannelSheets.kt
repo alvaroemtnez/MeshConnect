@@ -27,6 +27,8 @@ import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
 import io.alvaroedo.meshconnect.platform.PortraitCaptureActivity
 import io.alvaroedo.meshconnect.storage.ChannelEntity
+import io.alvaroedo.meshconnect.storage.ContactEntity
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.layout.size
 import androidx.compose.ui.graphics.asImageBitmap
 import io.alvaroedo.meshconnect.platform.Qr
@@ -65,8 +67,18 @@ private enum class AddChannelChoice { Public, CreatePrivate, JoinPrivate, Hashta
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ChannelAddSheet(vm: MeshCoreViewModel, onDismiss: () -> Unit) {
+fun ChannelAddSheet(
+    vm: MeshCoreViewModel,
+    onDismiss: () -> Unit,
+    /**
+     * Given, the sheet is Chats' "New chat" (2026-11-10): a person first, then the channel
+     * choices, then one scanner for any code. Settings → Channels leaves it out.
+     */
+    onMessageContact: ((ContactEntity) -> Unit)? = null,
+) {
     var choice by remember { mutableStateOf<AddChannelChoice?>(null) }
+    var pickingContact by remember { mutableStateOf(false) }
+    val newChat = onMessageContact != null
 
     val communityScanLauncher = rememberLauncherForActivityResult(ScanContract()) { result ->
         result.contents?.let { vm.importScannedCode(it) }
@@ -77,9 +89,25 @@ fun ChannelAddSheet(vm: MeshCoreViewModel, onDismiss: () -> Unit) {
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(Modifier.padding(horizontal = 24.dp).padding(bottom = 32.dp)) {
             when (val c = choice) {
+                null if pickingContact && onMessageContact != null -> ContactPicker(
+                    vm,
+                    onBack = { pickingContact = false },
+                    onPick = { onDismiss(); onMessageContact(it) },
+                )
                 null -> {
-                    Text(stringResource(R.string.ch_add_title), style = MaterialTheme.typography.headlineSmall)
-                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        stringResource(if (newChat) R.string.newchat_title else R.string.ch_add_title),
+                        style = MaterialTheme.typography.headlineSmall,
+                    )
+                    if (newChat) {
+                        SheetHeading(stringResource(R.string.newchat_people))
+                        ChoiceRow(R.drawable.ic_person, stringResource(R.string.newchat_contact), stringResource(R.string.newchat_contact_sub)) {
+                            pickingContact = true
+                        }
+                        SheetHeading(stringResource(R.string.newchat_channels))
+                    } else {
+                        Spacer(Modifier.height(8.dp))
+                    }
                     Text(
                         stringResource(R.string.ch_add_intro),
                         style = MaterialTheme.typography.bodyMedium,
@@ -97,7 +125,14 @@ fun ChannelAddSheet(vm: MeshCoreViewModel, onDismiss: () -> Unit) {
                     ChoiceRow(R.drawable.ic_tag, stringResource(R.string.ch_hashtag), stringResource(R.string.ch_hashtag_sub)) {
                         choice = AddChannelChoice.Hashtag
                     }
-                    ChoiceRow(R.drawable.ic_qr_code_scanner, stringResource(R.string.ch_scan), stringResource(R.string.ch_scan_sub)) {
+                    if (newChat) SheetHeading(stringResource(R.string.newchat_scan))
+                    // importScannedCode takes a contact's code as well as a channel's
+                    // or a community's, so in New chat this one row scans any of them.
+                    ChoiceRow(
+                        R.drawable.ic_qr_code_scanner,
+                        stringResource(if (newChat) R.string.newchat_scan else R.string.ch_scan),
+                        stringResource(if (newChat) R.string.newchat_scan_sub else R.string.ch_scan_sub),
+                    ) {
                         communityScanLauncher.launch(meshScanOptions(scanPrompt))
                     }
                     Spacer(Modifier.height(8.dp))
@@ -108,6 +143,59 @@ fun ChannelAddSheet(vm: MeshCoreViewModel, onDismiss: () -> Unit) {
                     )
                 }
                 else -> AddChannelForm(vm, c, onBack = { choice = null }, onDone = onDismiss)
+            }
+        }
+    }
+}
+
+/** People the radio can message, searchable; a tap opens the conversation. */
+@Composable
+private fun ContactPicker(vm: MeshCoreViewModel, onBack: () -> Unit, onPick: (ContactEntity) -> Unit) {
+    var query by remember { mutableStateOf("") }
+    val people = vm.dbContacts.collectAsState().value
+        .filter { it.type == io.github.thatsfguy.meshcore.protocol.Codes.ADV_TYPE_CHAT }
+        .filter { query.isBlank() || it.name.contains(query.trim(), ignoreCase = true) }
+        .sortedWith(compareByDescending<ContactEntity> { it.flags and io.github.thatsfguy.meshcore.protocol.Codes.CONTACT_FLAG_FAVORITE != 0 }.thenBy { it.name.lowercase() })
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        androidx.compose.material3.IconButton(onClick = onBack) {
+            Icon(painterResource(R.drawable.ic_arrow_back), stringResource(R.string.back))
+        }
+        Text(stringResource(R.string.newchat_contact), style = MaterialTheme.typography.titleLarge)
+    }
+    Spacer(Modifier.height(8.dp))
+    MeshTextField(
+        value = query,
+        onValueChange = { query = it },
+        placeholder = stringResource(R.string.newchat_search),
+        leadingIcon = { Icon(painterResource(R.drawable.ic_search), null) },
+        modifier = Modifier.fillMaxWidth(),
+    )
+    Spacer(Modifier.height(8.dp))
+    if (people.isEmpty()) {
+        Text(
+            stringResource(R.string.newchat_none),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(vertical = 16.dp),
+        )
+    }
+    for (c in people.take(200)) {
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .clip(androidx.compose.foundation.shape.RoundedCornerShape(12.dp))
+                .clickable { onPick(c) }
+                .padding(horizontal = 4.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            NodeAvatar(seed = c.keyHex, label = c.name.ifBlank { c.keyHex }, type = c.type, size = 40.dp)
+            Spacer(Modifier.width(16.dp))
+            Column(Modifier.weight(1f)) {
+                Text(c.name.ifBlank { c.keyHex.take(12) }, style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                val heard = io.github.thatsfguy.meshcore.presentation.LastHeard.seconds(c)
+                if (heard > 0) {
+                    Text(relativeAge(heard), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
             }
         }
     }

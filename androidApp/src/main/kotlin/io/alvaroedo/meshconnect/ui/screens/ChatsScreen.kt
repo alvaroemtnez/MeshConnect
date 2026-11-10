@@ -132,7 +132,7 @@ fun ChatsScreen(vm: MeshCoreViewModel, nav: NavController, archivedView: Boolean
                     MenuAction(stringResource(R.string.chats_advert_flood), icon = R.drawable.ic_radar) {
                         vm.sendSelfAdvert(flood = true)
                     },
-                    MenuAction(stringResource(R.string.chats_add_channel), icon = R.drawable.ic_tag) { showChannelSheet = true },
+                    MenuAction(stringResource(R.string.chats_new_chat), icon = R.drawable.ic_add_comment) { showChannelSheet = true },
                     MenuAction(stringResource(R.string.nodes_scan_qr), icon = R.drawable.ic_qr_code_scanner) {
                         communityScanLauncher.launch(meshScanOptions(scanPrompt))
                     },
@@ -142,7 +142,7 @@ fun ChatsScreen(vm: MeshCoreViewModel, nav: NavController, archivedView: Boolean
         },
         floatingActionButton = {
             FloatingActionButton(onClick = { showChannelSheet = true }) {
-                Icon(painterResource(R.drawable.ic_add), stringResource(R.string.chats_add_channel))
+                Icon(painterResource(R.drawable.ic_add_comment), stringResource(R.string.chats_new_chat))
             }
         },
     ) { padding ->
@@ -231,7 +231,11 @@ fun ChatsScreen(vm: MeshCoreViewModel, nav: NavController, archivedView: Boolean
         SelfQrDialog(vm, onDismiss = { showSelfQr = false })
     }
     if (showChannelSheet) {
-        ChannelAddSheet(vm, onDismiss = { showChannelSheet = false })
+        ChannelAddSheet(
+            vm,
+            onDismiss = { showChannelSheet = false },
+            onMessageContact = { nav.navigate(conversationRoute(io.alvaroedo.meshconnect.storage.MessageRepository.KIND_DM, it.keyHex)) },
+        )
     }
 
     editChannel?.let { idx ->

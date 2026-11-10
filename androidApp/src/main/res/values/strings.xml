@@ -1282,6 +1282,16 @@
     <string name="ch_kind_public">Public channel</string>
     <string name="ch_kind_hashtag">Hashtag channel</string>
     <string name="ch_kind_private">Private channel</string>
+    <string name="newchat_title">New chat</string>
+    <string name="newchat_people">People</string>
+    <string name="newchat_channels">Channels</string>
+    <string name="newchat_contact">Message a contact</string>
+    <string name="newchat_contact_sub">Pick someone from your radio\'s contacts.</string>
+    <string name="newchat_search">Search contacts</string>
+    <string name="newchat_none">No contacts to message yet. Add people from Nodes, or scan their code.</string>
+    <string name="newchat_scan">Scan a QR code</string>
+    <string name="newchat_scan_sub">A contact, channel or community someone shows you.</string>
+    <string name="chats_new_chat">New chat</string>
     <plurals name="vm_restored_settings">
         <item quantity="one">Restored: %1$d setting</item>
         <item quantity="other">Restored: %1$d settings</item>

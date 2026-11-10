@@ -1279,6 +1279,16 @@
     <string name="ch_kind_public">Canal público</string>
     <string name="ch_kind_hashtag">Canal hashtag</string>
     <string name="ch_kind_private">Canal privado</string>
+    <string name="newchat_title">Nuevo chat</string>
+    <string name="newchat_people">Personas</string>
+    <string name="newchat_channels">Canales</string>
+    <string name="newchat_contact">Escribir a un contacto</string>
+    <string name="newchat_contact_sub">Elige a alguien de los contactos de tu radio.</string>
+    <string name="newchat_search">Buscar contactos</string>
+    <string name="newchat_none">Aún no hay contactos a los que escribir. Añade personas desde Nodos o escanea su código.</string>
+    <string name="newchat_scan">Escanear un código QR</string>
+    <string name="newchat_scan_sub">Un contacto, canal o comunidad que te enseñen.</string>
+    <string name="chats_new_chat">Nuevo chat</string>
     <plurals name="vm_restored_settings">
         <item quantity="one">Restaurado: %1$d ajuste</item>
         <item quantity="many">Restaurados: %1$d ajustes</item>

@@ -58,6 +58,9 @@ ICONS = [
     ("ic_push_pin", "push_pin", False),
     ("ic_star", "star", False),
     ("ic_star_filled", "star", False, "fill1"),
+    ("ic_notifications_off", "notifications_off", False),
+    ("ic_alt_route", "alt_route", False),
+    ("ic_add_comment", "add_comment", False),
     # Map
     ("ic_my_location", "my_location", False),
     ("ic_location_on", "location_on", False),

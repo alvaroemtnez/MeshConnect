@@ -1484,6 +1484,16 @@ S = {
 "ch_kind_public": ("Public channel", "Canal público", "Canal públic"),
 "ch_kind_hashtag": ("Hashtag channel", "Canal hashtag", "Canal hashtag"),
 "ch_kind_private": ("Private channel", "Canal privado", "Canal privat"),
+"newchat_title": ("New chat", "Nuevo chat", "Xat nou"),
+"newchat_people": ("People", "Personas", "Persones"),
+"newchat_channels": ("Channels", "Canales", "Canals"),
+"newchat_contact": ("Message a contact", "Escribir a un contacto", "Escriure a un contacte"),
+"newchat_contact_sub": ("Pick someone from your radio's contacts.", "Elige a alguien de los contactos de tu radio.", "Tria algú dels contactes de la teua ràdio."),
+"newchat_search": ("Search contacts", "Buscar contactos", "Buscar contactes"),
+"newchat_none": ("No contacts to message yet. Add people from Nodes, or scan their code.", "Aún no hay contactos a los que escribir. Añade personas desde Nodos o escanea su código.", "Encara no hi ha contactes a qui escriure. Afig persones des de Nodes o escaneja el seu codi."),
+"newchat_scan": ("Scan a QR code", "Escanear un código QR", "Escanejar un codi QR"),
+"newchat_scan_sub": ("A contact, channel or community someone shows you.", "Un contacto, canal o comunidad que te enseñen.", "Un contacte, canal o comunitat que et mostren."),
+"chats_new_chat": ("New chat", "Nuevo chat", "Xat nou"),
 }
 
 # key -> ((one, other) en, (one, other) es, (one, other) ca)
