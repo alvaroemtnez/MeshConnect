@@ -3,7 +3,7 @@
 <h1 align="center">MeshConnect</h1>
 
 <p align="center">
-  <a href="https://apps.obtainium.imranr.dev/redirect?r=obtainium://add/https://github.com/alvaroemtnez/MeshCore"><img src="https://raw.githubusercontent.com/ImranR98/Obtainium/main/assets/graphics/badge_obtainium.png" height="56" alt="Get it on Obtainium"></a>
+  <a href="https://apps.obtainium.imranr.dev/redirect?r=obtainium://add/https://github.com/alvaroemtnez/MeshConnect"><img src="https://raw.githubusercontent.com/ImranR98/Obtainium/main/assets/graphics/badge_obtainium.png" height="56" alt="Get it on Obtainium"></a>
 </p>
 
 Off-grid encrypted LoRa messaging for **MeshCore** radios, on Android. No servers, no accounts, no
@@ -20,7 +20,7 @@ Google Play Services, no analytics, no crash reporting.
 > Please report MeshConnect problems here, not upstream.
 
 - Source: <https://code.alvaroedo.io/alvaroemtnez/MeshConnect>, mirrored to
-  <https://github.com/alvaroemtnez/MeshCore>
+  <https://github.com/alvaroemtnez/MeshConnect>
 - Licence: [AGPL-3.0-only](LICENSE), as upstream
 - App id: `io.alvaroedo.meshconnect` — installs alongside MeshCore Hardened, not over it
 

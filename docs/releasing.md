@@ -54,20 +54,20 @@ In the repository: *Settings → Actions → Secrets*.
 | `KEYSTORE_PASSWORD` | the keystore password |
 | `KEY_ALIAS` | `meshconnect` |
 | `KEY_PASSWORD` | the same password again (PKCS12); optional, it defaults to the store's |
-| `GH_RELEASE_TOKEN` | a GitHub fine-grained token for `alvaroemtnez/MeshCore` only, with *Contents: read and write*. Unset, the GitHub release is skipped. |
+| `GH_RELEASE_TOKEN` | a GitHub fine-grained token for `alvaroemtnez/MeshConnect` only, with *Contents: read and write*. Unset, the GitHub release is skipped. |
 
 And under *Settings → Actions → Variables*:
 
 | Variable | Value |
 | --- | --- |
-| `GH_REPO` | `alvaroemtnez/MeshCore` |
+| `GH_REPO` | `alvaroemtnez/MeshConnect` |
 
 The Forgejo release itself uses the job's automatic token. Clear the base64 text from your
 clipboard and shell history after pasting it.
 
 ### 3. The GitHub mirror
 
-The mirror (`alvaroemtnez/MeshCore`) is a push mirror from Forgejo. The release job creates
+The mirror (`alvaroemtnez/MeshConnect`) is a push mirror from Forgejo. The release job creates
 the GitHub release through the API once the mirror has pushed the tag, so the mirror must be
 set to push tags (Forgejo's push mirrors do). Obtainium, the README's button, reads the GitHub
 releases.

@@ -12,7 +12,7 @@
 #   GH_RELEASE_TOKEN    GitHub fine-grained token, "Contents: read and write" on
 #                       the mirror repo only. Unset = skip the GitHub release.
 # Variables (repo → Settings → Actions → Variables):
-#   GH_REPO             owner/name of the GitHub mirror: alvaroemtnez/MeshCore
+#   GH_REPO             owner/name of the GitHub mirror: alvaroemtnez/MeshConnect
 name: release
 on:
   push:

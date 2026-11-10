@@ -9,7 +9,7 @@ by thatSFguy, forked at upstream commit `8f226db` (0.10.15, 2026-11-09).
 |---|---|
 | MeshConnect (origin) | `code.alvaroedo.io/alvaroemtnez/MeshConnect`, a Forgejo fork of the mirror below |
 | Upstream mirror | `code.alvaroedo.io/mirrors/meshcore-mobile-app` (pull mirror of upstream's GitHub repo) |
-| GitHub copy | `github.com/alvaroemtnez/MeshCore`, a GitHub fork of upstream, fed by a push mirror from Forgejo. Releases are created there by `.forgejo/workflows/release.yml` (`GH_REPO=alvaroemtnez/MeshCore`) |
+| GitHub copy | `github.com/alvaroemtnez/MeshConnect`, a GitHub fork of upstream, fed by a push mirror from Forgejo. Releases are created there by `.forgejo/workflows/release.yml` (`GH_REPO=alvaroemtnez/MeshConnect`) |
 
 Because the GitHub copy is a real GitHub fork of upstream, changes to `shared/` can go back to
 thatSFguy as pull requests from it.
