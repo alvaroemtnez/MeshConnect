@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
@@ -84,7 +86,12 @@ fun RepeaterIdentityPanel(vm: MeshCoreViewModel, keyHex: String, isAdmin: Boolea
     var widthBytes by remember(keyHex) { mutableStateOf<Int?>(null) }
     LaunchedEffect(keyHex) { widthBytes = vm.repeaterPathHashWidth(keyHex) }
 
-    Text(stringResource(R.string.id_title), style = MaterialTheme.typography.titleSmall)
+    // Two cards (2026-11-10): reading or making a key, then the irreversible part on its own.
+    Column(
+        Modifier.padding(top = 8.dp),
+        verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(12.dp),
+    ) {
+    PanelCard(stringResource(R.string.id_title), R.drawable.ic_key) {
     HintText(stringResource(R.string.id_intro))
     widthBytes?.let { bytes ->
         ExpandableHint(stringResource(R.string.id_named_by, bytesPerHop(bytes))) {
@@ -97,9 +104,16 @@ fun RepeaterIdentityPanel(vm: MeshCoreViewModel, keyHex: String, isAdmin: Boolea
         }
     }
 
-    ButtonFlowRow {
-        TextButton(enabled = !busy, onClick = { revealConfirm = true }) { Text(stringResource(R.string.id_read)) }
-        TextButton(
+    Spacer(Modifier.height(8.dp))
+    androidx.compose.foundation.layout.Row(
+        Modifier.height(androidx.compose.foundation.layout.IntrinsicSize.Min),
+        horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp),
+    ) {
+        androidx.compose.material3.OutlinedButton(enabled = !busy, onClick = { revealConfirm = true }, modifier = Modifier.weight(1f).fillMaxHeight()) {
+            Text(stringResource(R.string.id_read), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+        }
+        androidx.compose.material3.FilledTonalButton(
+            modifier = Modifier.weight(1f).fillMaxHeight(),
             enabled = !busy && widthBytes != null,
             onClick = {
                 val width = widthBytes
@@ -124,7 +138,7 @@ fun RepeaterIdentityPanel(vm: MeshCoreViewModel, keyHex: String, isAdmin: Boolea
                     }
                 }
             },
-        ) { Text(stringResource(R.string.id_generate)) }
+        ) { Text(stringResource(R.string.id_generate), textAlign = androidx.compose.ui.text.style.TextAlign.Center) }
     }
     if (busy) SectionSpinner(busyLabel)
     note?.let { HintText(it) }
@@ -138,12 +152,19 @@ fun RepeaterIdentityPanel(vm: MeshCoreViewModel, keyHex: String, isAdmin: Boolea
 
     revealed?.let { key ->
         Spacer(Modifier.height(8.dp))
-        Text(
-            key,
-            style = MaterialTheme.typography.bodySmall,
-            fontFamily = FontFamily.Monospace,
-            color = MaterialTheme.colorScheme.error,
-        )
+        androidx.compose.material3.Surface(
+            shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+            color = MaterialTheme.colorScheme.errorContainer,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text(
+                key,
+                style = MaterialTheme.typography.bodySmall,
+                fontFamily = FontFamily.Monospace,
+                color = MaterialTheme.colorScheme.onErrorContainer,
+                modifier = Modifier.padding(12.dp),
+            )
+        }
         HintText(
             stringResource(R.string.id_write_down),
         )
@@ -157,8 +178,9 @@ fun RepeaterIdentityPanel(vm: MeshCoreViewModel, keyHex: String, isAdmin: Boolea
         GeneratedKeySummary(outcome)
     }
 
-    Spacer(Modifier.height(16.dp))
-    Text(stringResource(R.string.id_replace_title), style = MaterialTheme.typography.titleSmall)
+    }
+
+    PanelCard(stringResource(R.string.id_replace_title), R.drawable.ic_warning) {
     FormField(
         value = newKey,
         onValueChange = { newKey = it; generated = null },
@@ -215,11 +237,17 @@ fun RepeaterIdentityPanel(vm: MeshCoreViewModel, keyHex: String, isAdmin: Boolea
             )
         }
     }
-    ButtonFlowRow {
-        TextButton(
-            enabled = !busy && IdentityKey.isValidHex(newKey) && !IdentityKey.isDegenerate(newKey),
-            onClick = { changeConfirm = true },
-        ) { Text(stringResource(R.string.id_replace_btn), color = MaterialTheme.colorScheme.error) }
+    Spacer(Modifier.height(8.dp))
+    androidx.compose.material3.Button(
+        enabled = !busy && IdentityKey.isValidHex(newKey) && !IdentityKey.isDegenerate(newKey),
+        onClick = { changeConfirm = true },
+        colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+            containerColor = MaterialTheme.colorScheme.error,
+            contentColor = MaterialTheme.colorScheme.onError,
+        ),
+        modifier = Modifier.fillMaxWidth(),
+    ) { Text(stringResource(R.string.id_replace_btn)) }
+    }
     }
 
     if (revealConfirm) {

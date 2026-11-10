@@ -14,6 +14,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
@@ -145,7 +147,9 @@ fun RepeaterRegionsPanel(vm: MeshCoreViewModel, keyHex: String, isAdmin: Boolean
         Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp),
+            .padding(horizontal = 16.dp)
+            .padding(top = 8.dp, bottom = 24.dp),
+        verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(12.dp),
     ) {
         ExpandableHint(
             stringResource(R.string.rr_intro),
@@ -155,29 +159,39 @@ fun RepeaterRegionsPanel(vm: MeshCoreViewModel, keyHex: String, isAdmin: Boolean
             )
         }
 
-        ButtonFlowRow {
-            TextButton(enabled = !loading, onClick = { refresh() }) { Text(stringResource(R.string.rr_fetch)) }
-            TextButton(
+        // Edits go to the node's RAM; Save writes them to its flash.
+        Row(horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)) {
+            androidx.compose.material3.OutlinedButton(enabled = !loading, onClick = { refresh() }, modifier = Modifier.weight(1f)) {
+                androidx.compose.material3.Icon(
+                    androidx.compose.ui.res.painterResource(R.drawable.ic_refresh), null,
+                    modifier = Modifier.size(18.dp),
+                )
+                Spacer(Modifier.width(6.dp))
+                Text(stringResource(R.string.rr_fetch))
+            }
+            androidx.compose.material3.FilledTonalButton(
                 enabled = !loading && isAdmin,
                 onClick = { run(Regions.save(), describe = ctx.getString(R.string.rr_saved)) },
+                modifier = Modifier.weight(1f),
             ) { Text(stringResource(R.string.rr_save)) }
         }
-        if (loading) SectionSpinner(stringResource(R.string.rs_asking))
-        note?.let { HintText(it) }
-
-        if (pendingEdits) {
-            Text(
-                stringResource(R.string.rr_unsaved),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.error,
-            )
+        if (loading || note != null || pendingEdits) {
+            Column {
+                if (loading) SectionSpinner(stringResource(R.string.rs_asking))
+                note?.let { HintText(it) }
+                if (pendingEdits) {
+                    Text(
+                        stringResource(R.string.rr_unsaved),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
+            }
         }
 
         // --- Untagged traffic -----------------------------------------------
         val parsed = tree
-        if (parsed != null) {
-            Spacer(Modifier.height(12.dp))
-            Text(stringResource(R.string.rr_untagged), style = MaterialTheme.typography.titleSmall)
+        if (parsed != null) PanelCard(stringResource(R.string.rr_untagged), R.drawable.ic_public) {
             HintText(stringResource(R.string.rr_untagged_hint))
             val current =
                 RegionAdmin.currentUntagged(parsed.wildcardFloodAllowed, hopLimit, limitSupported)
@@ -231,8 +245,7 @@ fun RepeaterRegionsPanel(vm: MeshCoreViewModel, keyHex: String, isAdmin: Boolean
         }
 
         // --- Default scope --------------------------------------------------
-        Spacer(Modifier.height(12.dp))
-        Text(stringResource(R.string.rr_default), style = MaterialTheme.typography.titleSmall)
+        PanelCard(stringResource(R.string.rr_default), R.drawable.ic_pin_drop) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 HintText(
@@ -261,20 +274,22 @@ fun RepeaterRegionsPanel(vm: MeshCoreViewModel, keyHex: String, isAdmin: Boolean
             }
         }
 
-        // --- Region tree ----------------------------------------------------
-        Spacer(Modifier.height(12.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                stringResource(R.string.backup_regions),
-                style = MaterialTheme.typography.titleSmall,
-                modifier = Modifier.weight(1f),
-            )
-            if (isAdmin && parsed != null) {
-                TextButton(enabled = !loading, onClick = { addUnder = Regions.GLOBAL_SELECTOR }) {
-                    Text(stringResource(R.string.rr_add))
-                }
-            }
         }
+
+        // --- Region tree ----------------------------------------------------
+        PanelCard(
+            stringResource(R.string.backup_regions),
+            R.drawable.ic_map,
+            action = if (isAdmin && parsed != null) {
+                {
+                    TextButton(enabled = !loading, onClick = { addUnder = Regions.GLOBAL_SELECTOR }) {
+                        Text(stringResource(R.string.rr_add))
+                    }
+                }
+            } else {
+                null
+            },
+        ) {
         if (parsed == null && rawReply != null) {
             HintText(
                 stringResource(R.string.rr_not_tree),
@@ -294,12 +309,24 @@ fun RepeaterRegionsPanel(vm: MeshCoreViewModel, keyHex: String, isAdmin: Boolean
         }
         for (entry in parsed?.regions.orEmpty()) {
             val tappable = isAdmin && entry.actionable && !loading
-            Column(
+            Row(
                 Modifier
                     .fillMaxWidth()
+                    .clip(androidx.compose.foundation.shape.RoundedCornerShape(12.dp))
                     .clickable(enabled = tappable) { actionsFor = entry }
-                    .padding(start = (16 * (entry.depth - 1)).dp, top = 6.dp, bottom = 6.dp),
+                    .padding(start = (4 + 20 * (entry.depth - 1)).dp, top = 8.dp, bottom = 8.dp, end = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
+                androidx.compose.material3.Icon(
+                    androidx.compose.ui.res.painterResource(
+                        if (entry.floodAllowed) R.drawable.ic_public else R.drawable.ic_block,
+                    ),
+                    null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(20.dp),
+                )
+                Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
                 Text(entry.name, fontFamily = FontFamily.Monospace)
                 HintText(
                     listOfNotNull(
@@ -312,17 +339,24 @@ fun RepeaterRegionsPanel(vm: MeshCoreViewModel, keyHex: String, isAdmin: Boolean
                     HintText(stringResource(R.string.rr_not_valid))
                 }
             }
+                if (tappable) {
+                    androidx.compose.material3.Icon(
+                        androidx.compose.ui.res.painterResource(R.drawable.ic_chevron_right),
+                        null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
         }
         if (parsed?.truncated == true) {
             HintText(
                 stringResource(R.string.rr_truncated),
             )
         }
+        }
         if (!isAdmin) {
-            Spacer(Modifier.height(12.dp))
             HintText(stringResource(R.string.rr_admin_only))
         }
-        Spacer(Modifier.height(24.dp))
     }
 
     // --- Dialogs -------------------------------------------------------------

@@ -136,8 +136,12 @@ CLI_VALUES = {
     "repeat": "on", "flood.max": "64", "rxdelay": "0", "txdelay": "0.5", "direct.txdelay": "0.3",
     "allow.read.only": "off", "multi.acks": "1", "radio.rxgain": "on", "dutycycle": "50%",
     "int.thresh": "14", "loop.detect": "minimal", "ver": "v1.16.0 (Build: 2026-10-01)",
-    "board": "RAK 4631",
+    "board": "RAK 4631", "flood.max.unscoped": "64",
 }
+
+
+# RegionMap::printChildRegions: one space per level, ` F` when flood is allowed, `^` home.
+REGION_TREE = "* F\n es F\n  es-vc F\n   valencia^ F\n   castello F\n  es-ct\n"
 
 
 def cli_reply(command: str) -> str:
@@ -149,6 +153,10 @@ def cli_reply(command: str) -> str:
         if len(parts) == 2:
             CLI_VALUES[parts[0]] = parts[1]
         return "OK"
+    if command == "region":
+        return REGION_TREE
+    if command == "region default":
+        return " default scope is valencia"
     if command == "clock":
         return time.strftime("%H:%M - %d/%m/%Y UTC", time.gmtime())
     if command == "ver":
