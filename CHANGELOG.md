@@ -49,6 +49,26 @@ First MeshConnect release, forked from MeshCore Hardened 0.10.15.
   below); swipe a chat right for read/unread and left to archive, with archived chats behind
   one row and kept in backups; a "via …" chip on received messages whose route is known,
   opening the route on a map.
+- **Selecting messages:** Select in the long-press menu puts a circle beside each message;
+  reply to one, copy or delete several. The long-press blur now shows reliably (it relied on
+  window blur, which Android switches off in battery saver and elsewhere), and a long-press on
+  a card in a message opens its menu.
+- **Sending your location** asks first: a spinner while the phone looks, then the place on a
+  map with Cancel and Send.
+- **Chats:** a lock, globe or tag on each channel; a long-press card with mark read or unread,
+  pin, archive, edit (the channel editor, or a contact's nickname), select and delete, and
+  selecting several chats to mark read, archive or delete. Deleting a channel removes it from
+  the radio. Mark unread works on every chat and shows a dot rather than a number.
+- **One node sheet** for the Nodes list and the map: quick actions, facts as tiles, and the
+  map's neighbour links for a repeater.
+- **Battery percentage** follows a Li-ion discharge curve instead of a straight line from 3.0
+  to 4.2 V, which read a half-empty cell as nearly 60% and warned too late.
+- **Start with the phone:** reconnects after a restart or an app update, without opening the
+  app. A setting, on by default.
+- **Switch to a saved radio in range:** when the current Bluetooth radio has been out of reach
+  for a while, the app connects to another saved one nearby (one at home, one at work).
+- **Status card** shows the radio's frequency and settings, with readings laid out as tiles.
+- **QR codes** load inside a single dialog; the 2×1 widget shows the heard repeater and its SNR.
 - **Radio battery alerts** at 20% and 10%, from the reading the app already takes, so they
   cost the phone nothing. Their own notification channel and a switch in Notifications.
 - **Node sign-in** opens over the current screen and leads to the node only once it accepts.
