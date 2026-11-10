@@ -170,7 +170,8 @@ class NeighbourMapWiringTest {
             map.contains("onMarkerTap = { selectedKey = it }") &&
                 meshMap.contains("queryRenderedFeatures(pt, LAYER_PINS)"),
         )
-        assertTrue("the map never shows the popup", map.contains("MapNodeSheet("))
+        assertTrue("the map never shows the popup", map.contains("ContactDetailSheet("))
+        assertTrue("the neighbour links left the map's sheet", map.contains("NeighbourSection("))
     }
 
     @Test

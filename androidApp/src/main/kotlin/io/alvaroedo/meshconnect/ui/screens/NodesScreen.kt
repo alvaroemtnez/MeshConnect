@@ -847,15 +847,31 @@ private fun PositionRows(
     selfLon: Double?,
     units: io.github.thatsfguy.meshcore.presentation.UnitSystem,
 ) {
-    if (!isPlausiblePosition(lat, lon)) return
+    val distance = nodeDistance(lat, lon, selfLat, selfLon, units) ?: return
     Spacer(Modifier.height(8.dp))
     DetailRow(stringResource(R.string.node_position), "%.5f, %.5f".format(java.util.Locale.ROOT, lat, lon))
-    val distance = if (isPlausiblePosition(selfLat, selfLon)) {
+    DetailRow(stringResource(R.string.node_distance), distance)
+}
+
+/**
+ * How far a node is, for every sheet that shows one — null when it has no real position.
+ * `isPlausiblePosition`, not a null check: a node a few microdegrees from Null Island is
+ * non-null, and two sheets once disagreed about it (2026-09-07).
+ */
+@Composable
+internal fun nodeDistance(
+    lat: Double?,
+    lon: Double?,
+    selfLat: Double?,
+    selfLon: Double?,
+    units: io.github.thatsfguy.meshcore.presentation.UnitSystem,
+): String? {
+    if (!isPlausiblePosition(lat, lon)) return null
+    return if (isPlausiblePosition(selfLat, selfLon)) {
         Units.distance(haversineMetres(selfLat!!, selfLon!!, lat!!, lon!!), units)
     } else {
         stringResource(R.string.node_unknown)
     }
-    DetailRow(stringResource(R.string.node_distance), distance)
 }
 
 /**
@@ -955,6 +971,8 @@ fun ContactDetailSheet(
     onFlashFirmware: () -> Unit = {},
     /** Ping (nodes that forward) or trace towards a person; upstream issue #5. */
     onTrace: (() -> Unit)? = null,
+    /** Extra section under the facts — the map puts a repeater's neighbour links here. */
+    extra: (@Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit)? = null,
 ) {
     var renameOpen by remember { mutableStateOf(false) }
     var routingOpen by remember { mutableStateOf(false) }
@@ -978,56 +996,124 @@ fun ContactDetailSheet(
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(
             Modifier
-                .padding(horizontal = 24.dp)
+                .padding(horizontal = 16.dp)
                 .padding(bottom = 32.dp)
                 .verticalScroll(rememberScrollState()),
         ) {
-            Text(
-                contact.name.ifBlank { stringResource(R.string.node_unnamed) },
-                style = MaterialTheme.typography.headlineSmall,
-            )
-            Text(
-                SharedText.kind(LocalContext.current, contact.type),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.primary,
-            )
-            Spacer(Modifier.height(12.dp))
-
+            // ---- Who: the same avatar as the list and the map pin.
             Row(verticalAlignment = Alignment.CenterVertically) {
+                NodeAvatar(
+                    seed = contact.keyHex,
+                    label = contact.name.ifBlank { contact.keyHex },
+                    type = contact.type,
+                    typeIcon = true,
+                    size = 56.dp,
+                )
+                Spacer(Modifier.size(16.dp))
                 Column(Modifier.weight(1f)) {
-                    Text(stringResource(R.string.add_contact_key), style = MaterialTheme.typography.labelLarge)
                     Text(
-                        contact.keyHex,
-                        style = MaterialTheme.typography.bodySmall,
-                        fontFamily = FontFamily.Monospace,
+                        contact.name.ifBlank { stringResource(R.string.node_unnamed) },
+                        style = MaterialTheme.typography.headlineSmall,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Text(
+                        SharedText.kind(LocalContext.current, contact.type) +
+                            // Our radio's clock, not the node's claim — see LastHeard.
+                            (if (LastHeard.seconds(contact) > 0) " · " + relativeAge(LastHeard.seconds(contact)) else ""),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                TextButton(onClick = {
-                    clipboard.setText(androidx.compose.ui.text.AnnotatedString(contact.keyHex))
-                }) { Text(stringResource(R.string.copy)) }
             }
 
-            // `isPlausiblePosition`, not a null check. These two rows
-            // used different rules and contradicted each other in the
-            // same sheet: a node a few microdegrees from Null Island is
-            // non-null, so Position printed "0.00000, 0.00000" while
-            // Distance directly underneath it said "Unknown". Reported
-            // from the Public channel, 2026-09-07.
-            PositionRows(contact.latitude, contact.longitude, self?.latitude, self?.longitude, units)
+            // ---- What you came to do, one tap each.
+            val isFav = contact.flags and Codes.CONTACT_FLAG_FAVORITE != 0
+            // One row of equal shares: wrapping left a lone button on a second line.
+            Row(Modifier.fillMaxWidth().padding(top = 16.dp)) {
+                // A room is where you read and post, so that comes first — but it is
+                // also a node someone configures, so its owner keeps a way in too.
+                if (contact.type == Codes.ADV_TYPE_CHAT) {
+                    QuickAction(R.drawable.ic_chat, stringResource(R.string.card_message), onClick = onOpenChat)
+                }
+                if (contact.type == Codes.ADV_TYPE_ROOM) {
+                    QuickAction(R.drawable.ic_forum, stringResource(R.string.node_qa_room), onClick = onOpenChat)
+                }
+                if (isAdminable) {
+                    QuickAction(R.drawable.ic_tune, stringResource(R.string.node_qa_manage), onClick = onOpenAdmin)
+                }
+                onTrace?.let { trace ->
+                    QuickAction(
+                        R.drawable.ic_route,
+                        stringResource(if (isAdminable) R.string.trace_ping else R.string.node_qa_trace),
+                        onClick = trace,
+                    )
+                }
+                QuickAction(R.drawable.ic_qr_code, stringResource(R.string.node_qa_share)) { shareQrOpen = true }
+                QuickAction(R.drawable.ic_sensors, stringResource(R.string.node_qa_telemetry)) { telemetryOpen = true }
+                QuickAction(R.drawable.ic_star, stringResource(R.string.node_qa_favourite), on = isFav) {
+                    vm.setFavourite(contact.keyHex, !isFav)
+                }
+            }
 
+            // ---- Facts, as tiles: two to a row where they are short.
+            Spacer(Modifier.height(12.dp))
+            InfoTile(
+                stringResource(R.string.add_contact_key),
+                contact.keyHex,
+                Modifier.fillMaxWidth(),
+                mono = true,
+                trailing = {
+                    IconButton(onClick = {
+                        clipboard.setText(androidx.compose.ui.text.AnnotatedString(contact.keyHex))
+                    }) { Icon(painterResource(R.drawable.ic_content_copy), stringResource(R.string.copy)) }
+                },
+            )
+            val pathInfo = PathCodec.decodePathLen(live?.pathLen ?: contact.pathLen)
+            // The contact's own record says how wide ITS hashes are; the device
+            // setting only applies to new paths.
+            val width = if (pathInfo.isFlood) hashWidth else pathInfo.hashWidth
+            val distance = nodeDistance(contact.latitude, contact.longitude, self?.latitude, self?.longitude, units)
+            val placed = distance != null
+            Spacer(Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                InfoTile(
+                    stringResource(R.string.node_hops_away),
+                    SharedText.pathHops(LocalContext.current, pathInfo.isFlood, pathInfo.hops),
+                    Modifier.weight(1f),
+                )
+                if (distance != null) {
+                    InfoTile(stringResource(R.string.node_distance), distance, Modifier.weight(1f))
+                } else if (width != null) {
+                    InfoTile(stringResource(R.string.node_hash_size), pluralStringResource(R.plurals.node_hash_bytes, width, width), Modifier.weight(1f))
+                }
+            }
+            if (placed) {
+                Spacer(Modifier.height(8.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    InfoTile(
+                        stringResource(R.string.node_position),
+                        "%.5f, %.5f".format(java.util.Locale.ROOT, contact.latitude, contact.longitude),
+                        Modifier.weight(1f),
+                        mono = true,
+                    )
+                    if (width != null) {
+                        InfoTile(stringResource(R.string.node_hash_size), pluralStringResource(R.plurals.node_hash_bytes, width, width), Modifier.weight(1f))
+                    }
+                }
+            }
             if (LastHeard.seconds(contact) > 0) {
-                DetailRow(
+                Spacer(Modifier.height(8.dp))
+                InfoTile(
                     stringResource(R.string.node_last_heard),
-                    relativeAge(LastHeard.seconds(contact)) + " · " +
-                        DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT)
-                            .format(Date(LastHeard.seconds(contact) * 1000)),
+                    DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT)
+                        .format(Date(LastHeard.seconds(contact) * 1000)),
+                    Modifier.fillMaxWidth(),
                 )
             }
-            // The node's own claim, shown ONLY when it disagrees with
-            // what we observed. It is not a second opinion about when we
-            // heard it — it is a fact about that node's clock, and the
-            // thing its owner would otherwise be chasing as a bug in
-            // every client they try.
+            // The node's own claim, shown ONLY when it disagrees with what we
+            // observed: a fact about that node's clock, which its owner would
+            // otherwise chase as a bug in every client they try.
             if (LastHeard.claimDisagrees(contact)) {
                 DetailRow(
                     stringResource(R.string.node_own_clock),
@@ -1037,131 +1123,68 @@ fun ContactDetailSheet(
                     ),
                 )
             }
-
-            // Path, mirroring what the radio actually holds for this
-            // contact rather than what we last asked for.
-            val pathInfo = PathCodec.decodePathLen(live?.pathLen ?: contact.pathLen)
-            DetailRow(
-                stringResource(R.string.node_hops_away),
-                SharedText.pathHops(LocalContext.current, pathInfo.isFlood, pathInfo.hops),
-            )
+            // Path, mirroring what the radio actually holds for this contact.
             live?.storedPath?.takeIf { it.isNotEmpty() }?.let { bytes ->
-                val known = vm.liveContacts.collectAsState().value
-                    .mapValues { (_, c) -> c.name }
+                val known = vm.liveContacts.collectAsState().value.mapValues { (_, c) -> c.name }
                 val hops = PathCodec.resolveHops(bytes, pathInfo.hashWidth, known)
-                Column(Modifier.padding(top = 8.dp)) {
-                    Text(stringResource(R.string.node_out_path), style = MaterialTheme.typography.labelLarge)
-                    for ((index, hop) in hops.withIndex()) {
+                SheetHeading(stringResource(R.string.node_out_path))
+                for ((index, hop) in hops.withIndex()) {
+                    Text(
+                        "${index + 1}. ${hop.label}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontFamily = if (hop.isResolved) null else FontFamily.Monospace,
+                        color = if (hop.isAmbiguous) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
+                    )
+                    // A two-byte hash is 16 bits: more than one node can own it, so
+                    // list the candidates rather than asserting one of them is the hop.
+                    if (hop.isAmbiguous) {
                         Text(
-                            "${index + 1}. ${hop.label}",
-                            style = MaterialTheme.typography.bodySmall,
-                            fontFamily = if (hop.isResolved) null else FontFamily.Monospace,
-                            color = if (hop.isAmbiguous) {
-                                MaterialTheme.colorScheme.error
-                            } else {
-                                MaterialTheme.colorScheme.onSurface
-                            },
+                            "   " + hop.candidates.joinToString(" / "),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
-                        // A two-byte hash is 16 bits: more than one node
-                        // can own it, so list the candidates rather than
-                        // asserting one of them is the hop.
-                        if (hop.isAmbiguous) {
-                            Text(
-                                "   " + hop.candidates.joinToString(" / "),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
                     }
                 }
             }
-            // The contact's own record says how wide ITS hashes are; the
-            // device setting only applies to new paths.
-            val width = if (pathInfo.isFlood) hashWidth else pathInfo.hashWidth
-            width?.let { DetailRow(stringResource(R.string.node_hash_size), pluralStringResource(R.plurals.node_hash_bytes, it, it)) }
 
-            Spacer(Modifier.height(16.dp))
+            extra?.invoke(this)
 
-            if (contact.type == Codes.ADV_TYPE_CHAT) {
-                TextButton(onClick = onOpenChat) { Text(stringResource(R.string.node_open_conversation)) }
+            // ---- Everything else, as a list.
+            SheetHeading(stringResource(R.string.node_more))
+            SheetActionRow(R.drawable.ic_route, stringResource(R.string.conv_routing)) { routingOpen = true }
+            SheetActionRow(R.drawable.ic_edit, stringResource(R.string.node_rename)) { renameOpen = true }
+            SheetActionRow(R.drawable.ic_policy, stringResource(R.string.node_permissions_row)) {
+                permissionsOpen = !permissionsOpen
             }
-            // A room is where you read and post, so that comes first —
-            // but it is also a node someone configures (and may run as
-            // a repeater too), so its owner keeps a direct way in.
-            if (contact.type == Codes.ADV_TYPE_ROOM) {
-                TextButton(onClick = onOpenChat) { Text(stringResource(R.string.node_open_room)) }
-            }
+            if (permissionsOpen) ContactPermissions(vm, contact)
+            // Recovery lives on the node, because this is where someone looks
+            // for it — and everything else that reaches a repeater goes through
+            // the mesh, which is what a node in update mode no longer has.
+            // Offered whether or not an address was recorded: "no address" is
+            // the case that most needs a way in. The address is the node's
+            // Bluetooth address, learned in update mode.
             if (isAdminable) {
-                TextButton(onClick = onOpenAdmin) { Text(stringResource(R.string.node_administer)) }
+                SheetActionRow(
+                    R.drawable.ic_update,
+                    stringResource(R.string.node_recover_row),
+                    detail = contact.otaAddress?.let { stringResource(R.string.node_bt_address) + " " + it },
+                ) { updateModeOpen = true }
             }
-            // Recovery lives here, on the node, because this is where
-            // someone looks for it — and because everything else that
-            // reaches a repeater goes through the mesh, which is the one
-            // thing a node in update mode no longer has.
-            //
-            // Offered whether or not an address was recorded: a node can
-            // enter update mode from a session this app never saw, and
-            // "no address stored" is the case that most needs a way in,
-            // not the case to withhold one from.
-            if (isAdminable) {
-                // Labelled for what it is. "Update-mode address" read as
-                // a statement about the node's current state; it is the
-                // node's Bluetooth address, learned in update mode and
-                // true whatever the node is doing now.
-                contact.otaAddress?.let { DetailRow(stringResource(R.string.node_bt_address), it) }
-                TextButton(onClick = { updateModeOpen = true }) {
-                    Text(stringResource(R.string.node_recover))
-                }
-            }
-            val isFav = contact.flags and Codes.CONTACT_FLAG_FAVORITE != 0
-            TextButton(onClick = {
-                vm.setFavourite(contact.keyHex, !isFav)
-                onDismiss()
-            }) { Text(stringResource(if (isFav) R.string.node_unfavourite else R.string.node_favourite)) }
-            TextButton(onClick = { permissionsOpen = !permissionsOpen }) {
-                Text(stringResource(if (permissionsOpen) R.string.node_hide_permissions else R.string.node_permissions))
-            }
-            if (permissionsOpen) {
-                ContactPermissions(vm, contact)
-            }
-            TextButton(onClick = { shareQrOpen = true }) { Text(stringResource(R.string.node_share_qr)) }
-            onTrace?.let { trace ->
-                TextButton(onClick = trace) {
-                    Text(stringResource(if (isAdminable) R.string.trace_ping else R.string.trace_route))
-                }
-            }
-            TextButton(onClick = { telemetryOpen = true }) { Text(stringResource(R.string.node_telemetry)) }
-            TextButton(onClick = { routingOpen = true }) { Text(stringResource(R.string.conv_routing)) }
-            TextButton(onClick = { renameOpen = true }) { Text(stringResource(R.string.node_rename)) }
-            // Blocking is local and key-based: it drops their direct
-            // messages before they are written down. Removing the
-            // contact does NOT block them — the radio would happily
-            // re-add them on the next advert.
-            //
-            // Offered only where there is something to block. It used to
-            // appear on every node, including repeaters, where it could
-            // not do the thing its name promised (relayed traffic
-            // carries the original sender's key) and did do one thing
-            // nobody wanted: swallow the node's console replies.
-            // ...but never hidden while a block is in force, or a
-            // repeater blocked by an older build would have no way back.
-            // Hiding the only "Unblock" is how a setting becomes
-            // permanent by accident.
+            // Blocking is local and key-based. Offered only where there is
+            // something to block (relayed traffic carries the original sender's
+            // key, so on a repeater it could only swallow its console replies) —
+            // but never hidden while a block is in force, or an older build's
+            // block would have no way back.
             val blocked = vm.isBlocked(contact.keyHex)
             if (BlockList.isBlockableNodeType(contact.type) || blocked) {
-                TextButton(onClick = { vm.setBlocked(contact.keyHex, !blocked) }) {
-                    Text(
-                        stringResource(if (blocked) R.string.node_unblock else R.string.node_block),
-                        color = if (blocked) {
-                            MaterialTheme.colorScheme.primary
-                        } else {
-                            MaterialTheme.colorScheme.error
-                        },
-                    )
-                }
+                SheetActionRow(
+                    R.drawable.ic_block,
+                    stringResource(if (blocked) R.string.node_unblock else R.string.node_block),
+                    destructive = !blocked,
+                ) { vm.setBlocked(contact.keyHex, !blocked) }
             }
-            TextButton(onClick = { removeConfirm = true }) {
-                Text(stringResource(R.string.node_remove), color = MaterialTheme.colorScheme.error)
+            SheetActionRow(R.drawable.ic_delete, stringResource(R.string.node_remove), destructive = true) {
+                removeConfirm = true
             }
         }
     }

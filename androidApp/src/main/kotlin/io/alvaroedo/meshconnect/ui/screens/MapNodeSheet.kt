@@ -43,8 +43,10 @@ import io.github.thatsfguy.meshcore.protocol.Codes
 import kotlinx.coroutines.launch
 
 /**
- * The map's node popup: what this pin is, and — for a repeater — the
- * links it hears, drawn on the map with their signal quality.
+ * The map's part of a node's sheet: for a repeater, the links it hears,
+ * drawn on the map with their signal quality. The rest of the sheet is the
+ * same one the Nodes list opens ([ContactDetailSheet]); this goes in its
+ * `extra` slot. They were two different sheets for one node until 2026-11-10.
  *
  * Tapping a pin used to do nothing at all. Every marker already carries
  * its name, so an info bubble repeating it would have been a control
@@ -56,16 +58,13 @@ import kotlinx.coroutines.launch
  * on screen may therefore be hours old, and says so rather than
  * implying it is live.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MapNodeSheet(
+fun NeighbourSection(
     vm: MeshCoreViewModel,
     contact: ContactEntity,
     links: List<NeighbourLink>,
     linksShown: Boolean,
     onToggleLinks: () -> Unit,
-    onOpenNode: () -> Unit,
-    onDismiss: () -> Unit,
 ) {
     val scope = rememberCoroutineScope()
     val records = vm.neighbourRecords.collectAsState().value
@@ -88,101 +87,65 @@ fun MapNodeSheet(
         collected = collectedLabel(records, System.currentTimeMillis()),
     )
 
-    ModalBottomSheet(onDismissRequest = onDismiss) {
-        Column(
-            Modifier
-                .padding(horizontal = 24.dp)
-                .padding(bottom = 32.dp)
-                .verticalScroll(rememberScrollState()),
-        ) {
+    // Only repeater firmware keeps a neighbour table — there is no 0x06 handler
+    // on a room server or a sensor at all — so offering the control there could
+    // only ever produce a timeout that blames the link.
+    if (offer == null) return
+    Column {
+        SheetHeading(stringResource(R.string.mapnode_neighbours))
+        offer.collected?.let {
             Text(
-                contact.name.ifBlank { stringResource(R.string.node_unnamed) },
-                style = MaterialTheme.typography.headlineSmall,
+                "${offer.storedCount} heard · $it",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            Text(
-                io.alvaroedo.meshconnect.ui.model.SharedText.kind(androidx.compose.ui.platform.LocalContext.current, contact.type),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.primary,
-            )
-            if (LastHeard.seconds(contact) > 0) {
-                Text(
-                    // Our radio's clock, not the node's claim — see
-                    // LastHeard.
-                    stringResource(R.string.mapnode_last_heard, relativeAge(LastHeard.seconds(contact))),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
+        }
 
-            if (offer == null) {
-                // Only repeater firmware keeps a neighbour table — there
-                // is no 0x06 handler on a room server or a sensor at all
-                // — so offering the control here could only ever produce
-                // a timeout that blames the link.
-                Spacer(Modifier.height(16.dp))
-                TextButton(onClick = onOpenNode) { Text(stringResource(R.string.mapnode_open)) }
-                return@Column
+        ButtonFlowRow {
+            if (offer.hasStored) {
+                TextButton(onClick = onToggleLinks) {
+                    Text(stringResource(if (linksShown) R.string.mapnode_hide_links else R.string.mapnode_show_links))
+                }
             }
-
-            Spacer(Modifier.height(16.dp))
-            Text(stringResource(R.string.mapnode_neighbours), style = MaterialTheme.typography.titleSmall)
-            offer.collected?.let {
-                Text(
-                    "${offer.storedCount} heard · $it",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-
-            ButtonFlowRow {
-                if (offer.hasStored) {
-                    TextButton(onClick = onToggleLinks) {
-                        Text(stringResource(if (linksShown) R.string.mapnode_hide_links else R.string.mapnode_show_links))
+            TextButton(
+                enabled = offer.canFetch && !busy,
+                onClick = {
+                    scope.launch {
+                        busy = true
+                        note = vm.collectNeighbours(contact.keyHex).message
+                        busy = false
                     }
-                }
-                TextButton(
-                    enabled = offer.canFetch && !busy,
-                    onClick = {
-                        scope.launch {
-                            busy = true
-                            note = vm.collectNeighbours(contact.keyHex).message
-                            busy = false
-                        }
-                    },
-                ) { Text(offer.fetchLabel) }
-            }
-            if (busy) {
-                SectionSpinner(stringResource(R.string.mapnode_asking))
-                // What the radio actually reported, rather than a
-                // spinner that reads the same at second 1 and second 60.
-                RequestProgressHint(vm, contact.keyHex)
-            }
-            HintText(offer.fetchHint)
-            note?.let { HintText(it) }
-
-            if (links.isNotEmpty()) {
-                Spacer(Modifier.height(8.dp))
-                for (link in links) NeighbourRow(link)
-                val undrawable = links.count { !it.isDrawable }
-                if (undrawable > 0) {
-                    HintText(stringResource(R.string.mapnode_undrawable, undrawable))
-                }
-                Spacer(Modifier.height(4.dp))
-                // The caveats belong behind the tap, once, at the point
-                // they matter (REBUILD-PLAYBOOK §6.3).
-                ExpandableHint(stringResource(R.string.mapnode_line_means)) {
-                    HintText(stringResource(R.string.mapnode_line_1))
-                    HintText(stringResource(R.string.mapnode_line_2))
-                    HintText(stringResource(R.string.mapnode_line_3))
-                }
-            }
-
-            Spacer(Modifier.height(8.dp))
-            TextButton(onClick = onOpenNode) { Text(stringResource(R.string.node_administer)) }
+                },
+            ) { Text(offer.fetchLabel) }
             if (offer.hasStored) {
                 TextButton(onClick = { vm.forgetNeighbours(contact.keyHex) }) {
                     Text(stringResource(R.string.mapnode_forget))
                 }
+            }
+        }
+        if (busy) {
+            SectionSpinner(stringResource(R.string.mapnode_asking))
+            // What the radio actually reported, rather than a spinner that
+            // reads the same at second 1 and second 60.
+            RequestProgressHint(vm, contact.keyHex)
+        }
+        HintText(offer.fetchHint)
+        note?.let { HintText(it) }
+
+        if (links.isNotEmpty()) {
+            Spacer(Modifier.height(8.dp))
+            for (link in links) NeighbourRow(link)
+            val undrawable = links.count { !it.isDrawable }
+            if (undrawable > 0) {
+                HintText(stringResource(R.string.mapnode_undrawable, undrawable))
+            }
+            Spacer(Modifier.height(4.dp))
+            // The caveats belong behind the tap, once, at the point they
+            // matter (REBUILD-PLAYBOOK §6.3).
+            ExpandableHint(stringResource(R.string.mapnode_line_means)) {
+                HintText(stringResource(R.string.mapnode_line_1))
+                HintText(stringResource(R.string.mapnode_line_2))
+                HintText(stringResource(R.string.mapnode_line_3))
             }
         }
     }

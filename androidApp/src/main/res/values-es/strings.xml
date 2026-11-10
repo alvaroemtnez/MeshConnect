@@ -305,6 +305,15 @@
     <string name="node_administer">Administrar este nodo</string>
     <string name="node_bt_address">Dirección Bluetooth</string>
     <string name="node_recover">Recuperar / firmware…</string>
+    <string name="node_qa_room">Sala</string>
+    <string name="node_qa_manage">Gestionar</string>
+    <string name="node_qa_trace">Trazar</string>
+    <string name="node_qa_share">Compartir</string>
+    <string name="node_qa_telemetry">Telemetría</string>
+    <string name="node_qa_favourite">Favorito</string>
+    <string name="node_more">Más</string>
+    <string name="node_permissions_row">Permisos de telemetría</string>
+    <string name="node_recover_row">Recuperar o actualizar el firmware</string>
     <string name="node_favourite">☆ Añadir a favoritos</string>
     <string name="node_unfavourite">★ Quitar de favoritos</string>
     <string name="node_permissions">Permisos…</string>

@@ -29,7 +29,9 @@ class HeardNodeSheetWiringTest {
 
     @Test
     fun `both sheets draw position and distance the same way`() {
-        // One helper, called by both — the two copies once disagreed.
-        assertEquals(2, Regex("""PositionRows\(""").findAll(s).count() - 1)
+        // One helper, called by both — the two copies once disagreed. The heard
+        // sheet reaches it through PositionRows, the contact sheet directly.
+        assertEquals(1, Regex("""PositionRows\(""").findAll(s).count() - 1)
+        assertEquals(2, Regex("""nodeDistance\(""").findAll(s).count() - 1)
     }
 }

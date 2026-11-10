@@ -308,6 +308,15 @@
     <string name="node_administer">Administer this node</string>
     <string name="node_bt_address">Bluetooth address</string>
     <string name="node_recover">Recover / firmware…</string>
+    <string name="node_qa_room">Room</string>
+    <string name="node_qa_manage">Manage</string>
+    <string name="node_qa_trace">Trace</string>
+    <string name="node_qa_share">Share</string>
+    <string name="node_qa_telemetry">Telemetry</string>
+    <string name="node_qa_favourite">Favourite</string>
+    <string name="node_more">More</string>
+    <string name="node_permissions_row">Telemetry permissions</string>
+    <string name="node_recover_row">Recover or update firmware</string>
     <string name="node_favourite">☆ Add favourite</string>
     <string name="node_unfavourite">★ Remove favourite</string>
     <string name="node_permissions">Permissions…</string>

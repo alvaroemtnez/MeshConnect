@@ -1,6 +1,7 @@
 package io.alvaroedo.meshconnect.ui.screens
 
 import io.alvaroedo.meshconnect.R
+import io.alvaroedo.meshconnect.storage.MessageRepository
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.layout.fillMaxSize
@@ -241,17 +242,33 @@ fun MapScreen(vm: MeshCoreViewModel, nav: NavController) {
         if (contact == null) {
             selectedKey = null
         } else {
-            MapNodeSheet(
+            // The same sheet the Nodes list opens, with the repeater's
+            // neighbour links — the map's own business — added under the facts.
+            ContactDetailSheet(
                 vm = vm,
                 contact = contact,
-                links = linksOf(key),
-                linksShown = linksFor == key,
-                onToggleLinks = { linksFor = if (linksFor == key) null else key },
-                onOpenNode = {
+                onDismiss = { selectedKey = null },
+                onOpenChat = {
+                    selectedKey = null
+                    nav.navigate(conversationRoute(MessageRepository.KIND_DM, key))
+                },
+                onOpenAdmin = {
                     selectedKey = null
                     openAdmin(key)
                 },
-                onDismiss = { selectedKey = null },
+                onTrace = {
+                    selectedKey = null
+                    nav.navigate(traceRoute(key))
+                },
+                extra = {
+                    NeighbourSection(
+                        vm = vm,
+                        contact = contact,
+                        links = linksOf(key),
+                        linksShown = linksFor == key,
+                        onToggleLinks = { linksFor = if (linksFor == key) null else key },
+                    )
+                },
             )
         }
     }

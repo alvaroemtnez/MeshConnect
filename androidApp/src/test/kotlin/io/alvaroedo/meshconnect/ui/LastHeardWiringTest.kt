@@ -56,7 +56,7 @@ class LastHeardWiringTest {
         // The positive control for the lint above: it would also pass if
         // the screens stopped showing an age at all.
         val nodes = File(screens, "NodesScreen.kt").readText()
-        val map = File(screens, "MapNodeSheet.kt").readText()
+        val map = File(screens, "MapScreen.kt").readText()
         assertTrue(
             "the node row no longer shows when it was heard",
             nodes.contains("relativeAge(LastHeard.seconds(c))"),
@@ -66,8 +66,9 @@ class LastHeardWiringTest {
             nodes.contains("relativeAge(LastHeard.seconds(contact))"),
         )
         assertTrue(
+            // The map opens the same sheet as the list (2026-11-10).
             "the map popup no longer shows when it was heard",
-            map.contains("relativeAge(LastHeard.seconds(contact))"),
+            map.contains("ContactDetailSheet("),
         )
     }
 
