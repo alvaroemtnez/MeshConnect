@@ -350,6 +350,8 @@
     <string name="set_add_node">Afegir / connectar una ràdio</string>
     <string name="set_disconnect">Desconnectar</string>
     <string name="set_auto_reconnect">Reconnectar en obrir l\'aplicació</string>
+    <string name="set_roam">Canviar a una ràdio guardada a l\'abast</string>
+    <string name="set_roam_hint">Si la ràdio Bluetooth actual fa una estona que no està a l\'abast, connecta amb una altra de les teues ràdios guardades que estiga a prop, com una a casa i una altra a la faena.</string>
     <string name="set_start_at_boot">Iniciar amb el telèfon</string>
     <string name="set_start_at_boot_hint">Torna a connectar amb la teua ràdio després de reiniciar el telèfon o actualitzar l\'aplicació, perquè arriben missatges sense obrir-la.</string>
     <string name="set_tcp">TCP (sense xifrar)</string>

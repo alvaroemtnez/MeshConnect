@@ -440,6 +440,8 @@ S = {
 "set_add_node": ('Add / connect a radio', 'Añadir / conectar una radio', 'Afegir / connectar una ràdio'),
 "set_disconnect": ('Disconnect', 'Desconectar', 'Desconnectar'),
 "set_auto_reconnect": ('Reconnect when the app starts', 'Reconectar al abrir la app', "Reconnectar en obrir l'aplicació"),
+"set_roam": ("Switch to a saved radio in range", "Cambiar a una radio guardada al alcance", "Canviar a una ràdio guardada a l'abast"),
+"set_roam_hint": ("When the current Bluetooth radio has been out of reach for a while, connect to another of your saved radios that is nearby, such as one at home and one at work.", "Si la radio Bluetooth actual lleva un rato fuera de alcance, conecta con otra de tus radios guardadas que esté cerca, como una en casa y otra en el trabajo.", "Si la ràdio Bluetooth actual fa una estona que no està a l'abast, connecta amb una altra de les teues ràdios guardades que estiga a prop, com una a casa i una altra a la faena."),
 "set_start_at_boot": ("Start with the phone", "Iniciar con el teléfono", "Iniciar amb el telèfon"),
 "set_start_at_boot_hint": ("Reconnects to your radio after the phone restarts or the app updates, so messages arrive without opening the app.", "Vuelve a conectar con tu radio tras reiniciar el teléfono o actualizar la app, para que lleguen mensajes sin abrirla.", "Torna a connectar amb la teua ràdio després de reiniciar el telèfon o actualitzar l'aplicació, perquè arriben missatges sense obrir-la."),
 "set_tcp": ('TCP (unencrypted)', 'TCP (sin cifrar)', 'TCP (sense xifrar)'),

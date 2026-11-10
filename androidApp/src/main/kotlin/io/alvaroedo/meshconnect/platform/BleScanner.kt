@@ -78,4 +78,42 @@ object BleScanner {
         scanner.startScan(null, settings, callback)
         awaitClose { runCatching { scanner.stopScan(callback) } }
     }
+
+    /**
+     * Listen for [timeoutMs] for the given radios only, returning address → RSSI of those
+     * heard. Filtered by address, which Android keeps running with the screen off (an
+     * unfiltered scan is paused then) — this runs from the service, usually in a pocket.
+     * Empty without Bluetooth or without BLUETOOTH_SCAN.
+     */
+    @SuppressLint("MissingPermission")
+    suspend fun listenFor(context: Context, addresses: Collection<String>, timeoutMs: Long): Map<String, Int> {
+        if (addresses.isEmpty()) return emptyMap()
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S &&
+            context.checkSelfPermission(android.Manifest.permission.BLUETOOTH_SCAN) !=
+            android.content.pm.PackageManager.PERMISSION_GRANTED
+        ) return emptyMap()
+        val mgr = context.getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager
+        val scanner = mgr?.adapter?.takeIf { it.isEnabled }?.bluetoothLeScanner ?: return emptyMap()
+        val heard = java.util.concurrent.ConcurrentHashMap<String, Int>()
+        val callback = object : ScanCallback() {
+            override fun onScanResult(callbackType: Int, result: ScanResult) {
+                result.device?.address?.let { heard[it.uppercase()] = result.rssi }
+            }
+            override fun onBatchScanResults(results: MutableList<ScanResult>) {
+                results.forEach { onScanResult(0, it) }
+            }
+        }
+        val filters = addresses.mapNotNull { a ->
+            runCatching { android.bluetooth.le.ScanFilter.Builder().setDeviceAddress(a.uppercase()).build() }.getOrNull()
+        }
+        if (filters.isEmpty()) return emptyMap()
+        val settings = ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_BALANCED).build()
+        if (runCatching { scanner.startScan(filters, settings, callback) }.isFailure) return emptyMap()
+        try {
+            kotlinx.coroutines.delay(timeoutMs)
+        } finally {
+            runCatching { scanner.stopScan(callback) }
+        }
+        return heard.toMap()
+    }
 }

@@ -105,6 +105,12 @@ internal fun ConnectionSection(vm: MeshCoreViewModel, onAddNode: () -> Unit) {
         autoReconnect = it
         vm.prefs.autoReconnect = it
     }
+    var roam by remember { mutableStateOf(vm.prefs.roamSavedRadios) }
+    SettingRow(stringResource(R.string.set_roam), roam) {
+        roam = it
+        vm.prefs.roamSavedRadios = it
+    }
+    HintText(stringResource(R.string.set_roam_hint))
     var startAtBoot by remember { mutableStateOf(vm.prefs.startAtBoot) }
     SettingRow(stringResource(R.string.set_start_at_boot), startAtBoot) {
         startAtBoot = it

@@ -250,6 +250,46 @@ class MeshCoreService : Service() {
             diagnostics.log("Service", "Auto-reconnecting to remembered ${memory.kind}")
             connect(memory)
         }
+        startRoaming()
+    }
+
+    /**
+     * Move to another saved Bluetooth radio when the current one stays unreachable
+     * (RadioRoaming): one at home, one at work, and the app follows you between them.
+     */
+    private fun startRoaming() {
+        scope.launch {
+            var unreachableSince: Long? = null
+            while (true) {
+                kotlinx.coroutines.delay(RadioRoaming.CHECK_EVERY_MS)
+                val now = System.currentTimeMillis()
+                val current = currentMemory
+                val ready = engine.state.value == EngineState.Ready
+                // The clock runs only while a radio is wanted and not there; a deliberate
+                // disconnect (no supervisor) is not "unreachable".
+                unreachableSince = if (ready || supervisor == null) null else unreachableSince ?: now
+                if (!RadioRoaming.shouldLook(
+                        enabled = prefs.roamSavedRadios,
+                        current = current,
+                        ready = ready,
+                        busy = _firmwareUpdateRunning.value,
+                        unreachableSinceMs = unreachableSince,
+                        nowMs = now,
+                    )
+                ) continue
+                val candidates = RadioRoaming.candidates(prefs.savedNodes(), current)
+                if (candidates.isEmpty()) continue
+                val heard = io.alvaroedo.meshconnect.platform.BleScanner.listenFor(
+                    this@MeshCoreService, candidates.map { it.address }, RadioRoaming.LISTEN_MS,
+                )
+                // Re-check: the current radio may have come back, or the user acted, while listening.
+                if (engine.state.value == EngineState.Ready || currentMemory != current || supervisor == null) continue
+                val next = RadioRoaming.pick(candidates, heard) ?: continue
+                diagnostics.log("Service", "Current radio unreachable; moving to saved radio ${next.name ?: "(unnamed)"}")
+                unreachableSince = null
+                kotlinx.coroutines.withContext(Dispatchers.Main) { connect(next) }
+            }
+        }
     }
 
     /**

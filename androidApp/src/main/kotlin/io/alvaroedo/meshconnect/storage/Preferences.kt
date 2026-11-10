@@ -49,6 +49,11 @@ class Preferences(context: Context) {
         get() = prefs.getBoolean("auto_reconnect", true)
         set(v) { prefs.edit().putBoolean("auto_reconnect", v).apply() }
 
+    /** Move to another saved Bluetooth radio when the current one is out of reach (RadioRoaming). */
+    var roamSavedRadios: Boolean
+        get() = prefs.getBoolean("roam_saved_radios", true)
+        set(v) { prefs.edit().putBoolean("roam_saved_radios", v).apply() }
+
     /** Start the radio service when the phone boots (BootReceiver). On by default. */
     var startAtBoot: Boolean
         get() = prefs.getBoolean("start_at_boot", true)

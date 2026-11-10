@@ -353,6 +353,8 @@
     <string name="set_add_node">Add / connect a radio</string>
     <string name="set_disconnect">Disconnect</string>
     <string name="set_auto_reconnect">Reconnect when the app starts</string>
+    <string name="set_roam">Switch to a saved radio in range</string>
+    <string name="set_roam_hint">When the current Bluetooth radio has been out of reach for a while, connect to another of your saved radios that is nearby, such as one at home and one at work.</string>
     <string name="set_start_at_boot">Start with the phone</string>
     <string name="set_start_at_boot_hint">Reconnects to your radio after the phone restarts or the app updates, so messages arrive without opening the app.</string>
     <string name="set_tcp">TCP (unencrypted)</string>
