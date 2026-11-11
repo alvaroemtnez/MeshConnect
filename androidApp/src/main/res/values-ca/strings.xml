@@ -975,8 +975,6 @@
     <string name="rsf_lat">Latitud</string>
     <string name="rsf_lon">Longitud</string>
     <string name="rsf_adverts">Anuncis</string>
-    <string name="rsf_advert_sent">Anunci enviat</string>
-    <string name="rsf_advert_now">Anunciar ara</string>
     <string name="rsf_zero_hop">Zero salts (min)</string>
     <string name="rsf_flood_hours">Inundació (hores)</string>
     <string name="rsf_forwarding">Reenviament de paquets</string>
@@ -1002,7 +1000,17 @@
     <string name="rsf_m_clock_sync">Sincronitzar rellotge</string>
     <string name="rsf_m_version">Versió</string>
     <string name="rsf_m_board">Placa</string>
-    <string name="rsf_m_acl">ACL</string>
+    <string name="rsf_m_acl">Llista d\'accés</string>
+    <string name="rsf_m_ask">Preguntar al node</string>
+    <string name="rsf_m_clock_log">Rellotge i registre</string>
+    <string name="rsf_m_danger">Reiniciar i restablir</string>
+    <string name="rsf_m_danger_hint">Cada una demana confirmació abans.</string>
+    <string name="rsf_announce">Anunciar ara</string>
+    <string name="rsf_announce_hint">A prop arriba a les ràdios a l\'abast directe del node; tota la malla s\'inunda a través dels repetidors.</string>
+    <string name="rsf_announce_near_sent">Anunci proper enviat</string>
+    <string name="rsf_announce_mesh_sent">Anunci enviat a tota la malla</string>
+    <string name="rsf_announce_flooded">El firmware d\'aquest node no té anunci proper, així que l\'ha enviat a tota la malla.</string>
+    <string name="rsf_announce_refused">El node ho ha rebutjat: %1$s</string>
     <string name="rsf_m_log_start">Iniciar registre</string>
     <string name="rsf_m_log_stop">Parar registre</string>
     <string name="rsf_m_reboot">Reiniciar</string>

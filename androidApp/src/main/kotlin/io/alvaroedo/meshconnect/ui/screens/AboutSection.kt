@@ -289,6 +289,8 @@ private val CHANGELOG: List<Pair<String, List<String>>> = listOf(
         "Widgets redone: every size from 2×1 to 4×4 uses its space, with the latest message and nearby repeaters sharing it.",
         "Bigger chat and node rows, with two initials for contacts.",
         "New QR scanner: rounded frame, prompt in a bubble, still reads light-on-dark codes.",
+        "Repeater settings with pickers, a map picker, clearer announce and maintenance buttons.",
+        "Repeater sign-in follows your radio when you switch companions.",
         "Swiping a chat to read or unread toggles once, every time.",
         "Popup menus share the rounded long-press look; New chat has a new icon.",
         "A larger logo on the About page.",

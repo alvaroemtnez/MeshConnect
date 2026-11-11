@@ -1,6 +1,7 @@
 package io.alvaroedo.meshconnect.ui.screens
 
 import io.alvaroedo.meshconnect.R
+import io.alvaroedo.meshconnect.ui.model.RemoteAdvert
 import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.CircularProgressIndicator
@@ -278,46 +279,78 @@ fun RemoteSettingsForm(
             },
         ) {
             HintText(stringResource(R.string.radio_must_match))
+            // Laid out as Settings → Radio is for the radio in your hand: the values as
+            // pickers where only a fixed set is valid (RadioChoices), then where else they
+            // can come from. Saved with the card's Save, as before.
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                SettingsTextField(
+                    stringResource(R.string.radio_freq), values[CliFormFields.RADIO_FREQ].orEmpty(), Modifier.weight(1f),
+                ) { edit(CliFormFields.RADIO_FREQ, it) }
+                Spacer(Modifier.width(8.dp))
+                val bwHz = RadioUnits.khzTextToHz(values[CliFormFields.RADIO_BW].orEmpty())
+                DropdownField(
+                    label = stringResource(R.string.radio_bw),
+                    value = bwHz,
+                    options = io.alvaroedo.meshconnect.ui.model.RadioChoices.bandwidths(bwHz)
+                        .map { it to RadioUnits.hzToKhzText(it) },
+                    modifier = Modifier.weight(1f),
+                    enabled = isAdmin,
+                ) { edit(CliFormFields.RADIO_BW, RadioUnits.hzToKhzText(it!!)) }
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                val sf = values[CliFormFields.RADIO_SF]?.trim()?.toIntOrNull()
+                DropdownField(
+                    label = stringResource(R.string.radio_sf),
+                    value = sf,
+                    options = io.alvaroedo.meshconnect.ui.model.RadioChoices.spreadingFactors(sf).map { it to "SF$it" },
+                    modifier = Modifier.weight(1f),
+                    enabled = isAdmin,
+                ) { edit(CliFormFields.RADIO_SF, it.toString()) }
+                Spacer(Modifier.width(8.dp))
+                val cr = values[CliFormFields.RADIO_CR]?.trim()?.toIntOrNull()
+                DropdownField(
+                    label = stringResource(R.string.radio_cr),
+                    value = cr,
+                    options = io.alvaroedo.meshconnect.ui.model.RadioChoices.codingRates(cr)
+                        .map { it to io.alvaroedo.meshconnect.ui.model.RadioChoices.codingRateLabel(it) },
+                    modifier = Modifier.weight(1f),
+                    enabled = isAdmin,
+                ) { edit(CliFormFields.RADIO_CR, it.toString()) }
+            }
             if (isAdmin) {
-                ButtonFlowRow {
-                    TextButton(
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    androidx.compose.material3.FilledTonalButton(
                         enabled = isReady,
                         onClick = { presetSheet = true },
-                    ) { Text(stringResource(R.string.setup_pick_preset)) }
-                    TextButton(
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Text(
+                            stringResource(R.string.setup_pick_preset),
+                            maxLines = 1,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                        )
+                    }
+                    Spacer(Modifier.width(8.dp))
+                    androidx.compose.material3.FilledTonalIconButton(
                         enabled = isReady,
                         onClick = { scanLauncher.launch(ctx.getString(R.string.radio_scan_prompt)) },
-                    ) { Text(stringResource(R.string.radio_scan)) }
+                    ) {
+                        androidx.compose.material3.Icon(
+                            androidx.compose.ui.res.painterResource(R.drawable.ic_qr_code_scanner),
+                            stringResource(R.string.radio_scan),
+                        )
+                    }
                 }
             }
-            Row {
-                SettingsTextField(
-                    stringResource(R.string.radio_freq), values[CliFormFields.RADIO_FREQ].orEmpty(), Modifier.weight(1.2f),
-                ) { edit(CliFormFields.RADIO_FREQ, it) }
-                Spacer(Modifier.width(6.dp))
-                SettingsTextField(stringResource(R.string.radio_bw), values[CliFormFields.RADIO_BW].orEmpty(), Modifier.weight(1f)) {
-                    edit(CliFormFields.RADIO_BW, it)
-                }
-            }
-            Row {
-                SettingsTextField("SF", values[CliFormFields.RADIO_SF].orEmpty(), Modifier.weight(1f)) {
-                    edit(CliFormFields.RADIO_SF, it)
-                }
-                Spacer(Modifier.width(6.dp))
-                SettingsTextField("CR", values[CliFormFields.RADIO_CR].orEmpty(), Modifier.weight(1f)) {
-                    edit(CliFormFields.RADIO_CR, it)
-                }
-                Spacer(Modifier.width(6.dp))
-                SettingsTextField(stringResource(R.string.rsf_tx), values[CliIds.TX].orEmpty(), Modifier.weight(1f)) {
-                    edit(CliIds.TX, it)
-                }
+            SheetHeading(stringResource(R.string.radio_power_heading), Modifier.padding(top = 4.dp))
+            SettingsTextField(stringResource(R.string.rsf_tx), values[CliIds.TX].orEmpty()) {
+                edit(CliIds.TX, it)
             }
 
             // Applies on tap rather than on Save, like the switches: the
             // chips ARE the committed value, and a chip that shows a
             // selection the node has not been told about is a lie.
-            Spacer(Modifier.height(8.dp))
-            Text(stringResource(R.string.pol_hash_width), style = MaterialTheme.typography.labelLarge)
+            SheetHeading(stringResource(R.string.pol_hash_width))
             HintText(stringResource(R.string.rsf_hash_hint))
             // Blank until the node answers `get path.hash.mode` — the
             // width is mesh truth and guessing a default would show a
@@ -358,6 +391,32 @@ fun RemoteSettingsForm(
             send = ::send,
             clearDirty = { listOf(CliIds.LAT, CliIds.LON).forEach { dirty[it] = false } },
         ) {
+            var pickPosition by remember { mutableStateOf(false) }
+            if (pickPosition) {
+                PositionPickerDialog(
+                    vm = vm,
+                    initialLat = values[CliIds.LAT]?.trim()?.toDoubleOrNull() ?: 0.0,
+                    initialLon = values[CliIds.LON]?.trim()?.toDoubleOrNull() ?: 0.0,
+                    onPick = { la, lo ->
+                        edit(CliIds.LAT, "%.5f".format(java.util.Locale.ROOT, la))
+                        edit(CliIds.LON, "%.5f".format(java.util.Locale.ROOT, lo))
+                        pickPosition = false
+                    },
+                    onDismiss = { pickPosition = false },
+                )
+            }
+            // As Settings → Identity: picking fills the two fields; Save sends them.
+            if (isAdmin) {
+                TextButton(onClick = { pickPosition = true }) {
+                    androidx.compose.material3.Icon(
+                        androidx.compose.ui.res.painterResource(R.drawable.ic_add_location),
+                        null,
+                        modifier = Modifier.size(18.dp),
+                    )
+                    Spacer(Modifier.width(6.dp))
+                    Text(stringResource(R.string.set_pick_on_map))
+                }
+            }
             Row {
                 SettingsTextField(stringResource(R.string.rsf_lat), values[CliIds.LAT].orEmpty(), Modifier.weight(1f)) {
                     edit(CliIds.LAT, it)
@@ -395,14 +454,6 @@ fun RemoteSettingsForm(
                     CliIds.FLOOD_ADVERT_INTERVAL,
                 ).forEach { dirty[it] = false }
             },
-            extraActions = { setStatus ->
-                TextButton(onClick = {
-                    scope.launch {
-                        vm.cliQuery(keyHex, CliIds.ADVERT)
-                        setStatus(ctx.getString(R.string.rsf_advert_sent))
-                    }
-                }) { Text(stringResource(R.string.rsf_advert_now)) }
-            },
         ) {
             Row {
                 SettingsTextField(
@@ -412,6 +463,57 @@ fun RemoteSettingsForm(
                 SettingsTextField(
                     stringResource(R.string.rsf_flood_hours), values[CliIds.FLOOD_ADVERT_INTERVAL].orEmpty(), Modifier.weight(1f),
                 ) { edit(CliIds.FLOOD_ADVERT_INTERVAL, it) }
+            }
+            if (isAdmin) {
+                // Announce, as for the radio in your hand (Settings → Identity), and the
+                // node's own reply says which advert went out (RemoteAdvert).
+                SheetHeading(stringResource(R.string.rsf_announce), Modifier.padding(top = 4.dp))
+                HintText(stringResource(R.string.rsf_announce_hint))
+                var announceStatus by remember { mutableStateOf<String?>(null) }
+                var announcing by remember { mutableStateOf(false) }
+                fun announce(nearby: Boolean) {
+                    scope.launch {
+                        announcing = true
+                        announceStatus = null
+                        val reply = vm.cliQuery(keyHex, RemoteAdvert.command(nearby))
+                        announceStatus = when (RemoteAdvert.outcome(nearby, reply)) {
+                            RemoteAdvert.Outcome.Nearby -> ctx.getString(R.string.rsf_announce_near_sent)
+                            RemoteAdvert.Outcome.Mesh -> ctx.getString(R.string.rsf_announce_mesh_sent)
+                            RemoteAdvert.Outcome.MeshInsteadOfNearby -> ctx.getString(R.string.rsf_announce_flooded)
+                            RemoteAdvert.Outcome.NoAnswer -> ctx.getString(R.string.clock_no_answer)
+                            RemoteAdvert.Outcome.Refused -> ctx.getString(R.string.rsf_announce_refused, reply.orEmpty().trim())
+                        }
+                        announcing = false
+                    }
+                }
+                Row(horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)) {
+                    androidx.compose.material3.FilledTonalButton(
+                        enabled = isReady && !announcing,
+                        onClick = { announce(nearby = true) },
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        androidx.compose.material3.Icon(
+                            androidx.compose.ui.res.painterResource(R.drawable.ic_sensors), null, modifier = Modifier.size(18.dp),
+                        )
+                        Spacer(Modifier.width(6.dp))
+                        Text(stringResource(R.string.set_announce_near))
+                    }
+                    androidx.compose.material3.FilledTonalButton(
+                        enabled = isReady && !announcing,
+                        onClick = { announce(nearby = false) },
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        androidx.compose.material3.Icon(
+                            androidx.compose.ui.res.painterResource(R.drawable.ic_campaign), null, modifier = Modifier.size(18.dp),
+                        )
+                        Spacer(Modifier.width(6.dp))
+                        Text(stringResource(R.string.set_announce_mesh))
+                    }
+                }
+                if (announcing) SectionSpinner(stringResource(R.string.id_talking))
+                announceStatus?.let {
+                    Text(it, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                }
             }
         }
 
@@ -605,32 +707,35 @@ fun RemoteSettingsForm(
 
         CardSection(stringResource(R.string.rsf_maintenance), stringResource(R.string.rsf_maintenance_sub), R.drawable.ic_build) {
             HintText(stringResource(R.string.rsf_console_hint))
+            fun run(command: String) { scope.launch { vm.cliQuery(keyHex, command) } }
+            SheetHeading(stringResource(R.string.rsf_m_ask), Modifier.padding(top = 4.dp))
             ButtonFlowRow {
-                for ((label, command) in buildList {
-                    add(stringResource(R.string.rsf_m_clock) to CliIds.CLOCK)
-                    add(stringResource(R.string.rsf_m_clock_sync) to "clock sync")
-                    add(stringResource(R.string.rsf_m_version) to CliIds.VER)
-                    add(stringResource(R.string.rsf_m_board) to CliIds.BOARD)
-                    if (role == NodeRole.Repeater) add(stringResource(R.string.rs_neighbours) to CliIds.NEIGHBORS)
-                    add(stringResource(R.string.rsf_m_acl) to "get acl")
-                    add(stringResource(R.string.rsf_m_log_start) to "log start")
-                    add(stringResource(R.string.rsf_m_log_stop) to "log stop")
-                }) {
-                    TextButton(onClick = { scope.launch { vm.cliQuery(keyHex, command) } }) {
-                        Text(label)
-                    }
+                MaintenanceButton(R.drawable.ic_schedule, stringResource(R.string.rsf_m_clock)) { run(CliIds.CLOCK) }
+                MaintenanceButton(R.drawable.ic_info, stringResource(R.string.rsf_m_version)) { run(CliIds.VER) }
+                MaintenanceButton(R.drawable.ic_settings, stringResource(R.string.rsf_m_board)) { run(CliIds.BOARD) }
+                if (role == NodeRole.Repeater) {
+                    MaintenanceButton(R.drawable.ic_hub, stringResource(R.string.rs_neighbours)) { run(CliIds.NEIGHBORS) }
                 }
+                MaintenanceButton(R.drawable.ic_shield, stringResource(R.string.rsf_m_acl)) { run("get acl") }
             }
-            if (isAdmin) ButtonFlowRow {
-                for ((label, command) in listOf(
-                    stringResource(R.string.rsf_m_reboot) to CliIds.REBOOT,
-                    stringResource(R.string.rsf_m_clear_stats) to "clear stats",
-                    stringResource(R.string.rsf_m_log_erase) to "log erase",
-                    stringResource(R.string.rsf_m_factory) to CliIds.ERASE,
-                    stringResource(R.string.rsf_m_ota) to "start ota",
-                )) {
-                    TextButton(onClick = { confirmAction = label to command }) {
-                        Text(label, color = MaterialTheme.colorScheme.error)
+            if (isAdmin) {
+                SheetHeading(stringResource(R.string.rsf_m_clock_log))
+                ButtonFlowRow {
+                    MaintenanceButton(R.drawable.ic_update, stringResource(R.string.rsf_m_clock_sync)) { run("clock sync") }
+                    MaintenanceButton(R.drawable.ic_history, stringResource(R.string.rsf_m_log_start)) { run("log start") }
+                    MaintenanceButton(R.drawable.ic_close, stringResource(R.string.rsf_m_log_stop)) { run("log stop") }
+                }
+                SheetHeading(stringResource(R.string.rsf_m_danger))
+                HintText(stringResource(R.string.rsf_m_danger_hint))
+                ButtonFlowRow {
+                    for ((icon, label, command) in listOf(
+                        Triple(R.drawable.ic_restart, stringResource(R.string.rsf_m_reboot), CliIds.REBOOT),
+                        Triple(R.drawable.ic_delete_sweep, stringResource(R.string.rsf_m_clear_stats), "clear stats"),
+                        Triple(R.drawable.ic_delete, stringResource(R.string.rsf_m_log_erase), "log erase"),
+                        Triple(R.drawable.ic_bluetooth, stringResource(R.string.rsf_m_ota), "start ota"),
+                        Triple(R.drawable.ic_warning, stringResource(R.string.rsf_m_factory), CliIds.ERASE),
+                    )) {
+                        MaintenanceButton(icon, label, destructive = true) { confirmAction = label to command }
                     }
                 }
             }
@@ -938,6 +1043,35 @@ fun RemoteSettingsForm(
  * Settings tab, with the CLI fetch wired to the expand gesture and a
  * Save row for the dirty fields.
  */
+/** A maintenance command: tonal, or outlined in the error colour when it changes the node. */
+@Composable
+private fun MaintenanceButton(
+    @androidx.annotation.DrawableRes icon: Int,
+    label: String,
+    destructive: Boolean = false,
+    onClick: () -> Unit,
+) {
+    val content: @Composable androidx.compose.foundation.layout.RowScope.() -> Unit = {
+        androidx.compose.material3.Icon(
+            androidx.compose.ui.res.painterResource(icon), null, modifier = Modifier.size(18.dp),
+        )
+        Spacer(Modifier.width(6.dp))
+        Text(label)
+    }
+    if (destructive) {
+        androidx.compose.material3.OutlinedButton(
+            onClick = onClick,
+            colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(
+                contentColor = MaterialTheme.colorScheme.error,
+            ),
+            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.5f)),
+            content = content,
+        )
+    } else {
+        androidx.compose.material3.FilledTonalButton(onClick = onClick, content = content)
+    }
+}
+
 @Composable
 private fun RemoteSection(
     title: String,

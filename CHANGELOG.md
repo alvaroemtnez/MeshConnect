@@ -17,12 +17,19 @@ Its history up to the fork point (0.10.15) is in
   name and unread count; then battery and the repeater heard best. The card has the same
   first line; from three columns it puts a narrow status column beside the latest message,
   and whatever height is left goes to nearby repeaters (up to six) and more of the message.
-  SNR is gone from the widget: the signal bars already show it.
+  SNR is gone from the widget: the signal bars already show it. Space goes to what there is
+  to show, so a radio with no messages or few repeaters leaves no blank band.
 - **Bigger chat and node rows,** after Signal: larger avatars and names, more room between
   rows. Contacts show two initials; channels keep their globe, # or lock.
 - **New QR scanner,** built into the app: a rounded frame over the camera and the prompt in a
   bubble. It still reads light-on-dark codes, which about half the MeshCore codes around are.
   It replaces the ZXing Android Embedded scanner with Android's own camera library (CameraX).
+- **Repeater settings** match the phone's own: radio values as pickers with the preset and
+  QR buttons, a map picker for the position, Nearby and Whole mesh announce buttons that
+  report what the node actually sent, and Maintenance grouped into reads, clock and log, and
+  restart and reset.
+- **Repeater sign-in follows your radio.** Switching companion radios no longer carries the
+  other radio's admin or guest session over to it.
 - **Mark read and unread by swiping** works on every swipe. One swipe could toggle twice and
   end where it started.
 - **Mark unread from a menu** no longer does nothing while the radio is reconnecting.

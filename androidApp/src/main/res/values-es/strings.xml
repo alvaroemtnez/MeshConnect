@@ -975,8 +975,6 @@
     <string name="rsf_lat">Latitud</string>
     <string name="rsf_lon">Longitud</string>
     <string name="rsf_adverts">Anuncios</string>
-    <string name="rsf_advert_sent">Anuncio enviado</string>
-    <string name="rsf_advert_now">Anunciar ahora</string>
     <string name="rsf_zero_hop">Cero saltos (min)</string>
     <string name="rsf_flood_hours">Inundación (horas)</string>
     <string name="rsf_forwarding">Reenvío de paquetes</string>
@@ -1002,7 +1000,17 @@
     <string name="rsf_m_clock_sync">Sincronizar reloj</string>
     <string name="rsf_m_version">Versión</string>
     <string name="rsf_m_board">Placa</string>
-    <string name="rsf_m_acl">ACL</string>
+    <string name="rsf_m_acl">Lista de acceso</string>
+    <string name="rsf_m_ask">Preguntar al nodo</string>
+    <string name="rsf_m_clock_log">Reloj y registro</string>
+    <string name="rsf_m_danger">Reiniciar y restablecer</string>
+    <string name="rsf_m_danger_hint">Cada una pide confirmación antes.</string>
+    <string name="rsf_announce">Anunciar ahora</string>
+    <string name="rsf_announce_hint">Cerca llega a las radios al alcance directo del nodo; toda la malla se inunda a través de los repetidores.</string>
+    <string name="rsf_announce_near_sent">Anuncio cercano enviado</string>
+    <string name="rsf_announce_mesh_sent">Anuncio enviado a toda la malla</string>
+    <string name="rsf_announce_flooded">El firmware de este nodo no tiene anuncio cercano, así que lo ha enviado a toda la malla.</string>
+    <string name="rsf_announce_refused">El nodo lo ha rechazado: %1$s</string>
     <string name="rsf_m_log_start">Iniciar registro</string>
     <string name="rsf_m_log_stop">Parar registro</string>
     <string name="rsf_m_reboot">Reiniciar</string>
