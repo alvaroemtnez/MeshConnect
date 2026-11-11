@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -120,14 +121,19 @@ fun AboutScreen(vm: MeshCoreViewModel, nav: NavController) {
                 verticalArrangement = Arrangement.spacedBy(2.dp),
             ) {
                 Box(
+                    // primary, not primaryContainer: the bubble is white, as on the
+                    // launcher's teal, and white on a pale container barely showed.
                     Modifier.size(96.dp).clip(RoundedCornerShape(28.dp))
-                        .background(MaterialTheme.colorScheme.primaryContainer),
+                        .background(MaterialTheme.colorScheme.primary),
                     contentAlignment = Alignment.Center,
                 ) {
+                    // The bubble is 40 of the foreground's 108 units (the rest is the
+                    // adaptive-icon safe zone), so the image is drawn larger than its tile:
+                    // 176 dp puts a 65 dp bubble in the 96 dp tile, as on the launcher.
                     Image(
                         painterResource(R.drawable.ic_launcher_foreground),
                         contentDescription = null,
-                        modifier = Modifier.size(140.dp),
+                        modifier = Modifier.requiredSize(176.dp),
                     )
                 }
                 Spacer(Modifier.height(8.dp))

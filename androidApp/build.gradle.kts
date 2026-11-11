@@ -123,9 +123,12 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.9.4")
     implementation("androidx.core:core-ktx:1.17.0")
 
-    // QR code generation + scanner Activity (contact/channel/community QR).
-    implementation("com.journeyapps:zxing-android-embedded:4.3.0")
+    // QR code generation and decoding (contact/channel/community/settings QR).
     implementation("com.google.zxing:core:3.5.3")
+    // The QR scanner's camera (QrScanActivity), as in Skypost.
+    implementation("androidx.camera:camera-camera2:1.6.2")
+    implementation("androidx.camera:camera-lifecycle:1.6.2")
+    implementation("androidx.camera:camera-compose:1.6.2")
 
     // Maps: MapLibre renders vector tiles (OpenFreeMap, no API key) with
     // no Google Play Services and no telemetry. 13.x needs Kotlin 2.2+

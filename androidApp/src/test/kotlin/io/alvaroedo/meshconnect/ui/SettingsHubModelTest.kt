@@ -15,8 +15,6 @@ import io.alvaroedo.meshconnect.ui.screens.CONVERSATION_ROUTE
 import io.alvaroedo.meshconnect.ui.screens.conversationRoute
 import io.github.thatsfguy.meshcore.engine.EngineState
 import io.github.thatsfguy.meshcore.protocol.RadioPresets
-import com.google.zxing.client.android.Intents
-import io.alvaroedo.meshconnect.ui.screens.meshScanOptions
 import java.io.File
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -121,8 +119,7 @@ class SettingsHubModelTest {
         val screens = File("src/main/kotlin/io/alvaroedo/meshconnect/ui/screens")
         val scanners = screens.listFiles { f: File -> f.name.endsWith(".kt") }
             .orEmpty()
-            .filter { it.readText().contains("rememberLauncherForActivityResult(ScanContract())") ||
-                it.readText().contains("ScanContract()") }
+            .filter { it.readText().contains("ScanQr()") }
         assertTrue("no QR scanners found — has the scanner API changed?", scanners.isNotEmpty())
         for (file in scanners) {
             val source = file.readText()
@@ -136,54 +133,21 @@ class SettingsHubModelTest {
                     source.contains(narrow),
                 )
             }
-            // Every launcher must build its options through the one
-            // factory. A hand-rolled ScanOptions drifts: the repeater
-            // Radio panel's opened SIDEWAYS in a portrait-locked app,
-            // and — invisibly — without PortraitCaptureActivity it also
-            // lost ALSO_INVERTED, so it could not read a dark-mode QR at
-            // all. About half the codes in circulation are inverted
-            // (MESHCORE_PROTOCOL §11), and a scanner that reads nothing
-            // looks exactly like a code that is bad.
-            assertFalse(
-                "${file.name} builds ScanOptions by hand — use meshScanOptions()",
-                source.contains("ScanOptions()"),
-            )
-            assertTrue(
-                "${file.name} scans a QR but does not use meshScanOptions()",
-                source.contains("meshScanOptions("),
-            )
         }
     }
 
     @Test
-    fun `the scan options ask for a mixed normal and inverted scan`() {
-        // This test used to assert that PortraitCaptureActivity.kt
-        // CONTAINED the string "ALSO_INVERTED". It did, for months, and
-        // the scanner still could not read a single inverted code: the
-        // decoder factory that hint was set on is replaced during the
-        // same onCreate, by
-        // DecoratedBarcodeView.initializeFromIntent() building a fresh
-        // DefaultDecoderFactory from the intent extras. A grep for a
-        // constant is not a test of behaviour, and here it actively
-        // certified a feature that had never once worked.
-        //
-        // So this asserts the value that actually reaches the library:
-        // an intent extra, on the object we hand to ScanContract.
-        val extras = meshScanOptions("x").moreExtras
-        assertEquals(
-            "SCAN_TYPE must ask for MIXED_SCAN (normal + inverted frames)",
-            Intents.Scan.MIXED_SCAN,
-            extras[Intents.Scan.SCAN_TYPE],
-        )
-        // Portrait is a separate concern and still comes from the
-        // capture activity.
-        val factory = File(
-            "src/main/kotlin/io/alvaroedo/meshconnect/ui/screens/ScanOptionsFactory.kt",
-        ).readText()
-        assertTrue(
-            "meshScanOptions must use PortraitCaptureActivity for the portrait lock",
-            factory.contains("PortraitCaptureActivity::class.java"),
-        )
+    fun `the scanner is portrait-locked and nothing else launches a scanner`() {
+        // The old library's stock capture activity followed the sensor, so a launcher that
+        // skipped the portrait subclass opened sideways in a portrait app. The scanner is
+        // ours now; it is pinned in the manifest, and no other scanner may come back.
+        val manifest = File("src/main/AndroidManifest.xml").readText()
+        val scanner = manifest.substringAfter("android:name=\".platform.QrScanActivity\"").substringBefore("/>")
+        assertTrue("QrScanActivity must be portrait", scanner.contains("android:screenOrientation=\"portrait\""))
+        val sources = File("src/main/kotlin").walk().filter { it.name.endsWith(".kt") }
+        for (file in sources) {
+            assertFalse("${file.name} uses zxing-android-embedded", file.readText().contains("journeyapps"))
+        }
     }
 
     @Test

@@ -73,10 +73,8 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.journeyapps.barcodescanner.ScanContract
-import com.journeyapps.barcodescanner.ScanOptions
-import io.alvaroedo.meshconnect.platform.PortraitCaptureActivity
 import io.alvaroedo.meshconnect.platform.Qr
 import io.alvaroedo.meshconnect.storage.ContactEntity
 import io.alvaroedo.meshconnect.storage.MessageRepository
@@ -154,8 +152,8 @@ fun NodesScreen(vm: MeshCoreViewModel, nav: NavController) {
     }
     var staleOpen by remember { mutableStateOf(false) }
 
-    val scanLauncher = rememberLauncherForActivityResult(ScanContract()) { result ->
-        result.contents?.let { vm.importScannedCode(it) }
+    val scanLauncher = rememberLauncherForActivityResult(io.alvaroedo.meshconnect.platform.ScanQr()) { result ->
+        result?.let { vm.importScannedCode(it) }
     }
     val scanPrompt = stringResource(R.string.scan_prompt)
     var showSelfQr by remember { mutableStateOf(false) }
@@ -238,7 +236,7 @@ fun NodesScreen(vm: MeshCoreViewModel, nav: NavController) {
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = { scanLauncher.launch(meshScanOptions(scanPrompt)) }) {
+            FloatingActionButton(onClick = { scanLauncher.launch(scanPrompt) }) {
                 Icon(painterResource(R.drawable.ic_qr_code_scanner), stringResource(R.string.nodes_scan_qr))
             }
         },
@@ -597,7 +595,7 @@ private fun SortFilterMenu(
     onClearFilters: () -> Unit,
     onHideHeardChange: (Boolean) -> Unit,
 ) {
-    DropdownMenu(expanded = open, onDismissRequest = onDismiss) {
+    MeshDropdownMenu(expanded = open, onDismissRequest = onDismiss) {
         MenuHeading(stringResource(R.string.nodes_sort_by))
         for (option in NodeListModel.Sort.entries) {
             DropdownMenuItem(
@@ -663,7 +661,7 @@ private fun DiscoveredRow(
             // Tap and long-press both open the node's sheet: it can't be
             // administered until it is added.
             .combinedClickable(onClick = onOpen, onLongClick = onOpen)
-            .padding(start = 16.dp, end = 4.dp, top = 10.dp, bottom = 10.dp),
+            .padding(start = 16.dp, end = 4.dp, top = 14.dp, bottom = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         NodeAvatar(
@@ -671,12 +669,13 @@ private fun DiscoveredRow(
             label = node.name.ifBlank { node.keyHex },
             type = node.type,
             typeIcon = true,
+            size = LIST_AVATAR_SIZE,
         )
-        Spacer(Modifier.size(12.dp))
+        Spacer(Modifier.size(16.dp))
         Column(Modifier.weight(1f)) {
             Text(
                 node.name.ifBlank { node.keyHex.take(12) },
-                style = MaterialTheme.typography.bodyLarge,
+                style = MaterialTheme.typography.titleMedium.copy(fontSize = 17.sp),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -688,7 +687,7 @@ private fun DiscoveredRow(
                     SharedText.heardReach(LocalContext.current, node.minHops, node.directSnr),
                     DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(node.lastHeardAt)),
                 ).joinToString(" · "),
-                style = MaterialTheme.typography.bodySmall,
+                style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             signals?.let {
@@ -786,7 +785,7 @@ private fun ContactRow(
         Modifier
             .fillMaxWidth()
             .combinedClickable(onClick = onClick, onLongClick = onLongClick)
-            .padding(horizontal = 16.dp, vertical = 10.dp),
+            .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         NodeAvatar(
@@ -794,13 +793,14 @@ private fun ContactRow(
             label = c.name.ifBlank { c.keyHex },
             type = c.type,
             typeIcon = true,
+            size = LIST_AVATAR_SIZE,
         )
-        Spacer(Modifier.size(12.dp))
+        Spacer(Modifier.size(16.dp))
         Column(Modifier.weight(1f)) {
             Text(
                 (if (c.flags and Codes.CONTACT_FLAG_FAVORITE != 0) "★ " else "") +
                     c.name.ifBlank { c.keyHex.take(12) },
-                style = MaterialTheme.typography.bodyLarge,
+                style = MaterialTheme.typography.titleMedium.copy(fontSize = 17.sp),
                 maxLines = 1,
                 overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
             )
@@ -808,7 +808,7 @@ private fun ContactRow(
                 c.keyHex.take(12) + " · " + PathCodec.decodePathLen(c.pathLen).let { info ->
                     if (info.isFlood) stringResource(R.string.flood) else stringResource(R.string.hops_path, info.hops)
                 },
-                style = MaterialTheme.typography.bodySmall,
+                style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
                 overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
@@ -827,7 +827,7 @@ private fun ContactRow(
             // RTC is unset (LastHeard).
             Text(
                 relativeAge(LastHeard.seconds(c)),
-                style = MaterialTheme.typography.labelSmall,
+                style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = androidx.compose.ui.text.style.TextAlign.End,
             )

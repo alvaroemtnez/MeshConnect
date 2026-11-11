@@ -3,9 +3,6 @@ package io.alvaroedo.meshconnect.ui.screens
 import io.alvaroedo.meshconnect.R
 import androidx.compose.ui.res.stringResource
 import androidx.activity.compose.rememberLauncherForActivityResult
-import com.journeyapps.barcodescanner.ScanContract
-import com.journeyapps.barcodescanner.ScanOptions
-import io.alvaroedo.meshconnect.platform.PortraitCaptureActivity
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
@@ -327,8 +324,8 @@ internal fun RadioSection(vm: MeshCoreViewModel) {
     // changes exactly what this screen changes, and nobody looking for
     // "how do I apply the code my mesh handed me" thinks to open the
     // contact-import button on another tab.
-    val scanLauncher = rememberLauncherForActivityResult(ScanContract()) { result ->
-        result.contents?.let { vm.importScannedCode(it) }
+    val scanLauncher = rememberLauncherForActivityResult(io.alvaroedo.meshconnect.platform.ScanQr()) { result ->
+        result?.let { vm.importScannedCode(it) }
     }
     if (presetSheet) {
         RadioPresetSheet(vm, onDismiss = { presetSheet = false })
@@ -388,7 +385,7 @@ internal fun RadioSection(vm: MeshCoreViewModel) {
         }
         Spacer(Modifier.width(8.dp))
         androidx.compose.material3.FilledTonalIconButton(onClick = {
-            scanLauncher.launch(meshScanOptions(ctx.getString(R.string.radio_scan_prompt)))
+            scanLauncher.launch(ctx.getString(R.string.radio_scan_prompt))
         }) {
             androidx.compose.material3.Icon(
                 androidx.compose.ui.res.painterResource(R.drawable.ic_qr_code_scanner),

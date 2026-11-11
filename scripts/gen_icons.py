@@ -60,7 +60,7 @@ ICONS = [
     ("ic_star_filled", "star", False, "fill1"),
     ("ic_notifications_off", "notifications_off", False),
     ("ic_alt_route", "alt_route", False),
-    ("ic_add_comment", "add_comment", False),
+    ("ic_edit_square", "edit_square", False),
     ("ic_campaign", "campaign", False),
     ("ic_repeat", "repeat", False),
     ("ic_build", "build", False),

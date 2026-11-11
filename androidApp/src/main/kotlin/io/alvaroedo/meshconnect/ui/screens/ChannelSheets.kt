@@ -23,9 +23,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
-import com.journeyapps.barcodescanner.ScanContract
-import com.journeyapps.barcodescanner.ScanOptions
-import io.alvaroedo.meshconnect.platform.PortraitCaptureActivity
 import io.alvaroedo.meshconnect.storage.ChannelEntity
 import io.alvaroedo.meshconnect.storage.ContactEntity
 import androidx.compose.ui.draw.clip
@@ -81,8 +78,8 @@ fun ChannelAddSheet(
     val clipboard = androidx.compose.ui.platform.LocalClipboardManager.current
     val newChat = onMessageContact != null
 
-    val communityScanLauncher = rememberLauncherForActivityResult(ScanContract()) { result ->
-        result.contents?.let { vm.importScannedCode(it) }
+    val communityScanLauncher = rememberLauncherForActivityResult(io.alvaroedo.meshconnect.platform.ScanQr()) { result ->
+        result?.let { vm.importScannedCode(it) }
         onDismiss()
     }
 
@@ -134,7 +131,7 @@ fun ChannelAddSheet(
                         stringResource(if (newChat) R.string.newchat_scan else R.string.ch_scan),
                         stringResource(if (newChat) R.string.newchat_scan_sub else R.string.ch_scan_sub),
                     ) {
-                        communityScanLauncher.launch(meshScanOptions(scanPrompt))
+                        communityScanLauncher.launch(scanPrompt)
                     }
                     // A link that arrived somewhere it could not be tapped, copied instead.
                     if (newChat) {

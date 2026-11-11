@@ -1188,6 +1188,10 @@
     <string name="kind_sensor">Sensor</string>
     <string name="nodes_search_hint">Cercar nom o clau</string>
     <string name="nodes_scan_qr">Escanejar codi QR</string>
+    <string name="scan_title">Escanejar codi</string>
+    <string name="scan_hint">Apunta la càmera al codi QR</string>
+    <string name="scan_permission">Per a escanejar codis QR l\'aplicació necessita la càmera. Tot es queda en aquest telèfon.</string>
+    <string name="scan_allow_camera">Permetre la càmera</string>
     <string name="scan_prompt">Escaneja un QR de MeshCore: contacte, canal o comunitat</string>
     <string name="nodes_paste_code">Apegar un codi</string>
     <string name="my_qr">El meu codi QR</string>

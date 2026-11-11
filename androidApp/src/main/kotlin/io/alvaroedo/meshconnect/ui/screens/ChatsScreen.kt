@@ -35,6 +35,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
@@ -81,9 +82,9 @@ fun ChatsScreen(vm: MeshCoreViewModel, nav: NavController, archivedView: Boolean
     val channels by vm.dbChannels.collectAsState()
 
     val communityScanLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
-        com.journeyapps.barcodescanner.ScanContract(),
+        io.alvaroedo.meshconnect.platform.ScanQr(),
     ) { result ->
-        result.contents?.let { vm.importScannedCode(it) }
+        result?.let { vm.importScannedCode(it) }
     }
 
     Scaffold(
@@ -132,9 +133,9 @@ fun ChatsScreen(vm: MeshCoreViewModel, nav: NavController, archivedView: Boolean
                     MenuAction(stringResource(R.string.chats_advert_flood), icon = R.drawable.ic_campaign) {
                         vm.sendSelfAdvert(flood = true)
                     },
-                    MenuAction(stringResource(R.string.chats_new_chat), icon = R.drawable.ic_add_comment) { showChannelSheet = true },
+                    MenuAction(stringResource(R.string.chats_new_chat), icon = R.drawable.ic_edit_square) { showChannelSheet = true },
                     MenuAction(stringResource(R.string.nodes_scan_qr), icon = R.drawable.ic_qr_code_scanner) {
-                        communityScanLauncher.launch(meshScanOptions(scanPrompt))
+                        communityScanLauncher.launch(scanPrompt)
                     },
                     MenuAction(stringResource(R.string.my_qr), icon = R.drawable.ic_qr_code) { showSelfQr = true },
                 ),
@@ -142,7 +143,7 @@ fun ChatsScreen(vm: MeshCoreViewModel, nav: NavController, archivedView: Boolean
         },
         floatingActionButton = {
             FloatingActionButton(onClick = { showChannelSheet = true }) {
-                Icon(painterResource(R.drawable.ic_add_comment), stringResource(R.string.chats_new_chat))
+                Icon(painterResource(R.drawable.ic_edit_square), stringResource(R.string.chats_new_chat))
             }
         },
     ) { padding ->
@@ -319,7 +320,7 @@ private fun ConversationRowItem(
                 onClick = onClick,
                 onLongClick = { if (selecting) onToggleSelected() else menuOpen = true },
             )
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+            .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         androidx.compose.animation.AnimatedVisibility(
@@ -342,15 +343,16 @@ private fun ConversationRowItem(
             type = row.contactType,
             isChannel = row.isChannel,
             channelKind = channelKind,
+            size = LIST_AVATAR_SIZE,
         )
         androidx.compose.foundation.layout.Spacer(
-            Modifier.padding(start = 12.dp),
+            Modifier.padding(start = 16.dp),
         )
         Column(Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = row.title,
-                    style = MaterialTheme.typography.bodyLarge,
+                    style = MaterialTheme.typography.titleMedium.copy(fontSize = 17.sp),
                     fontWeight = if (row.unread > 0 || row.markedUnread) FontWeight.Bold else FontWeight.Normal,
                     maxLines = 1,
                     overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
@@ -358,9 +360,11 @@ private fun ConversationRowItem(
             }
             Text(
                 row.subtitle,
-                style = MaterialTheme.typography.bodySmall,
+                style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                modifier = Modifier.padding(top = 2.dp),
             )
         }
         Column(horizontalAlignment = Alignment.End) {
@@ -376,7 +380,7 @@ private fun ConversationRowItem(
                 Text(
                     DateFormat.getTimeInstance(DateFormat.SHORT)
                         .format(Date(row.timestamp * 1000)),
-                    style = MaterialTheme.typography.labelSmall,
+                    style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
@@ -398,12 +402,9 @@ private fun ConversationRowItem(
         }
         // The message long-press card's look (rounded, raised), as a plain popup:
         // no blur here, the list stays readable behind it.
-        DropdownMenu(
+        MeshDropdownMenu(
             expanded = menuOpen,
             onDismissRequest = { menuOpen = false },
-            shape = androidx.compose.foundation.shape.RoundedCornerShape(20.dp),
-            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-            shadowElevation = 6.dp,
             modifier = Modifier.widthIn(min = 232.dp),
         ) {
             val unread = row.unread > 0 || row.markedUnread

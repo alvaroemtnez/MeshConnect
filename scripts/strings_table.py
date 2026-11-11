@@ -1329,6 +1329,10 @@ S = {
 # Nodes
 "nodes_search_hint": ("Search name or key", "Buscar nombre o clave", "Cercar nom o clau"),
 "nodes_scan_qr": ("Scan QR code", "Escanear código QR", "Escanejar codi QR"),
+"scan_title": ("Scan code", "Escanear código", "Escanejar codi"),
+"scan_hint": ("Point the camera at the QR code", "Apunta la cámara al código QR", "Apunta la càmera al codi QR"),
+"scan_permission": ("To scan QR codes the app needs the camera. Everything stays on this phone.", "Para escanear códigos QR la app necesita la cámara. Todo se queda en este teléfono.", "Per a escanejar codis QR l'aplicació necessita la càmera. Tot es queda en aquest telèfon."),
+"scan_allow_camera": ("Allow camera", "Permitir la cámara", "Permetre la càmera"),
 "scan_prompt": ("Scan a MeshCore QR: contact, channel or community", "Escanea un QR de MeshCore: contacto, canal o comunidad", "Escaneja un QR de MeshCore: contacte, canal o comunitat"),
 "nodes_paste_code": ("Paste a code", "Pegar un código", "Apegar un codi"),
 "my_qr": ("My QR code", "Mi código QR", "El meu codi QR"),

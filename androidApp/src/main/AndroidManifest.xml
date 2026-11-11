@@ -85,13 +85,11 @@
             </intent-filter>
         </activity>
 
-        <!-- QR scanner pinned to portrait (zxing-android-embedded). -->
+        <!-- QR scanner (CameraX + ZXing core), pinned to portrait. -->
         <activity
-            android:name=".platform.PortraitCaptureActivity"
+            android:name=".platform.QrScanActivity"
             android:screenOrientation="portrait"
-            android:stateNotNeeded="true"
-            android:exported="false"
-            android:theme="@style/zxing_CaptureTheme" />
+            android:exported="false" />
 
         <service
             android:name=".service.MeshCoreService"

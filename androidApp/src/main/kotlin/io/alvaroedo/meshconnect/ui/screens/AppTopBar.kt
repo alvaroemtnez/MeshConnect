@@ -174,7 +174,7 @@ fun AppTopBar(
                     IconButton(onClick = { menuOpen = true }) {
                         Icon(painterResource(R.drawable.ic_more_vert), stringResource(R.string.more_options))
                     }
-                    DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                    MeshDropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
                         for (action in menuActions) {
                             DropdownMenuItem(
                                 text = {

@@ -1191,6 +1191,10 @@
     <string name="kind_sensor">Sensor</string>
     <string name="nodes_search_hint">Search name or key</string>
     <string name="nodes_scan_qr">Scan QR code</string>
+    <string name="scan_title">Scan code</string>
+    <string name="scan_hint">Point the camera at the QR code</string>
+    <string name="scan_permission">To scan QR codes the app needs the camera. Everything stays on this phone.</string>
+    <string name="scan_allow_camera">Allow camera</string>
     <string name="scan_prompt">Scan a MeshCore QR: contact, channel or community</string>
     <string name="nodes_paste_code">Paste a code</string>
     <string name="my_qr">My QR code</string>

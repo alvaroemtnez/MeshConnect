@@ -16,8 +16,6 @@ import androidx.compose.foundation.selection.toggleable
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.activity.compose.rememberLauncherForActivityResult
-import com.journeyapps.barcodescanner.ScanContract
-import com.journeyapps.barcodescanner.ScanOptions
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -95,8 +93,8 @@ fun RemoteSettingsForm(
         mutableStateOf<io.github.thatsfguy.meshcore.protocol.ShareUri.Decoded.RadioConfig?>(null)
     }
     var scanError by remember { mutableStateOf<String?>(null) }
-    val scanLauncher = rememberLauncherForActivityResult(ScanContract()) { result ->
-        val text = result.contents ?: return@rememberLauncherForActivityResult
+    val scanLauncher = rememberLauncherForActivityResult(io.alvaroedo.meshconnect.platform.ScanQr()) { result ->
+        val text = result ?: return@rememberLauncherForActivityResult
         // Same decoder, same refusals — a code is no more trustworthy
         // for being scanned on an admin screen.
         //
@@ -288,7 +286,7 @@ fun RemoteSettingsForm(
                     ) { Text(stringResource(R.string.setup_pick_preset)) }
                     TextButton(
                         enabled = isReady,
-                        onClick = { scanLauncher.launch(meshScanOptions(ctx.getString(R.string.radio_scan_prompt))) },
+                        onClick = { scanLauncher.launch(ctx.getString(R.string.radio_scan_prompt)) },
                     ) { Text(stringResource(R.string.radio_scan)) }
                 }
             }

@@ -50,4 +50,24 @@ class MarkUnreadWiringTest {
         assertTrue(chats.contains("} else if (row.markedUnread) {"))
         assertTrue(chats.contains("if (row.unread > 0 || row.markedUnread) vm.markRead(row.kind, row.key)"))
     }
+
+    @Test
+    fun `marking unread does not wait for the radio`() {
+        val mark = body(vm, "fun markUnread(kind: String, peerKey: String) {")
+        assertFalse("must not bail out on an empty radio key", mark.contains("isEmpty()"))
+    }
+
+    /**
+     * One swipe, one toggle. Material3 1.4 consults `confirmValueChange` during the drag
+     * too, so acting from it could toggle twice and land back where it started (reported
+     * 2026-11-11: "works two or three times, then sometimes does nothing").
+     */
+    @Test
+    fun `a swipe acts from onDismiss, not from confirmValueChange`() {
+        val swipe = File("src/main/kotlin/io/alvaroedo/meshconnect/ui/screens/SwipeRow.kt").readText()
+            .substringAfter("fun SwipeRow(")
+        assertFalse(swipe.contains("confirmValueChange"))
+        assertTrue(swipe.contains("onDismiss = { value ->"))
+        assertTrue("must spring back after acting", swipe.contains("state.reset()"))
+    }
 }

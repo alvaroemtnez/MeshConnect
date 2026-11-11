@@ -117,7 +117,12 @@ fun NodeAvatar(
     }
 
     // Not the first character: an emoji is two, and half of one drew "�". See AvatarGlyph.
-    val glyph = io.github.thatsfguy.meshcore.presentation.AvatarGlyph.of(label)
+    // A list-sized circle has room for two letters, Signal-style (AvatarInitials).
+    val glyph = if (size >= LIST_AVATAR_SIZE) {
+        io.alvaroedo.meshconnect.ui.model.AvatarInitials.of(label)
+    } else {
+        io.github.thatsfguy.meshcore.presentation.AvatarGlyph.of(label)
+    }
 
     Box(
         modifier = Modifier
@@ -130,10 +135,13 @@ fun NodeAvatar(
             color = if (darkText) Color.Black else Color.White,
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
-            fontSize = (size.value * 0.42f).sp,
+            fontSize = (size.value * (if (glyph.length > 1 && !glyph[0].isSurrogate()) 0.36f else 0.42f)).sp,
         )
     }
 }
+
+/** The avatar in the chat and node lists: big enough for two initials. */
+val LIST_AVATAR_SIZE = 52.dp
 
 /** Neutral infrastructure gray, shared with the map's repeater pins. */
 val REPEATER_GRAY = Color(0xFF757575)

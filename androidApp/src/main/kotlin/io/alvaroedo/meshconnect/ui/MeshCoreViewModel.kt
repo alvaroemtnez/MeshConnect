@@ -723,15 +723,15 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
             if (key.isEmpty()) flowOf(0) else db.messages().threadCount(key, kind, peerKey)
         }.stateIn(viewModelScope, SharingStarted.Eagerly, 0)
 
-    /** Leave a thread marked unread (badge stays until next open). */
+    /**
+     * Leave a thread marked unread (badge stays until next open). A preference, so it does
+     * not wait for the radio: this used to return quietly while the radio's key was empty
+     * (mid-reconnect), one of the ways "mark unread" did nothing.
+     */
     fun markUnread(kind: String, peerKey: String) {
-        viewModelScope.launch {
-            val key = selfKey.value
-            if (key.isEmpty()) return@launch
-            markThreadClosed()
-            prefs.setThreadMarkedUnread(Inbox.threadKey(kind, peerKey), true)
-            transientMessage.value = str(R.string.vm_marked_unread)
-        }
+        markThreadClosed()
+        prefs.setThreadMarkedUnread(Inbox.threadKey(kind, peerKey), true)
+        transientMessage.value = str(R.string.vm_marked_unread)
     }
 
     /** Clear a thread's unread count from the list (swipe), without opening it. */
