@@ -10,7 +10,6 @@
   <p>
     <a href="https://code.alvaroedo.io/alvaroemtnez/MeshConnect/releases"><img src="https://img.shields.io/badge/Releases-APK-0F7B6C?style=for-the-badge" height="40" alt="Releases"></a>
   </p>
-  <br>
 </div>
 
 ## What it does
