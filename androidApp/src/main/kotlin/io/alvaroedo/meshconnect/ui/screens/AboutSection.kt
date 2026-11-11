@@ -61,14 +61,14 @@ private val BASED_ON = listOf(
 
 /** (component, licence, bundled text in assets/licences/) — every one is shipped in the APK. */
 private val LIBRARIES = listOf(
-    Triple("Android Jetpack, Jetpack Compose, Material 3, Room, Glance", "Apache-2.0", "apache-2.0.txt"),
+    Triple("Android Jetpack, Jetpack Compose, Material 3, Room, Glance, CameraX", "Apache-2.0", "apache-2.0.txt"),
     Triple("Kotlin, kotlinx.coroutines, kotlinx.serialization, kotlinx-datetime", "Apache-2.0", "apache-2.0.txt"),
     Triple("MapLibre Native · © MapLibre contributors, MapTiler.com, Mapbox", "BSD-2-Clause", "maplibre-native.txt"),
     Triple("MapLibre gestures · © Mapbox, MapLibre contributors", "BSD-2-Clause", "maplibre-gestures.txt"),
     Triple("MapLibre GeoJSON and Turf", "Apache-2.0", "apache-2.0.txt"),
     Triple("SQLCipher for Android · © ZETETIC LLC", "BSD-3-Clause", "sqlcipher.txt"),
     Triple("Bouncy Castle · © The Legion of the Bouncy Castle Inc.", "MIT", "bouncycastle.txt"),
-    Triple("ZXing, ZXing Android Embedded", "Apache-2.0", "apache-2.0.txt"),
+    Triple("ZXing", "Apache-2.0", "apache-2.0.txt"),
     Triple("OkHttp, Okio (Square), Gson, Guava listenablefuture (Google), Timber (Jake Wharton), JetBrains annotations", "Apache-2.0", "apache-2.0.txt"),
     Triple("Material Symbols (Google)", "Apache-2.0", "apache-2.0.txt"),
     Triple("Map tiles: OpenFreeMap, OpenMapTiles · © OpenStreetMap contributors", "ODbL · CC-BY 4.0", null),
@@ -285,6 +285,14 @@ private fun AboutGroup(title: String) {
  * fork is in docs/upstream/CHANGELOG-MeshCoreHardened.md.
  */
 private val CHANGELOG: List<Pair<String, List<String>>> = listOf(
+    "1.1.0" to listOf(
+        "Widgets redone: every size from 2×1 to 4×4 uses its space, with the latest message and nearby repeaters sharing it.",
+        "Bigger chat and node rows, with two initials for contacts.",
+        "New QR scanner: rounded frame, prompt in a bubble, still reads light-on-dark codes.",
+        "Swiping a chat to read or unread toggles once, every time.",
+        "Popup menus share the rounded long-press look; New chat has a new icon.",
+        "A larger logo on the About page.",
+    ),
     "1.0.0" to listOf(
         "First MeshConnect release, forked from MeshCore Hardened 0.10.15.",
         "New name and app id: it installs alongside MeshCore Hardened, with its own database.",

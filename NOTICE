@@ -26,11 +26,10 @@ Third-party components keep their own licences. Their texts ship inside
 the app (androidApp/src/main/assets/licences/, shown under About →
 Open-source licences):
 
-  Apache-2.0    AndroidX, Jetpack Compose, Material 3, Room, Glance, Kotlin,
-                kotlinx libraries, OkHttp, Okio, Gson, Guava listenablefuture, Timber,
-                JetBrains annotations, ZXing,
-                ZXing Android Embedded, MapLibre GeoJSON and Turf,
-                Material Symbols
+  Apache-2.0    AndroidX (CameraX included), Jetpack Compose, Material 3, Room,
+                Glance, Kotlin, kotlinx libraries, OkHttp, Okio, Gson, Guava
+                listenablefuture, Timber, JetBrains annotations, ZXing,
+                MapLibre GeoJSON and Turf, Material Symbols
   BSD-2-Clause  MapLibre Native; MapLibre gestures
   BSD-3-Clause  SQLCipher for Android (ZETETIC LLC)
   MIT           Bouncy Castle

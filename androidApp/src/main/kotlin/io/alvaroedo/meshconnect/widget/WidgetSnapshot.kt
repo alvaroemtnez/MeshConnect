@@ -60,8 +60,8 @@ data class WidgetSnapshot(
         /** Twice the service's battery poll: past this the data is not live. */
         const val STALE_MS = 10L * 60 * 1000
 
-        /** The most the largest widget lists. */
-        const val MAX_NEARBY = 4
+        /** The most the largest widget lists (WidgetLayout.MAX_NEARBY). */
+        const val MAX_NEARBY = 6
 
         /**
          * One repeater per line, tab-separated. A name is advert text, so

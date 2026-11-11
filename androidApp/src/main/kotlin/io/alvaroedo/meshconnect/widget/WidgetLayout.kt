@@ -1,85 +1,87 @@
 package io.alvaroedo.meshconnect.widget
 
 /**
- * What the widget draws at a given size, in dp (2026-11-10).
+ * What the widget draws at a given size, in dp. Pure, so the rules are tested without a
+ * launcher.
  *
- * It used to pick from fixed breakpoints, which Glance resolves to the largest one that fits:
- * when GrapheneOS moved to six shorter rows, a 3×2 fell just under the 270 dp the nearby
- * repeaters needed and drew the 180 dp card with the rest empty, and a 2×1 drew the same
- * small row whatever its height. The widget now gets its real size and this decides, so
- * every extra few dp go to something: larger text in a row, another line of the message,
- * another nearby repeater. Pure, so the rules are tested without a launcher.
+ * 1.1 rethink (reviewed as mockups, 2026-11-11). 1.0 fitted blocks greedily around a fixed
+ * card, and it showed: a 3×2 put the message beside the battery with empty space above it
+ * and cut the repeater off, a 3×3 had empty space at the bottom, a 4×3 wasted most of
+ * itself. Now every size is the same blocks:
+ *
+ * - **Header**: status dot, name, unread count (the mark too, from three columns).
+ * - **Status**: battery, then signal bars and the repeater's hash. No SNR: the bars show it.
+ *   Narrow, on one line; wide, a narrow two-line column with the message beside it.
+ * - **Latest message**, and **nearby repeaters**, which share the spare height in a fixed
+ *   order: the message gets two lines, then repeaters get rows, then the message grows.
+ *
+ * The same function drew the mockups, so the reviewed frames are what ships.
  */
 object WidgetLayout {
 
     data class Plan(
-        /** One row of status (2×1, 4×1) rather than the card. */
+        /** One row (2×1, 4×1) rather than the card. */
         val row: Boolean,
-        /** A row with room for a third line, where the repeater gets its own. */
-        val roomyRow: Boolean,
-        /** Row text and icons a size up, for a row tall enough to look empty otherwise. */
+        /** A row tall enough to look empty at the regular size: everything a size up. */
         val largeRow: Boolean,
-        /** Wide enough for the latest message beside the gauges, or the mark in a row. */
+        /** Three columns or more: the mark in the header, the message beside the status. */
         val wide: Boolean,
-        /** The heard repeater's SNR under the gauges. */
-        val snrLine: Boolean,
-        /** Lines of the latest message: beside the gauges when [wide], under them otherwise. */
+        /** Lines of the latest message; 0 hides it. */
         val messageLines: Int,
         /** Nearby repeaters to list; 0 hides the card. */
         val nearbyRows: Int,
     )
 
-    /** Below this the card cannot fit (header, status, gauges, unread, padding). */
+    /** Below this it is a row, not the card. */
     const val CARD_MIN_HEIGHT = 140f
 
     /** Three cells on a five-column grid are about 230 dp; four on four, 300+. */
     const val WIDE_MIN_WIDTH = 220f
 
-    private const val CARD_BASE = 126f      // padding 28, header 26+6, status 16+8, gauges 18+6, unread 18
-    private const val SNR_LINE = 16f
-    private const val MESSAGE_HEAD = 34f    // gap, sender, age
-    private const val MESSAGE_LINE = 15f
-    private const val NEARBY_HEAD = 46f     // gap, padding, title
-    private const val NEARBY_ROW = 22f
-    const val MAX_NEARBY = 4
+    /** A row this tall draws a size up. */
+    const val LARGE_ROW_MIN_HEIGHT = 96f
+
+    const val PAD = 14f
+    const val HEAD = 28f
+    const val GAP = 10f
+    /** Battery over signal, beside the message. */
+    const val STATUS_TWO_LINES = 40f
+    /** Battery and signal on one line, stacked layouts. */
+    const val STATUS_ONE_LINE = 20f
+    /** Width of the two-line status column, wide layouts. */
+    const val STATUS_WIDTH = 64f
+    const val MESSAGE_HEAD = 20f
+    const val MESSAGE_LINE = 16f
+    const val NEARBY_HEAD = 30f
+    const val NEARBY_ROW = 22f
+    const val MAX_NEARBY = 6
+    const val MAX_MESSAGE_LINES = 6
 
     fun plan(width: Float, height: Float): Plan {
         val wide = width >= WIDE_MIN_WIDTH
         if (height < CARD_MIN_HEIGHT) {
-            return Plan(
-                row = true,
-                roomyRow = height >= 80f,
-                largeRow = height >= 96f,
-                wide = wide,
-                snrLine = false,
-                messageLines = 0,
-                nearbyRows = 0,
-            )
+            return Plan(row = true, largeRow = height >= LARGE_ROW_MIN_HEIGHT, wide = wide, messageLines = 0, nearbyRows = 0)
         }
-        var left = height - CARD_BASE
-        val messageLines: Int
+        var left = height - 2 * PAD - HEAD - GAP
+        var lines = 0
         if (wide) {
-            // Beside the gauges, in height they already use.
-            messageLines = 3
+            // Status and message share one band, as tall as the taller of the two.
+            lines = 2
+            left -= maxOf(STATUS_TWO_LINES, MESSAGE_HEAD + lines * MESSAGE_LINE)
         } else {
-            // Under the gauges: only with room for at least two lines.
-            val fit = ((left - MESSAGE_HEAD) / MESSAGE_LINE).toInt()
-            messageLines = if (fit >= 2) fit.coerceAtMost(6) else 0
-            if (messageLines > 0) left -= MESSAGE_HEAD + messageLines * MESSAGE_LINE
+            left -= STATUS_ONE_LINE
+            if (left - GAP >= MESSAGE_HEAD + 2 * MESSAGE_LINE) {
+                lines = 2
+                left -= GAP + MESSAGE_HEAD + 2 * MESSAGE_LINE
+            }
         }
-        // Nearby before the SNR line: each nearby row carries its own SNR, and the list
-        // says more than one reading does.
-        val nearby = ((left - NEARBY_HEAD) / NEARBY_ROW).toInt().coerceIn(0, MAX_NEARBY)
-        if (nearby > 0) left -= NEARBY_HEAD + nearby * NEARBY_ROW
-        val snrLine = left >= SNR_LINE
-        return Plan(
-            row = false,
-            roomyRow = false,
-            largeRow = false,
-            wide = wide,
-            snrLine = snrLine,
-            messageLines = messageLines,
-            nearbyRows = nearby,
-        )
+        var nearby = 0
+        if (left - GAP >= NEARBY_HEAD + NEARBY_ROW) {
+            nearby = ((left - GAP - NEARBY_HEAD) / NEARBY_ROW).toInt().coerceAtMost(MAX_NEARBY)
+            left -= GAP + NEARBY_HEAD + nearby * NEARBY_ROW
+        }
+        // Whatever is left grows the message.
+        if (lines > 0) lines = (lines + (left / MESSAGE_LINE).toInt()).coerceAtMost(MAX_MESSAGE_LINES)
+        return Plan(row = false, largeRow = false, wide = wide, messageLines = lines, nearbyRows = nearby)
     }
 }

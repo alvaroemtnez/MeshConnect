@@ -49,7 +49,7 @@ class WidgetNearbyTest {
     }
 
     @Test
-    fun `at most four are kept`() {
+    fun `at most six are kept`() {
         val many = (0 until 10).map { Nearby("a%03d".format(it), null, it.toDouble(), 2) }
         assertEquals(WidgetSnapshot.MAX_NEARBY, WidgetSnapshot.decodeNearby(WidgetSnapshot.encodeNearby(many)).size)
     }

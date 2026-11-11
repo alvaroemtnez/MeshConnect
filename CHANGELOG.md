@@ -11,6 +11,25 @@ MeshConnect is a fork of [MeshCore Hardened](https://github.com/thatSFguy/meshco
 Its history up to the fork point (0.10.15) is in
 [docs/upstream/CHANGELOG-MeshCoreHardened.md](docs/upstream/CHANGELOG-MeshCoreHardened.md).
 
+## 1.1.0
+
+- **Widgets redone.** Every size uses its space. The one-row widget is two lines: status dot,
+  name and unread count; then battery and the repeater heard best. The card has the same
+  first line; from three columns it puts a narrow status column beside the latest message,
+  and whatever height is left goes to nearby repeaters (up to six) and more of the message.
+  SNR is gone from the widget: the signal bars already show it.
+- **Bigger chat and node rows,** after Signal: larger avatars and names, more room between
+  rows. Contacts show two initials; channels keep their globe, # or lock.
+- **New QR scanner,** built into the app: a rounded frame over the camera and the prompt in a
+  bubble. It still reads light-on-dark codes, which about half the MeshCore codes around are.
+  It replaces the ZXing Android Embedded scanner with Android's own camera library (CameraX).
+- **Mark read and unread by swiping** works on every swipe. One swipe could toggle twice and
+  end where it started.
+- **Mark unread from a menu** no longer does nothing while the radio is reconnecting.
+- **Popup menus** have the same rounded look as the long-press menu, and New chat has a
+  new icon.
+- **About** shows the logo at its proper size.
+
 ## 1.0.0
 
 First MeshConnect release, forked from MeshCore Hardened 0.10.15.
