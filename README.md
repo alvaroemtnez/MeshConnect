@@ -1,28 +1,13 @@
-<p align="center"><img src="docs/logo.png" width="128" alt="MeshConnect logo"></p>
-
-<h1 align="center">MeshConnect</h1>
-
-<p align="center">
-  <a href="https://apps.obtainium.imranr.dev/redirect?r=obtainium://add/https://github.com/alvaroemtnez/MeshConnect"><img src="https://raw.githubusercontent.com/ImranR98/Obtainium/main/assets/graphics/badge_obtainium.png" height="72" alt="Get it on Obtainium"></a>
-</p>
-
-Off-grid encrypted LoRa messaging for **MeshCore** radios, on Android. No servers, no accounts, no
-Google Play Services, no analytics, no crash reporting.
-
-> **MeshConnect is a fork of [MeshCore Hardened](https://github.com/thatSFguy/meshcore-mobile-app)
-> by [thatSFguy](https://github.com/thatSFguy).** The protocol layer, the radio engine, storage,
-> security work and most of the screens are theirs; this fork reworks the interface (Material You
-> colours, Signal-style search and composer, rich message cards, a MapLibre map), adds Spanish and
-> Valencian/Catalan, a home-screen widget and a ping/trace map, and builds and releases from a
-> self-hosted Forgejo. Upstream's own README is kept at
-> [docs/upstream/README-MeshCoreHardened.md](docs/upstream/README-MeshCoreHardened.md) and its
-> history up to the fork at [docs/upstream/CHANGELOG-MeshCoreHardened.md](docs/upstream/CHANGELOG-MeshCoreHardened.md).
-> Please report MeshConnect problems here, not upstream.
-
-- Source: <https://code.alvaroedo.io/alvaroemtnez/MeshConnect>, mirrored to
-  <https://github.com/alvaroemtnez/MeshConnect>
-- Licence: [AGPL-3.0-only](LICENSE), as upstream
-- App id: `io.alvaroedo.meshconnect` — installs alongside MeshCore Hardened, not over it
+<div align="center">
+  <img src="docs/logo.png" width="128" alt="MeshConnect logo">
+  <h1>MeshConnect</h1>
+  <p><strong>Private off-grid LoRa messaging for Android.</strong><br>
+  An independent, hardened MeshCore client: no servers, no accounts, no Google Play Services. Encrypted history, verified adverts, in-app firmware updates over Bluetooth.</p>
+  <!-- Stores, one row: F-Droid, Accrescent and Flathub join Obtainium here. -->
+  <p>
+    <a href="https://apps.obtainium.imranr.dev/redirect?r=obtainium://add/https://github.com/alvaroemtnez/MeshConnect"><img src="https://raw.githubusercontent.com/ImranR98/Obtainium/main/assets/graphics/badge_obtainium.png" height="72" alt="Get it on Obtainium"></a>
+  </p>
+</div>
 
 ## Radios
 
