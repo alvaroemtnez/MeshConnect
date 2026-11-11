@@ -74,6 +74,33 @@ class WidgetLayoutTest {
         }
     }
 
+    /** Reported from a phone: no messages, two repeaters heard, a blank band below. */
+    @Test
+    fun `the plan follows what there is to show`() {
+        // No message, two repeaters, 4×3: the card lists two, not six.
+        val p = WidgetLayout.plan(4 * 78f, 3 * 98f, hasMessage = false, nearbyAvailable = 2)
+        assertEquals(0, p.messageLines)
+        assertEquals(2, p.nearbyRows)
+        // A message and two repeaters: the height the card doesn't need grows the message.
+        val withMessage = WidgetLayout.plan(4 * 78f, 3 * 98f, hasMessage = true, nearbyAvailable = 2)
+        assertEquals(2, withMessage.nearbyRows)
+        assertEquals(WidgetLayout.MAX_MESSAGE_LINES, withMessage.messageLines)
+        // Stacked and no message: no height for it at all; the repeaters get it.
+        val narrow = WidgetLayout.plan(2 * 78f, 2 * 98f, hasMessage = false, nearbyAvailable = 6)
+        assertEquals(0, narrow.messageLines)
+        assertTrue(narrow.nearbyRows >= 2)
+        // None heard still takes one row, for "none heard".
+        assertEquals(1, WidgetLayout.plan(2 * 78f, 3 * 98f, nearbyAvailable = 0).nearbyRows)
+    }
+
+    @Test
+    fun `the last block takes the remaining height`() {
+        val src = File("src/main/kotlin/io/alvaroedo/meshconnect/widget/MeshWidget.kt").readText()
+        assertTrue(src.contains("Nearby(s, ink, muted, stale, plan.nearbyRows, GlanceModifier.defaultWeight())"))
+        assertTrue(src.contains("hasMessage = s.lastFrom != null"))
+        assertTrue(src.contains("nearbyAvailable = if (stale) 0 else s.nearby.size"))
+    }
+
     @Test
     fun `a 2x1 is a row, and a tall one draws larger`() {
         val short = WidgetLayout.plan(156f, 64f)
@@ -88,6 +115,6 @@ class WidgetLayoutTest {
     fun `the widget takes its real size, not breakpoints`() {
         val src = File("src/main/kotlin/io/alvaroedo/meshconnect/widget/MeshWidget.kt").readText()
         assertTrue(src.contains("override val sizeMode = SizeMode.Exact"))
-        assertTrue(src.contains("WidgetLayout.plan(size.width.value, size.height.value)"))
+        assertTrue(src.contains("WidgetLayout.plan(\n        size.width.value,\n        size.height.value,"))
     }
 }

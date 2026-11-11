@@ -120,7 +120,12 @@ private fun Content(s: WidgetSnapshot) {
     val size = LocalSize.current
     val now = System.currentTimeMillis()
     val stale = s.isStale(now)
-    val plan = WidgetLayout.plan(size.width.value, size.height.value)
+    val plan = WidgetLayout.plan(
+        size.width.value,
+        size.height.value,
+        hasMessage = s.lastFrom != null,
+        nearbyAvailable = if (stale) 0 else s.nearby.size,
+    )
     val muted = GlanceTheme.colors.onSurfaceVariant
     val ink = if (stale) muted else GlanceTheme.colors.onSurface
 
@@ -129,7 +134,10 @@ private fun Content(s: WidgetSnapshot) {
         return
     }
 
-    // The blocks and their heights are WidgetLayout's; keep the two in step.
+    // The blocks and their heights are WidgetLayout's; keep the two in step. The last
+    // block takes the remaining height (defaultWeight), so whatever the plan could not use
+    // is inside it, never a blank band under it.
+    val nearbyLast = plan.nearbyRows > 0
     Box(
         GlanceModifier.fillMaxSize()
             .background(GlanceTheme.colors.widgetBackground)
@@ -148,7 +156,10 @@ private fun Content(s: WidgetSnapshot) {
             Spacer(GlanceModifier.height(WidgetLayout.GAP.dp))
             if (plan.wide) {
                 // A narrow status column, the message taking the rest of the width.
-                Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
+                Row(
+                    GlanceModifier.fillMaxWidth().let { if (nearbyLast) it else it.defaultWeight() },
+                    verticalAlignment = Alignment.Top,
+                ) {
                     Column(GlanceModifier.width(WidgetLayout.STATUS_WIDTH.dp)) {
                         Row(GlanceModifier.height(20.dp), verticalAlignment = Alignment.CenterVertically) { Battery(s, ink) }
                         Row(GlanceModifier.height(20.dp), verticalAlignment = Alignment.CenterVertically) { Repeater(s, ink) }
@@ -165,12 +176,14 @@ private fun Content(s: WidgetSnapshot) {
                 }
                 if (plan.messageLines > 0) {
                     Spacer(GlanceModifier.height(WidgetLayout.GAP.dp))
-                    Latest(s, ink, muted, now, plan.messageLines)
+                    Column(GlanceModifier.fillMaxWidth().let { if (nearbyLast) it else it.defaultWeight() }) {
+                        Latest(s, ink, muted, now, plan.messageLines)
+                    }
                 }
             }
-            if (plan.nearbyRows > 0) {
+            if (nearbyLast) {
                 Spacer(GlanceModifier.height(WidgetLayout.GAP.dp))
-                Nearby(s, ink, muted, stale, plan.nearbyRows)
+                Nearby(s, ink, muted, stale, plan.nearbyRows, GlanceModifier.defaultWeight())
             }
         }
     }
@@ -336,10 +349,17 @@ private fun statusDot(s: WidgetSnapshot, stale: Boolean): ColorProvider {
 
 /** Repeaters heard directly, strongest first, named only when unambiguous. Bars, no dB. */
 @Composable
-private fun Nearby(s: WidgetSnapshot, ink: ColorProvider, muted: ColorProvider, stale: Boolean, maxRows: Int) {
+private fun Nearby(
+    s: WidgetSnapshot,
+    ink: ColorProvider,
+    muted: ColorProvider,
+    stale: Boolean,
+    maxRows: Int,
+    modifier: GlanceModifier = GlanceModifier,
+) {
     val context = LocalContext.current
     Column(
-        GlanceModifier.fillMaxWidth()
+        modifier.fillMaxWidth()
             .background(GlanceTheme.colors.secondaryContainer)
             .cornerRadius(16.dp)
             .padding(horizontal = 12.dp, vertical = 8.dp),

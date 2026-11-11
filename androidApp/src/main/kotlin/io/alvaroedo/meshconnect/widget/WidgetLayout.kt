@@ -16,6 +16,13 @@ package io.alvaroedo.meshconnect.widget
  *   order: the message gets two lines, then repeaters get rows, then the message grows.
  *
  * The same function drew the mockups, so the reviewed frames are what ships.
+ *
+ * **Content, not just size** (on the phone, 2026-11-11): planning for the most each block
+ * could hold left a blank band under a radio with no messages and two repeaters, because
+ * the message's six lines and the card's six rows were reserved and never drawn. The plan
+ * now takes what there is to show, and MeshWidget gives the last block the remaining
+ * height, so any surplus (or a launcher reporting a size a little off) lands inside the
+ * last block rather than under it.
  */
 object WidgetLayout {
 
@@ -57,7 +64,11 @@ object WidgetLayout {
     const val MAX_NEARBY = 6
     const val MAX_MESSAGE_LINES = 6
 
-    fun plan(width: Float, height: Float): Plan {
+    /**
+     * [hasMessage]: there is a latest message to show. [nearbyAvailable]: repeaters there
+     * are to list (an empty list still takes one row, for "none heard").
+     */
+    fun plan(width: Float, height: Float, hasMessage: Boolean = true, nearbyAvailable: Int = MAX_NEARBY): Plan {
         val wide = width >= WIDE_MIN_WIDTH
         if (height < CARD_MIN_HEIGHT) {
             return Plan(row = true, largeRow = height >= LARGE_ROW_MIN_HEIGHT, wide = wide, messageLines = 0, nearbyRows = 0)
@@ -65,19 +76,23 @@ object WidgetLayout {
         var left = height - 2 * PAD - HEAD - GAP
         var lines = 0
         if (wide) {
-            // Status and message share one band, as tall as the taller of the two.
-            lines = 2
-            left -= maxOf(STATUS_TWO_LINES, MESSAGE_HEAD + lines * MESSAGE_LINE)
+            // Status and message share one band, as tall as the taller of the two. With no
+            // message, the band is the status and "No messages yet" sits beside it.
+            if (hasMessage) lines = 2
+            left -= maxOf(STATUS_TWO_LINES, if (hasMessage) MESSAGE_HEAD + lines * MESSAGE_LINE else 0f)
         } else {
             left -= STATUS_ONE_LINE
-            if (left - GAP >= MESSAGE_HEAD + 2 * MESSAGE_LINE) {
+            // Stacked, a missing message takes no height at all.
+            if (hasMessage && left - GAP >= MESSAGE_HEAD + 2 * MESSAGE_LINE) {
                 lines = 2
                 left -= GAP + MESSAGE_HEAD + 2 * MESSAGE_LINE
             }
         }
         var nearby = 0
         if (left - GAP >= NEARBY_HEAD + NEARBY_ROW) {
-            nearby = ((left - GAP - NEARBY_HEAD) / NEARBY_ROW).toInt().coerceAtMost(MAX_NEARBY)
+            nearby = ((left - GAP - NEARBY_HEAD) / NEARBY_ROW).toInt()
+                .coerceAtMost(MAX_NEARBY)
+                .coerceAtMost(nearbyAvailable.coerceAtLeast(1))
             left -= GAP + NEARBY_HEAD + nearby * NEARBY_ROW
         }
         // Whatever is left grows the message.

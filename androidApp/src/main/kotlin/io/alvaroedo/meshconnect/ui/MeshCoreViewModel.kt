@@ -1888,6 +1888,23 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
     private val _loginError = MutableStateFlow<Map<String, String>>(emptyMap())
     val loginError: StateFlow<Map<String, String>> = _loginError
 
+    init {
+        // A session belongs to (this radio, that repeater): drop them all when the
+        // companion radio changes, or the old radio's grant shows on the new one
+        // (RadioSessions). Here, not in the init at the top: these fields must exist.
+        viewModelScope.launch {
+            var lastRadio = ""
+            selfKey.collect { key ->
+                val (remember, changed) = io.alvaroedo.meshconnect.ui.model.RadioSessions.onIdentity(lastRadio, key)
+                lastRadio = remember
+                if (changed) {
+                    _adminSessions.value = emptyMap()
+                    _loginError.value = emptyMap()
+                }
+            }
+        }
+    }
+
     /**
      * Log in to a repeater/room with [password].
      *
