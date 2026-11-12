@@ -417,6 +417,7 @@
     <string name="add_host">Host</string>
     <string name="add_port">Port</string>
     <string name="add_tcp_connect">Connect (unencrypted)</string>
+    <string name="add_tcp_local_network">To connect over TCP, allow MeshConnect to reach devices on your local network (Nearby devices, in the app\'s permissions).</string>
     <string name="mapnode_last_heard">Last heard %1$s</string>
     <string name="mapnode_open">Open this node</string>
     <string name="mapnode_neighbours">Neighbours</string>

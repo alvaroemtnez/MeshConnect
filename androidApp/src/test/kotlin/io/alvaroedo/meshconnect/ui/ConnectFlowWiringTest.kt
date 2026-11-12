@@ -39,7 +39,14 @@ class ConnectFlowWiringTest {
     @Test
     fun `bluetooth permission is not asked before first run is done`() {
         val s = src("MainActivity.kt")
-        assertTrue(s.contains("Preferences(this).setupComplete && !BlePermissions.allGranted(this)"))
+        // 1.2.0: the start-up request also carries the local network permission (TCP on,
+        // Android 17+), so it is built as a list, but all of it stays behind setupComplete.
+        val gate = s.indexOf("if (prefs.setupComplete) {")
+        val ble = s.indexOf("BlePermissions.required()")
+        val lan = s.indexOf("add(LocalNetworkPermission.PERMISSION)")
+        val launch = s.indexOf("permissionLauncher.launch(")
+        assertTrue("nothing is asked outside the first-run gate", gate in 0 until ble && ble < lan && lan < launch)
+        assertTrue(s.substring(gate, launch).count { it == '{' } > s.substring(gate, launch).count { it == '}' })
         assertFalse(s.contains("        if (!BlePermissions.allGranted(this)) {"))
     }
 }

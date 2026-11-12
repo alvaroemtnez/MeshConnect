@@ -23,11 +23,17 @@
     <!-- Foreground service holding the BLE/USB/TCP radio link. -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
-    <!-- dataSync FGS type for TCP-only connections: connectedDevice requires
-         a granted Bluetooth runtime permission on Android 14+, which a
-         TCP-only user who denied BLE doesn't have (carried over from
-         reticulum-mobile-app issue #35). -->
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <!-- connectedDevice's prerequisite for every link, Bluetooth or not. Android 14+ starts a
+         connectedDevice service only if the app holds one of a list of permissions: a granted
+         Bluetooth one, or this one merely declared (a normal permission, granted at install).
+         Until 1.2.0 a TCP-only user who denied Bluetooth fell back to the dataSync type
+         (reticulum-mobile-app issue #35); targeting Android 15+, dataSync is limited to six
+         hours a day and may not start from BOOT_COMPLETED, so it is gone. -->
+    <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
+    <!-- Android 17+: reaching a radio on the local network (the TCP transport, off by default)
+         needs this runtime permission. Same "Nearby devices" group as Bluetooth, so who has
+         granted Bluetooth is not asked again. Requested only when TCP is on (BlePermissions). -->
+    <uses-permission android:name="android.permission.ACCESS_LOCAL_NETWORK" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- Start the radio service with the phone (BootReceiver; a setting). -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
@@ -93,7 +99,7 @@
 
         <service
             android:name=".service.MeshCoreService"
-            android:foregroundServiceType="connectedDevice|dataSync"
+            android:foregroundServiceType="connectedDevice"
             android:exported="false" />
 
         <!-- Boot and app-update start. Both are system broadcasts, which reach

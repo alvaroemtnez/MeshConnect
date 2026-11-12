@@ -505,6 +505,7 @@ S = {
 "add_host": ('Host', 'Host', 'Host'),
 "add_port": ('Port', 'Puerto', 'Port'),
 "add_tcp_connect": ('Connect (unencrypted)', 'Conectar (sin cifrar)', 'Connectar (sense xifrar)'),
+"add_tcp_local_network": ("To connect over TCP, allow MeshConnect to reach devices on your local network (Nearby devices, in the app's permissions).", "Para conectar por TCP, permite que MeshConnect acceda a los dispositivos de tu red local (Dispositivos cercanos, en los permisos de la app).", "Per a connectar per TCP, permet que MeshConnect accedisca als dispositius de la teua xarxa local (Dispositius pròxims, en els permisos de l'aplicació)."),
 
 "mapnode_last_heard": ('Last heard %1$s', 'Oído por última vez %1$s', 'Escoltat per última vegada %1$s'),
 "mapnode_open": ('Open this node', 'Abrir este nodo', 'Obrir aquest node'),

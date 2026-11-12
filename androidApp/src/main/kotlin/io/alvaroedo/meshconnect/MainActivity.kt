@@ -45,6 +45,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import io.alvaroedo.meshconnect.platform.BlePermissions
+import io.alvaroedo.meshconnect.platform.LocalNetworkPermission
 import io.alvaroedo.meshconnect.ui.FirmwareTargetKind
 import io.alvaroedo.meshconnect.ui.MeshCoreViewModel
 import io.alvaroedo.meshconnect.ui.screens.FirmwareScreen
@@ -112,8 +113,17 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         // First run asks when the user goes looking for a radio (RadioPicker), with the
         // reason on screen; asking here, before anything is shown, explains nothing.
-        if (io.alvaroedo.meshconnect.storage.Preferences(this).setupComplete && !BlePermissions.allGranted(this)) {
-            permissionLauncher.launch(BlePermissions.required())
+        val prefs = io.alvaroedo.meshconnect.storage.Preferences(this)
+        if (prefs.setupComplete) {
+            val ask = buildList {
+                if (!BlePermissions.allGranted(this@MainActivity)) addAll(BlePermissions.required())
+                if (LocalNetworkPermission.shouldRequest(
+                        android.os.Build.VERSION.SDK_INT, prefs.tcpEnabled,
+                        LocalNetworkPermission.granted(this@MainActivity),
+                    )
+                ) add(LocalNetworkPermission.PERMISSION)
+            }
+            if (ask.isNotEmpty()) permissionLauncher.launch(ask.toTypedArray())
         }
         // MapLibre needs its singleton before any MapView exists.
         io.alvaroedo.meshconnect.ui.map.MapStyles.init(this)

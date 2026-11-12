@@ -414,6 +414,7 @@
     <string name="add_host">Host</string>
     <string name="add_port">Port</string>
     <string name="add_tcp_connect">Connectar (sense xifrar)</string>
+    <string name="add_tcp_local_network">Per a connectar per TCP, permet que MeshConnect accedisca als dispositius de la teua xarxa local (Dispositius pròxims, en els permisos de l\'aplicació).</string>
     <string name="mapnode_last_heard">Escoltat per última vegada %1$s</string>
     <string name="mapnode_open">Obrir aquest node</string>
     <string name="mapnode_neighbours">Veïns</string>

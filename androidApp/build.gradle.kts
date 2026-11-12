@@ -27,14 +27,14 @@ fun gitDerivedVersion(): Pair<String, Int>? {
 
 android {
     namespace = "io.alvaroedo.meshconnect"
-    compileSdk = 36
+    compileSdk = 37
     // build.sh installs the SDK packages named here and by compileSdk.
-    buildToolsVersion = "36.0.0"
+    buildToolsVersion = "37.0.0"
 
     defaultConfig {
         applicationId = "io.alvaroedo.meshconnect"
         minSdk = 26
-        targetSdk = 34
+        targetSdk = 37
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         val gitVersion = gitDerivedVersion()
         versionName = (project.findProperty("versionName") as? String)

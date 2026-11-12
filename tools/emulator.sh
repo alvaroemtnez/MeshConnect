@@ -10,13 +10,17 @@
 #
 # Needs /dev/kvm and, once:
 #   eval "$(./build.sh env)"
-#   android --no-metrics --sdk=$ANDROID_HOME sdk install emulator system-images/android-34/default/x86_64
+#   android --no-metrics --sdk=$ANDROID_HOME sdk install emulator system-images/android-37.0/default/x86_64
+#
+# Android 17 (API 37), what the app targets since 1.2.0, so the target-SDK rules (boot start,
+# foreground service types, the local network permission) apply. A new AVD name, so an
+# existing API 34 "meshconnect" AVD and its data are left alone.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 eval "$("$ROOT/build.sh" env 2>/dev/null)"
 export ANDROID_AVD_HOME="$ANDROID_USER_HOME/avd"
-AVD=meshconnect
-IMG="system-images/android-34/default/x86_64"
+AVD=meshconnect-37
+IMG="system-images/android-37.0/default/x86_64"
 ADB="$ANDROID_HOME/platform-tools/adb"
 
 create() {
@@ -25,7 +29,7 @@ create() {
     cat > "$ANDROID_AVD_HOME/$AVD.ini" <<INI
 avd.ini.encoding=UTF-8
 path=$ANDROID_AVD_HOME/$AVD.avd
-target=android-34
+target=android-37.0
 INI
     cat > "$ANDROID_AVD_HOME/$AVD.avd/config.ini" <<INI
 image.sysdir.1=$IMG/

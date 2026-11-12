@@ -55,7 +55,7 @@ kotlin {
 
 android {
     namespace = "io.github.thatsfguy.meshcore.shared"
-    compileSdk = 34
+    compileSdk = 37
     defaultConfig {
         minSdk = 26  // Android 8.0 — BLE APIs stable
     }

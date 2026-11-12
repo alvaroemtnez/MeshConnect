@@ -42,6 +42,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.alvaroedo.meshconnect.R
 import io.alvaroedo.meshconnect.platform.BlePermissions
+import io.alvaroedo.meshconnect.platform.LocalNetworkPermission
 import io.alvaroedo.meshconnect.platform.BleScanner
 import io.alvaroedo.meshconnect.platform.DiscoveredDevice
 import io.alvaroedo.meshconnect.platform.UsbDevices
@@ -193,11 +194,35 @@ fun RadioPicker(
                 )
             }
             HintText(stringResource(R.string.set_tcp_warning))
+            // Android 17+: a radio on the local network needs ACCESS_LOCAL_NETWORK. Asked here,
+            // at the tap that needs it; the connection starts only once it is granted, and a
+            // refusal says why TCP cannot connect instead of failing in the background.
+            var pendingTcp by remember { mutableStateOf<Pair<String, Int>?>(null) }
+            var lanRefused by remember { mutableStateOf(false) }
+            val lanPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { ok ->
+                val target = pendingTcp
+                pendingTcp = null
+                lanRefused = !ok
+                if (ok && target != null) {
+                    vm.connectTcp(target.first, target.second)
+                    onPicked()
+                }
+            }
+            if (lanRefused) HintText(stringResource(R.string.add_tcp_local_network))
             FilledTonalButton(onClick = {
                 val p = port.toIntOrNull()
                 if (host.isNotBlank() && p != null && p in 1..65535) {
-                    vm.connectTcp(host.trim(), p)
-                    onPicked()
+                    if (LocalNetworkPermission.shouldRequest(
+                            android.os.Build.VERSION.SDK_INT, tcpEnabled = true,
+                            granted = LocalNetworkPermission.granted(context),
+                        )
+                    ) {
+                        pendingTcp = host.trim() to p
+                        lanPermission.launch(LocalNetworkPermission.PERMISSION)
+                    } else {
+                        vm.connectTcp(host.trim(), p)
+                        onPicked()
+                    }
                 }
             }) { Text(stringResource(R.string.add_tcp_connect)) }
         }

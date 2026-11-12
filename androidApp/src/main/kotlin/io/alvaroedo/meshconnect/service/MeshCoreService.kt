@@ -737,16 +737,11 @@ class MeshCoreService : Service() {
         )
         val notification = buildNotification(getString(R.string.hub_not_connected))
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            // Declare only the FGS types whose runtime permissions are
-            // actually granted (connectedDevice needs BLUETOOTH_CONNECT
-            // on 14+; TCP-only users may have denied it).
-            var types = ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
-            if (checkSelfPermission(android.Manifest.permission.BLUETOOTH_CONNECT) ==
-                PackageManager.PERMISSION_GRANTED
-            ) {
-                types = types or ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE
-            }
-            startForeground(NOTIF_ID, notification, types)
+            // connectedDevice only, for every link (BLE, USB, TCP): its prerequisite is met by
+            // CHANGE_NETWORK_STATE, declared in the manifest, whether or not Bluetooth was
+            // granted. Not dataSync: targeting Android 15+, a dataSync service may not start
+            // from BOOT_COMPLETED and is stopped after six hours a day (see the manifest).
+            startForeground(NOTIF_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE)
         } else {
             startForeground(NOTIF_ID, notification)
         }
