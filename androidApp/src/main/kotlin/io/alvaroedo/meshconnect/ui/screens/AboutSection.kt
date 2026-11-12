@@ -285,6 +285,12 @@ private fun AboutGroup(title: String) {
  * fork is in docs/upstream/CHANGELOG-MeshCoreHardened.md.
  */
 private val CHANGELOG: List<Pair<String, List<String>>> = listOf(
+    "1.2.0" to listOf(
+        "The widget shows the link with an icon (connected, connecting, not connected) and says it in words when there is no link.",
+        "The widget follows the link as it changes, instead of sometimes staying on \"connected\".",
+        "Targets Android 17: the radio service runs all day and starts with the phone on every link.",
+        "On Android 17, a network (TCP) radio asks for local network access, part of Nearby devices.",
+    ),
     "1.1.0" to listOf(
         "Widgets redone: every size from 2×1 to 4×4 uses its space, with the latest message and nearby repeaters sharing it.",
         "Bigger chat and node rows, with two initials for contacts.",

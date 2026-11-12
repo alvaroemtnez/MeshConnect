@@ -161,16 +161,16 @@ original author does not oppose the inclusion: tell thatSFguy before submitting.
   a DNS `TXT` record at `_accverify.alvaroedo.io` holding the code the reviewer emails.
   Accrescent pins the signing key of the first upload, so upload one signed with the key from
   step 1.
-- **Blocker: the target SDK.** Accrescent follows Google Play's target SDK rules with no
-  extensions: API 36 for new apps and updates from 31 August 2026 (and 37 likely from August
-  2027). MeshConnect targets 34. Raising it means, from Android 15: the foreground service
-  must stop using the `dataSync` type (a `BOOT_COMPLETED` receiver may not start it, and it is
-  limited to 6 hours a day), keeping `connectedDevice`; from Android 16: orientation is
-  ignored on large screens; from Android 17: the `ACCESS_LOCAL_NETWORK` runtime permission
-  for TCP radios and the Wi-Fi firmware update.
+- Target SDK: 37 since 1.2.0. Accrescent follows Google Play's target SDK rules with no
+  extensions (API 36 for new apps and updates from 31 August 2026, likely 37 from August
+  2027), so raise it again when Google does. What 1.2.0 changed for it: the radio service is
+  a `connectedDevice` foreground service for every link (`CHANGE_NETWORK_STATE` declared, so
+  it needs no Bluetooth grant), not `dataSync`, which Android 15+ limits to six hours a day
+  and forbids from `BOOT_COMPLETED`; TCP asks for `ACCESS_LOCAL_NETWORK` on Android 17. The
+  emulator (`tools/emulator.sh`) runs Android 17 to test these.
 - Checked against Accrescent's publishing requirements (November 2026) on the 1.1.0 `.apks`:
   one signer, v2 and v3 signatures, not a debug certificate, arm64-v8a with armeabi-v7a, not
-  debuggable. Apps may not have self-updaters: the firmware updater updates the radio, not the
+  debuggable (on 1.1.0, before the target SDK change). Apps may not have self-updaters: the firmware updater updates the radio, not the
   app; say so to the reviewer. Accrescent has no generative-AI policy.
 - The reviewer reads the manifest's permissions: Bluetooth (the radio; scanning is declared
   `neverForLocation`), location (the phone's position, shared only when you choose to; also

@@ -11,6 +11,21 @@ MeshConnect is a fork of [MeshCore Hardened](https://github.com/thatSFguy/meshco
 Its history up to the fork point (0.10.15) is in
 [docs/upstream/CHANGELOG-MeshCoreHardened.md](docs/upstream/CHANGELOG-MeshCoreHardened.md).
 
+## 1.2.0
+
+- **The widget tells you whether the radio is connected.** The status dot is now an icon with
+  a different shape for each state: a link (connected; red over unencrypted TCP), a sync
+  arrow (connecting), a broken link (not connected, or the app not running). While there is
+  no link, the battery and signal line says so in words instead of showing the last readings.
+  And the widget now follows the link as it changes: until now a widget could keep showing
+  "connected" after the radio dropped.
+- **Ready for Android 15, 16 and 17.** MeshConnect targets Android 17. The service that keeps
+  the radio connected is now a "connected device" service for every link, so it keeps running
+  past six hours and still starts with the phone; before, a TCP-only setup that had refused
+  Bluetooth would have hit both limits. On Android 17, connecting to a network (TCP) radio asks
+  for access to devices on your local network, in the same "Nearby devices" permission as
+  Bluetooth: if you already allowed Bluetooth, nothing new is asked.
+
 ## 1.1.0
 
 - **Widgets redone.** Every size uses its space. The one-row widget is two lines: status dot,
