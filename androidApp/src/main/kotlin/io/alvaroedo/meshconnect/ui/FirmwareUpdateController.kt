@@ -500,7 +500,7 @@ class FirmwareUpdateController(
                                     TransferLog.describe(
                                         progress.bytesSent,
                                         progress.totalBytes,
-                                        System.currentTimeMillis() - (startedAt ?: 0L),
+                                        System.currentTimeMillis() - startedAt,
                                     ),
                                 )
                             }

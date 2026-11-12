@@ -119,7 +119,6 @@ object MessageLinks {
                         when (kind) {
                             Kind.Http -> onHttpLink(url)
                             Kind.Meshcore -> onMeshcoreLink(url)
-                            else -> Unit
                         }
                     },
                 ),

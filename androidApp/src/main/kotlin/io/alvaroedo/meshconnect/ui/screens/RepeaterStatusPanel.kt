@@ -46,7 +46,7 @@ import kotlinx.coroutines.launch
  */
 @Composable
 fun RepeaterStatusPanel(vm: MeshCoreViewModel, keyHex: String) {
-    val ctx = androidx.compose.ui.platform.LocalContext.current
+    val res = androidx.compose.ui.platform.LocalResources.current
     val scope = rememberCoroutineScope()
     var status by remember(keyHex) { mutableStateOf<RepeaterStatus?>(null) }
     var telemetry by remember(keyHex) { mutableStateOf<List<TelemetryReading>>(emptyList()) }
@@ -58,7 +58,7 @@ fun RepeaterStatusPanel(vm: MeshCoreViewModel, keyHex: String) {
         loading = true
         note = null
         status = vm.repeaterStatus(keyHex)
-        if (status == null) note = ctx.getString(R.string.rs_no_status)
+        if (status == null) note = res.getString(R.string.rs_no_status)
         loading = false
     }
 
@@ -188,7 +188,7 @@ private fun StatField(label: String, value: String) {
  */
 @Composable
 private fun AccessListSection(vm: MeshCoreViewModel, keyHex: String) {
-    val ctx = androidx.compose.ui.platform.LocalContext.current
+    val res = androidx.compose.ui.platform.LocalResources.current
     val scope = rememberCoroutineScope()
     var entries by remember(keyHex) {
         mutableStateOf<List<io.github.thatsfguy.meshcore.protocol.AccessList.BinEntry>?>(null)
@@ -211,7 +211,7 @@ private fun AccessListSection(vm: MeshCoreViewModel, keyHex: String) {
                         // question it could never have answered.
                         entries = vm.repeaterAccessList(keyHex)
                         if (entries == null) {
-                            note = ctx.getString(R.string.rs_acl_no_reply)
+                            note = res.getString(R.string.rs_acl_no_reply)
                         }
                         loading = false
                     }
@@ -332,7 +332,7 @@ private const val WATCH_SAMPLES = 24
  */
 @Composable
 private fun NeighboursSection(vm: MeshCoreViewModel, keyHex: String) {
-    val ctx = androidx.compose.ui.platform.LocalContext.current
+    val res = androidx.compose.ui.platform.LocalResources.current
     // Only repeater firmware keeps a neighbour table — room servers and
     // sensors have no `0x06` handler at all, so the button could only
     // ever time out into "no reply, are you in range?", which blames the
@@ -367,12 +367,12 @@ private fun NeighboursSection(vm: MeshCoreViewModel, keyHex: String) {
         val t = vm.repeaterNeighbours(keyHex, offset = offset)
         table = t
         when {
-            t == null -> note = ctx.getString(R.string.rs_no_reply)
+            t == null -> note = res.getString(R.string.rs_no_reply)
             // A correct request cannot produce this: the node is
             // claiming rows and returning an empty first page. Say it is
             // wrong rather than inviting a retry that cannot help.
             t.isEmptyButNotEmpty ->
-                note = ctx.getString(R.string.rs_nb_rejected, t.total)
+                note = res.getString(R.string.rs_nb_rejected, t.total)
             else -> rows = if (offset == 0) t.entries else rows + t.entries
         }
         loading = false
@@ -392,7 +392,7 @@ private fun NeighboursSection(vm: MeshCoreViewModel, keyHex: String) {
                             probing = true
                             note = null
                             if (!vm.probeNeighbours(keyHex)) {
-                                note = ctx.getString(R.string.rs_probe_refused)
+                                note = res.getString(R.string.rs_probe_refused)
                             } else {
                                 // Replies arrive over the air, one per
                                 // repeater that hears it. Measured against a

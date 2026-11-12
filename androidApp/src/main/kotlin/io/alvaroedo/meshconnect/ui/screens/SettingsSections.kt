@@ -281,7 +281,7 @@ internal fun IdentitySection(vm: MeshCoreViewModel, onShowSelfQr: () -> Unit) {
 
 @Composable
 internal fun RadioSection(vm: MeshCoreViewModel) {
-    val ctx = androidx.compose.ui.platform.LocalContext.current
+    val res = androidx.compose.ui.platform.LocalResources.current
     val self by vm.selfInfo.collectAsState()
     val info = self
     if (info == null) {
@@ -385,7 +385,7 @@ internal fun RadioSection(vm: MeshCoreViewModel) {
         }
         Spacer(Modifier.width(8.dp))
         androidx.compose.material3.FilledTonalIconButton(onClick = {
-            scanLauncher.launch(ctx.getString(R.string.radio_scan_prompt))
+            scanLauncher.launch(res.getString(R.string.radio_scan_prompt))
         }) {
             androidx.compose.material3.Icon(
                 androidx.compose.ui.res.painterResource(R.drawable.ic_qr_code_scanner),
@@ -416,7 +416,7 @@ internal fun RadioSection(vm: MeshCoreViewModel) {
             ) {
                 vm.setRadioParams(f, b, s, c)
             } else {
-                vm.transientMessage.value = ctx.getString(R.string.radio_bad_params)
+                vm.transientMessage.value = res.getString(R.string.radio_bad_params)
             }
         },
     ) { Text(stringResource(R.string.radio_apply_params)) }
@@ -904,7 +904,7 @@ private fun ChannelDatagramTool(vm: MeshCoreViewModel) {
     var note by remember { mutableStateOf<String?>(null) }
     var busy by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
-    val ctx = androidx.compose.ui.platform.LocalContext.current
+    val res = androidx.compose.ui.platform.LocalResources.current
 
     // Spaced: filled fields stacked with no gap read as one overlapping block.
     Column(verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)) {
@@ -951,13 +951,13 @@ private fun ChannelDatagramTool(vm: MeshCoreViewModel) {
                     scope.launch {
                         val bytes = io.github.thatsfguy.meshcore.util.hexToBytesOrNull(payloadHex)
                         note = when {
-                            bytes == null -> ctx.getString(R.string.dg_odd)
+                            bytes == null -> res.getString(R.string.dg_odd)
                             else -> {
                                 val ok = vm.sendChannelDatagram(idx ?: -1, type ?: 0, bytes)
                                 if (ok) {
-                                    ctx.getString(R.string.dg_sent, bytes.size, idx ?: -1)
+                                    res.getString(R.string.dg_sent, bytes.size, idx ?: -1)
                                 } else {
-                                    ctx.getString(R.string.dg_refused)
+                                    res.getString(R.string.dg_refused)
                                 }
                             }
                         }

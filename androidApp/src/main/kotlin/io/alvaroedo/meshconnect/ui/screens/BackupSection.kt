@@ -41,7 +41,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun BackupSection(vm: MeshCoreViewModel) {
     val scope = rememberCoroutineScope()
-    val ctx = androidx.compose.ui.platform.LocalContext.current
+    val res = androidx.compose.ui.platform.LocalResources.current
     var exportPrompt by remember { mutableStateOf(false) }
     var pendingExport by remember { mutableStateOf<String?>(null) }
     var importPreview by remember { mutableStateOf<ConfigBackup.Parsed?>(null) }
@@ -63,7 +63,7 @@ fun BackupSection(vm: MeshCoreViewModel) {
         scope.launch {
             val parsed = vm.readBackupFile(uri)
             if (parsed == null) {
-                note = ctx.getString(R.string.backup_not_ours)
+                note = res.getString(R.string.backup_not_ours)
             } else {
                 importPreview = parsed
             }
@@ -88,7 +88,7 @@ fun BackupSection(vm: MeshCoreViewModel) {
                 scope.launch {
                     val text = vm.buildBackup(passphrase)
                     if (text == null) {
-                        note = ctx.getString(R.string.backup_build_failed)
+                        note = res.getString(R.string.backup_build_failed)
                     } else {
                         pendingExport = text
                         createFile.launch(ConfigBackupRepository.suggestedFileName(vm.nowSeconds()))

@@ -64,7 +64,7 @@ import kotlinx.coroutines.launch
  */
 @Composable
 fun RepeaterRegionsPanel(vm: MeshCoreViewModel, keyHex: String, isAdmin: Boolean) {
-    val ctx = androidx.compose.ui.platform.LocalContext.current
+    val res = androidx.compose.ui.platform.LocalResources.current
     val scope = rememberCoroutineScope()
     var tree by remember(keyHex) { mutableStateOf<Regions.RegionTree?>(null) }
     var rawReply by remember(keyHex) { mutableStateOf<String?>(null) }
@@ -102,7 +102,7 @@ fun RepeaterRegionsPanel(vm: MeshCoreViewModel, keyHex: String, isAdmin: Boolean
             chosenMode = RegionAdmin.currentUntagged(t.wildcardFloodAllowed, hopLimit, limitSupported)
             hopLimit?.takeIf { it in RegionAdmin.NEARBY_HOPS }?.let { chosenHops = it }
         }
-        if (listing == null) note = ctx.getString(R.string.rs_no_reply)
+        if (listing == null) note = res.getString(R.string.rs_no_reply)
     }
 
     fun refresh() {
@@ -127,7 +127,7 @@ fun RepeaterRegionsPanel(vm: MeshCoreViewModel, keyHex: String, isAdmin: Boolean
             for (command in commands) {
                 val reply = vm.cliQuery(keyHex, command)
                 when {
-                    reply == null -> failed = ctx.getString(R.string.rr_no_reply_to, command)
+                    reply == null -> failed = res.getString(R.string.rr_no_reply_to, command)
                     reply.trim().startsWith("Err", ignoreCase = true) ->
                         failed = "`$command`: ${reply.trim()}"
                     RegionAdmin.savesRegions(command) -> pendingEdits = false
@@ -171,7 +171,7 @@ fun RepeaterRegionsPanel(vm: MeshCoreViewModel, keyHex: String, isAdmin: Boolean
             }
             androidx.compose.material3.FilledTonalButton(
                 enabled = !loading && isAdmin,
-                onClick = { run(Regions.save(), describe = ctx.getString(R.string.rr_saved)) },
+                onClick = { run(Regions.save(), describe = res.getString(R.string.rr_saved)) },
                 modifier = Modifier.weight(1f),
             ) { Text(stringResource(R.string.rr_save)) }
         }
@@ -229,15 +229,15 @@ fun RepeaterRegionsPanel(vm: MeshCoreViewModel, keyHex: String, isAdmin: Boolean
                     onClick = {
                         if (target == Untagged.Refuse) {
                             confirm = PendingRegionAction(
-                                title = ctx.getString(R.string.rr_refuse_q),
-                                body = ctx.getString(R.string.rr_refuse_body),
-                                confirmLabel = ctx.getString(R.string.rr_refuse),
+                                title = res.getString(R.string.rr_refuse_q),
+                                body = res.getString(R.string.rr_refuse_body),
+                                confirmLabel = res.getString(R.string.rr_refuse),
                                 destructive = true,
                                 commands = commands,
-                                describe = ctx.getString(R.string.rr_refused),
+                                describe = res.getString(R.string.rr_refused),
                             )
                         } else {
-                            run(commands, describe = ctx.getString(R.string.rr_updated))
+                            run(commands, describe = res.getString(R.string.rr_updated))
                         }
                     },
                 ) { Text(stringResource(R.string.rr_apply)) }
@@ -263,12 +263,12 @@ fun RepeaterRegionsPanel(vm: MeshCoreViewModel, keyHex: String, isAdmin: Boolean
             if (isAdmin && defaultScope != null && defaultScope != Regions.GLOBAL_SELECTOR) {
                 TextButton(enabled = !loading, onClick = {
                     confirm = PendingRegionAction(
-                        title = ctx.getString(R.string.rr_clear_q),
-                        body = ctx.getString(R.string.rr_clear_body),
-                        confirmLabel = ctx.getString(R.string.clear),
+                        title = res.getString(R.string.rr_clear_q),
+                        body = res.getString(R.string.rr_clear_body),
+                        confirmLabel = res.getString(R.string.clear),
                         destructive = false,
                         commands = listOf(Regions.setDefault(null)),
-                        describe = ctx.getString(R.string.rr_cleared),
+                        describe = res.getString(R.string.rr_cleared),
                     )
                 }) { Text(stringResource(R.string.clear)) }
             }
@@ -377,32 +377,32 @@ fun RepeaterRegionsPanel(vm: MeshCoreViewModel, keyHex: String, isAdmin: Boolean
                                 when (action) {
                                     Action.MakeDefault -> run(
                                         Regions.setDefault(entry.name),
-                                        describe = ctx.getString(R.string.rr_now_default, entry.name),
+                                        describe = res.getString(R.string.rr_now_default, entry.name),
                                     )
                                     Action.SetHome -> run(
                                         Regions.setHome(entry.name),
-                                        describe = ctx.getString(R.string.rr_now_home, entry.name),
+                                        describe = res.getString(R.string.rr_now_home, entry.name),
                                     )
                                     Action.AddChild -> addUnder = entry.name
                                     Action.AllowFlood -> run(
                                         Regions.allowFlood(entry.name),
-                                        describe = ctx.getString(R.string.rr_flood_allowed, entry.name),
+                                        describe = res.getString(R.string.rr_flood_allowed, entry.name),
                                     )
                                     Action.DenyFlood -> confirm = PendingRegionAction(
-                                        title = ctx.getString(R.string.rr_deny_q, entry.name),
-                                        body = ctx.getString(R.string.rr_deny_body, entry.name),
-                                        confirmLabel = ctx.getString(R.string.rr_deny),
+                                        title = res.getString(R.string.rr_deny_q, entry.name),
+                                        body = res.getString(R.string.rr_deny_body, entry.name),
+                                        confirmLabel = res.getString(R.string.rr_deny),
                                         destructive = true,
                                         commands = listOf(Regions.denyFlood(entry.name)),
-                                        describe = ctx.getString(R.string.rr_flood_denied, entry.name),
+                                        describe = res.getString(R.string.rr_flood_denied, entry.name),
                                     )
                                     Action.Remove -> confirm = PendingRegionAction(
-                                        title = ctx.getString(R.string.rr_remove_q, entry.name),
-                                        body = ctx.getString(R.string.rr_remove_body),
-                                        confirmLabel = ctx.getString(R.string.rr_remove),
+                                        title = res.getString(R.string.rr_remove_q, entry.name),
+                                        body = res.getString(R.string.rr_remove_body),
+                                        confirmLabel = res.getString(R.string.rr_remove),
                                         destructive = true,
                                         commands = listOf(Regions.remove(entry.name)),
-                                        describe = ctx.getString(R.string.rr_removed, entry.name),
+                                        describe = res.getString(R.string.rr_removed, entry.name),
                                     )
                                 }
                             },
@@ -432,7 +432,7 @@ fun RepeaterRegionsPanel(vm: MeshCoreViewModel, keyHex: String, isAdmin: Boolean
             onDismiss = { addUnder = null },
             onAdd = { name, parent ->
                 addUnder = null
-                run(Regions.put(name, parent), describe = ctx.getString(R.string.rr_added, Regions.canonical(name)))
+                run(Regions.put(name, parent), describe = res.getString(R.string.rr_added, Regions.canonical(name)))
             },
         )
     }

@@ -216,7 +216,9 @@ fun ConversationScreen(
     var confirmMyLocation by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
-    val selfName = vm.selfInfo.collectAsState().value?.name
+    val res = androidx.compose.ui.platform.LocalResources.current
+    val selfInfo by vm.selfInfo.collectAsState()
+    val selfName = selfInfo?.name
     // Who `@` can offer. On a channel that is the names seen posting on
     // it — the same list "Names seen…" shows, and the only names anyone
     // reading the channel would recognise. In a DM there is exactly one
@@ -383,7 +385,7 @@ fun ConversationScreen(
                     rich = { content ->
                         RichContentCard(
                             content = content,
-                            selfKey = vm.selfInfo.value?.publicKeyHex,
+                            selfKey = selfInfo?.publicKeyHex,
                             tilesEnabled = vm.prefs.mapTilesEnabled,
                             contacts = contacts,
                             channels = channels,
@@ -519,7 +521,7 @@ fun ConversationScreen(
     fun sendAttachment(text: String?) {
         if (text == null) return
         if (text.encodeToByteArray().size > maxBytes) {
-            vm.transientMessage.value = context.getString(R.string.attach_too_long)
+            vm.transientMessage.value = res.getString(R.string.attach_too_long)
             return
         }
         sendText(vm, isChannel, peerKey, text)
@@ -530,7 +532,7 @@ fun ConversationScreen(
         if (granted.values.any { it }) {
             confirmMyLocation = true
         } else {
-            vm.transientMessage.value = context.getString(R.string.attach_location_denied)
+            vm.transientMessage.value = res.getString(R.string.attach_location_denied)
         }
     }
     if (attachOpen) {
@@ -571,7 +573,7 @@ fun ConversationScreen(
                 scope.launch {
                     val psk = vm.channelPskHex(ch)
                     if (psk == null) {
-                        vm.transientMessage.value = context.getString(R.string.attach_channel_no_key)
+                        vm.transientMessage.value = res.getString(R.string.attach_channel_no_key)
                     } else {
                         sendAttachment(ShareUri.encodeChannel(ch.name.ifBlank { "#${ch.idx}" }, psk))
                     }
@@ -592,7 +594,7 @@ fun ConversationScreen(
         )
     }
     if (pickOnMap) {
-        val me = vm.selfInfo.value
+        val me = selfInfo
         PositionPickerDialog(
             vm = vm,
             initialLat = me?.latitude ?: 0.0,
@@ -1903,9 +1905,10 @@ private fun MessageFooter(m: MessageEntity) {
             Spacer(Modifier.width(4.dp))
             Icon(painterResource(icon), stringResource(label), tint = tint, modifier = Modifier.size(14.dp))
         }
+        val tryLabel = if (m.outgoing && m.attempts > 1) stringResource(R.string.conv_try, m.attempts) else null
         val extras = buildList {
             // Retries make a struggling route visible.
-            if (m.outgoing && m.attempts > 1) add(context.getString(R.string.conv_try, m.attempts))
+            tryLabel?.let { add(it) }
             // Who picked this up off the air; absent is not "nobody".
             if (m.outgoing) MessageRepeats.badge(m.repeatHopsHex, m.repeatHashWidth)?.let { add(it) }
             io.alvaroedo.meshconnect.ui.model.SharedText.footerHops(context, m.hops)?.let { add(it) }

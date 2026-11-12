@@ -96,7 +96,6 @@ data class ConversationRow(
     val markedUnread: Boolean = false,
 )
 
-@OptIn(ExperimentalCoroutinesApi::class)
 /**
  * The device's country, for the default choice of units.
  *
@@ -110,6 +109,8 @@ private fun deviceCountry(app: Application): String? =
         ?.get(0)
         ?.country
 
+// flatMapLatest / mapLatest follow the service binding as it comes and goes.
+@OptIn(ExperimentalCoroutinesApi::class)
 class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
 
     /** A translated string for snackbar messages built here. */

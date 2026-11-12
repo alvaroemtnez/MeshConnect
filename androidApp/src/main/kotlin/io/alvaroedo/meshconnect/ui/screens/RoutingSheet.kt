@@ -63,7 +63,7 @@ fun RoutingSheet(
     onDismiss: () -> Unit,
 ) {
     val scope = rememberCoroutineScope()
-    val ctx = androidx.compose.ui.platform.LocalContext.current
+    val res = androidx.compose.ui.platform.LocalResources.current
     val keyHex = contact.keyHex
     val paths by remember(keyHex) { vm.pathHistory(keyHex) }.collectAsState()
     val liveContacts by vm.liveContacts.collectAsState()
@@ -235,7 +235,7 @@ fun RoutingSheet(
                         onClick = {
                             val hex = HopSelection.toHex(hops, hopWidth)
                             if (hex == null) {
-                                vm.transientMessage.value = ctx.getString(R.string.route_bad_hops)
+                                vm.transientMessage.value = res.getString(R.string.route_bad_hops)
                             } else {
                                 vm.setRouting(keyHex, RoutingMode.Manual, hex)
                             }
@@ -265,7 +265,7 @@ fun RoutingSheet(
                                 // digit count.
                                 val parsed = HopSelection.fromTokens(manualHops, hopWidth)
                                 if (parsed.isNullOrEmpty()) {
-                                    vm.transientMessage.value = ctx.getString(R.string.route_hex_bad, hopWidth * 2, PathCodec.maxHopsFor(hopWidth))
+                                    vm.transientMessage.value = res.getString(R.string.route_hex_bad, hopWidth * 2, PathCodec.maxHopsFor(hopWidth))
                                 } else {
                                     // Into the same ordered list, so the hex
                                     // path and the tap path can't disagree
@@ -375,13 +375,13 @@ fun RoutingSheet(
                                 // probe in the first place.
                                 vm.transientMessage.value =
                                     if (contact.pathLen == 0xFF || contact.pathLen < 0) {
-                                        ctx.getString(R.string.route_trace_flood)
+                                        res.getString(R.string.route_trace_flood)
                                     } else {
                                         // A trace has to traverse the whole route and come
                                         // back, so one node being down anywhere along it
                                         // looks exactly like a broken feature. Say which
                                         // to check rather than implying a fault.
-                                        ctx.getString(R.string.route_trace_no_reply)
+                                        res.getString(R.string.route_trace_no_reply)
                                     }
                             }
                         }
@@ -513,20 +513,22 @@ private fun PathRow(
                 fontFamily = FontFamily.Monospace,
                 style = MaterialTheme.typography.bodyMedium,
             )
+            // Recomputed, not read: rows written before the width column
+            // held a BYTE count here, and this list is exactly where
+            // "2 hops" read as "4".
+            val hops = PathHistoryHygiene.hopCount(path.pathHex.length / 2, width)
+            val hopsLabel = pluralStringResource(R.plurals.hops, hops, hops)
+            val workedLabel = stringResource(R.string.route_worked)
             Text(
                 buildString {
                     append(PathCodec.qualityLabel(path.successes, path.failures, isFlood))
                     if (!isFlood) {
-                        // Recomputed, not read: rows written before the
-                        // width column held a BYTE count here, and this
-                        // list is exactly where "2 hops" read as "4".
-                        val hops = PathHistoryHygiene.hopCount(path.pathHex.length / 2, width)
-                        append(" · " + androidx.compose.ui.platform.LocalContext.current.resources.getQuantityString(R.plurals.hops, hops, hops))
+                        append(" · $hopsLabel")
                     }
                     append(" · ${path.successes}✓/${path.failures}✗")
                     if (path.lastWorkedAt > 0) {
                         append(
-                            " · " + androidx.compose.ui.platform.LocalContext.current.getString(R.string.route_worked) + " " +
+                            " · $workedLabel " +
                                 DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT)
                                     .format(Date(path.lastWorkedAt)),
                         )

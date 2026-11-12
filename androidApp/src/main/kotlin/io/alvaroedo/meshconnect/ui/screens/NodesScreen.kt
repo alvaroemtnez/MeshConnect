@@ -1232,7 +1232,7 @@ fun ContactDetailSheet(
 
     if (updateModeOpen) {
         val otaAddress = contact.otaAddress
-        val ctx = LocalContext.current
+        val res = androidx.compose.ui.platform.LocalResources.current
         AlertDialog(
             onDismissRequest = { if (!updateModeBusy) updateModeOpen = false },
             title = { Text(stringResource(R.string.recover_title, contact.name.ifBlank { contact.keyHex.take(8) })) },
@@ -1258,7 +1258,7 @@ fun ContactDetailSheet(
                     enabled = !updateModeBusy,
                     onClick = {
                         updateModeBusy = true
-                        updateModeNote = ctx.getString(R.string.recover_looking)
+                        updateModeNote = res.getString(R.string.recover_looking)
                         vm.exitUpdateMode(contact.keyHex) { result ->
                             updateModeNote = result
                             updateModeBusy = false

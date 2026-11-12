@@ -266,7 +266,7 @@ fun FirmwareScreen(
                     Text(stringResource(R.string.fw_too_far), style = MaterialTheme.typography.titleMedium)
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        stringResource(R.string.fw_too_far_body, current.peer.toString(), current.rssi, current.pkg.imageSize / 1024),
+                        stringResource(R.string.fw_too_far_body, current.peer, current.rssi, current.pkg.imageSize / 1024),
                         style = MaterialTheme.typography.bodyMedium,
                     )
                     Spacer(Modifier.height(12.dp))

@@ -20,11 +20,11 @@ and what to offer upstream are in [FORK.md](../FORK.md); feature parity in [PARI
 
 ## Code health
 
-- **Android lint**: `./gradlew :androidApp:lintDebug` (not part of `./build.sh test`) reports
-  74 errors in older screens, nearly all `LocalContextGetResourceValueCall`
-  (`context.getString` inside composables; use `stringResource`), plus two
-  `StateFlowValueCalledInComposition`. None about the API level. Fix them, then add lint to
-  `./build.sh test` so they stay fixed.
-- **Compiler warnings** under Kotlin 2.4: a deprecated `LocationManagerCompat.getCurrentLocation`
-  overload (`PhoneLocator.kt`), two `ExperimentalCoroutinesApi` uses without an opt-in
-  (`MeshCoreViewModel.kt`), a redundant `?:` (`FirmwareUpdateController.kt`).
+- **`LocalClipboardManager` is deprecated** (seven uses: `NodesScreen`, `ConversationScreen`,
+  `ChannelSheets`, `QrLinkActions`), the last compiler warnings in `androidApp`. Its
+  replacement `LocalClipboard` is suspend-only (`setClipEntry(ClipEntry(ClipData...))`), so
+  each copy needs a coroutine scope; check paste-to-import in New chat and Channels after.
+- **`SharedText` takes a `Context`** and its callers pass `LocalContext.current` during
+  composition, which goes stale on a configuration change for the same reason lint flags
+  `context.getString` (lint cannot see through the call). Take `Resources` and pass
+  `LocalResources.current`.

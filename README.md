@@ -110,7 +110,7 @@ Android Studio is not needed. You need an x86_64 Linux with `bash`, `curl`, `tar
 
 ```sh
 ./build.sh              # debug APK -> dist/MeshConnect-debug.apk
-./build.sh test         # unit tests
+./build.sh test         # unit tests + Android lint
 ./build.sh install      # build and install on a phone over adb
 ./build.sh run          # install, launch, follow logcat
 ./build.sh release      # signed APK + AAB (with MESHCONNECT_KEYSTORE set)

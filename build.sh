@@ -9,7 +9,7 @@
 #   install     build the debug APK and install it on the connected phone
 #   run         install, then launch the app and follow its log
 #   logcat      follow the log of the running app
-#   test        run the shared + app JVM unit tests
+#   test        run the shared + app JVM unit tests, then Android lint
 #   gradle ...  run any Gradle task with the bundled toolchain
 #   env         print exports for using gradlew/adb directly: eval "$(./build.sh env)"
 #   setup       only download the toolchain into .tools/
@@ -307,7 +307,8 @@ run_app() {
 check() {
     setup
     mkdir -p "$MESHCONNECT_ROBOLECTRIC_DIR/.m2/repository"
-    gradle :shared:testAndroidHostTest :androidApp:testDebugUnitTest
+    # Lint fails the build on any error, so cleared issues stay cleared.
+    gradle :shared:testAndroidHostTest :androidApp:testDebugUnitTest :androidApp:lintDebug
 }
 
 print_env() {

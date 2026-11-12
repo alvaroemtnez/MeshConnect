@@ -55,6 +55,7 @@ import org.maplibre.android.geometry.LatLng
 fun MapScreen(vm: MeshCoreViewModel, nav: NavController) {
     val openAdmin = rememberAdminOpener(vm, nav)
     val context = LocalContext.current
+    val res = androidx.compose.ui.platform.LocalResources.current
     val contacts by vm.dbContacts.collectAsState()
     val self by vm.selfInfo.collectAsState()
     val neighbours by vm.neighbourRecords.collectAsState()
@@ -126,7 +127,7 @@ fun MapScreen(vm: MeshCoreViewModel, nav: NavController) {
                         vm.prefs.mapTilesEnabled = tilesEnabled
                     },
                     MenuAction(stringResource(R.string.map_clear_cache)) {
-                        MapStyles.clearCache(context) { vm.transientMessage.value = context.getString(R.string.map_cache_cleared) }
+                        MapStyles.clearCache(context) { vm.transientMessage.value = res.getString(R.string.map_cache_cleared) }
                     },
                 ),
             )

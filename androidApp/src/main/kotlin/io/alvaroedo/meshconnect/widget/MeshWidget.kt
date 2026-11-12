@@ -115,7 +115,7 @@ object WidgetState {
         val previous = _live.value
         val same = previous != null && snapshot.copy(updatedAtMs = 0) == previous.copy(updatedAtMs = 0)
         // The heartbeat moves updatedAtMs; redraw for it only now and then.
-        if (same && snapshot.updatedAtMs - previous!!.updatedAtMs < HEARTBEAT_REDRAW_MS) return
+        if (same && snapshot.updatedAtMs - previous.updatedAtMs < HEARTBEAT_REDRAW_MS) return
         _live.value = snapshot
         snapshot.save(prefs(context))
         val app = context.applicationContext

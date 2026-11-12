@@ -71,7 +71,7 @@ fun RemoteSettingsForm(
     role: NodeRole,
     isAdmin: Boolean = true,
 ) {
-    val ctx = androidx.compose.ui.platform.LocalContext.current
+    val res = androidx.compose.ui.platform.LocalResources.current
     val scope = rememberCoroutineScope()
     val engineState by vm.engineState.collectAsState()
     val isReady = engineState == EngineState.Ready
@@ -112,7 +112,7 @@ fun RemoteSettingsForm(
             is io.github.thatsfguy.meshcore.protocol.ShareUri.Decoded.RadioConfig ->
                 scannedConfig = d
             is io.github.thatsfguy.meshcore.protocol.ShareUri.Decoded.UnsupportedVersion ->
-                scanError = ctx.getString(R.string.scan_newer_app, d.version.toString())
+                scanError = res.getString(R.string.scan_newer_app, d.version.toString())
             else ->
                 vm.importScannedCode(text)
         }
@@ -259,7 +259,7 @@ fun RemoteSettingsForm(
                         // Same as the preset path: the node writes these
                         // and keeps running on the old ones until it
                         // restarts. Typing them by hand is no different.
-                        pendingReboot = ctx.getString(R.string.rsf_saved_radio)
+                        pendingReboot = res.getString(R.string.rsf_saved_radio)
                     }
                     values[CliIds.TX]?.trim()?.toIntOrNull()?.let {
                         if (dirty[CliIds.TX] == true) add("set tx $it")
@@ -333,7 +333,7 @@ fun RemoteSettingsForm(
                     Spacer(Modifier.width(8.dp))
                     androidx.compose.material3.FilledTonalIconButton(
                         enabled = isReady,
-                        onClick = { scanLauncher.launch(ctx.getString(R.string.radio_scan_prompt)) },
+                        onClick = { scanLauncher.launch(res.getString(R.string.radio_scan_prompt)) },
                     ) {
                         androidx.compose.material3.Icon(
                             androidx.compose.ui.res.painterResource(R.drawable.ic_qr_code_scanner),
@@ -477,11 +477,11 @@ fun RemoteSettingsForm(
                         announceStatus = null
                         val reply = vm.cliQuery(keyHex, RemoteAdvert.command(nearby))
                         announceStatus = when (RemoteAdvert.outcome(nearby, reply)) {
-                            RemoteAdvert.Outcome.Nearby -> ctx.getString(R.string.rsf_announce_near_sent)
-                            RemoteAdvert.Outcome.Mesh -> ctx.getString(R.string.rsf_announce_mesh_sent)
-                            RemoteAdvert.Outcome.MeshInsteadOfNearby -> ctx.getString(R.string.rsf_announce_flooded)
-                            RemoteAdvert.Outcome.NoAnswer -> ctx.getString(R.string.clock_no_answer)
-                            RemoteAdvert.Outcome.Refused -> ctx.getString(R.string.rsf_announce_refused, reply.orEmpty().trim())
+                            RemoteAdvert.Outcome.Nearby -> res.getString(R.string.rsf_announce_near_sent)
+                            RemoteAdvert.Outcome.Mesh -> res.getString(R.string.rsf_announce_mesh_sent)
+                            RemoteAdvert.Outcome.MeshInsteadOfNearby -> res.getString(R.string.rsf_announce_flooded)
+                            RemoteAdvert.Outcome.NoAnswer -> res.getString(R.string.clock_no_answer)
+                            RemoteAdvert.Outcome.Refused -> res.getString(R.string.rsf_announce_refused, reply.orEmpty().trim())
                         }
                         announcing = false
                     }
@@ -962,18 +962,18 @@ fun RemoteSettingsForm(
                             for (command in regionCommands) {
                                 val reply = vm.cliQuery(keyHex, command)
                                 if (RegionAdmin.treeStepRefused(reply)) {
-                                    refused = ctx.getString(
+                                    refused = res.getString(
                                         R.string.rsf_step_refused, node, command,
                                         reply?.trim()?.let { r ->
-                                            if (r.contains("??")) ctx.getString(R.string.rsf_needs_116, r) else r
-                                        } ?: ctx.getString(R.string.clock_no_answer),
+                                            if (r.contains("??")) res.getString(R.string.rsf_needs_116, r) else r
+                                        } ?: res.getString(R.string.clock_no_answer),
                                     )
                                     break
                                 }
                             }
-                            vm.transientMessage.value = refused ?: ctx.getString(R.string.rsf_regions_updated, node)
+                            vm.transientMessage.value = refused ?: res.getString(R.string.rsf_regions_updated, node)
                         }
-                        if (!state.radioSame) pendingReboot = c.name.ifBlank { ctx.getString(R.string.rsf_scanned_settings) }
+                        if (!state.radioSame) pendingReboot = c.name.ifBlank { res.getString(R.string.rsf_scanned_settings) }
                     }
                 }) {
                     Text(
@@ -1011,7 +1011,7 @@ fun RemoteSettingsForm(
                 TextButton(onClick = {
                     scope.launch { vm.cliQuery(keyHex, CliIds.REBOOT) }
                     pendingReboot = null
-                    vm.transientMessage.value = ctx.getString(R.string.rsf_reboot_sent, node)
+                    vm.transientMessage.value = res.getString(R.string.rsf_reboot_sent, node)
                 }) { Text(stringResource(R.string.rsf_reboot_now), color = MaterialTheme.colorScheme.error) }
             },
             dismissButton = {
@@ -1088,7 +1088,7 @@ private fun RemoteSection(
     content: @Composable () -> Unit,
 ) {
     CardSection(title, subtitle, icon) {
-        val ctx = androidx.compose.ui.platform.LocalContext.current
+        val res = androidx.compose.ui.platform.LocalResources.current
         val scope = rememberCoroutineScope()
         var status by remember { mutableStateOf<String?>(null) }
         var busy by remember { mutableStateOf(false) }
@@ -1097,7 +1097,7 @@ private fun RemoteSection(
             enabled = isReady && fetchIds.isNotEmpty(),
             query = {
                 val ok = fetch(fetchIds)
-                status = if (ok > 0) null else ctx.getString(R.string.rs_no_reply)
+                status = if (ok > 0) null else res.getString(R.string.rs_no_reply)
             },
         ) {
             content()
@@ -1127,7 +1127,7 @@ private fun RemoteSection(
                             busy = true
                             status = null
                             val ok = fetch(fetchIds)
-                            status = if (ok > 0) ctx.resources.getQuantityString(R.plurals.rsf_refreshed, ok, ok) else ctx.getString(R.string.clock_no_answer)
+                            status = if (ok > 0) res.getQuantityString(R.plurals.rsf_refreshed, ok, ok) else res.getString(R.string.clock_no_answer)
                             busy = false
                         }
                     },
@@ -1149,9 +1149,9 @@ private fun RemoteSection(
                             val commands = buildSaves()
                             val ok = send(commands)
                             status = when {
-                                commands.isEmpty() -> ctx.getString(R.string.rsf_nothing_valid)
-                                ok == commands.size -> ctx.getString(R.string.rr_saved)
-                                else -> ctx.getString(R.string.rsf_saved_partial, ok, commands.size)
+                                commands.isEmpty() -> res.getString(R.string.rsf_nothing_valid)
+                                ok == commands.size -> res.getString(R.string.rr_saved)
+                                else -> res.getString(R.string.rsf_saved_partial, ok, commands.size)
                             }
                             if (ok == commands.size) clearDirty()
                             busy = false
