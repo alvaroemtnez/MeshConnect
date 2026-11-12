@@ -114,6 +114,7 @@ ICONS = [
     ("ic_mark_unread", "mark_chat_unread", False),
     # Settings hub
     ("ic_link", "link", False),
+    ("ic_sync", "sync", False),
     ("ic_password", "password", False),
     ("ic_antenna", "settings_input_antenna", False),
     ("ic_policy", "policy", False),

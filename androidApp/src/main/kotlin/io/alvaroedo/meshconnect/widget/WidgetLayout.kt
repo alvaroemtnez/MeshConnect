@@ -57,6 +57,12 @@ object WidgetLayout {
     const val STATUS_ONE_LINE = 20f
     /** Width of the two-line status column, wide layouts. */
     const val STATUS_WIDTH = 64f
+    /**
+     * The same column holding the link state in words instead (1.2, WidgetStatus): wide enough
+     * that every state fits in two lines in English, Spanish and Valencian ("L'aplicació no
+     * està oberta").
+     */
+    const val STATUS_WIDTH_WORDS = 88f
     const val MESSAGE_HEAD = 20f
     const val MESSAGE_LINE = 16f
     const val NEARBY_HEAD = 30f

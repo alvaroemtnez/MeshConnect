@@ -2,6 +2,8 @@ package io.alvaroedo.meshconnect.widget
 
 import android.content.Context
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -43,6 +45,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 /**
@@ -59,9 +63,15 @@ class MeshWidget : GlanceAppWidget() {
     override val sizeMode = SizeMode.Exact
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
-        val snapshot = WidgetState.current(context)
+        val initial = WidgetState.current(context)
         provideContent {
-            GlanceTheme { Content(snapshot) }
+            // Read inside the composition, never captured outside it. Glance keeps a session
+            // running between updates, and updateAll() on a running session only recomposes
+            // it, without calling provideGlance again: a snapshot read out here stayed the one
+            // the session started with. Seen on Android 17 (2026-11-12): the link dropped, the
+            // saved snapshot said Connecting, the widget still said Connected.
+            val live by WidgetState.live.collectAsState()
+            GlanceTheme { Content(live ?: initial) }
         }
     }
 
@@ -89,7 +99,9 @@ class MeshWidgetCompactReceiver : GlanceAppWidgetReceiver() {
  * and the debounced redraw the service calls on every change.
  */
 object WidgetState {
-    @Volatile private var live: WidgetSnapshot? = null
+    /** The latest snapshot while the service runs; a running widget session collects it. */
+    private val _live = MutableStateFlow<WidgetSnapshot?>(null)
+    val live: StateFlow<WidgetSnapshot?> = _live
     private var pending: Job? = null
     private const val HEARTBEAT_REDRAW_MS = 3L * 60 * 1000
     private val scope = CoroutineScope(Dispatchers.Default)
@@ -97,14 +109,14 @@ object WidgetState {
     private fun prefs(context: Context) =
         context.getSharedPreferences("widget", Context.MODE_PRIVATE)
 
-    fun current(context: Context): WidgetSnapshot = live ?: WidgetSnapshot.load(prefs(context))
+    fun current(context: Context): WidgetSnapshot = _live.value ?: WidgetSnapshot.load(prefs(context))
 
     fun publish(context: Context, snapshot: WidgetSnapshot) {
-        val previous = live
+        val previous = _live.value
         val same = previous != null && snapshot.copy(updatedAtMs = 0) == previous.copy(updatedAtMs = 0)
         // The heartbeat moves updatedAtMs; redraw for it only now and then.
         if (same && snapshot.updatedAtMs - previous!!.updatedAtMs < HEARTBEAT_REDRAW_MS) return
-        live = snapshot
+        _live.value = snapshot
         snapshot.save(prefs(context))
         val app = context.applicationContext
         pending?.cancel()
@@ -128,9 +140,11 @@ private fun Content(s: WidgetSnapshot) {
     )
     val muted = GlanceTheme.colors.onSurfaceVariant
     val ink = if (stale) muted else GlanceTheme.colors.onSurface
+    val link = WidgetStatus.of(s, now)
+    val gauges = WidgetStatus.showsGauges(link)
 
     if (plan.row) {
-        RowContent(s, stale, plan.wide, ink, large = plan.largeRow)
+        RowContent(s, link, plan.wide, ink, large = plan.largeRow)
         return
     }
 
@@ -151,18 +165,24 @@ private fun Content(s: WidgetSnapshot) {
                     Mark()
                     Spacer(GlanceModifier.width(8.dp))
                 }
-                HeaderLine(s, stale, ink, nameSp = 15, textSp = 13, icon = 18.dp)
+                HeaderLine(s, link, ink, nameSp = 15, textSp = 13, icon = 18.dp)
             }
             Spacer(GlanceModifier.height(WidgetLayout.GAP.dp))
             if (plan.wide) {
-                // A narrow status column, the message taking the rest of the width.
+                // A narrow status column, the message taking the rest of the width. Holding
+                // the state in words it is a little wider, so two lines fit every language.
                 Row(
                     GlanceModifier.fillMaxWidth().let { if (nearbyLast) it else it.defaultWeight() },
                     verticalAlignment = Alignment.Top,
                 ) {
-                    Column(GlanceModifier.width(WidgetLayout.STATUS_WIDTH.dp)) {
-                        Row(GlanceModifier.height(20.dp), verticalAlignment = Alignment.CenterVertically) { Battery(s, ink) }
-                        Row(GlanceModifier.height(20.dp), verticalAlignment = Alignment.CenterVertically) { Repeater(s, ink) }
+                    val statusWidth = if (gauges) WidgetLayout.STATUS_WIDTH else WidgetLayout.STATUS_WIDTH_WORDS
+                    Column(GlanceModifier.width(statusWidth.dp)) {
+                        if (gauges) {
+                            Row(GlanceModifier.height(20.dp), verticalAlignment = Alignment.CenterVertically) { Battery(s, ink) }
+                            Row(GlanceModifier.height(20.dp), verticalAlignment = Alignment.CenterVertically) { Repeater(s, ink) }
+                        } else {
+                            LinkWords(link, textSp = 13, maxLines = 2)
+                        }
                     }
                     Spacer(GlanceModifier.width(12.dp))
                     Column(GlanceModifier.defaultWeight()) { Latest(s, ink, muted, now, plan.messageLines) }
@@ -170,9 +190,13 @@ private fun Content(s: WidgetSnapshot) {
             } else {
                 // Battery and signal on one line, so the height goes to the content.
                 Row(GlanceModifier.height(WidgetLayout.STATUS_ONE_LINE.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Battery(s, ink)
-                    Spacer(GlanceModifier.width(12.dp))
-                    Repeater(s, ink)
+                    if (gauges) {
+                        Battery(s, ink)
+                        Spacer(GlanceModifier.width(12.dp))
+                        Repeater(s, ink)
+                    } else {
+                        LinkWords(link, textSp = 13, maxLines = 1)
+                    }
                 }
                 if (plan.messageLines > 0) {
                     Spacer(GlanceModifier.height(WidgetLayout.GAP.dp))
@@ -190,14 +214,14 @@ private fun Content(s: WidgetSnapshot) {
 }
 
 /**
- * Status dot, the node's name, the unread count: the first line of every size. The name
+ * Link icon, the node's name, the unread count: the first line of every size. The name
  * takes the slack and gives way ("…"), the count never does — at the end of the gauge line
  * a 4×1 once pushed the number off the edge. Shown at 0 too, as a place to look.
  */
 @Composable
 private fun androidx.glance.layout.RowScope.HeaderLine(
     s: WidgetSnapshot,
-    stale: Boolean,
+    link: WidgetStatus.Link,
     ink: ColorProvider,
     nameSp: Int,
     textSp: Int,
@@ -205,8 +229,8 @@ private fun androidx.glance.layout.RowScope.HeaderLine(
 ) {
     val context = LocalContext.current
     val c = GlanceTheme.colors
-    Box(GlanceModifier.size(8.dp).cornerRadius(4.dp).background(statusDot(s, stale))) {}
-    Spacer(GlanceModifier.width(6.dp))
+    LinkIcon(link, icon - 2.dp)
+    Spacer(GlanceModifier.width(4.dp))
     Text(
         s.nodeName ?: context.getString(R.string.app_name),
         maxLines = 1,
@@ -296,7 +320,7 @@ private fun Mark() {
 @Composable
 private fun RowContent(
     s: WidgetSnapshot,
-    stale: Boolean,
+    link: WidgetStatus.Link,
     wide: Boolean,
     ink: ColorProvider,
     large: Boolean = false,
@@ -322,29 +346,70 @@ private fun RowContent(
             }
             Column(GlanceModifier.defaultWeight()) {
                 Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    HeaderLine(s, stale, ink, nameSp, textSp, icon - 2.dp)
+                    HeaderLine(s, link, ink, nameSp, textSp, icon)
                 }
                 Spacer(GlanceModifier.height(if (large) 4.dp else 2.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Battery(s, ink, icon, textSp)
-                    Spacer(GlanceModifier.width(10.dp))
-                    Repeater(s, ink, icon, textSp)
+                    if (WidgetStatus.showsGauges(link)) {
+                        Battery(s, ink, icon, textSp)
+                        Spacer(GlanceModifier.width(10.dp))
+                        Repeater(s, ink, icon, textSp)
+                    } else {
+                        LinkWords(link, textSp, maxLines = 1)
+                    }
                 }
             }
         }
     }
 }
 
+/** The link's colour; the icon's shape and the words carry the state too (WidgetStatus). */
 @Composable
-private fun statusDot(s: WidgetSnapshot, stale: Boolean): ColorProvider {
+private fun linkTint(link: WidgetStatus.Link): ColorProvider {
     val c = GlanceTheme.colors
-    return when {
-        stale -> c.outline
-        s.status == WidgetSnapshot.Status.Connected && s.plaintext -> c.error
-        s.status == WidgetSnapshot.Status.Connected -> c.primary
-        s.status == WidgetSnapshot.Status.Connecting -> c.tertiary
-        else -> c.outline
+    return when (link) {
+        WidgetStatus.Link.Connected -> c.primary
+        WidgetStatus.Link.ConnectedUnencrypted -> c.error
+        WidgetStatus.Link.Connecting -> c.tertiary
+        // Not outline: a not-connected state must read as plainly as a connected one.
+        WidgetStatus.Link.NotConnected, WidgetStatus.Link.NotRunning -> c.onSurfaceVariant
     }
+}
+
+/** The link, by shape: linked, syncing, broken. Described for screen readers. */
+@Composable
+private fun LinkIcon(link: WidgetStatus.Link, size: androidx.compose.ui.unit.Dp) {
+    Image(
+        ImageProvider(
+            when (link) {
+                WidgetStatus.Link.Connected, WidgetStatus.Link.ConnectedUnencrypted -> R.drawable.ic_link
+                WidgetStatus.Link.Connecting -> R.drawable.ic_sync
+                WidgetStatus.Link.NotConnected, WidgetStatus.Link.NotRunning -> R.drawable.ic_link_off
+            },
+        ),
+        linkWords(LocalContext.current, link),
+        GlanceModifier.size(size),
+        colorFilter = ColorFilter.tint(linkTint(link)),
+    )
+}
+
+/** The state in words, where the battery and signal go while there is no link. */
+@Composable
+private fun LinkWords(link: WidgetStatus.Link, textSp: Int, maxLines: Int) {
+    Text(
+        linkWords(LocalContext.current, link),
+        maxLines = maxLines,
+        style = TextStyle(color = linkTint(link), fontSize = textSp.sp, fontWeight = FontWeight.Medium),
+    )
+}
+
+private fun linkWords(context: Context, link: WidgetStatus.Link): String = when (link) {
+    WidgetStatus.Link.Connected -> context.getString(R.string.status_connected)
+    WidgetStatus.Link.ConnectedUnencrypted ->
+        context.getString(R.string.svc_tcp_label, context.getString(R.string.status_connected))
+    WidgetStatus.Link.Connecting -> context.getString(R.string.status_connecting)
+    WidgetStatus.Link.NotConnected -> context.getString(R.string.hub_not_connected)
+    WidgetStatus.Link.NotRunning -> context.getString(R.string.widget_not_running)
 }
 
 /** Repeaters heard directly, strongest first, named only when unambiguous. Bars, no dB. */
