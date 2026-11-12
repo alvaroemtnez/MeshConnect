@@ -61,6 +61,14 @@ Then resolve:
   One deliberate *change* rather than addition: `presentation/BatteryLevel.percent` uses a
   Li-ion discharge curve instead of upstream's 3000–4200 mV line (2026-11-10, see its KDoc).
   If upstream touches that file, keep our `percent` and `CURVE_MV`.
+- **Build files** (1.2.0 moved to AGP 9.5.1, Gradle 9.8.1, Kotlin 2.4.21; upstream stays on AGP 8
+  until it moves): `shared/build.gradle.kts` now uses `com.android.kotlin.multiplatform.library`
+  with a `kotlin { android { } }` block, and its host tests live in `src/androidHostTest` (was
+  `src/androidUnitTest`). A trial merge of a simulated upstream change (2026-11-12) showed:
+  protocol fixes and dependency bumps in `shared/` merge cleanly; edits to existing tests follow
+  the rename; a *new* upstream test in `androidUnitTest/` is moved into `androidHostTest/` by git,
+  which asks you to confirm (`git add` it there); plugin versions in the root
+  `build.gradle.kts` conflict, so keep ours, and port upstream's other root changes by hand.
 - **`androidApp/`**: git's rename detection maps upstream's old paths onto ours, so many hunks
   apply cleanly. Where they don't, keep our version and port the change by hand. Strings go
   through `scripts/strings_table.py`, icons through `scripts/gen_icons.py`. Watch for upstream
