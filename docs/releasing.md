@@ -3,7 +3,7 @@
 A release is a tag. Pushing `vX.Y.Z` runs `.forgejo/workflows/release.yml`, which runs the
 tests, builds and signs the APK, the AAB and the Accrescent APK set, and publishes them with
 `SHA256SUMS` on Forgejo and on the GitHub mirror. This page covers the one-time set-up, then
-each release, then the stores.
+each release, betas, then the stores.
 
 ## One-time set-up
 
@@ -93,6 +93,31 @@ releases.
 
 The version comes from the tag: there is no version string to bump in the code. Don't create
 the release by hand as well; the job fails if it already exists.
+
+## Betas
+
+A tag `vX.Y.Z-beta.N` (`N` from 1) runs the same workflow and publishes the same files, as
+`MeshConnect-X.Y.Z-beta.N-release.apk` and so on, but marks both releases as pre-releases:
+
+- **Obtainium** offers it only to users who turned on *Include prereleases* for the app; everyone
+  else stays on the last release.
+- **F-Droid** never sees it: its recipe follows `^v[0-9.]+$`.
+- **Accrescent**: the `.apks` is built too; don't upload it.
+
+A beta is a preview of X.Y.Z, so it takes its notes from the `## X.Y.Z` section of
+`CHANGELOG.md` (with a "Pre-release of X.Y.Z" line on top) and needs that section and the About
+entry, as the release will. Its versionCode is the release's (`X*10000 + Y*100 + Z`): the scheme
+has no room below a release, and Android installs an equal code as an update, so
+beta.1 → beta.2 → X.Y.Z each install over the last. The `changelogs/<versionCode>.txt` files are
+the release's; a beta needs none of its own.
+
+```sh
+git tag -a vX.Y.Z-beta.N -m "MeshConnect X.Y.Z-beta.N"
+git push && git push --tags
+```
+
+When it is good, tag `vX.Y.Z`, on the same commit or a later one. Gradle prefers the release tag
+when both are on a commit, which keeps F-Droid's build of `vX.Y.Z` named X.Y.Z.
 
 ## App stores
 

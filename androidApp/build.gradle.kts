@@ -8,21 +8,25 @@ plugins {
 /**
  * Derive `(versionName, versionCode)` from the git tag when HEAD sits
  * exactly on a `v*` tag (MeshConnect scheme; upstream used `android-v*`):
- * `v1.2.3` → ("1.2.3", 10203). CI `-PversionName`/`-PversionCode`
+ * `v1.2.3` → ("1.2.3", 10203), `v1.3.0-beta.1` → ("1.3.0-beta.1", 10300): a beta
+ * carries its release's code, as in tools/release-version.sh. CI `-PversionName`/`-PversionCode`
  * always win; otherwise a local build gets `0.0.0-dev`.
  */
 fun gitDerivedVersion(): Pair<String, Int>? {
-    val tag = runCatching {
-        val proc = ProcessBuilder(
-            "git", "describe", "--tags", "--exact-match", "--match", "v[0-9]*",
-        ).directory(rootDir).redirectErrorStream(true).start()
-        val out = proc.inputStream.bufferedReader().readText().trim()
-        if (proc.waitFor() == 0) out else null
-    }.getOrNull()?.takeIf { it.isNotEmpty() } ?: return null
+    val tags = runCatching {
+        val proc = ProcessBuilder("git", "tag", "--points-at", "HEAD", "--list", "v[0-9]*")
+            .directory(rootDir).redirectErrorStream(true).start()
+        val out = proc.inputStream.bufferedReader().readLines().map { it.trim() }
+        if (proc.waitFor() == 0) out else emptyList()
+    }.getOrDefault(emptyList())
 
-    val m = Regex("""v(\d+)\.(\d+)\.(\d+)""").matchEntire(tag) ?: return null
-    val (maj, min, pat) = m.destructured
-    return "$maj.$min.$pat" to (maj.toInt() * 10_000 + min.toInt() * 100 + pat.toInt())
+    // A release tagged on its last beta's commit is the release: F-Droid builds `commit: vX.Y.Z`
+    // and its APK must say X.Y.Z, as ours does, or the reproducible-build check fails.
+    val pattern = Regex("""v(\d+)\.(\d+)\.(\d+)(-beta\.\d+)?""")
+    val m = tags.mapNotNull { pattern.matchEntire(it) }.minByOrNull { it.groupValues[4].isNotEmpty() }
+        ?: return null
+    val (maj, min, pat, beta) = m.destructured
+    return "$maj.$min.$pat$beta" to (maj.toInt() * 10_000 + min.toInt() * 100 + pat.toInt())
 }
 
 android {
