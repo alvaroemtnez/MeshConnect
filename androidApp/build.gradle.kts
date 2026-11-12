@@ -104,6 +104,11 @@ android {
         includeInBundle = false
     }
 
+    // Robolectric tests resolve the app's own strings and plurals (SharedTextResourcesTest).
+    testOptions {
+        unitTests.isIncludeAndroidResources = true
+    }
+
     buildFeatures {
         buildConfig = true
     }

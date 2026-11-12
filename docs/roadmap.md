@@ -17,14 +17,3 @@ and what to offer upstream are in [FORK.md](../FORK.md); feature parity in [PARI
 - **Accrescent**: sign-up is closed (November 2026). The APK set meets the publishing
   requirements and the app targets API 37; when sign-up opens, register, verify the domain by
   DNS and upload ([releasing.md](releasing.md), "Accrescent").
-
-## Code health
-
-- **`LocalClipboardManager` is deprecated** (seven uses: `NodesScreen`, `ConversationScreen`,
-  `ChannelSheets`, `QrLinkActions`), the last compiler warnings in `androidApp`. Its
-  replacement `LocalClipboard` is suspend-only (`setClipEntry(ClipEntry(ClipData...))`), so
-  each copy needs a coroutine scope; check paste-to-import in New chat and Channels after.
-- **`SharedText` takes a `Context`** and its callers pass `LocalContext.current` during
-  composition, which goes stale on a configuration change for the same reason lint flags
-  `context.getString` (lint cannot see through the call). Take `Resources` and pass
-  `LocalResources.current`.

@@ -75,7 +75,7 @@ fun ChannelAddSheet(
 ) {
     var choice by remember { mutableStateOf<AddChannelChoice?>(null) }
     var pickingContact by remember { mutableStateOf(false) }
-    val clipboard = androidx.compose.ui.platform.LocalClipboardManager.current
+    val clipboard = io.alvaroedo.meshconnect.ui.rememberTextClipboard()
     val newChat = onMessageContact != null
 
     val communityScanLauncher = rememberLauncherForActivityResult(io.alvaroedo.meshconnect.platform.ScanQr()) { result ->
@@ -140,8 +140,10 @@ fun ChannelAddSheet(
                             stringResource(R.string.newchat_paste),
                             stringResource(R.string.newchat_paste_sub),
                         ) {
-                            vm.importPastedText(clipboard.getText()?.text)
-                            onDismiss()
+                            clipboard.paste {
+                                vm.importPastedText(it)
+                                onDismiss()
+                            }
                         }
                     }
                     Spacer(Modifier.height(8.dp))

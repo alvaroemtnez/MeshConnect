@@ -17,12 +17,12 @@ import io.alvaroedo.meshconnect.R
  */
 @Composable
 internal fun QrLinkActions(uri: String?) {
-    val clipboard = androidx.compose.ui.platform.LocalClipboardManager.current
+    val clipboard = io.alvaroedo.meshconnect.ui.rememberTextClipboard()
     val context = LocalContext.current
     Row {
         TextButton(
             enabled = uri != null,
-            onClick = { uri?.let { clipboard.setText(androidx.compose.ui.text.AnnotatedString(it)) } },
+            onClick = { uri?.let { clipboard.copy(it) } },
         ) { Text(stringResource(R.string.ch_copy_link)) }
         TextButton(
             enabled = uri != null,

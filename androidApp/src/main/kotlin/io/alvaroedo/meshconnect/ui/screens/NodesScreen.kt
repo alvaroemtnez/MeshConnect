@@ -17,7 +17,6 @@ import androidx.compose.ui.res.stringResource
 import io.alvaroedo.meshconnect.R
 import io.alvaroedo.meshconnect.ui.model.NodeKinds
 import io.alvaroedo.meshconnect.ui.model.SharedText
-import androidx.compose.ui.platform.LocalContext
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -158,7 +157,7 @@ fun NodesScreen(vm: MeshCoreViewModel, nav: NavController) {
     val scanPrompt = stringResource(R.string.scan_prompt)
     var showSelfQr by remember { mutableStateOf(false) }
     var discovering by remember { mutableStateOf(false) }
-    val clipboard = androidx.compose.ui.platform.LocalClipboardManager.current
+    val clipboard = io.alvaroedo.meshconnect.ui.rememberTextClipboard()
 
     // Saveable: opening a node or a conversation takes this screen off the
     // composition, and the search term must survive the round trip.
@@ -217,7 +216,7 @@ fun NodesScreen(vm: MeshCoreViewModel, nav: NavController) {
                     // The camera is not the only way a code arrives: contacts
                     // shared between clients usually come as a copied link.
                     MenuAction(stringResource(R.string.nodes_paste_code), icon = R.drawable.ic_content_copy) {
-                        vm.importPastedText(clipboard.getText()?.text)
+                        clipboard.paste { vm.importPastedText(it) }
                     },
                     MenuAction(stringResource(R.string.my_qr), icon = R.drawable.ic_qr_code) { showSelfQr = true },
                     // Active discovery: a broadcast asking nearby repeaters
@@ -684,7 +683,7 @@ private fun DiscoveredRow(
             Text(
                 listOfNotNull(
                     stringResource(singleKindLabel(node.type)),
-                    SharedText.heardReach(LocalContext.current, node.minHops, node.directSnr),
+                    SharedText.heardReach(androidx.compose.ui.platform.LocalResources.current, node.minHops, node.directSnr),
                     DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(node.lastHeardAt)),
                 ).joinToString(" · "),
                 style = MaterialTheme.typography.bodyMedium,
@@ -693,7 +692,7 @@ private fun DiscoveredRow(
             signals?.let {
                 (if (node.type == Codes.ADV_TYPE_REPEATER) it else it.copy(relayed = 0))
                     .copy(heardDirect = false)
-            }?.let { SharedText.signals(LocalContext.current, it) }?.let {
+            }?.let { SharedText.signals(androidx.compose.ui.platform.LocalResources.current, it) }?.let {
                 Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
             }
         }
@@ -876,8 +875,7 @@ private fun HeardDetailSheet(
     onAdd: () -> Unit,
     onForget: () -> Unit,
 ) {
-    val clipboard = androidx.compose.ui.platform.LocalClipboardManager.current
-    val context = LocalContext.current
+    val clipboard = io.alvaroedo.meshconnect.ui.rememberTextClipboard()
     val self = vm.selfInfo.collectAsState().value
     val units by vm.unitSystem.collectAsState()
     val stamp = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT)
@@ -907,7 +905,7 @@ private fun HeardDetailSheet(
                         overflow = TextOverflow.Ellipsis,
                     )
                     Text(
-                        stringResource(R.string.node_heard_not_added, SharedText.kind(context, node.type)),
+                        stringResource(R.string.node_heard_not_added, SharedText.kind(androidx.compose.ui.platform.LocalResources.current, node.type)),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -927,14 +925,14 @@ private fun HeardDetailSheet(
                 mono = true,
                 trailing = {
                     IconButton(onClick = {
-                        clipboard.setText(androidx.compose.ui.text.AnnotatedString(node.keyHex))
+                        clipboard.copy(node.keyHex)
                     }) { Icon(painterResource(R.drawable.ic_content_copy), stringResource(R.string.copy)) }
                 },
             )
             // Hops, and the node's own signal only when heard direct: after a relay
             // the latest SNR is the last repeater's (HeardReach). Local arrival times,
             // never the advert's own timestamp, which is the node's clock (LastHeard).
-            val reach = SharedText.heardReach(context, node.minHops, node.directSnr)
+            val reach = SharedText.heardReach(androidx.compose.ui.platform.LocalResources.current, node.minHops, node.directSnr)
             Spacer(Modifier.height(8.dp))
             TileRow {
                 reach?.let {
@@ -965,7 +963,7 @@ private fun HeardDetailSheet(
             signals?.let {
                 (if (node.type == Codes.ADV_TYPE_REPEATER) it else it.copy(relayed = 0))
                     .copy(heardDirect = false)
-            }?.let { SharedText.signals(context, it) }?.let {
+            }?.let { SharedText.signals(androidx.compose.ui.platform.LocalResources.current, it) }?.let {
                 Spacer(Modifier.height(8.dp))
                 InfoTile(stringResource(R.string.node_why_add), it, Modifier.fillMaxWidth())
             }
@@ -1017,7 +1015,7 @@ fun ContactDetailSheet(
     val isAdminable = contact.type == Codes.ADV_TYPE_REPEATER ||
         contact.type == Codes.ADV_TYPE_ROOM ||
         contact.type == Codes.ADV_TYPE_SENSOR
-    val clipboard = androidx.compose.ui.platform.LocalClipboardManager.current
+    val clipboard = io.alvaroedo.meshconnect.ui.rememberTextClipboard()
     val live = vm.liveContacts.collectAsState().value[contact.keyHex]
     val self = vm.selfInfo.collectAsState().value
     val hashWidth = vm.deviceInfo.collectAsState().value?.pathHashByteWidth
@@ -1047,7 +1045,7 @@ fun ContactDetailSheet(
                         overflow = TextOverflow.Ellipsis,
                     )
                     Text(
-                        SharedText.kind(LocalContext.current, contact.type) +
+                        SharedText.kind(androidx.compose.ui.platform.LocalResources.current, contact.type) +
                             // Our radio's clock, not the node's claim — see LastHeard.
                             (if (LastHeard.seconds(contact) > 0) " · " + relativeAge(LastHeard.seconds(contact)) else ""),
                         style = MaterialTheme.typography.bodyMedium,
@@ -1106,7 +1104,7 @@ fun ContactDetailSheet(
                 mono = true,
                 trailing = {
                     IconButton(onClick = {
-                        clipboard.setText(androidx.compose.ui.text.AnnotatedString(contact.keyHex))
+                        clipboard.copy(contact.keyHex)
                     }) { Icon(painterResource(R.drawable.ic_content_copy), stringResource(R.string.copy)) }
                 },
             )
@@ -1119,7 +1117,7 @@ fun ContactDetailSheet(
             TileRow {
                 InfoTile(
                     stringResource(R.string.node_hops_away),
-                    SharedText.pathHops(LocalContext.current, pathInfo.isFlood, pathInfo.hops),
+                    SharedText.pathHops(androidx.compose.ui.platform.LocalResources.current, pathInfo.isFlood, pathInfo.hops),
                     Modifier.weight(1f).fillMaxHeight(),
                 )
                 if (width != null) {
@@ -1657,7 +1655,6 @@ private fun DiscoverNodesDialog(
 /** One answer: who it is (or its prefix), the link both ways, and its card on tap. */
 @Composable
 private fun DiscoveryCard(hit: MeshCoreViewModel.DiscoveryHit, sf: Int?, onClick: (() -> Unit)?) {
-    val context = LocalContext.current
     val key = hit.contact?.keyHex ?: hit.heard?.keyHex ?: hit.reply.prefixHex
     val name = hit.contact?.name ?: hit.heard?.name
     val fmt = { v: Double -> String.format(java.util.Locale.ROOT, "%.1f", v) }
@@ -1679,8 +1676,8 @@ private fun DiscoveryCard(hit: MeshCoreViewModel.DiscoveryHit, sf: Int?, onClick
                 )
                 Text(
                     when {
-                        hit.contact != null -> SharedText.kind(context, hit.contact.type)
-                        hit.heard != null -> stringResource(R.string.node_heard_not_added, SharedText.kind(context, hit.heard.type))
+                        hit.contact != null -> SharedText.kind(androidx.compose.ui.platform.LocalResources.current, hit.contact.type)
+                        hit.heard != null -> stringResource(R.string.node_heard_not_added, SharedText.kind(androidx.compose.ui.platform.LocalResources.current, hit.heard.type))
                         else -> stringResource(R.string.discover_unknown, hit.reply.prefixHex.take(8).uppercase())
                     },
                     style = MaterialTheme.typography.bodySmall,

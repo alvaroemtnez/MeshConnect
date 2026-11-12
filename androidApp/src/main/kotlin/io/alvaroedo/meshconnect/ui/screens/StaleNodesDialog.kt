@@ -1,7 +1,6 @@
 package io.alvaroedo.meshconnect.ui.screens
 
 import io.alvaroedo.meshconnect.R
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.layout.Column
@@ -100,7 +99,7 @@ fun StaleNodesDialog(vm: MeshCoreViewModel, onDismiss: () -> Unit) {
                     stringResource(R.string.stale_count, sweep.count, sweep.total),
                     style = MaterialTheme.typography.titleSmall,
                 )
-                io.alvaroedo.meshconnect.ui.model.SharedText.staleKept(LocalContext.current, sweep)?.let {
+                io.alvaroedo.meshconnect.ui.model.SharedText.staleKept(androidx.compose.ui.platform.LocalResources.current, sweep)?.let {
                     Text(
                         it,
                         style = MaterialTheme.typography.bodySmall,

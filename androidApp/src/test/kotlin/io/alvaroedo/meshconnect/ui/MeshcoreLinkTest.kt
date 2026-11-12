@@ -34,6 +34,6 @@ class MeshcoreLinkTest {
     @Test
     fun `new chat can take a code from the clipboard`() {
         val sheet = File("src/main/kotlin/io/alvaroedo/meshconnect/ui/screens/ChannelSheets.kt").readText()
-        assertTrue(sheet.contains("vm.importPastedText(clipboard.getText()?.text)"))
+        assertTrue(sheet.contains("clipboard.paste {\n                                vm.importPastedText(it)"))
     }
 }

@@ -77,10 +77,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.input.TextFieldValue
@@ -204,7 +202,7 @@ fun ConversationScreen(
     // nothing picked turns the mode off rather than leaving an empty bar.
     var selection by remember(threadKey) { mutableStateOf<Set<Long>?>(null) }
     var confirmDeleteMany by remember { mutableStateOf<Set<Long>?>(null) }
-    val clipboard = LocalClipboardManager.current
+    val clipboard = io.alvaroedo.meshconnect.ui.rememberTextClipboard()
     androidx.activity.compose.BackHandler(enabled = selection != null) { selection = null }
     fun toggleSelected(id: Long) {
         selection = selection?.let { MessageSelection.toggle(it, id).ifEmpty { null } }
@@ -293,7 +291,7 @@ fun ConversationScreen(
                         }) { Icon(painterResource(R.drawable.ic_reply), stringResource(R.string.conv_reply)) }
                     }
                     IconButton(onClick = {
-                        clipboard.setText(AnnotatedString(MessageSelection.copyText(messages, picked, showSenders)))
+                        clipboard.copy(MessageSelection.copyText(messages, picked, showSenders))
                         selection = null
                     }) { Icon(painterResource(R.drawable.ic_content_copy), stringResource(R.string.copy)) }
                     SelectionDeleteAction {
@@ -315,7 +313,7 @@ fun ConversationScreen(
                 subtitle = if (isChannel) {
                     val idx = peerKey.toIntOrNull()
                     io.alvaroedo.meshconnect.ui.model.SharedText.channelSubtitle(
-                        LocalContext.current,
+                        androidx.compose.ui.platform.LocalResources.current,
                         idx?.let { channelKinds[it] },
                         idx?.let { channelRegions[it] },
                     )
@@ -406,10 +404,10 @@ fun ConversationScreen(
             }
 
             if (isRoom) {
-                io.alvaroedo.meshconnect.ui.model.SharedText.roomNotice(LocalContext.current, roomSession)?.let { notice ->
+                io.alvaroedo.meshconnect.ui.model.SharedText.roomNotice(androidx.compose.ui.platform.LocalResources.current, roomSession)?.let { notice ->
                     RoomAccessBanner(
                         text = notice,
-                        action = io.alvaroedo.meshconnect.ui.model.SharedText.roomAction(LocalContext.current, roomSession),
+                        action = io.alvaroedo.meshconnect.ui.model.SharedText.roomAction(androidx.compose.ui.platform.LocalResources.current, roomSession),
                         onAction = { roomSignIn = true },
                     )
                 }
@@ -859,7 +857,7 @@ private fun MessageBubble(
     // Long-press opens an inline action bar anchored on the bubble —
     // one tap to react, no dialog to read and dismiss first.
     var showActions by remember(m.id) { mutableStateOf(false) }
-    val clipboard = LocalClipboardManager.current
+    val clipboard = io.alvaroedo.meshconnect.ui.rememberTextClipboard()
     val outgoing = m.outgoing
     val (quoted, body) = remember(m.text) { splitQuote(m.text) }
     // A message that is wholly a shared contact, channel or place is drawn
@@ -1040,7 +1038,7 @@ private fun MessageBubble(
                 onMention = { showActions = false; onMention() },
                 onCopy = {
                     showActions = false
-                    clipboard.setText(AnnotatedString(m.text))
+                    clipboard.copy(m.text)
                 },
                 onInfo = { showActions = false; onInfo() },
                 onDelete = { showActions = false; onDelete() },
@@ -1593,7 +1591,7 @@ private fun MessageInfoSheet(
             // route to itself — so calling it "Path" implied we knew
             // which repeaters carried it. We don't. And on a routed
             // arrival there is not even a count: see arrivalLabel.
-            val arrival = io.alvaroedo.meshconnect.ui.model.SharedText.arrival(LocalContext.current, m.hops)
+            val arrival = io.alvaroedo.meshconnect.ui.model.SharedText.arrival(androidx.compose.ui.platform.LocalResources.current, m.hops)
             if (arrival != null || m.snr != null) {
                 Spacer(Modifier.height(8.dp))
                 TileRow {
@@ -1671,7 +1669,7 @@ private fun ArrivalRoute(
     SheetHeading(stringResource(R.string.info_arrived_via))
     if (path == null || width == null) {
         Text(
-            io.alvaroedo.meshconnect.ui.model.SharedText.heardVia(LocalContext.current, m.hops, null, 1),
+            io.alvaroedo.meshconnect.ui.model.SharedText.heardVia(androidx.compose.ui.platform.LocalResources.current, m.hops, null, 1),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -1680,7 +1678,7 @@ private fun ArrivalRoute(
     val bytes = io.github.thatsfguy.meshcore.util.hexToBytesOrNull(path) ?: return
     val hops = PathCodec.resolveHops(bytes, width, contactNames, metresAway)
     Text(
-        io.alvaroedo.meshconnect.ui.model.SharedText.heardVia(LocalContext.current, m.hops, path, width),
+        io.alvaroedo.meshconnect.ui.model.SharedText.heardVia(androidx.compose.ui.platform.LocalResources.current, m.hops, path, width),
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
@@ -1890,7 +1888,6 @@ private fun RichContentCard(
  */
 @Composable
 private fun MessageFooter(m: MessageEntity) {
-    val context = LocalContext.current
     val ink = MaterialTheme.colorScheme.onSurfaceVariant
     val style = MaterialTheme.typography.labelSmall
     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -1911,7 +1908,7 @@ private fun MessageFooter(m: MessageEntity) {
             tryLabel?.let { add(it) }
             // Who picked this up off the air; absent is not "nobody".
             if (m.outgoing) MessageRepeats.badge(m.repeatHopsHex, m.repeatHashWidth)?.let { add(it) }
-            io.alvaroedo.meshconnect.ui.model.SharedText.footerHops(context, m.hops)?.let { add(it) }
+            io.alvaroedo.meshconnect.ui.model.SharedText.footerHops(androidx.compose.ui.platform.LocalResources.current, m.hops)?.let { add(it) }
             m.snr?.let { add(String.format(java.util.Locale.ROOT, "%.1f dB", it)) }
         }
         if (extras.isNotEmpty()) {
