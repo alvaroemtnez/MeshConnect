@@ -54,7 +54,7 @@ SELF_POS = (39.4699, -0.3763)  # Valencia
 # (name, type, lat, lon)
 NODES = [
     ("Marta", ADV_CHAT, 39.4752, -0.3790),
-    ("Pau EA5ABC", ADV_CHAT, None, None),
+    ("Pau", ADV_CHAT, None, None),
     ("Hilltop Rpt", ADV_REPEATER, 39.5098, -0.4205),
     ("Port Rpt", ADV_REPEATER, 39.4510, -0.3220),
     ("Albufera Rpt", ADV_REPEATER, 39.3330, -0.3520),
@@ -63,7 +63,7 @@ NODES = [
 ]
 
 HEARD = [
-    ("Joan EA5XYZ", ADV_CHAT, 39.4900, -0.3900),
+    ("Joan", ADV_CHAT, 39.4900, -0.3900),
     ("Serra Rpt", ADV_REPEATER, 39.6800, -0.4400),
     ("Xativa Rpt", ADV_REPEATER, 38.9900, -0.5200),
 ]
@@ -228,14 +228,14 @@ class Session:
     def seed_messages(self):
         mk = key("Marta").hex()
         self.queue = [
-            channel_msg(0, "Pau EA5ABC", "Morning all, anyone on the Hilltop repeater?"),
+            channel_msg(0, "Pau", "Morning all, anyone on the Hilltop repeater?"),
             channel_msg(0, "Marta", "Loud and clear from the city centre"),
             channel_msg(0, "Marta", f"<{key('Hilltop Rpt').hex()}:2:Hilltop Rpt>"),
-            channel_msg(0, "Pau EA5ABC", "meshcore://channel/add?name=%23valencia&secret=" + CHANNELS[1][2].hex()),
+            channel_msg(0, "Pau", "meshcore://channel/add?name=%23valencia&secret=" + CHANNELS[1][2].hex()),
             channel_msg(1, "Marta", "39.47520,-0.37900"),
-            channel_msg(1, "Pau EA5ABC", "meshcore://channel/add?name=%23fallas&secret=" + key("#fallas")[:16].hex()),
+            channel_msg(1, "Pau", "meshcore://channel/add?name=%23fallas&secret=" + key("#fallas")[:16].hex()),
             contact_msg("Marta", "Hi! Are you coming to the meetup?"),
-            contact_msg("Marta", f"<{key('Pau EA5ABC').hex()}:1:Pau EA5ABC>"),
+            contact_msg("Marta", f"<{key('Pau').hex()}:1:Pau>"),
             contact_msg("Marta", "39.46990,-0.37630"),
         ]
         # One DM with a known route, for the "heard via" chip: its RX-log copy first.

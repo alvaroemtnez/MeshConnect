@@ -113,9 +113,17 @@ November 2026, so a reviewer may count either. The merge request template asks t
 original author does not oppose the inclusion: tell thatSFguy before submitting.
 
 - Store text, icon and per-version changelogs: `fastlane/metadata/android/<locale>/` (en-US,
-  es-ES, ca). Screenshots go in `images/phoneScreenshots/` (the template expects them); take
-  them redacted (`tools/redact-screenshot.py`, see CLAUDE.md) or from the fake radio. Keep
-  `short_description.txt` under 80 characters.
+  es-ES, ca). Keep `short_description.txt` under 80 characters.
+- Screenshots: `fastlane/metadata/android/en-US/images/phoneScreenshots/1.png` to `5.png`
+  (chats, a conversation, the map, nodes, the widget), taken 2026-11-12 on the Android 17
+  emulator from `tools/fake_radio.py`, so nothing in them is real and nothing needs
+  redacting (its demo names carry no callsigns). To retake: fresh app data
+  (`adb shell pm clear io.alvaroedo.meshconnect.debug`), the fake radio over TCP
+  (10.0.2.2:5000), and the system UI demo mode for a clean status bar
+  (`am broadcast -a com.android.systemui.demo -e command enter`, then clock, battery,
+  network). Over TCP the app flags the link as unencrypted (the red ⚠ and the red link on the
+  widget); shots from a radio over Bluetooth would not show that. From a real radio, redact
+  them first (`tools/redact-screenshot.py`, see CLAUDE.md).
 - Build recipe: `packaging/fdroid/io.alvaroedo.meshconnect.yml`, in the form
   `fdroid rewritemeta` writes (it drops comments, so the notes are here), with one build entry:
   the template wants only the latest version. F-Droid brings its own JDK and SDK and runs
