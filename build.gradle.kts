@@ -1,16 +1,14 @@
 plugins {
-    // Versions are declared here and applied in submodules via `apply false`.
-    // Update these when upgrading the KMP or Android Gradle Plugin version.
-    id("com.android.application") version "8.13.2" apply false
-    id("com.android.library") version "8.13.2" apply false
-    id("org.jetbrains.kotlin.multiplatform") version "2.3.21" apply false
-    id("org.jetbrains.kotlin.android") version "2.3.21" apply false
-    // Only for parsing firmware-package manifests and the release index
-    // (shared/firmware/): third-party JSON is hostile input and does not
-    // get a hand-rolled parser.
-    id("org.jetbrains.kotlin.plugin.serialization") version "2.3.21" apply false
-    id("org.jetbrains.kotlin.plugin.compose") version "2.3.21" apply false
-    id("com.google.devtools.ksp") version "2.3.10" apply false
+    // AGP 9 (Gradle 9.8.1, Kotlin 2.4.21, as HFPredict): it compiles Kotlin itself (no kotlin.android
+    // plugin), and a Kotlin Multiplatform module uses its own Android plugin, not
+    // com.android.library (see shared/build.gradle.kts).
+    id("com.android.application") version "9.5.1" apply false
+    id("com.android.kotlin.multiplatform.library") version "9.5.1" apply false
+    id("org.jetbrains.kotlin.multiplatform") version "2.4.21" apply false
+    id("org.jetbrains.kotlin.plugin.serialization") version "2.4.21" apply false
+    id("org.jetbrains.kotlin.plugin.compose") version "2.4.21" apply false
+    // 2.3.12, not 2.3.13: the maintainers flag a regression in 2.3.13 (google/ksp#3286).
+    id("com.google.devtools.ksp") version "2.3.12" apply false
 }
 
 // Reproducible-build hygiene (carried over from reticulum-mobile-app):

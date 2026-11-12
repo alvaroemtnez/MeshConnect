@@ -1,6 +1,6 @@
 plugins {
+    // AGP 9 compiles Kotlin itself: no kotlin("android"). The Kotlin version is the root's.
     id("com.android.application")
-    kotlin("android")
     id("org.jetbrains.kotlin.plugin.compose")
     id("com.google.devtools.ksp")
 }
@@ -50,13 +50,16 @@ android {
         // only: arm64 for every current device, armeabi-v7a for old 32-bit
         // ones. (Consequence: no x86_64 emulator/Chromebook builds. The
         // project has no instrumented tests, so CI is unaffected.)
-        // English (default), Spanish, Valencian; drops the translations
-        // libraries bring for every other language.
-        resourceConfigurations += listOf("en", "es", "ca")
 
         ndk {
             abiFilters += listOf("arm64-v8a", "armeabi-v7a")
         }
+    }
+
+    // English (default), Spanish, Valencian; drops the translations libraries bring for
+    // every other language. The app's own locales_config.xml lists the same three.
+    androidResources {
+        localeFilters += listOf("en", "es", "ca")
     }
 
     compileOptions {

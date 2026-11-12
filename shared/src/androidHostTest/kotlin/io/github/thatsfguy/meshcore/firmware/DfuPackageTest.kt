@@ -18,7 +18,7 @@ import kotlin.test.assertTrue
  * (sha256 `c41430c4…`), so this pins what MeshCore actually ships
  * rather than what a package format document says it might.
  *
- * These live in androidUnitTest rather than commonTest because the zip
+ * These live in androidHostTest rather than commonTest because the zip
  * reader is an expect/actual and iOS has no implementation yet — a
  * commonTest here would fail the `iosSimulatorArm64Test` CI run that
  * exists to catch exactly that kind of platform leak.

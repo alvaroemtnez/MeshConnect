@@ -307,7 +307,7 @@ run_app() {
 check() {
     setup
     mkdir -p "$MESHCONNECT_ROBOLECTRIC_DIR/.m2/repository"
-    gradle :shared:testDebugUnitTest :androidApp:testDebugUnitTest
+    gradle :shared:testAndroidHostTest :androidApp:testDebugUnitTest
 }
 
 print_env() {

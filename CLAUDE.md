@@ -110,7 +110,7 @@ Layout:
   iosMain (TCP + CommonCrypto; Ed25519 bridged to CryptoKit 2026-08-06 via
   `shared/iosCryptoBridge/` + cinterop — written but NOT yet proven by a green
   iOS CI run, which is the only thing that compiles it).
-  Tests: `./gradlew :shared:testDebugUnitTest` — protocol vectors + fake-radio engine tests.
+  Tests: `./gradlew :shared:testAndroidHostTest` (AGP 9; was `testDebugUnitTest`) — protocol vectors + fake-radio engine tests.
 - **`androidApp/`** — Room DB (sealed PSKs), KeystoreSecretVault, MeshCoreService
   (foreground + reconnect supervisor), MeshCoreViewModel, Compose screens (chats,
   conversation, nodes+detail, osmdroid map, repeater admin, settings incl. stern TCP

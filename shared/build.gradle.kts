@@ -2,17 +2,29 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     kotlin("multiplatform")
-    id("com.android.library")
+    // AGP 9's plugin for the Android target of a Kotlin Multiplatform module. Using
+    // com.android.library here relies on APIs AGP 9 deprecates and AGP 10 removes.
+    id("com.android.kotlin.multiplatform.library")
     kotlin("plugin.serialization")
 }
 
 kotlin {
-    // No `jvmToolchain(17)` pin — run on whatever JDK (>=17) is present and
-    // pin the *output* bytecode to 17 (same F-Droid-friendly setup as
-    // reticulum-mobile-app).
-    androidTarget {
+    android {
+        namespace = "io.github.thatsfguy.meshcore.shared"
+        compileSdk = 37
+        minSdk = 26  // Android 8.0 — BLE APIs stable
+
+        // No `jvmToolchain(17)` pin — run on whatever JDK (>=17) is present and
+        // pin the *output* bytecode to 17 (same F-Droid-friendly setup as
+        // reticulum-mobile-app). Applies to Kotlin and Java alike.
         compilerOptions {
             jvmTarget.set(JvmTarget.JVM_17)
+        }
+
+        // Host (JVM) tests are opt-in with this plugin: src/androidHostTest, run by
+        // :shared:testAndroidHostTest. Android stubs return defaults, as before.
+        withHostTest {
+            isReturnDefaultValues = true
         }
     }
 
@@ -23,49 +35,33 @@ kotlin {
     // and engine keep merging cleanly from upstream.
 
     sourceSets {
-        val commonMain by getting {
+        commonMain {
             dependencies {
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.1")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
             }
         }
-        val commonTest by getting {
+        commonTest {
             dependencies {
                 implementation(kotlin("test"))
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1")
             }
         }
-        val androidMain by getting {
+        androidMain {
             dependencies {
                 // Bouncy Castle for Ed25519 (advert verify, identity keygen)
                 implementation("org.bouncycastle:bcprov-jdk18on:1.78.1")
             }
         }
-        val androidUnitTest by getting {
+        // No generated accessor for this one; by name, as Google's migration guide does.
+        getByName("androidHostTest") {
             dependencies {
                 implementation(kotlin("test"))
                 implementation(kotlin("test-junit"))
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1")
                 implementation("junit:junit:4.13.2")
             }
-        }
-    }
-}
-
-android {
-    namespace = "io.github.thatsfguy.meshcore.shared"
-    compileSdk = 37
-    defaultConfig {
-        minSdk = 26  // Android 8.0 — BLE APIs stable
-    }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
-    }
-    testOptions {
-        unitTests {
-            isReturnDefaultValues = true
         }
     }
 }
