@@ -213,10 +213,15 @@ build_release() {
         args+=(--key-pass env:MESHCONNECT_KEYSTORE_PASS)
     fi
 
-    info "Aligning and signing release APK with $MESHCONNECT_KEYSTORE"
-    "$bt/zipalign" -f -p 4 "$unsigned" "$DIST_DIR/aligned.apk"
-    "$bt/apksigner" "${args[@]}" "$DIST_DIR/aligned.apk"
-    rm -f "$DIST_DIR/aligned.apk" "$out.idsig"
+    # Gradle's packager already aligns the APK (4 bytes, 16 KB pages for the
+    # native libraries). Signing must keep its bytes exactly as they are, no
+    # zipalign and no realignment by apksigner, so the signature can be
+    # copied onto F-Droid's build of the same source: that is how F-Droid
+    # checks the build is reproducible and ships our signature.
+    args+=(--alignment-preserved true)
+    info "Signing release APK with $MESHCONNECT_KEYSTORE"
+    "$bt/apksigner" "${args[@]}" "$unsigned"
+    rm -f "$out.idsig"
 
     # The AAB is signed with jarsigner (apksigner does not sign bundles).
     local jargs=(-keystore "$MESHCONNECT_KEYSTORE" -signedjar "$DIST_DIR/$APP_NAME-$ver-release.aab")
