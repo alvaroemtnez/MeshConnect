@@ -8,6 +8,11 @@ developed on <https://code.alvaroedo.io/alvaroemtnez/MeshConnect> and mirrored t
 - **Security problems:** report privately to the maintainer rather than in a public issue.
 - **Protocol and engine (`shared/`):** this code tracks upstream (see [FORK.md](FORK.md)). Fixes
   that apply to MeshCore Hardened too are best sent there first, and MeshConnect will merge them.
+- **Pull requests** are welcome on either host. GitHub is a mirror, so a PR opened there is
+  reviewed there but merged on Forgejo, keeping your commits and authorship; GitHub then shows
+  it as merged once the mirror catches up. If it had to be reworked first, it is closed with a
+  link to the commit that carries it, crediting you as co-author. The details are in
+  [FORK.md](FORK.md) → *Pull requests on the GitHub copy*.
 - **Translations:** strings live in `scripts/strings_table.py` (English, Spanish, Valencian).
   Corrections are welcome.
 

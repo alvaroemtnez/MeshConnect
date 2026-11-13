@@ -1,0 +1,62 @@
+# Weekly check for new upstream (MeshCore Hardened) commits. When there are some, push
+# upstream's head as a branch `upstream/<sha>` and open a pull request describing them
+# (tools/upstream-sync.sh): the commits, the shared/ vs androidApp/ diffstat and what a trial
+# merge conflicts on. The PR is a reminder to review, not something to merge with the button:
+# the merge is done locally as FORK.md → "Syncing" says. A newer check closes the older PR.
+#
+# Upstream is fetched from GitHub, not from the mirrors org on this Forgejo, which only its
+# members can read. Needs no secrets: the automatic token pushes the branch and opens the PR,
+# as it creates releases in release.yml. Forgejo does not start workflows for events that
+# token causes, so CI does not run on the PR; run ./build.sh test on the local merge, as
+# FORK.md asks anyway. The push mirror copies the branch to GitHub too; delete it after merging.
+name: upstream
+on:
+  schedule:
+    - cron: '41 6 * * 1'
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: docker
+    container:
+      image: node:20-bookworm # git, curl
+    steps:
+      - uses: https://code.forgejo.org/actions/checkout@v4
+        with:
+          fetch-depth: 0 # the merge base with upstream
+
+      - name: Compare with upstream
+        id: sync
+        run: BODY_FILE="$RUNNER_TEMP/body.md" tools/upstream-sync.sh | tee -a "$GITHUB_OUTPUT"
+
+      - name: Open pull request
+        if: steps.sync.outputs.STATUS == 'new'
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          API: ${{ github.server_url }}/api/v1/repos/${{ github.repository }}
+          SHA: ${{ steps.sync.outputs.SHA }}
+          SHORT: ${{ steps.sync.outputs.SHORT }}
+          COUNT: ${{ steps.sync.outputs.COUNT }}
+        run: |
+          apt-get update -qq && apt-get install -y -qq jq > /dev/null
+          BRANCH="upstream/$SHORT"
+          if git ls-remote --exit-code origin "refs/heads/$BRANCH" > /dev/null; then
+            echo "$BRANCH already exists; its pull request is open or was dealt with."
+            exit 0
+          fi
+          git push -q origin "$SHA:refs/heads/$BRANCH"
+          AUTH="Authorization: token $TOKEN"
+          NEW=$(jq -n --arg title "Upstream: $COUNT new commit(s) up to $SHORT" --arg head "$BRANCH" \
+                  --rawfile body "$RUNNER_TEMP/body.md" '{title: $title, head: $head, base: "main", body: $body}' |
+                curl -fsS -X POST -H "$AUTH" -H 'Content-Type: application/json' "$API/pulls" -d @- | jq -r .number)
+          echo "Opened #$NEW"
+          # The older sync PRs are covered by the new one.
+          curl -fsS -H "$AUTH" "$API/pulls?state=open&limit=50" |
+            jq -r --arg b "$BRANCH" '.[] | select(.head.ref | startswith("upstream/")) | select(.head.ref != $b) | .number' |
+            while read -r n; do
+              curl -fsS -X POST -H "$AUTH" -H 'Content-Type: application/json' "$API/issues/$n/comments" \
+                -d "{\"body\": \"Superseded by #$NEW.\"}" > /dev/null
+              curl -fsS -X PATCH -H "$AUTH" -H 'Content-Type: application/json' "$API/pulls/$n" \
+                -d '{"state": "closed"}' > /dev/null
+              echo "Closed #$n"
+            done

@@ -78,6 +78,55 @@ Then resolve:
 - Run `./build.sh test`, drive the change on the emulator (`tools/emulator.sh`,
   `tools/fake_radio.py`), and describe the upstream range in the merge commit.
 
+### The weekly check
+
+`.forgejo/workflows/upstream.yml` runs `tools/upstream-sync.sh` every Monday (or from the Actions
+tab → *Run workflow*). When upstream has commits we haven't merged, it pushes upstream's head as a
+branch `upstream/<sha>` and opens a pull request listing them, with the diffstat split into
+`shared/`, `androidApp/` and the rest, and the files a trial merge conflicts on. A newer check
+closes the older PR. Run the script yourself for the same report without opening anything.
+
+- **Don't merge that PR with the button.** It is a reminder. Merge locally as above (the PR body
+  has the commands), push, and the PR closes itself as merged. Delete the `upstream/<sha>` branch
+  afterwards: the push mirror copies it to GitHub as well.
+- **It fetches from GitHub**, not from the mirror above. The `mirrors` org is visible to members
+  only, so the Actions token can't read it, and a personal token that could would also be able to
+  read every other repository you own. The mirror stays a copy in case upstream disappears; if
+  that happens the check starts failing, and `upstream` (the remote above) still has everything.
+- **It needs no secrets.** The automatic token pushes the branch and opens the PR, as it creates
+  releases. Forgejo doesn't start workflows for what that token does, so CI doesn't run on the
+  PR; `./build.sh test` on the local merge covers it.
+
+## Pull requests on the GitHub copy
+
+GitHub is a push mirror: anything merged there is overwritten by the next push from Forgejo. So a
+pull request on `github.com/alvaroemtnez/MeshConnect` is reviewed on GitHub, where its author is,
+and merged here.
+
+1. **Fetch it.** GitHub publishes every PR as a ref, readable without an account:
+
+   ```console
+   $ git fetch https://github.com/alvaroemtnez/MeshConnect.git pull/<N>/head:gh-pr-<N>
+   ```
+
+2. **Review it like our own work:** strings through `scripts/strings_table.py`, icons through
+   `scripts/gen_icons.py`, tests for what it fixes or adds, `./build.sh test`, and the emulator for
+   UI. To get CI and a place for notes, push the branch here and open a Forgejo PR from it
+   (`git push origin gh-pr-<N>`).
+3. **Ask for changes on the GitHub PR.** The author pushes to their branch there; fetch again
+   (step 1, with `+pull/<N>/head:gh-pr-<N>` to overwrite the local branch).
+4. **Merge here, keeping their commits:** `git merge --no-ff gh-pr-<N>` on `main`, with a message
+   naming the GitHub PR (`Merge GitHub PR #<N> from <user>/<branch>`). Their commits keep them as
+   author. When their exact commits reach GitHub's `main` through the mirror, GitHub marks the PR
+   *merged* on its own.
+5. **If you change it substantially** (squash, rework, take only part), commit under your name with
+   a `Co-authored-by: Name <email>` trailer, using the address from their commits, and close the
+   GitHub PR with a comment linking the commit. Don't just close it: say what landed and why.
+6. A PR that touches `shared/` and is not specific to MeshConnect is better sent to upstream
+   (thatSFguy's repo). Say so on the PR; we get it back through the weekly check.
+
+Delete `gh-pr-<N>` (locally and on Forgejo) once it is merged.
+
 ## Things to offer upstream
 
 - `BatteryLevel` on a discharge curve: the straight line reads 3.70 V as 58% and puts 20% at
