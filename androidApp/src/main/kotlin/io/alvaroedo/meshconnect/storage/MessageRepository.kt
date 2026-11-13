@@ -422,15 +422,13 @@ class MessageRepository(
                             " -> ${if (notify) "notify" else "silent"}",
                     )
                 }
+                // A CLI reply is not counted as unread (1.2.1-beta.2): it
+                // answers a command the user just typed into the console,
+                // and nothing could clear the count — the console is not a
+                // Chats thread — so it only ever inflated the widget.
                 if (notify) {
                     db.contacts().bumpUnread(self, peer, System.currentTimeMillis())
                     onNewMessage?.invoke(KIND_DM, peer, event.roomAuthorLabel, event.text)
-                } else if (inserted != -1L &&
-                    Inbox.shouldBumpUnread(activeThread, KIND_DM, peer)
-                ) {
-                    // A CLI reply still counts as unread — the console
-                    // has something new in it — it just never interrupts.
-                    db.contacts().bumpUnread(self, peer, System.currentTimeMillis())
                 }
             }
 

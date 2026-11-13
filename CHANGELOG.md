@@ -26,6 +26,11 @@ Its history up to the fork point (0.10.15) is in
 - **Hidden newcomers, said quietly.** With "Hide nodes not added" on, the Nodes list has a
   faint "Hiding nodes not added" line where the heard nodes' row would be, just above the top,
   instead of a line with a Show button under the tabs.
+- **The widget's unread count matches the Chats tab.** It added up every contact, repeaters
+  included, and a repeater's thread is its admin console: each reply to a console command was
+  counted as unread, nothing could clear it, and the widget's number only went up. The widget
+  now counts the chats the list shows, and console replies are no longer counted as unread. Its
+  "last message" line skips console replies too.
 
 ## 1.2.0
 

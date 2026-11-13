@@ -180,6 +180,45 @@ class MessageRepositoryGuardsTest {
     }
 
     // ------------------------------------------------------------------
+    // What counts as unread
+    // ------------------------------------------------------------------
+
+    private suspend fun kotlinx.coroutines.test.TestScope.unreadAfter(txtType: Int): Int {
+        val peerHex = peer.joinToString("") { "%02x".format(it) }
+        db.contacts().upsertAll(listOf(contactRow(peerHex, "node")))
+        val repository = repo(backgroundScope)
+        repository.selfKey = selfHex
+        val engine = MeshCoreEngine(backgroundScope, AndroidCryptoProvider(), { 1_700_000_000L })
+        repository.handle(
+            engine,
+            MeshEvent.DirectMessageReceived(
+                senderPrefixHex = peerHex.take(12),
+                senderKeyHex = peerHex,
+                text = "radio: 910.525",
+                timestamp = 1_700_000_300L,
+                txtType = txtType,
+                snr = null,
+            ),
+        )
+        return db.contacts().allOnce(selfHex).single().unread
+    }
+
+    @Test
+    fun aConsoleReplyIsStoredButNotCountedAsUnread() = runTest {
+        // 1.2.1-beta.2: a reply to a command typed into a repeater's
+        // console bumped its unread count, which nothing could clear (the
+        // console is not a Chats thread) and the widget added up.
+        assertEquals(0, unreadAfter(Codes.TXT_TYPE_CLI_DATA))
+        assertEquals(1, db.messages().countAll(selfHex), "the reply must still reach the console")
+    }
+
+    @Test
+    fun aPlainMessageIsCountedAsUnread() = runTest {
+        // Positive control: a repository that counted nothing passes the test above.
+        assertEquals(1, unreadAfter(Codes.TXT_TYPE_PLAIN))
+    }
+
+    // ------------------------------------------------------------------
     // A Keystore that cannot seal
     // ------------------------------------------------------------------
 

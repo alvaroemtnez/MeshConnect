@@ -317,8 +317,11 @@ class MeshCoreService : Service() {
                     flowOf(Triple(0, null as String?, null as io.alvaroedo.meshconnect.storage.MessageEntity?))
                 } else {
                     combine(db.contacts().all(key), db.channels().all(key), db.messages().latestPerThread(key)) { cs, chs, latest ->
-                        val unread = cs.sumOf { it.unread } + chs.sumOf { it.unread }
-                        val last = latest.filter { !it.outgoing }.maxByOrNull { it.timestamp }
+                        // The Chats list's rule, not a sum of every row (ChatThreads).
+                        val unread = io.alvaroedo.meshconnect.ui.model.ChatThreads.unreadTotal(latest, cs, chs)
+                        val last = io.alvaroedo.meshconnect.ui.model.ChatThreads
+                            .chatLatest(latest, cs.associateBy { it.keyHex })
+                            .filter { !it.outgoing }.maxByOrNull { it.timestamp }
                         val from = last?.let { m ->
                             if (m.kind == MessageRepository.KIND_CHANNEL) {
                                 val ch = chs.firstOrNull { it.idx == m.peerKey.toIntOrNull() }?.name?.ifBlank { null }

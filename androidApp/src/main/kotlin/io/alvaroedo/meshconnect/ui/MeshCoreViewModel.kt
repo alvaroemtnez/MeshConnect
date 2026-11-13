@@ -658,8 +658,9 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
             } else {
                 val c = contactByKey[m.peerKey]
                 // Repeater admin traffic (CLI console) lives in the admin
-                // screen — repeater threads never surface in Chats.
-                if (c?.type == io.github.thatsfguy.meshcore.protocol.Codes.ADV_TYPE_REPEATER) {
+                // screen — repeater threads never surface in Chats. The
+                // widget counts by the same rule (ChatThreads).
+                if (!io.alvaroedo.meshconnect.ui.model.ChatThreads.isChatPeer(c)) {
                     continue
                 }
                 rows.add(

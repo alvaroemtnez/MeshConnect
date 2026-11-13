@@ -290,6 +290,7 @@ private val CHANGELOG: List<Pair<String, List<String>>> = listOf(
         "Map: what is shown (kinds, labels, links) moved to its own filter icon; the ⋮ keeps the actions, with icons.",
         "Map: sensors can be filtered, and a filter that hides every pin says so.",
         "Nodes: with newcomers hidden, a faint reminder sits where their row would be, with no Show button.",
+        "Widget: the unread count matches the Chats tab; repeater console replies no longer count as unread.",
     ),
     "1.2.0" to listOf(
         "The widget shows the link with an icon (connected, connecting, not connected) and says it in words when there is no link.",
