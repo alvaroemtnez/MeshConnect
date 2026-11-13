@@ -285,6 +285,12 @@ private fun AboutGroup(title: String) {
  * fork is in docs/upstream/CHANGELOG-MeshCoreHardened.md.
  */
 private val CHANGELOG: List<Pair<String, List<String>>> = listOf(
+    "1.2.1" to listOf(
+        "Adding someone or a channel from New chat opens the conversation; Settings and Nodes still add without leaving.",
+        "Map: what is shown (kinds, labels, links) moved to its own filter icon; the ⋮ keeps the actions, with icons.",
+        "Map: sensors can be filtered, and a filter that hides every pin says so.",
+        "Nodes: with newcomers hidden, a faint reminder sits where their row would be, with no Show button.",
+    ),
     "1.2.0" to listOf(
         "The widget shows the link with an icon (connected, connecting, not connected) and says it in words when there is no link.",
         "The widget follows the link as it changes, instead of sometimes staying on \"connected\".",

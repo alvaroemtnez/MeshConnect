@@ -11,6 +11,22 @@ MeshConnect is a fork of [MeshCore Hardened](https://github.com/thatSFguy/meshco
 Its history up to the fork point (0.10.15) is in
 [docs/upstream/CHANGELOG-MeshCoreHardened.md](docs/upstream/CHANGELOG-MeshCoreHardened.md).
 
+## 1.2.1
+
+- **New chat opens the chat.** Adding someone from the New chat button (by scanning their code
+  or pasting their link) now opens the conversation with them as soon as they are added, and so
+  does joining or creating a channel there, including one you already had. Adding a channel
+  from Settings → Channels, or a node from the Nodes tab, still leaves you where you were.
+- **The map's menus are split.** What the map shows (node kinds, labels, neighbour links) is
+  behind a new filter icon, laid out like the Nodes sort menu; the icon is tinted while a kind
+  is hidden. The ⋮ menu keeps the actions, each with an icon: show the whole network, export
+  as GPX, load map tiles, clear the cache. "Show the whole network" had sat among the filters
+  and read as the way to undo them; it only zooms out. Sensors can now be filtered too, and a
+  filter that hides every pin says so instead of claiming no node has a position.
+- **Hidden newcomers, said quietly.** With "Hide nodes not added" on, the Nodes list has a
+  faint "Hiding nodes not added" line where the heard nodes' row would be, just above the top,
+  instead of a line with a Show button under the tabs.
+
 ## 1.2.0
 
 - **The widget tells you whether the radio is connected.** The status dot is now an icon with
