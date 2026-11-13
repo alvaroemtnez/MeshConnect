@@ -21,7 +21,21 @@ class HeardFoldWiringTest {
 
     @Test
     fun `the list opens one row down so the heard row starts out of sight`() {
-        assertTrue(s.contains("rememberLazyListState(initialFirstVisibleItemIndex = if (heard.isNotEmpty()) 1 else 0)"))
+        assertTrue(s.contains("rememberLazyListState(initialFirstVisibleItemIndex = if (heard.isNotEmpty() || hideHeard) 1 else 0)"))
         assertTrue(s.contains("onToggle = { heardRevealed = !heardRevealed }"))
+    }
+
+    @Test
+    fun `hiding newcomers puts a quiet reminder in the -1 row, with no Show button`() {
+        val list = s.substringAfter("LazyColumn(Modifier.fillMaxSize(), state = listState) {")
+        assertTrue(list.trimStart().startsWith("if (hideHeard) {\n                        item(key = \"heard_hidden\") { HiddenHeardRow() }"))
+        val row = s.substringAfter("private fun HiddenHeardRow()").substringBefore("\n}\n")
+        assertTrue(row.contains("R.string.hiding_not_added"))
+        assertTrue(row.contains("FontStyle.Italic"))
+        assertTrue(row.contains("TextAlign.Center"))
+        assertFalse(row.contains("Button"))
+        // And it is no longer a line under the chips.
+        assertFalse(s.substringAfter("private fun ActiveFilterNotes(").substringBefore("\n}\n").contains("hiding_not_added"))
+        assertFalse(s.contains("onShowHeard"))
     }
 }

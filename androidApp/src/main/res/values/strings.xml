@@ -181,9 +181,9 @@
     <string name="set_diagnostics">Diagnostics</string>
     <string name="map_labels">Show labels</string>
     <string name="map_hide_links">Hide neighbour links</string>
-    <string name="map_only_contacts">Only contacts</string>
-    <string name="map_only_repeaters">Only repeaters</string>
-    <string name="map_only_rooms">Only rooms</string>
+    <string name="map_filter">Filter the map</string>
+    <string name="map_on_map">On the map</string>
+    <string name="map_empty_filtered">Nothing with a position matches the filter.\nClear it from the filter menu.</string>
     <string name="map_export_gpx">Export nodes as GPX</string>
     <string name="map_load_tiles">Load map tiles (network)</string>
     <string name="map_clear_cache">Clear map cache</string>

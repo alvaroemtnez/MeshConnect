@@ -1,6 +1,12 @@
 package io.alvaroedo.meshconnect.ui.screens
 
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
+import androidx.compose.ui.res.painterResource
+import io.alvaroedo.meshconnect.R
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.DropdownMenu
@@ -31,4 +37,21 @@ fun MeshDropdownMenu(
         modifier = modifier.widthIn(min = 200.dp),
         content = content,
     )
+}
+
+/** A section title inside a sort/filter menu (Nodes, Map). */
+@Composable
+fun MenuHeading(text: String) {
+    Text(
+        text,
+        style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+    )
+}
+
+/** The tick on a sort/filter menu's selected or switched-on row. */
+@Composable
+fun SelectedTick() {
+    Icon(painterResource(R.drawable.ic_check), null, modifier = Modifier.size(18.dp))
 }

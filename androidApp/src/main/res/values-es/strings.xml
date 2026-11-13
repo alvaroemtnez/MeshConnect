@@ -178,9 +178,9 @@
     <string name="set_diagnostics">Diagnóstico</string>
     <string name="map_labels">Mostrar etiquetas</string>
     <string name="map_hide_links">Ocultar enlaces de vecinos</string>
-    <string name="map_only_contacts">Solo contactos</string>
-    <string name="map_only_repeaters">Solo repetidores</string>
-    <string name="map_only_rooms">Solo salas</string>
+    <string name="map_filter">Filtrar el mapa</string>
+    <string name="map_on_map">En el mapa</string>
+    <string name="map_empty_filtered">Nada con posición coincide con el filtro.\nQuítalo desde el menú de filtros.</string>
     <string name="map_export_gpx">Exportar nodos como GPX</string>
     <string name="map_load_tiles">Cargar mapas (red)</string>
     <string name="map_clear_cache">Borrar la caché del mapa</string>

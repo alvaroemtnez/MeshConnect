@@ -8,7 +8,16 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.Box
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.ui.res.painterResource
+import io.github.thatsfguy.meshcore.protocol.Codes
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
@@ -45,7 +54,8 @@ import org.maplibre.android.geometry.LatLng
  * Markers are Canvas-drawn pins ([NodeMarkers]): color + glyph per node
  * type (companion/repeater/room/sensor, mirroring the reference
  * client's icon scheme) with always-visible name labels — no tap
- * needed. The ⋮ menu toggles labels and re-fits the view.
+ * needed. The filter icon chooses what is shown (kinds, labels, links);
+ * the ⋮ menu holds actions (re-fit, export, tiles, cache).
  *
  * Tapping a pin opens [MapNodeSheet]; for a repeater that is where its
  * neighbour links are turned on, drawn from the pin to every neighbour
@@ -64,6 +74,7 @@ fun MapScreen(vm: MeshCoreViewModel, nav: NavController) {
     var fitRequest by remember { mutableIntStateOf(0) }
     var typeFilter by remember { mutableStateOf(vm.prefs.mapTypeFilter) }
     var tilesEnabled by remember { mutableStateOf(vm.prefs.mapTilesEnabled) }
+    var filterMenu by remember { mutableStateOf(false) }
 
     // The tapped pin, and separately the repeater whose links are drawn.
     // They are not the same state: the whole point of the links is to
@@ -105,28 +116,44 @@ fun MapScreen(vm: MeshCoreViewModel, nav: NavController) {
                 title = stringResource(R.string.nav_map),
                 vm = vm,
                 subtitle = pluralStringResource(R.plurals.map_subtitle, located.size, located.size),
-                menuActions = listOfNotNull(
-                    MenuAction(stringResource(R.string.map_labels), checked = showLabels) { showLabels = !showLabels },
-                    MenuAction(stringResource(R.string.map_fit_all)) { fitRequest++ },
-                    linksFor?.let { MenuAction(stringResource(R.string.map_hide_links)) { linksFor = null } },
-                    MenuAction(
-                        stringResource(R.string.map_only_contacts),
-                        checked = io.github.thatsfguy.meshcore.protocol.Codes.ADV_TYPE_CHAT in typeFilter,
-                    ) { toggleType(io.github.thatsfguy.meshcore.protocol.Codes.ADV_TYPE_CHAT) },
-                    MenuAction(
-                        stringResource(R.string.map_only_repeaters),
-                        checked = io.github.thatsfguy.meshcore.protocol.Codes.ADV_TYPE_REPEATER in typeFilter,
-                    ) { toggleType(io.github.thatsfguy.meshcore.protocol.Codes.ADV_TYPE_REPEATER) },
-                    MenuAction(
-                        stringResource(R.string.map_only_rooms),
-                        checked = io.github.thatsfguy.meshcore.protocol.Codes.ADV_TYPE_ROOM in typeFilter,
-                    ) { toggleType(io.github.thatsfguy.meshcore.protocol.Codes.ADV_TYPE_ROOM) },
-                    MenuAction(stringResource(R.string.map_export_gpx)) { vm.exportGpx(located.size) },
-                    MenuAction(stringResource(R.string.map_load_tiles), checked = tilesEnabled) {
+                // What the map shows lives behind its own icon, as on Nodes; the ⋮ holds
+                // things to DO (2026-11-13). Mixed together, "Show the whole network" sat
+                // under "Only contacts" and read as the way to undo it — it only zooms out.
+                actions = {
+                    Box {
+                        IconButton(onClick = { filterMenu = true }) {
+                            Icon(
+                                painterResource(R.drawable.ic_filter_list),
+                                stringResource(R.string.map_filter),
+                                // Tinted while something is hidden, as Nodes' sort icon is.
+                                tint = if (typeFilter.isEmpty()) {
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                } else {
+                                    MaterialTheme.colorScheme.primary
+                                },
+                            )
+                        }
+                        MapFilterMenu(
+                            open = filterMenu,
+                            onDismiss = { filterMenu = false },
+                            typeFilter = typeFilter,
+                            onToggleType = ::toggleType,
+                            onClearTypes = { typeFilter = emptySet(); vm.prefs.mapTypeFilter = typeFilter },
+                            showLabels = showLabels,
+                            onToggleLabels = { showLabels = !showLabels },
+                            linksShown = linksFor != null,
+                            onHideLinks = { linksFor = null },
+                        )
+                    }
+                },
+                menuActions = listOf(
+                    MenuAction(stringResource(R.string.map_fit_all), icon = R.drawable.ic_zoom_out_map) { fitRequest++ },
+                    MenuAction(stringResource(R.string.map_export_gpx), icon = R.drawable.ic_download) { vm.exportGpx(located.size) },
+                    MenuAction(stringResource(R.string.map_load_tiles), icon = R.drawable.ic_layers, checked = tilesEnabled) {
                         tilesEnabled = !tilesEnabled
                         vm.prefs.mapTilesEnabled = tilesEnabled
                     },
-                    MenuAction(stringResource(R.string.map_clear_cache)) {
+                    MenuAction(stringResource(R.string.map_clear_cache), icon = R.drawable.ic_delete) {
                         MapStyles.clearCache(context) { vm.transientMessage.value = res.getString(R.string.map_cache_cleared) }
                     },
                 ),
@@ -134,9 +161,11 @@ fun MapScreen(vm: MeshCoreViewModel, nav: NavController) {
         },
     ) { padding ->
         if (located.isEmpty()) {
+            val anyPlaced = contacts.any { isPlausiblePosition(it.latitude, it.longitude) }
             EmptyHint(
                 modifier = Modifier.padding(padding),
-                text = stringResource(R.string.map_empty),
+                // A filter that hides every pin must not read as "nobody has a position".
+                text = stringResource(if (anyPlaced && typeFilter.isNotEmpty()) R.string.map_empty_filtered else R.string.map_empty),
             )
             return@Scaffold
         }
@@ -294,4 +323,60 @@ fun MapScreen(vm: MeshCoreViewModel, nav: NavController) {
 }
 
 private fun ContactEntity.displayName(): String = name.ifBlank { keyHex.take(8) }
+
+/** The node kinds the map filters on, in the Nodes tabs' order. */
+private val MAP_KINDS = listOf(
+    Codes.ADV_TYPE_CHAT to R.string.kind_contacts,
+    Codes.ADV_TYPE_REPEATER to R.string.kind_repeaters,
+    Codes.ADV_TYPE_ROOM to R.string.kind_rooms,
+    Codes.ADV_TYPE_SENSOR to R.string.kind_sensors,
+)
+
+/**
+ * What the map shows: which kinds of node, and what is drawn with them. Laid out like
+ * Nodes' sort/filter menu, with toggles that stack and so keep the menu open.
+ */
+@Composable
+private fun MapFilterMenu(
+    open: Boolean,
+    onDismiss: () -> Unit,
+    typeFilter: Set<Int>,
+    onToggleType: (Int) -> Unit,
+    onClearTypes: () -> Unit,
+    showLabels: Boolean,
+    onToggleLabels: () -> Unit,
+    linksShown: Boolean,
+    onHideLinks: () -> Unit,
+) {
+    MeshDropdownMenu(expanded = open, onDismissRequest = onDismiss) {
+        MenuHeading(stringResource(R.string.nodes_show_only))
+        for ((type, label) in MAP_KINDS) {
+            DropdownMenuItem(
+                text = { Text(stringResource(label)) },
+                onClick = { onToggleType(type) },
+                trailingIcon = { if (type in typeFilter) SelectedTick() },
+            )
+        }
+        HorizontalDivider()
+        MenuHeading(stringResource(R.string.map_on_map))
+        DropdownMenuItem(
+            text = { Text(stringResource(R.string.map_labels)) },
+            onClick = onToggleLabels,
+            trailingIcon = { if (showLabels) SelectedTick() },
+        )
+        if (linksShown) {
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.map_hide_links)) },
+                onClick = { onHideLinks(); onDismiss() },
+            )
+        }
+        if (typeFilter.isNotEmpty()) {
+            HorizontalDivider()
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.nodes_clear_filters)) },
+                onClick = { onClearTypes(); onDismiss() },
+            )
+        }
+    }
+}
 

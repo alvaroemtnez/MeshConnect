@@ -79,7 +79,7 @@ fun ChannelAddSheet(
     val newChat = onMessageContact != null
 
     val communityScanLauncher = rememberLauncherForActivityResult(io.alvaroedo.meshconnect.platform.ScanQr()) { result ->
-        result?.let { vm.importScannedCode(it) }
+        result?.let { vm.importScannedCode(it, openChat = newChat) }
         onDismiss()
     }
 
@@ -141,7 +141,7 @@ fun ChannelAddSheet(
                             stringResource(R.string.newchat_paste_sub),
                         ) {
                             clipboard.paste {
-                                vm.importPastedText(it)
+                                vm.importPastedText(it, openChat = newChat)
                                 onDismiss()
                             }
                         }
@@ -153,7 +153,7 @@ fun ChannelAddSheet(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                else -> AddChannelForm(vm, c, onBack = { choice = null }, onDone = onDismiss)
+                else -> AddChannelForm(vm, c, openChat = newChat, onBack = { choice = null }, onDone = onDismiss)
             }
         }
     }
@@ -258,6 +258,8 @@ private fun ChoiceRow(@androidx.annotation.DrawableRes icon: Int, title: String,
 private fun AddChannelForm(
     vm: MeshCoreViewModel,
     choice: AddChannelChoice,
+    /** From Chats' New chat: open the channel once it is in (NewChatThread). */
+    openChat: Boolean,
     onBack: () -> Unit,
     onDone: () -> Unit,
 ) {
@@ -332,10 +334,10 @@ private fun AddChannelForm(
             enabled = ready,
             onClick = {
                 when (choice) {
-                    AddChannelChoice.Public -> vm.joinPublicChannel()
-                    AddChannelChoice.Hashtag -> vm.joinHashtagChannel(okName!!)
-                    AddChannelChoice.CreatePrivate -> vm.createPrivateChannel(okName!!)
-                    AddChannelChoice.JoinPrivate -> vm.joinPrivateChannel(okName!!, okKey!!)
+                    AddChannelChoice.Public -> vm.joinPublicChannel(openChat)
+                    AddChannelChoice.Hashtag -> vm.joinHashtagChannel(okName!!, openChat)
+                    AddChannelChoice.CreatePrivate -> vm.createPrivateChannel(okName!!, openChat)
+                    AddChannelChoice.JoinPrivate -> vm.joinPrivateChannel(okName!!, okKey!!, openChat)
                 }
                 onDone()
             },

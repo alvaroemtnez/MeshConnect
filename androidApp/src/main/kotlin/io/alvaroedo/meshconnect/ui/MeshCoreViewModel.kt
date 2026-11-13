@@ -32,6 +32,7 @@ import io.alvaroedo.meshconnect.storage.ContactEntity
 import io.alvaroedo.meshconnect.storage.MeshCoreDatabase
 import io.alvaroedo.meshconnect.storage.MessageEntity
 import io.alvaroedo.meshconnect.storage.MessageRepository
+import io.alvaroedo.meshconnect.ui.model.NewChatThread
 import io.alvaroedo.meshconnect.storage.NeighbourEntity
 import io.alvaroedo.meshconnect.storage.Preferences
 import io.github.thatsfguy.meshcore.engine.EngineState
@@ -1465,6 +1466,25 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
     val pendingRadioConfig = MutableStateFlow<ShareUri.Decoded.RadioConfig?>(null)
 
     /**
+     * Whether the code awaiting confirmation came from Chats' New chat, which opens
+     * the conversation once the add lands (2026-11-13, [NewChatThread]). It has to
+     * outlive the call that set it: the confirmation is a dialog at the app root, so
+     * the add happens later, in [confirmContactCard] / [confirmChannelShare]. Every
+     * import sets it afresh, so a scan from anywhere else can never inherit it.
+     */
+    private var pendingOpensChat = false
+
+    /**
+     * A conversation to open, posted when something added from New chat has landed.
+     * AppShell navigates to it and clears it, the same way as a notification tap.
+     */
+    val openThreadRequest = MutableStateFlow<Pair<String, String>?>(null)
+
+    private fun openAfterAdd(open: Boolean, thread: Pair<String, String>?) {
+        if (open && thread != null) openThreadRequest.value = thread
+    }
+
+    /**
      * Apply a confirmed settings code to the attached radio.
      *
      * TX power is deliberately untouched — it is not in the code, and it
@@ -1522,7 +1542,7 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
      * `meshcore://` link, and a code photographed off a screen is dense
      * enough that focus and moiré decide whether it reads at all.
      */
-    fun importPastedText(raw: String?) {
+    fun importPastedText(raw: String?, openChat: Boolean = false) {
         val code = ScannedCode.extract(raw.orEmpty())
         if (code == null) {
             transientMessage.value =
@@ -1533,27 +1553,36 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
                 }
             return
         }
-        importScannedCode(code)
+        importScannedCode(code, openChat)
     }
 
-    fun importScannedCode(text: String) {
+    /** [openChat]: the code came from New chat — see [pendingOpensChat]. */
+    fun importScannedCode(text: String, openChat: Boolean = false) {
         when (ScannedCode.classify(text)) {
-            ScannedCode.Community -> joinCommunity(text)
-            ScannedCode.MeshCoreUri -> importContactUri(text)
+            // A community writes its own channel set; there is no one chat to open.
+            ScannedCode.Community -> { pendingOpensChat = false; joinCommunity(text) }
+            ScannedCode.MeshCoreUri -> importContactUri(text, openChat)
             // Let the URI decoder produce the specific complaint; it
             // distinguishes malformed from oversized from not-ours.
-            ScannedCode.Unknown -> importContactUri(text)
+            ScannedCode.Unknown -> importContactUri(text, openChat)
         }
     }
 
-    fun importContactUri(text: String) {
+    fun importContactUri(text: String, openChat: Boolean = false) {
+        pendingOpensChat = false
         if (_service.value == null) return
         // Scanned QR data is entirely attacker-controlled: decode is
         // total and returns a typed result rather than throwing.
         when (val decoded = ShareUri.decode(text)) {
-            is ShareUri.Decoded.Advert -> importAdvertBlob(decoded.blob)
-            is ShareUri.Decoded.Contact -> pendingContactCard.value = decoded
-            is ShareUri.Decoded.ChannelShare -> pendingChannelShare.value = decoded
+            is ShareUri.Decoded.Advert -> importAdvertBlob(decoded.blob, openChat)
+            is ShareUri.Decoded.Contact -> {
+                pendingOpensChat = openChat
+                pendingContactCard.value = decoded
+            }
+            is ShareUri.Decoded.ChannelShare -> {
+                pendingOpensChat = openChat
+                pendingChannelShare.value = decoded
+            }
             // NEVER applied here. A settings code retunes the radio, so
             // it goes to a confirmation that shows every value first —
             // see pendingRadioConfig.
@@ -1569,12 +1598,13 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    private fun importAdvertBlob(blob: ByteArray) {
+    private fun importAdvertBlob(blob: ByteArray, openChat: Boolean = false) {
         val svc = _service.value ?: return
         viewModelScope.launch {
             val ok = runCatching { svc.engine.importContact(blob) }.getOrDefault(false)
             transientMessage.value =
                 if (ok) str(R.string.vm_contact_imported) else str(R.string.vm_import_failed)
+            if (ok) openAfterAdd(openChat, NewChatThread.forAdvert(blob))
         }
     }
 
@@ -1582,22 +1612,26 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
     fun confirmContactCard(card: ShareUri.Decoded.Contact) {
         val svc = _service.value ?: return
         pendingContactCard.value = null
+        val openChat = pendingOpensChat.also { pendingOpensChat = false }
         val key = hexToBytesOrNull(card.pubKeyHex) ?: return
         viewModelScope.launch {
             val ok = runCatching {
                 svc.engine.addContactFromCard(key, card.name, card.type)
             }.getOrDefault(false)
             transientMessage.value = if (ok) str(R.string.vm_contact_added) else str(R.string.vm_add_failed)
+            if (ok) openAfterAdd(openChat, NewChatThread.forContact(card.pubKeyHex, card.type))
         }
     }
 
     fun dismissContactCard() {
         pendingContactCard.value = null
+        pendingOpensChat = false
     }
 
     /** Commit a scanned channel key the user has confirmed. */
     fun confirmChannelShare(share: ShareUri.Decoded.ChannelShare) {
         pendingChannelShare.value = null
+        val openChat = pendingOpensChat.also { pendingOpensChat = false }
         addChannel(
             share.name.ifBlank { str(R.string.vm_shared_channel) },
             share.pskHex,
@@ -1607,11 +1641,13 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
             // at all — and the join reported "Channel added" for a
             // channel that will now flood globally.
             regionScope = share.rawRegionScope,
+            openChat = openChat,
         )
     }
 
     fun dismissChannelShare() {
         pendingChannelShare.value = null
+        pendingOpensChat = false
     }
 
     // ------------------------------------------------------------------
@@ -1627,7 +1663,7 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
      * channel that floods globally while its owner believes it is
      * contained.
      */
-    fun addChannel(name: String, pskHexOrEmpty: String, regionScope: String = "") {
+    fun addChannel(name: String, pskHexOrEmpty: String, regionScope: String = "", openChat: Boolean = false) {
         val crypto = io.github.thatsfguy.meshcore.platform.androidCryptoProvider()
         val psk = when {
             pskHexOrEmpty.isNotBlank() -> hexToBytesOrNull(pskHexOrEmpty.replace(" ", ""))
@@ -1638,31 +1674,39 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
             transientMessage.value = str(R.string.vm_psk_length)
             return
         }
-        addChannelWithKey(name, psk, regionScope)
+        addChannelWithKey(name, psk, regionScope, openChat)
     }
 
     // The add sheet's four choices. Each says exactly which key it means,
     // instead of inferring it from how the name is spelled — a private
     // channel named "#x" used to silently become the public #x.
 
-    fun joinPublicChannel() =
-        addChannelWithKey(io.github.thatsfguy.meshcore.presentation.ChannelSetup.PUBLIC_NAME, ChannelCrypto.PUBLIC_CHANNEL_PSK)
+    // [openChat] on each: the sheet is Chats' New chat, which opens the channel once
+    // it is in (NewChatThread). Settings → Channels leaves it false.
+
+    fun joinPublicChannel(openChat: Boolean = false) =
+        addChannelWithKey(
+            io.github.thatsfguy.meshcore.presentation.ChannelSetup.PUBLIC_NAME,
+            ChannelCrypto.PUBLIC_CHANNEL_PSK,
+            openChat = openChat,
+        )
 
     /** [label] must already be a valid "#name" (ChannelSetup.hashtag). */
-    fun joinHashtagChannel(label: String) {
+    fun joinHashtagChannel(label: String, openChat: Boolean = false) {
         val crypto = io.github.thatsfguy.meshcore.platform.androidCryptoProvider()
-        addChannelWithKey(label, ChannelCrypto.hashtagPsk(crypto, label))
+        addChannelWithKey(label, ChannelCrypto.hashtagPsk(crypto, label), openChat = openChat)
     }
 
     /** A new private channel under a fresh random key. */
-    fun createPrivateChannel(name: String) {
+    fun createPrivateChannel(name: String, openChat: Boolean = false) {
         val crypto = io.github.thatsfguy.meshcore.platform.androidCryptoProvider()
-        addChannelWithKey(name, crypto.randomBytes(16))
+        addChannelWithKey(name, crypto.randomBytes(16), openChat = openChat)
     }
 
-    fun joinPrivateChannel(name: String, key: ByteArray) = addChannelWithKey(name, key)
+    fun joinPrivateChannel(name: String, key: ByteArray, openChat: Boolean = false) =
+        addChannelWithKey(name, key, openChat = openChat)
 
-    private fun addChannelWithKey(name: String, psk: ByteArray, regionScope: String = "") {
+    private fun addChannelWithKey(name: String, psk: ByteArray, regionScope: String = "", openChat: Boolean = false) {
         val svc = _service.value ?: return
         viewModelScope.launch {
             // Joining is idempotent, and keyed on the SECRET rather than
@@ -1686,6 +1730,8 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
                 // every existing member used to get "Already in this
                 // channel" and carry on flooding globally.
                 transientMessage.value = str(R.string.vm_already_in, label) + applyChannelScope(existing.index, regionScope)
+                // Already holding it is still "I want to talk there": open the one we have.
+                openAfterAdd(openChat, NewChatThread.forChannel(existing.index))
                 return@launch
             }
             val idx = svc.engine.nextFreeChannelIndex()
@@ -1709,6 +1755,7 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
             // a failed join would leave a scope pointing at a channel
             // that isn't there.
             transientMessage.value = str(R.string.vm_channel_added) + applyChannelScope(idx, regionScope)
+            openAfterAdd(openChat, NewChatThread.forChannel(idx))
         }
     }
 

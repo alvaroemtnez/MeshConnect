@@ -218,6 +218,16 @@ private fun AppShell(
         openThread.value = null
     }
 
+    // Something added from Chats' New chat has landed: open its conversation
+    // (NewChatThread). Routed through the notification path above so it lands the
+    // same way — on top of Chats, Back returning there.
+    val requestedThread by vm.openThreadRequest.collectAsStateWithLifecycle()
+    LaunchedEffect(requestedThread) {
+        val thread = requestedThread ?: return@LaunchedEffect
+        openThread.value = thread
+        vm.openThreadRequest.value = null
+    }
+
     // Another radio took over (the top bar's switcher, or roaming between saved radios):
     // a conversation or a node's admin screen belongs to the radio it was opened on, and
     // left open it shows an empty thread under a bare key. Back to Chats instead. The same

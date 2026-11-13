@@ -75,6 +75,8 @@ ICONS = [
     ("ic_remove", "remove", False),
     ("ic_zoom_out_map", "zoom_out_map", False),
     ("ic_layers", "layers", False),
+    ("ic_filter_list", "filter_list", False),
+    ("ic_download", "download", False),
     ("ic_route", "route", False),
     ("ic_radar", "radar", False),
     ("ic_open_in_new", "open_in_new", False),

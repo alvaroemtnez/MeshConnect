@@ -178,9 +178,9 @@
     <string name="set_diagnostics">Diagnòstic</string>
     <string name="map_labels">Mostrar etiquetes</string>
     <string name="map_hide_links">Amagar enllaços de veïns</string>
-    <string name="map_only_contacts">Només contactes</string>
-    <string name="map_only_repeaters">Només repetidors</string>
-    <string name="map_only_rooms">Només sales</string>
+    <string name="map_filter">Filtrar el mapa</string>
+    <string name="map_on_map">En el mapa</string>
+    <string name="map_empty_filtered">Res amb posició no coincidix amb el filtre.\nLleva\'l des del menú de filtres.</string>
     <string name="map_export_gpx">Exportar nodes com a GPX</string>
     <string name="map_load_tiles">Carregar mapes (xarxa)</string>
     <string name="map_clear_cache">Esborrar la memòria cau del mapa</string>

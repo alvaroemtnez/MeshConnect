@@ -243,9 +243,13 @@ S = {
 # Map screen
 "map_labels": ("Show labels", "Mostrar etiquetas", "Mostrar etiquetes"),
 "map_hide_links": ("Hide neighbour links", "Ocultar enlaces de vecinos", "Amagar enllaços de veïns"),
-"map_only_contacts": ("Only contacts", "Solo contactos", "Només contactes"),
-"map_only_repeaters": ("Only repeaters", "Solo repetidores", "Només repetidors"),
-"map_only_rooms": ("Only rooms", "Solo salas", "Només sales"),
+"map_filter": ("Filter the map", "Filtrar el mapa", "Filtrar el mapa"),
+"map_on_map": ("On the map", "En el mapa", "En el mapa"),
+"map_empty_filtered": (
+    "Nothing with a position matches the filter.\nClear it from the filter menu.",
+    "Nada con posición coincide con el filtro.\nQuítalo desde el menú de filtros.",
+    "Res amb posició no coincidix amb el filtre.\nLleva'l des del menú de filtres.",
+),
 "map_export_gpx": ("Export nodes as GPX", "Exportar nodos como GPX", "Exportar nodes com a GPX"),
 "map_load_tiles": ("Load map tiles (network)", "Cargar mapas (red)", "Carregar mapes (xarxa)"),
 "map_clear_cache": ("Clear map cache", "Borrar la caché del mapa", "Esborrar la memòria cau del mapa"),

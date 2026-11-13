@@ -274,11 +274,7 @@ fun NodesScreen(vm: MeshCoreViewModel, nav: NavController) {
                     vm.prefs.nodesKind = NodeKinds.toSaved(it)
                 },
             )
-            ActiveFilterNotes(
-                filters = filters,
-                hiddenNote = if (hideHeard) stringResource(R.string.hiding_not_added) else null,
-                onShowHeard = { hideHeard = false; vm.prefs.nodesHideHeard = false },
-            )
+            ActiveFilterNotes(filters = filters)
 
             // The heard section is the list's "-1" row: a fold-out header that sits just
             // above the top when the list opens, so it is there when you scroll up and out
@@ -288,11 +284,15 @@ fun NodesScreen(vm: MeshCoreViewModel, nav: NavController) {
             var heardRevealed by rememberSaveable { mutableStateOf(false) }
             var confirmDismiss by remember { mutableStateOf<List<String>?>(null) }
             val radioFull by vm.contactsFull.collectAsState()
-            val listState = rememberLazyListState(initialFirstVisibleItemIndex = if (heard.isNotEmpty()) 1 else 0)
+            // With newcomers hidden, the -1 row is a quiet reminder that they are, in place
+            // of the header (2026-11-13). It was a line under the chips with a Show button,
+            // always on screen for a choice the user had made on purpose.
+            val listState = rememberLazyListState(initialFirstVisibleItemIndex = if (heard.isNotEmpty() || hideHeard) 1 else 0)
             val hasHeard = heard.isNotEmpty()
+            val hasMinusOneRow = hasHeard || hideHeard
             // Heard nodes can arrive after the list is first drawn; tuck the row away then too.
-            LaunchedEffect(hasHeard) {
-                if (hasHeard && !heardRevealed && listState.firstVisibleItemIndex == 0 &&
+            LaunchedEffect(hasMinusOneRow) {
+                if (hasMinusOneRow && !heardRevealed && listState.firstVisibleItemIndex == 0 &&
                     listState.firstVisibleItemScrollOffset == 0
                 ) {
                     listState.scrollToItem(1)
@@ -301,7 +301,9 @@ fun NodesScreen(vm: MeshCoreViewModel, nav: NavController) {
 
             Box(Modifier.fillMaxSize()) {
                 LazyColumn(Modifier.fillMaxSize(), state = listState) {
-                    if (hasHeard) {
+                    if (hideHeard) {
+                        item(key = "heard_hidden") { HiddenHeardRow() }
+                    } else if (hasHeard) {
                         item(key = "heard_header") {
                             HeardHeader(
                                 count = heard.size,
@@ -547,11 +549,7 @@ private fun KindChips(selected: NodeTab?, newCounts: Map<NodeTab, Int>, onSelect
  * the app appears to contain, so each is named in a line under the chips.
  */
 @Composable
-private fun ActiveFilterNotes(
-    filters: Set<NodeListModel.Filter>,
-    hiddenNote: String?,
-    onShowHeard: () -> Unit,
-) {
+private fun ActiveFilterNotes(filters: Set<NodeListModel.Filter>) {
     if (filters.isNotEmpty()) {
         val joined = filters.map { filterLabel(it).lowercase() }.joinToString(stringResource(R.string.nodes_and))
         Text(
@@ -561,20 +559,23 @@ private fun ActiveFilterNotes(
             modifier = Modifier.padding(horizontal = 16.dp).padding(bottom = 4.dp),
         )
     }
-    hiddenNote?.let { note ->
-        Row(
-            Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                note,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.weight(1f),
-            )
-            TextButton(onClick = onShowHeard) { Text(stringResource(R.string.show)) }
-        }
-    }
+}
+
+/**
+ * The -1 row while "Hide nodes not added" is on: where the heard header would sit, a
+ * gentle reminder that newcomers are hidden. No button — the sort/filter menu, whose
+ * icon is tinted meanwhile, is where it was switched on and where it switches off.
+ */
+@Composable
+private fun HiddenHeardRow() {
+    Text(
+        stringResource(R.string.hiding_not_added),
+        style = MaterialTheme.typography.bodySmall,
+        fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
+        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
+    )
 }
 
 /**
@@ -628,21 +629,6 @@ private fun SortFilterMenu(
             )
         }
     }
-}
-
-@Composable
-private fun MenuHeading(text: String) {
-    Text(
-        text,
-        style = MaterialTheme.typography.labelSmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-    )
-}
-
-@Composable
-private fun SelectedTick() {
-    Icon(painterResource(R.drawable.ic_check), null, modifier = Modifier.size(18.dp))
 }
 
 @Composable
