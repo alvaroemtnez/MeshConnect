@@ -58,10 +58,19 @@ $ git merge upstream/main
 
 Then resolve:
 
-- **`shared/`**: take upstream's side; re-check the four MeshConnect additions still compile.
-  One deliberate *change* rather than addition: `presentation/BatteryLevel.percent` uses a
-  Li-ion discharge curve instead of upstream's 3000–4200 mV line (2026-11-10, see its KDoc).
-  If upstream touches that file, keep our `percent` and `CURVE_MV`.
+- **`shared/`**: take upstream's side, then check that what MeshConnect adds there survived
+  (`git diff <last merged sha> HEAD -- shared/src/commonMain shared/src/androidMain` lists it):
+  - `engine/MeshCoreEngine`: `discoverNodes` (discovery replies with their signal both ways), and
+    the read-back after a write: `addContactFromCard` reads back only that contact
+    (`readBackContact`) and `setChannel` only that slot (`readBackChannel`), each falling back to
+    the full sweep. If upstream touches either function, keep the read-back (2026-11-16).
+  - `protocol/Discovery`: `parseDiscoveryReply` and `NodeDiscovery.Reply` (SNR and RSSI).
+  - `presentation/NodeListModel.arrange`: the optional `alias` (local nicknames in search and
+    the name sort).
+  - `protocol/RadioPresets`: comment only. `firmware/AndroidHttpFetcher`: our User-Agent.
+  - One deliberate *change* rather than addition: `presentation/BatteryLevel.percent` uses a
+    Li-ion discharge curve instead of upstream's 3000–4200 mV line (2026-11-10, see its KDoc).
+    If upstream touches that file, keep our `percent` and `CURVE_MV`.
 - **Build files** (1.2.0 moved to AGP 9.5.1, Gradle 9.8.1, Kotlin 2.4.21; upstream stays on AGP 8
   until it moves): `shared/build.gradle.kts` now uses `com.android.kotlin.multiplatform.library`
   with a `kotlin { android { } }` block, and its host tests live in `src/androidHostTest` (was
@@ -88,8 +97,12 @@ branch `upstream/<sha>` and opens a pull request listing them, with the diffstat
 closes the older PR. Run the script yourself for the same report without opening anything.
 
 - **Don't merge that PR with the button.** It is a reminder. Merge locally as above (the PR body
-  has the commands), push, and the PR closes itself as merged. Delete the `upstream/<sha>` branch
-  afterwards: the push mirror copies it to GitHub as well.
+  has the commands) and push `main`. **Then wait until the PR shows Merged before deleting the
+  `upstream/<sha>` branch**: Forgejo marks it merged on its own once its head commit is in `main`
+  (repo Settings → Pull requests → *Enable autodetect manually merged*, switched on 2026-11-16),
+  but a PR whose branch is deleted first only shows Closed and can't be reopened. That is what
+  happened to PR #1 (0.11.0). If one is missed anyway, the PR's *Manually merged* option takes
+  the merge commit. Delete the branch afterwards: the push mirror copies it to GitHub as well.
 - **It fetches from GitHub**, not from the mirror above. The `mirrors` org is visible to members
   only, so the Actions token can't read it, and a personal token that could would also be able to
   read every other repository you own. The mirror stays a copy in case upstream disappears; if
@@ -134,6 +147,10 @@ Delete `gh-pr-<N>` (locally and on Forgejo) once it is merged.
   3.24 V, so a low-battery warning arrives with nothing left to act on.
 
 - `RadioStats` + `MeshCoreEngine.radioStats()`: live noise floor, RSSI and SNR (their issue #6).
+- Read back only what changed after `addContactFromCard` and `setChannel` (one contact by key,
+  one slot), instead of the full sweeps that made the chat a scanned code opens wait for seconds
+  on a radio with a few hundred contacts. Engine tests cover both paths and the fallback.
+- `NodeListModel.arrange`'s `alias`, if upstream ever adds local nicknames.
 - The trace round trip (`androidApp/.../ui/model/TraceRoutes.kt`): upstream sends the stored
   route as-is and then reversed, which only returns when the far end is in direct range of the
   sender (`Mesh.cpp:42-67`). A round-trip hop list always comes back. Worth an issue with the
