@@ -245,26 +245,40 @@ fun NodesScreen(vm: MeshCoreViewModel, nav: NavController) {
             val ofThisKind = contacts.filter { NodeKinds.matches(kind, it.type) }
             // Searching, narrowing and ordering are NodeListModel's, so the
             // rules are pinned by tests rather than by driving a phone.
+            val selfInfo by vm.selfInfo.collectAsState()
+            val units by vm.unitSystem.collectAsState()
+            val ownPosition = io.github.thatsfguy.meshcore.presentation.SelfPosition(selfInfo?.latitude, selfInfo?.longitude)
             val listed = NodeListModel.arrange(
                 items = ofThisKind,
                 query = query,
                 sort = sort,
                 filters = filters,
                 nowSeconds = vm.nowSeconds(),
+                self = ownPosition,
             )
             val newCounts = NodeTabsModel.counts(discovered, hidden = hideHeard)
             val signals by vm.heardSignals.collectAsState()
-            // Useful ones first — relayed your traffic or heard direct —
-            // then the rest, each group newest first (the sort is stable).
+            // In the list's sort (upstream 0.10.16). On the two time sorts, useful ones
+            // first — relayed your traffic or heard direct — then the rest, each group
+            // newest first (the sort is stable); a sort the user picked by name, hops or
+            // distance is taken as asked.
             val heard = NodeKinds.heard(
                 kind = kind,
                 heard = discovered,
                 query = query,
                 filtersActive = filters.isNotEmpty(),
                 hidden = hideHeard,
-            ).sortedByDescending { d ->
-                signals[d.keyHex]?.let { it.provenRelay || it.heardDirect } == true
+                sort = sort,
+                self = ownPosition,
+            ).let { list ->
+                if (sort == NodeListModel.Sort.Activity || sort == NodeListModel.Sort.LastHeard) {
+                    list.sortedByDescending { d -> signals[d.keyHex]?.let { it.provenRelay || it.heardDirect } == true }
+                } else {
+                    list
+                }
             }
+            fun distanceOf(lat: Double?, lon: Double?): String? =
+                ownPosition.metresTo(lat, lon)?.let { Units.distance(it, units) }
 
             KindChips(
                 selected = kind,
@@ -275,6 +289,15 @@ fun NodesScreen(vm: MeshCoreViewModel, nav: NavController) {
                 },
             )
             ActiveFilterNotes(filters = filters)
+            // Otherwise "Nearest" silently becomes A–Z and looks broken.
+            if (sort == NodeListModel.Sort.Distance && !ownPosition.isKnown) {
+                Text(
+                    stringResource(R.string.nodes_nearest_no_position),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                )
+            }
 
             // The heard section is the list's "-1" row: a fold-out header that sits just
             // above the top when the list opens, so it is there when you scroll up and out
@@ -318,6 +341,7 @@ fun NodesScreen(vm: MeshCoreViewModel, nav: NavController) {
                         items(heard, key = { "heard_${it.keyHex}" }) { d ->
                             DiscoveredRow(
                                 node = d,
+                                distance = distanceOf(d.latitude, d.longitude),
                                 signals = signals[d.keyHex],
                                 onOpen = { heardDetail = d },
                                 onAdd = { vm.addDiscovered(d.keyHex) },
@@ -351,7 +375,12 @@ fun NodesScreen(vm: MeshCoreViewModel, nav: NavController) {
                         // Every kind opens its card, tap or hold (2026-11-10): a repeater
                         // went straight to sign-in, which is one of several things you
                         // might want from it. Manage, Room and Message are one tap on the card.
-                        ContactRow(c = c, onClick = { detail = c }, onLongClick = { detail = c })
+                        ContactRow(
+                            c = c,
+                            distance = distanceOf(c.latitude, c.longitude),
+                            onClick = { detail = c },
+                            onLongClick = { detail = c },
+                        )
                     }
                     item(key = "fab_clearance") { Spacer(Modifier.height(88.dp)) }
                 }
@@ -636,6 +665,7 @@ private fun SortFilterMenu(
 @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 private fun DiscoveredRow(
     node: io.alvaroedo.meshconnect.storage.DiscoveredEntity,
+    distance: String? = null,
     signals: io.github.thatsfguy.meshcore.presentation.RepeaterSignals.Signals? = null,
     onOpen: () -> Unit,
     onAdd: () -> Unit,
@@ -671,8 +701,11 @@ private fun DiscoveredRow(
                 listOfNotNull(
                     stringResource(singleKindLabel(node.type)),
                     SharedText.heardReach(androidx.compose.ui.platform.LocalResources.current, node.minHops, node.directSnr),
+                    distance,
                     DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(node.lastHeardAt)),
                 ).joinToString(" · "),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -764,6 +797,7 @@ internal fun typeLabel(type: Int): String = when (type) {
 @Composable
 private fun ContactRow(
     c: ContactEntity,
+    distance: String? = null,
     onClick: () -> Unit,
     onLongClick: (() -> Unit)? = null,
 ) {
@@ -791,9 +825,13 @@ private fun ContactRow(
                 overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
             )
             Text(
-                c.keyHex.take(12) + " · " + PathCodec.decodePathLen(c.pathLen).let { info ->
-                    if (info.isFlood) stringResource(R.string.flood) else stringResource(R.string.hops_path, info.hops)
-                },
+                listOfNotNull(
+                    c.keyHex.take(12),
+                    PathCodec.decodePathLen(c.pathLen).let { info ->
+                        if (info.isFlood) stringResource(R.string.flood) else stringResource(R.string.hops_path, info.hops)
+                    },
+                    distance,
+                ).joinToString(" · "),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,

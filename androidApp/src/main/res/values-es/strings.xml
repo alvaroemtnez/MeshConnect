@@ -1220,6 +1220,7 @@
     <string name="sort_last_heard">Oído por última vez</string>
     <string name="sort_name">Nombre (A–Z)</string>
     <string name="sort_hops">Menos saltos</string>
+    <string name="nodes_nearest_no_position">Tu radio no tiene posición, así que no se puede ordenar por distancia.</string>
     <string name="sort_distance">Más cerca</string>
     <string name="filter_favorites">Favoritos</string>
     <string name="filter_unread">Sin leer</string>

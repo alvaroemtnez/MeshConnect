@@ -1365,6 +1365,7 @@ S = {
 "sort_last_heard": ("Last heard", "Oído por última vez", "Escoltat per última vegada"),
 "sort_name": ("Name (A–Z)", "Nombre (A–Z)", "Nom (A–Z)"),
 "sort_hops": ("Fewest hops", "Menos saltos", "Menys salts"),
+"nodes_nearest_no_position": ("Your radio has no position set, so nothing can be ordered by distance.", "Tu radio no tiene posición, así que no se puede ordenar por distancia.", "La teua ràdio no té posició, així que no es pot ordenar per distància."),
 "sort_distance": ("Nearest", "Más cerca", "Més a prop"),
 "filter_favorites": ("Favourites", "Favoritos", "Preferits"),
 "filter_unread": ("Unread", "Sin leer", "Sense llegir"),

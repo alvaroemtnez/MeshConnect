@@ -1220,6 +1220,7 @@
     <string name="sort_last_heard">Escoltat per última vegada</string>
     <string name="sort_name">Nom (A–Z)</string>
     <string name="sort_hops">Menys salts</string>
+    <string name="nodes_nearest_no_position">La teua ràdio no té posició, així que no es pot ordenar per distància.</string>
     <string name="sort_distance">Més a prop</string>
     <string name="filter_favorites">Preferits</string>
     <string name="filter_unread">Sense llegir</string>

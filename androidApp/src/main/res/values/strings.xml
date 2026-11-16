@@ -1223,6 +1223,7 @@
     <string name="sort_last_heard">Last heard</string>
     <string name="sort_name">Name (A–Z)</string>
     <string name="sort_hops">Fewest hops</string>
+    <string name="nodes_nearest_no_position">Your radio has no position set, so nothing can be ordered by distance.</string>
     <string name="sort_distance">Nearest</string>
     <string name="filter_favorites">Favourites</string>
     <string name="filter_unread">Unread</string>
