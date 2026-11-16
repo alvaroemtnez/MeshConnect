@@ -15,6 +15,8 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.ui.unit.dp
@@ -188,6 +190,13 @@ internal fun leavesOnRadioSwitch(route: String?): Boolean =
         route.startsWith("conversation/") || route.startsWith("repeater/") || route.startsWith("trace/")
         )
 
+/** Room the snackbar leaves above the screen's own bottom: the tab bar, or a composer. */
+internal fun snackbarLift(route: String?, onTab: Boolean): androidx.compose.ui.unit.Dp = when {
+    onTab -> 80.dp
+    route?.startsWith("conversation/") == true -> 72.dp
+    else -> 0.dp
+}
+
 /** Both ends are bottom-bar tabs: switching tabs, not drilling in. */
 internal fun isTabSwitch(from: String?, to: String?): Boolean =
     from in TAB_ROUTES && to in TAB_ROUTES
@@ -357,14 +366,16 @@ private fun AppShell(
     Scaffold(
         modifier = Modifier.backdropBlur(backdrop),
         // Above the tab bar on a tab screen, where the bar now belongs to the screen.
+        // Clear of the gesture bar and the screen's rounded corners on every screen (it sat flush
+        // with the bottom edge outside the tabs), of the keyboard, and of what each screen keeps
+        // at its bottom: the tab bar, or a conversation's composer.
         snackbarHost = {
             SnackbarHost(
                 snackbar,
-                if (tabs.any { it.route == currentRoute }) {
-                    Modifier.windowInsetsPadding(WindowInsets.navigationBars).padding(bottom = 80.dp)
-                } else {
-                    Modifier
-                },
+                Modifier
+                    .windowInsetsPadding(WindowInsets.navigationBars.union(WindowInsets.ime))
+                    .padding(horizontal = 8.dp)
+                    .padding(bottom = snackbarLift(currentRoute, onTab = tabs.any { it.route == currentRoute }) + 8.dp),
             )
         },
         // Edge-to-edge: the shell adds no system-bar padding of its own.

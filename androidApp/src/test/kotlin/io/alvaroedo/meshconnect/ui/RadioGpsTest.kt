@@ -47,3 +47,25 @@ class RadioGpsTest {
         assertTrue(dialog.contains("send(g.idx)"))
     }
 }
+
+class SnackbarAndAddBackTest {
+    private fun src(path: String) = File("src/main/kotlin/io/alvaroedo/meshconnect/$path").readText()
+
+    @Test
+    fun `the snackbar keeps clear of the system bar everywhere, and of the tab bar and composer`() {
+        val shell = src("MainActivity.kt").substringAfter("snackbarHost = {").substringBefore("contentWindowInsets")
+        assertTrue(shell.contains("WindowInsets.navigationBars.union(WindowInsets.ime)"))
+        assertEquals(80, io.alvaroedo.meshconnect.snackbarLift("chats", onTab = true).value.toInt())
+        assertEquals(72, io.alvaroedo.meshconnect.snackbarLift("conversation/dm/ab", onTab = false).value.toInt())
+        assertEquals(0, io.alvaroedo.meshconnect.snackbarLift("settings/app", onTab = false).value.toInt())
+    }
+
+    @Test
+    fun `the add-back dialog closes with Close, not OK, and has its two ways as buttons`() {
+        val dialog = src("ui/screens/ScanConfirmations.kt").substringAfter("addBack?.let { name ->").substringBefore("if (showOwnQr)")
+        assertTrue(dialog.contains("R.string.close"))
+        assertFalse(dialog.contains("R.string.ok"))
+        assertTrue(dialog.indexOf("R.string.addback_ask") < dialog.indexOf("R.string.addback_show_qr"))
+        assertTrue(dialog.contains("FilledTonalButton("))
+    }
+}

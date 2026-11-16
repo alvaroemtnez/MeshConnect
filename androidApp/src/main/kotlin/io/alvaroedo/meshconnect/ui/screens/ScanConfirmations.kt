@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
@@ -129,22 +130,40 @@ fun ScanConfirmations(vm: MeshCoreViewModel) {
             onDismissRequest = { vm.pendingAddBack.value = null },
             icon = { Icon(painterResource(R.drawable.ic_person_add), null) },
             title = { Text(stringResource(R.string.addback_title, name)) },
-            text = { Text(stringResource(R.string.addback_body_ask, name)) },
-            confirmButton = {
-                Row {
-                    // Over the mesh, when they are not here to scan (#mcn-internal, or a group).
-                    TextButton(onClick = {
-                        vm.pendingAddBack.value = null
-                        askFor = name
-                    }) { Text(stringResource(R.string.addback_ask)) }
-                    TextButton(onClick = {
-                        vm.pendingAddBack.value = null
-                        showOwnQr = true
-                    }) { Text(stringResource(R.string.addback_show_qr)) }
+            text = {
+                Column {
+                    Text(stringResource(R.string.addback_body_ask, name))
+                    Spacer(Modifier.height(16.dp))
+                    // Two ways, stacked: over the mesh (quieter), or the QR in front of them
+                    // (the plain one, so it leads). The dialog's own button only closes it:
+                    // "OK" read as agreeing to send something.
+                    androidx.compose.material3.FilledTonalButton(
+                        onClick = {
+                            vm.pendingAddBack.value = null
+                            askFor = name
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Icon(painterResource(R.drawable.ic_hub), null, Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text(stringResource(R.string.addback_ask))
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    Button(
+                        onClick = {
+                            vm.pendingAddBack.value = null
+                            showOwnQr = true
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Icon(painterResource(R.drawable.ic_qr_code), null, Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text(stringResource(R.string.addback_show_qr))
+                    }
                 }
             },
-            dismissButton = {
-                TextButton(onClick = { vm.pendingAddBack.value = null }) { Text(stringResource(R.string.ok)) }
+            confirmButton = {
+                TextButton(onClick = { vm.pendingAddBack.value = null }) { Text(stringResource(R.string.close)) }
             },
         )
     }
