@@ -42,12 +42,25 @@ Brings in MeshCore Hardened 0.10.16, 0.10.17 and 0.11.0.
   is explained rather than taken as proof they can't hear you.
 - **Far away, heard only.** Heard nodes that show no sign of hearing you and are 4 or more
   hops or over 100 km away fold into their own group. Adding one asks first.
+- **Codes and links go where you meant.** From Chats (its scanner, New chat, a link you tap, a
+  card in a message), a person, a room or a group opens its conversation; from Nodes, a node
+  opens its card. A repeater or sensor opens its card from either. Something you already have
+  skips the confirmation and goes straight there. After adding a person, the app says they
+  won't get your messages until they add you too, with your QR code one tap away; this
+  replaces the offer to post on a channel. Simple mode turns away repeater, sensor, Public and
+  hashtag codes with a note, and adds nothing.
+- **Simple cards.** Holding someone, a room or a group in New chat opens its card, in both
+  modes. Simple mode's card for a person or a room has the favourite star, "Check if they can
+  hear you", and Show QR code, Rename, Block and Remove; a conversation's ⋮ opens it. New chat
+  lists Favourites first, then a section per letter, with search on top. Nodes ⋮ has Scan QR
+  code. Simple mode's long-press in Chats no longer offers a private nickname.
 - **Settings → Advanced.** Map tiles, the diagnostics log and the channel datagram tool moved
   here from Appearance and alerts. New chat's "Message a contact" is now "Existing contact,
   group or room", one alphabetical list of all three. Disconnect is red, and About shows the
   logo in the launcher's teal at the launcher's size.
 - **Fixed:** on a fresh install, tapping a tab at the bottom blanked the screen and slid it in
-  again until the app was restarted. The radio card said a repeater was heard "in 0 minutes".
+  again until the app was restarted. The radio card said a repeater was heard "in 0 minutes",
+  and a node's card "In 0 seconds" when the radio's clock ran ahead.
 - **Distance on node rows, and sort by nearest.** The heard section now follows the chosen
   sort too, so "Fewest hops" no longer looks like it does nothing.
 - **Codes and links from other apps confirm before adding.** A signed contact code was added

@@ -32,7 +32,8 @@ import io.alvaroedo.meshconnect.storage.ContactEntity
 import io.alvaroedo.meshconnect.storage.MeshCoreDatabase
 import io.alvaroedo.meshconnect.storage.MessageEntity
 import io.alvaroedo.meshconnect.storage.MessageRepository
-import io.alvaroedo.meshconnect.ui.model.NewChatThread
+import io.alvaroedo.meshconnect.ui.model.ScanFollowUp
+import io.alvaroedo.meshconnect.ui.model.ScanOrigin
 import io.alvaroedo.meshconnect.storage.NeighbourEntity
 import io.alvaroedo.meshconnect.storage.Preferences
 import io.github.thatsfguy.meshcore.engine.EngineState
@@ -1659,22 +1660,35 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
     val pendingRadioConfig = MutableStateFlow<ShareUri.Decoded.RadioConfig?>(null)
 
     /**
-     * Whether the code awaiting confirmation came from Chats' New chat, which opens
-     * the conversation once the add lands (2026-11-13, [NewChatThread]). It has to
-     * outlive the call that set it: the confirmation is a dialog at the app root, so
-     * the add happens later, in [confirmContactCard] / [confirmChannelShare]. Every
-     * import sets it afresh, so a scan from anywhere else can never inherit it.
+     * Where the code awaiting confirmation came in (ScanOrigin), which decides what opens
+     * once it is in (ScanFollowUp). It has to outlive the call that set it: the confirmation
+     * is a dialog at the app root, so the add happens later, in [confirmContactCard] /
+     * [confirmChannelShare]. Every import sets it afresh, so a scan from anywhere else can
+     * never inherit it.
      */
-    private var pendingOpensChat = false
+    private var pendingOrigin = ScanOrigin.Elsewhere
 
     /**
-     * A conversation to open, posted when something added from New chat has landed.
-     * AppShell navigates to it and clears it, the same way as a notification tap.
+     * A conversation to open after a code or link: AppShell navigates to it and clears it,
+     * the same way as a notification tap.
      */
     val openThreadRequest = MutableStateFlow<Pair<String, String>?>(null)
 
-    private fun openAfterAdd(open: Boolean, thread: Pair<String, String>?) {
-        if (open && thread != null) openThreadRequest.value = thread
+    /** A contact whose card to open, by key: hosted once at the app root (NodeCardHost). */
+    val openCardRequest = MutableStateFlow<String?>(null)
+
+    /**
+     * The name of a person just added from a code, whose radio drops our direct messages
+     * until they add us too. A dialog at the app root says so, over whatever opened.
+     */
+    val pendingAddBack = MutableStateFlow<String?>(null)
+
+    private fun follow(step: ScanFollowUp.Step) {
+        when (step) {
+            is ScanFollowUp.Step.OpenChat -> openThreadRequest.value = step.kind to step.key
+            is ScanFollowUp.Step.OpenCard -> openCardRequest.value = step.keyHex
+            ScanFollowUp.Step.Nothing -> Unit
+        }
     }
 
     /**
@@ -1735,7 +1749,7 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
      * `meshcore://` link, and a code photographed off a screen is dense
      * enough that focus and moiré decide whether it reads at all.
      */
-    fun importPastedText(raw: String?, openChat: Boolean = false) {
+    fun importPastedText(raw: String?, origin: ScanOrigin) {
         val code = ScannedCode.extract(raw.orEmpty())
         if (code == null) {
             transientMessage.value =
@@ -1746,7 +1760,7 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
                 }
             return
         }
-        importScannedCode(code, openChat)
+        importScannedCode(code, origin)
     }
 
     /**
@@ -1758,7 +1772,8 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
      */
     fun openIncomingLink(raw: String?) {
         when (val offer = linkInbox.offer(raw, engineState.value == EngineState.Ready)) {
-            is io.github.thatsfguy.meshcore.presentation.LinkInbox.Offer.Open -> importScannedCode(offer.link)
+            // A tapped link means "take me there", as a scan from Chats does.
+            is io.github.thatsfguy.meshcore.presentation.LinkInbox.Offer.Open -> importScannedCode(offer.link, ScanOrigin.Chats)
             io.github.thatsfguy.meshcore.presentation.LinkInbox.Offer.Held ->
                 transientMessage.value = str(R.string.vm_link_held)
             io.github.thatsfguy.meshcore.presentation.LinkInbox.Offer.Ignored ->
@@ -1771,38 +1786,32 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
     init {
         viewModelScope.launch {
             engineState.collect { state ->
-                if (state == EngineState.Ready) linkInbox.onReady()?.let { importScannedCode(it) }
+                if (state == EngineState.Ready) linkInbox.onReady()?.let { importScannedCode(it, ScanOrigin.Chats) }
             }
         }
     }
 
-    /** [openChat]: the code came from New chat — see [pendingOpensChat]. */
-    fun importScannedCode(text: String, openChat: Boolean = false) {
+    /** [origin]: where it came in, which decides what opens afterwards (ScanFollowUp). */
+    fun importScannedCode(text: String, origin: ScanOrigin) {
         when (ScannedCode.classify(text)) {
             // A community writes its own channel set; there is no one chat to open.
-            ScannedCode.Community -> { pendingOpensChat = false; joinCommunity(text) }
-            ScannedCode.MeshCoreUri -> importContactUri(text, openChat)
+            ScannedCode.Community -> { pendingOrigin = ScanOrigin.Elsewhere; joinCommunity(text) }
+            ScannedCode.MeshCoreUri -> importContactUri(text, origin)
             // Let the URI decoder produce the specific complaint; it
             // distinguishes malformed from oversized from not-ours.
-            ScannedCode.Unknown -> importContactUri(text, openChat)
+            ScannedCode.Unknown -> importContactUri(text, origin)
         }
     }
 
-    fun importContactUri(text: String, openChat: Boolean = false) {
-        pendingOpensChat = false
+    fun importContactUri(text: String, origin: ScanOrigin) {
+        pendingOrigin = ScanOrigin.Elsewhere
         if (_service.value == null) return
         // Scanned QR data is entirely attacker-controlled: decode is
         // total and returns a typed result rather than throwing.
         when (val decoded = ShareUri.decode(text)) {
-            is ShareUri.Decoded.Advert -> importAdvertBlob(decoded.blob, openChat)
-            is ShareUri.Decoded.Contact -> {
-                pendingOpensChat = openChat
-                pendingContactCard.value = decoded
-            }
-            is ShareUri.Decoded.ChannelShare -> {
-                pendingOpensChat = openChat
-                pendingChannelShare.value = decoded
-            }
+            is ShareUri.Decoded.Advert -> importAdvertBlob(decoded.blob, origin)
+            is ShareUri.Decoded.Contact -> offerContact(decoded, origin)
+            is ShareUri.Decoded.ChannelShare -> offerChannel(decoded, origin)
             // NEVER applied here. A settings code retunes the radio, so
             // it goes to a confirmation that shows every value first —
             // see pendingRadioConfig.
@@ -1828,35 +1837,87 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
      * said "Contact imported" and nothing had been added (upstream 0.11.0,
      * `MeshCoreEngine.contactCardFromAdvert`).
      */
-    private fun importAdvertBlob(blob: ByteArray, openChat: Boolean = false) {
+    private fun importAdvertBlob(blob: ByteArray, origin: ScanOrigin) {
         val svc = _service.value ?: return
         val card = svc.engine.contactCardFromAdvert(blob)
         if (card == null) {
             transientMessage.value = str(R.string.vm_advert_bad_signature)
             return
         }
-        pendingOpensChat = openChat
+        offerContact(card, origin)
+    }
+
+    /**
+     * A node's code, before any dialog (2026-11-16). Simple mode turns away what it cannot
+     * talk to, adding nothing. A node already in contacts needs no confirmation: it goes
+     * straight to what the code was for (ScanFollowUp). Anything else is confirmed first.
+     */
+    private fun offerContact(card: ShareUri.Decoded.Contact, origin: ScanOrigin) {
+        val svc = _service.value ?: return
+        if (ScanFollowUp.refusesContact(prefs.appMode, card.type)) {
+            transientMessage.value = str(
+                R.string.simple_refuse_node,
+                io.alvaroedo.meshconnect.ui.model.SharedText.kind(getApplication<Application>().resources, card.type).lowercase(),
+            )
+            return
+        }
+        val key = card.pubKeyHex.lowercase()
+        svc.engine.contacts.value[key]?.let { known ->
+            // Its type as the radio holds it, not as the code claims it.
+            follow(ScanFollowUp.forContact(origin, known.type, key))
+            return
+        }
+        pendingOrigin = origin
         pendingContactCard.value = card
+    }
+
+    /**
+     * A channel's code, before any dialog: as [offerContact]. Simple mode turns away Public
+     * and hashtag codes. A key already held opens its channel — unless the code also brings a
+     * flood scope that differs from the one in use, which changes routing and so is
+     * confirmed first, as before.
+     */
+    private fun offerChannel(share: ShareUri.Decoded.ChannelShare, origin: ScanOrigin) {
+        val svc = _service.value ?: return
+        val psk = hexToBytesOrNull(share.pskHex)
+        if (psk != null) {
+            val kind = io.github.thatsfguy.meshcore.protocol.ChannelKinds.of(
+                share.name, psk, io.github.thatsfguy.meshcore.platform.androidCryptoProvider(),
+            )
+            if (ScanFollowUp.refusesChannel(prefs.appMode, kind)) {
+                transientMessage.value = str(R.string.simple_refuse_channel)
+                return
+            }
+            val held = ChannelList.findByPsk(svc.engine.channels.value, psk.toHex())
+            val scopeChanges = share.rawRegionScope.isNotBlank() &&
+                share.regionScope != prefs.channelRegion(held?.index ?: -1).orEmpty()
+            if (held != null && !scopeChanges) {
+                follow(ScanFollowUp.forChannel(origin, held.index))
+                return
+            }
+        }
+        pendingOrigin = origin
+        pendingChannelShare.value = share
     }
 
     /** Commit a contact card the user has confirmed. */
     fun confirmContactCard(card: ShareUri.Decoded.Contact) {
         val svc = _service.value ?: return
         pendingContactCard.value = null
-        val openChat = pendingOpensChat.also { pendingOpensChat = false }
+        val origin = pendingOrigin.also { pendingOrigin = ScanOrigin.Elsewhere }
         val key = hexToBytesOrNull(card.pubKeyHex) ?: return
         viewModelScope.launch {
             val ok = runCatching {
                 svc.engine.addContactFromCard(key, card.name, card.type)
             }.getOrDefault(false)
             transientMessage.value = if (ok) str(R.string.vm_contact_added) else str(R.string.vm_add_failed)
-            if (ok) openAfterAdd(openChat, NewChatThread.forContact(card.pubKeyHex, card.type))
-            // They may not have us, and until they do their radio drops our direct
-            // messages. Offer to answer on a shared channel so their app adds us back
-            // (DmRequest): only for a person, only with a channel to use. Hosted in the
-            // shell, so it shows over the chat New chat opens too.
-            if (ok && card.type == Codes.ADV_TYPE_CHAT && dbChannels.value.isNotEmpty()) {
-                pendingTellBack.value = card
+            if (ok) {
+                follow(ScanFollowUp.forContact(origin, card.type, card.pubKeyHex))
+                // Until they add us too, their radio drops what we send them. Said once,
+                // over whatever just opened, with our own code one tap away.
+                if (ScanFollowUp.warnsToAddBack(wasNew = true, type = card.type)) {
+                    pendingAddBack.value = card.name.ifBlank { card.pubKeyHex.take(8) }
+                }
             }
         }
     }
@@ -1934,32 +1995,15 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
         dmHandledRevision.value++
     }
 
-    /** A person just added from a code, who may not have us: offer to tell them. */
-    val pendingTellBack = MutableStateFlow<ShareUri.Decoded.Contact?>(null)
-
-    /** Post the reply form on [channelIndex], which their app treats as an accept. */
-    fun tellBack(card: ShareUri.Decoded.Contact, channelIndex: Int) {
-        pendingTellBack.value = null
-        val me = selfInfo.value ?: return
-        val reply = io.github.thatsfguy.meshcore.presentation.DmRequest
-            .accept(card.name, card.pubKeyHex, me.publicKeyHex)
-        if (reply == null || !io.github.thatsfguy.meshcore.presentation.DmRequest.fits(me.name, reply)) {
-            transientMessage.value = str(R.string.vm_tell_back_cant)
-            return
-        }
-        sendChannelMessage(channelIndex, reply)
-        transientMessage.value = str(R.string.vm_tell_back_posted)
-    }
-
     fun dismissContactCard() {
         pendingContactCard.value = null
-        pendingOpensChat = false
+        pendingOrigin = ScanOrigin.Elsewhere
     }
 
     /** Commit a scanned channel key the user has confirmed. */
     fun confirmChannelShare(share: ShareUri.Decoded.ChannelShare) {
         pendingChannelShare.value = null
-        val openChat = pendingOpensChat.also { pendingOpensChat = false }
+        val origin = pendingOrigin.also { pendingOrigin = ScanOrigin.Elsewhere }
         addChannel(
             share.name.ifBlank { str(R.string.vm_shared_channel) },
             share.pskHex,
@@ -1969,13 +2013,13 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
             // at all — and the join reported "Channel added" for a
             // channel that will now flood globally.
             regionScope = share.rawRegionScope,
-            openChat = openChat,
+            origin = origin,
         )
     }
 
     fun dismissChannelShare() {
         pendingChannelShare.value = null
-        pendingOpensChat = false
+        pendingOrigin = ScanOrigin.Elsewhere
     }
 
     // ------------------------------------------------------------------
@@ -1991,7 +2035,7 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
      * channel that floods globally while its owner believes it is
      * contained.
      */
-    fun addChannel(name: String, pskHexOrEmpty: String, regionScope: String = "", openChat: Boolean = false) {
+    fun addChannel(name: String, pskHexOrEmpty: String, regionScope: String = "", origin: ScanOrigin = ScanOrigin.Elsewhere) {
         val crypto = io.github.thatsfguy.meshcore.platform.androidCryptoProvider()
         val psk = when {
             pskHexOrEmpty.isNotBlank() -> hexToBytesOrNull(pskHexOrEmpty.replace(" ", ""))
@@ -2002,7 +2046,7 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
             transientMessage.value = str(R.string.vm_psk_length)
             return
         }
-        addChannelWithKey(name, psk, regionScope, openChat)
+        addChannelWithKey(name, psk, regionScope, origin)
     }
 
     // The add sheet's four choices. Each says exactly which key it means,
@@ -2010,7 +2054,7 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
     // channel named "#x" used to silently become the public #x.
 
     // [openChat] on each: the sheet is Chats' New chat, which opens the channel once
-    // it is in (NewChatThread). Settings → Channels leaves it false.
+    // it is in (ScanFollowUp). Settings → Channels leaves it false.
 
     fun joinPublicChannel(openChat: Boolean = false) =
         addChannelWithKey(
@@ -2034,7 +2078,10 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
     fun joinPrivateChannel(name: String, key: ByteArray, openChat: Boolean = false) =
         addChannelWithKey(name, key, openChat = openChat)
 
-    private fun addChannelWithKey(name: String, psk: ByteArray, regionScope: String = "", openChat: Boolean = false) {
+    private fun addChannelWithKey(name: String, psk: ByteArray, regionScope: String = "", openChat: Boolean = false) =
+        addChannelWithKey(name, psk, regionScope, if (openChat) ScanOrigin.Chats else ScanOrigin.Elsewhere)
+
+    private fun addChannelWithKey(name: String, psk: ByteArray, regionScope: String, origin: ScanOrigin) {
         val svc = _service.value ?: return
         viewModelScope.launch {
             // Joining is idempotent, and keyed on the SECRET rather than
@@ -2059,7 +2106,7 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
                 // channel" and carry on flooding globally.
                 transientMessage.value = str(R.string.vm_already_in, label) + applyChannelScope(existing.index, regionScope)
                 // Already holding it is still "I want to talk there": open the one we have.
-                openAfterAdd(openChat, NewChatThread.forChannel(existing.index))
+                follow(ScanFollowUp.forChannel(origin, existing.index))
                 return@launch
             }
             val idx = svc.engine.nextFreeChannelIndex()
@@ -2083,7 +2130,7 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
             // a failed join would leave a scope pointing at a channel
             // that isn't there.
             transientMessage.value = str(R.string.vm_channel_added) + applyChannelScope(idx, regionScope)
-            openAfterAdd(openChat, NewChatThread.forChannel(idx))
+            follow(ScanFollowUp.forChannel(origin, idx))
         }
     }
 

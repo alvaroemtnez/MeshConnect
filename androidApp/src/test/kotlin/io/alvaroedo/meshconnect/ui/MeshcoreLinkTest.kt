@@ -30,9 +30,9 @@ class MeshcoreLinkTest {
         assertTrue(shell.contains("vm.openIncomingLink(text)"))
         val open = vm.substringAfter("fun openIncomingLink(").substringBefore("private val linkInbox")
         assertTrue(open.contains("linkInbox.offer(raw, engineState.value == EngineState.Ready)"))
-        assertTrue(open.contains("is io.github.thatsfguy.meshcore.presentation.LinkInbox.Offer.Open -> importScannedCode(offer.link)"))
+        assertTrue(open.contains("is io.github.thatsfguy.meshcore.presentation.LinkInbox.Offer.Open -> importScannedCode(offer.link, ScanOrigin.Chats)"))
         // The held link opens when the radio is ready, at most once (LinkInbox.onReady).
-        assertTrue(vm.contains("if (state == EngineState.Ready) linkInbox.onReady()?.let { importScannedCode(it) }"))
+        assertTrue(vm.contains("if (state == EngineState.Ready) linkInbox.onReady()?.let { importScannedCode(it, ScanOrigin.Chats) }"))
         // Both a cold start and a running app's new intent deliver it.
         assertTrue(shell.contains("if (savedInstanceState == null) openLink.value = linkFrom(intent)"))
         assertTrue(shell.contains("linkFrom(intent)?.let { openLink.value = it }"))
@@ -41,6 +41,6 @@ class MeshcoreLinkTest {
     @Test
     fun `new chat can take a code from the clipboard`() {
         val sheet = File("src/main/kotlin/io/alvaroedo/meshconnect/ui/screens/ChannelSheets.kt").readText()
-        assertTrue(sheet.contains("clipboard.paste {\n                                vm.importPastedText(it, openChat = newChat)"))
+        assertTrue(sheet.contains("clipboard.paste {\n                                vm.importPastedText(it, if (newChat) io.alvaroedo.meshconnect.ui.model.ScanOrigin.Chats else io.alvaroedo.meshconnect.ui.model.ScanOrigin.Elsewhere)"))
     }
 }

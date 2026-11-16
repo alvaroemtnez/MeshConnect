@@ -300,7 +300,11 @@ fun ConversationScreen(
             } else {
                 null
             },
-            if (technical) MenuAction(stringResource(R.string.conv_contact_details), icon = R.drawable.ic_person) { showContact = true } else null,
+            // Both modes; Simple mode opens the simple card (SimpleContactSheet). A room's says so.
+            MenuAction(
+                stringResource(if (!technical && isRoom) R.string.simple_room_details else R.string.conv_contact_details),
+                icon = R.drawable.ic_person,
+            ) { showContact = true },
             if (technical) MenuAction(stringResource(R.string.conv_routing), icon = R.drawable.ic_alt_route) { showRouting = true } else null,
             if (technical) MenuAction(stringResource(R.string.trace_route), icon = R.drawable.ic_route) { nav.navigate(traceRoute(peerKey)) } else null,
             MenuAction(stringResource(R.string.conv_clear), destructive = true, icon = R.drawable.ic_delete_sweep) { clearConfirm = true },
@@ -438,7 +442,7 @@ fun ConversationScreen(
                     onDelete = { vm.deleteMessage(m.id) },
                     onResend = { vm.resendMessage(m.id) },
                     onHttpLink = { pendingUrl = it },
-                    onMeshcoreLink = { vm.importContactUri(it) },
+                    onMeshcoreLink = { vm.importContactUri(it, io.alvaroedo.meshconnect.ui.model.ScanOrigin.Chats) },
                     rich = { content ->
                         RichContentCard(
                             content = content,
@@ -452,8 +456,8 @@ fun ConversationScreen(
                                     else -> nav.navigate(conversationRoute(MessageRepository.KIND_DM, c.keyHex))
                                 }
                             },
-                            onAddContact = { vm.importContactUri(it) },
-                            onJoinChannel = { vm.importScannedCode(it) },
+                            onAddContact = { vm.importContactUri(it, io.alvaroedo.meshconnect.ui.model.ScanOrigin.Chats) },
+                            onJoinChannel = { vm.importScannedCode(it, io.alvaroedo.meshconnect.ui.model.ScanOrigin.Chats) },
                             onOpenChannel = { idx ->
                                 nav.navigate(conversationRoute(MessageRepository.KIND_CHANNEL, idx.toString()))
                             },
@@ -714,6 +718,10 @@ fun ConversationScreen(
 
     if (showContact) {
         contacts.firstOrNull { it.keyHex == peerKey }?.let { contact ->
+            if (!technical) {
+                SimpleContactSheet(vm, contact, onDismiss = { showContact = false })
+                return@let
+            }
             ContactDetailSheet(
                 vm = vm,
                 contact = contact,

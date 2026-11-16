@@ -74,6 +74,8 @@ object NewChatList {
         val channelKind: ChannelKind? = null,
         /** Epoch seconds the contact was last heard; 0 for channels and never. */
         val heard: Long = 0,
+        /** The radio's favourite flag. People and rooms only: channels have no such flag. */
+        val favourite: Boolean = false,
     ) {
         val isChannel: Boolean get() = kind == MessageRepository.KIND_CHANNEL
     }
@@ -95,6 +97,7 @@ object NewChatList {
                     key = it.keyHex,
                     contactType = it.type,
                     heard = io.github.thatsfguy.meshcore.presentation.LastHeard.seconds(it),
+                    favourite = it.flags and Codes.CONTACT_FLAG_FAVORITE != 0,
                 )
             }
         val groups = channels
@@ -112,7 +115,36 @@ object NewChatList {
         val q = query.trim()
         return (people + groups)
             .filter { q.isEmpty() || it.title.contains(q, ignoreCase = true) }
-            // Case-insensitive, and a hashtag sorts by its name, not under '#'.
-            .sortedWith(compareBy<Entry> { it.title.removePrefix("#").lowercase() }.thenBy { it.key })
+            // Case- and accent-insensitive, and a hashtag sorts by its name, not under '#'.
+            .sortedWith(compareBy<Entry> { sortKey(it.title) }.thenBy { it.key })
     }
+
+    /** A titled run of the list: [letter] null is Favourites. */
+    data class Section(val letter: String?, val entries: List<Entry>)
+
+    /**
+     * Favourites first, then one section per initial, as Signal's new-message list does. A
+     * favourite is listed only under Favourites. An initial that is not a letter (a digit, an
+     * emoji) files under "#", last.
+     */
+    fun sections(entries: List<Entry>): List<Section> {
+        val favourites = entries.filter { it.favourite }
+        val byLetter = entries.filterNot { it.favourite }
+            .groupBy { initial(it.title) }
+            .toList()
+            .sortedWith(compareBy<Pair<String, List<Entry>>> { it.first == "#" }.thenBy { it.first })
+            .map { (letter, list) -> Section(letter, list) }
+        return (if (favourites.isEmpty()) emptyList() else listOf(Section(null, favourites))) + byLetter
+    }
+
+    /** "Àngels" files under A, "#cats" under C, "3rd floor" under #. */
+    fun initial(title: String): String {
+        val first = sortKey(title).firstOrNull() ?: return "#"
+        return if (first.isLetter()) first.uppercaseChar().toString() else "#"
+    }
+
+    private fun sortKey(title: String): String =
+        java.text.Normalizer.normalize(title.trim().removePrefix("#"), java.text.Normalizer.Form.NFD)
+            .replace(Regex("\\p{Mn}+"), "")
+            .lowercase()
 }

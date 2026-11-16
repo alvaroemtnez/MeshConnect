@@ -86,7 +86,7 @@ fun ChatsScreen(vm: MeshCoreViewModel, nav: NavController, archivedView: Boolean
     val communityScanLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
         io.alvaroedo.meshconnect.platform.ScanQr(),
     ) { result ->
-        result?.let { vm.importScannedCode(it) }
+        result?.let { vm.importScannedCode(it, io.alvaroedo.meshconnect.ui.model.ScanOrigin.Chats) }
     }
 
     Scaffold(
@@ -196,9 +196,10 @@ fun ChatsScreen(vm: MeshCoreViewModel, nav: NavController, archivedView: Boolean
                         onToggleRead = {
                             if (row.unread > 0 || row.markedUnread) vm.markRead(row.kind, row.key) else vm.markUnread(row.kind, row.key)
                         },
-                        // Simple mode edits a group from its conversation's ⋮ only, where the
-                        // sheet is the simple one; a long-press is easy to make by accident.
-                        onEdit = if (row.isChannel && simple) {
+                        // Simple mode edits a group, a person or a room from its conversation's
+                        // ⋮ only, where the card is the simple one: no settings on the long-press,
+                        // and no private nickname (the card renames).
+                        onEdit = if (simple) {
                             null
                         } else {
                             { if (row.isChannel) editChannel = row.key.toIntOrNull() else nicknameFor = row }
@@ -245,6 +246,11 @@ fun ChatsScreen(vm: MeshCoreViewModel, nav: NavController, archivedView: Boolean
             vm,
             onDismiss = { showChannelSheet = false },
             onOpenThread = { kind, key -> nav.navigate(conversationRoute(kind, key)) },
+            // Held: its card, over the list (the simple ones in Simple mode). A channel's is the
+            // group card; a person's or a room's is hosted at the app root (NodeCardHost).
+            onHoldThread = { e ->
+                if (e.isChannel) editChannel = e.key.toIntOrNull() else vm.openCardRequest.value = e.key
+            },
         )
     }
 

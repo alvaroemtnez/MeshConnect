@@ -114,7 +114,7 @@ fun RemoteSettingsForm(
             is io.github.thatsfguy.meshcore.protocol.ShareUri.Decoded.UnsupportedVersion ->
                 scanError = res.getString(R.string.scan_newer_app, d.version.toString())
             else ->
-                vm.importScannedCode(text)
+                vm.importScannedCode(text, io.alvaroedo.meshconnect.ui.model.ScanOrigin.Elsewhere)
         }
     }
 

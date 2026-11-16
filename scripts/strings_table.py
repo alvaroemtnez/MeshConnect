@@ -1392,13 +1392,6 @@ S = {
 "vm_dm_cant_answer": ("Can't answer a request from that name", "No se puede responder a una petición de ese nombre", "No es pot respondre a una petició d'aquest nom"),
 "vm_dm_add_failed": ("Couldn't add %1$s. Is the radio's contact list full?", "No se ha podido añadir a %1$s. ¿Está llena la lista de contactos de la radio?", "No s'ha pogut afegir %1$s. Està plena la llista de contactes de la ràdio?"),
 "vm_dm_accepted": ("Added %1$s. You can message each other directly.", "%1$s añadido. Ya podéis escribiros directamente.", "%1$s afegit. Ja podeu escriure-vos directament."),
-"tell_back_title": ("Let %1$s know?", "¿Avisar a %1$s?", "Avisar %1$s?"),
-"tell_back_them": ("them", "esa persona", "eixa persona"),
-"tell_back_body": ("They can't message you until they add you too. Post a short note with your key on a channel you both use, and their app adds you. Everyone on that channel will see it.", "No podrá escribirte hasta que también te añada. Publica una nota breve con tu clave en un canal que uséis los dos y su app te añadirá. Todos en ese canal la verán.", "No podrà escriure't fins que també t'afija. Publica una nota breu amb la teua clau en un canal que useu tots dos i la seua aplicació t'afegirà. Tots en aquell canal la voran."),
-"tell_back_no_channel": ("Join your group's channel first; there's nowhere to post yet.", "Únete primero al canal de tu grupo; aún no hay dónde publicar.", "Uneix-te primer al canal del teu grup; encara no hi ha on publicar."),
-"tell_back_post_on": ("Post on %1$s", "Publicar en %1$s", "Publicar en %1$s"),
-"vm_tell_back_cant": ("Can't post a reply for that name", "No se puede publicar una respuesta para ese nombre", "No es pot publicar una resposta per a aquest nom"),
-"vm_tell_back_posted": ("Posted. Once their app sees it, they can message you too.", "Publicado. Cuando su app lo vea, también podrá escribirte.", "Publicat. Quan la seua aplicació ho veja, també podrà escriure't."),
 # Can I talk to them? (Reachability, upstream 0.11.0)
 "reach_label": ("Can you talk to them?", "¿Os podéis comunicar?", "Vos podeu comunicar?"),
 "reach_nothing_known": ("Nothing known yet, either way.", "Aún no se sabe nada, en ningún sentido.", "Encara no se sap res, en cap sentit."),
@@ -1627,6 +1620,14 @@ S = {
 "simple_scan_sub": ("A person's or a group's code that someone shows you.", "El código de una persona o de un grupo que te enseñen.", "El codi d'una persona o d'un grup que et mostren."),
 "simple_newchat_none": ("No one to write to yet. Scan someone's QR code, or create a group.", "Aún no hay nadie a quien escribir. Escanea el código QR de alguien o crea un grupo.", "Encara no hi ha ningú a qui escriure. Escaneja el codi QR d'algú o crea un grup."),
 "cd_group": ("Group", "Grupo", "Grup"),
+"simple_refuse_node": ("That code is for a %1$s. Simple mode only adds people, groups and rooms: turn it off in Settings → Appearance and alerts to add it.", "Ese código es de un %1$s. El modo sencillo solo añade personas, grupos y salas: desactívalo en Ajustes → Apariencia y avisos para añadirlo.", "Aquest codi és d'un %1$s. El mode senzill només afig persones, grups i sales: desactiva'l en Ajustos → Aparença i avisos per a afegir-lo."),
+"simple_refuse_channel": ("That code is for a public channel. Simple mode only joins groups: turn it off in Settings → Appearance and alerts to join it.", "Ese código es de un canal público. El modo sencillo solo se une a grupos: desactívalo en Ajustes → Apariencia y avisos para unirte.", "Aquest codi és d'un canal públic. El mode senzill només s'unix a grups: desactiva'l en Ajustos → Aparença i avisos per a unir-te."),
+"addback_title": ("Ask %1$s to add you too", "Pide a %1$s que te añada", "Demana a %1$s que t'afija"),
+"addback_body": ("%1$s won't receive your messages until they add you as a contact too. The easiest way is to let them scan your QR code.", "%1$s no recibirá tus mensajes hasta que también te añada como contacto. Lo más fácil es que escanee tu código QR.", "%1$s no rebrà els teus missatges fins que també t'afija com a contacte. El més fàcil és que escanege el teu codi QR."),
+"addback_show_qr": ("Show my QR code", "Mostrar mi código QR", "Mostrar el meu codi QR"),
+"newchat_favourites": ("Favourites", "Favoritos", "Preferits"),
+"simple_show_qr": ("Show QR code", "Mostrar código QR", "Mostrar codi QR"),
+"simple_room_details": ("Room details", "Detalles de la sala", "Detalls de la sala"),
 }
 
 # key -> ((one, other) en, (one, other) es, (one, other) ca)

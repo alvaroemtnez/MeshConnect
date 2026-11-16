@@ -334,7 +334,7 @@ internal fun RadioSection(vm: MeshCoreViewModel) {
     // "how do I apply the code my mesh handed me" thinks to open the
     // contact-import button on another tab.
     val scanLauncher = rememberLauncherForActivityResult(io.alvaroedo.meshconnect.platform.ScanQr()) { result ->
-        result?.let { vm.importScannedCode(it) }
+        result?.let { vm.importScannedCode(it, io.alvaroedo.meshconnect.ui.model.ScanOrigin.Elsewhere) }
     }
     if (presetSheet) {
         RadioPresetSheet(vm, onDismiss = { presetSheet = false })

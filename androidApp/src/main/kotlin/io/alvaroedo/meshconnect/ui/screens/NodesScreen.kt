@@ -154,7 +154,7 @@ fun NodesScreen(vm: MeshCoreViewModel, nav: NavController) {
     var farAddRequest by remember { mutableStateOf<io.alvaroedo.meshconnect.storage.DiscoveredEntity?>(null) }
 
     val scanLauncher = rememberLauncherForActivityResult(io.alvaroedo.meshconnect.platform.ScanQr()) { result ->
-        result?.let { vm.importScannedCode(it) }
+        result?.let { vm.importScannedCode(it, io.alvaroedo.meshconnect.ui.model.ScanOrigin.Nodes) }
     }
     val scanPrompt = stringResource(R.string.scan_prompt)
     var showSelfQr by remember { mutableStateOf(false) }
@@ -218,7 +218,11 @@ fun NodesScreen(vm: MeshCoreViewModel, nav: NavController) {
                     // The camera is not the only way a code arrives: contacts
                     // shared between clients usually come as a copied link.
                     MenuAction(stringResource(R.string.nodes_paste_code), icon = R.drawable.ic_content_copy) {
-                        clipboard.paste { vm.importPastedText(it) }
+                        clipboard.paste { vm.importPastedText(it, io.alvaroedo.meshconnect.ui.model.ScanOrigin.Nodes) }
+                    },
+                    // The scan button does the same; the menu lists every way a code comes in.
+                    MenuAction(stringResource(R.string.nodes_scan_qr), icon = R.drawable.ic_qr_code_scanner) {
+                        scanLauncher.launch(scanPrompt)
                     },
                     MenuAction(stringResource(R.string.my_qr), icon = R.drawable.ic_qr_code) { showSelfQr = true },
                     // Active discovery: a broadcast asking nearby repeaters
@@ -1485,8 +1489,10 @@ private fun DetailRow(label: String, value: String, mono: Boolean = false) {
 /** Localized by the platform ("5 minutes ago", "hace 5 minutos"). */
 internal fun relativeAge(epochSeconds: Long): String {
     val now = System.currentTimeMillis()
+    // Never in the future: the time comes from the radio's clock, which can run a little
+    // ahead of the phone's, and "In 0 seconds" read as nonsense (seen 2026-11-16).
     return android.text.format.DateUtils.getRelativeTimeSpanString(
-        epochSeconds * 1000, now, android.text.format.DateUtils.SECOND_IN_MILLIS,
+        minOf(epochSeconds * 1000, now), now, android.text.format.DateUtils.SECOND_IN_MILLIS,
     ).toString()
 }
 

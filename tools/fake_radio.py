@@ -85,13 +85,20 @@ def cstr(s: str, n: int) -> bytes:
     return b + b"\0" * (n - len(b))
 
 
-def contact_frame(name, typ, lat, lon) -> bytes:
-    k = key(name)
+# Contacts the app added (CMD_ADD_UPDATE_CONTACT), by key: (name, type). Kept for the life of
+# the process, so a code scanned in the app lands in the next contact sync, as on a radio.
+ADDED = {}
+# Contact flags the app wrote (favourite), by key.
+FLAGS = {}
+
+
+def contact_frame(name, typ, lat, lon, k=None) -> bytes:
+    k = k or key(name)
     path_len = 0xFF if typ == ADV_CHAT else ((HASH_WIDTH - 1) << 6) | 1
     path = (key("Hilltop Rpt")[:HASH_WIDTH] if path_len != 0xFF else b"").ljust(64, b"\0")
     now = int(time.time())
     return (
-        bytes([RESP_CONTACT]) + k + bytes([typ, 0, path_len]) + path + cstr(name, 32)
+        bytes([RESP_CONTACT]) + k + bytes([typ, FLAGS.get(k, 0), path_len]) + path + cstr(name, 32)
         + struct.pack("<IiiI", now - random.randint(60, 7200),
                       int((lat or 0) * 1e6), int((lon or 0) * 1e6), now)
     )
@@ -274,14 +281,35 @@ class Session:
         elif cmd == CMD_GET_DEVICE_TIME:
             self.send(bytes([RESP_CURR_TIME]) + struct.pack("<I", int(time.time())))
         elif cmd == CMD_GET_CONTACTS:
-            self.send(bytes([RESP_CONTACTS_START]) + struct.pack("<I", len(NODES)))
+            self.send(bytes([RESP_CONTACTS_START]) + struct.pack("<I", len(NODES) + len(ADDED)))
             for n in NODES:
                 self.send(contact_frame(*n))
+            for k, (name, typ) in ADDED.items():
+                self.send(contact_frame(name, typ, None, None, k))
             self.send(bytes([RESP_END_CONTACTS]) + struct.pack("<I", int(time.time())))
         elif cmd == CMD_GET_CHANNEL:
             idx = frame[1] if len(frame) > 1 else 0
             ch = next((c for c in CHANNELS if c[0] == idx), (idx, "", bytes(16)))
             self.send(bytes([RESP_CHANNEL_INFO, idx]) + cstr(ch[1], 32) + ch[2])
+        elif cmd == 9 and len(frame) >= 132:  # CMD_ADD_UPDATE_CONTACT: [9][key 32][type][flags][path_len][path 64][name 32]…
+            k = bytes(frame[1:33])
+            FLAGS[k] = frame[34]
+            if k not in [key(n[0]) for n in NODES]:
+                ADDED[k] = (frame[100:132].split(b"\0")[0].decode(errors="replace"), frame[33])
+            self.send(bytes([RESP_OK]))
+        elif cmd == 32 and len(frame) >= 50:  # CMD_SET_CHANNEL: [32][idx][name 32][psk 16]
+            idx = frame[1]
+            CHANNELS[:] = [c for c in CHANNELS if c[0] != idx] + [(idx, frame[2:34].split(b"\0")[0].decode(errors="replace"), bytes(frame[34:50]))]
+            self.send(bytes([RESP_OK]))
+        elif cmd == 30 and len(frame) >= 33:  # CMD_GET_CONTACT_BY_KEY: one contact, as the list sends it
+            k = bytes(frame[1:33])
+            node = next((n for n in NODES if key(n[0]) == k), None)
+            if node:
+                self.send(contact_frame(*node))
+            elif k in ADDED:
+                self.send(contact_frame(ADDED[k][0], ADDED[k][1], None, None, k))
+            else:
+                self.send(bytes([RESP_ERR, 2]))
         elif cmd == CMD_SYNC_NEXT_MESSAGE:
             self.send(self.queue.pop(0) if self.queue else bytes([RESP_NO_MORE]))
         elif cmd == CMD_GET_BATT:

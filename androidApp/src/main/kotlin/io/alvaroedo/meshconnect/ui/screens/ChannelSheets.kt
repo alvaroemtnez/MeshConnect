@@ -33,6 +33,7 @@ import io.github.thatsfguy.meshcore.protocol.ShareUri
 import io.alvaroedo.meshconnect.ui.MeshCoreViewModel
 import io.github.thatsfguy.meshcore.presentation.ChannelSetup
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.imePadding
@@ -73,6 +74,8 @@ fun ChannelAddSheet(
      * Called with a conversation's kind and key (MessageRepository.KIND_DM / KIND_CHANNEL).
      */
     onOpenThread: ((kind: String, key: String) -> Unit)? = null,
+    /** A held row in the list: open its card (the simple one in Simple mode). */
+    onHoldThread: (io.alvaroedo.meshconnect.ui.model.NewChatList.Entry) -> Unit = {},
 ) {
     var choice by remember { mutableStateOf<AddChannelChoice?>(null) }
     var pickingExisting by remember { mutableStateOf(false) }
@@ -81,7 +84,7 @@ fun ChannelAddSheet(
     val simple = io.alvaroedo.meshconnect.ui.model.SimpleMode.isSimple(LocalAppMode.current)
 
     val communityScanLauncher = rememberLauncherForActivityResult(io.alvaroedo.meshconnect.platform.ScanQr()) { result ->
-        result?.let { vm.importScannedCode(it, openChat = newChat) }
+        result?.let { vm.importScannedCode(it, if (newChat) io.alvaroedo.meshconnect.ui.model.ScanOrigin.Chats else io.alvaroedo.meshconnect.ui.model.ScanOrigin.Elsewhere) }
         onDismiss()
     }
     val scanPrompt = stringResource(R.string.scan_prompt)
@@ -108,7 +111,7 @@ fun ChannelAddSheet(
                         Text(stringResource(R.string.newchat_existing), style = MaterialTheme.typography.titleLarge)
                     }
                     Spacer(Modifier.height(8.dp))
-                    ExistingThreads(vm, search = true, onPick = open)
+                    ExistingThreads(vm, onPick = open, onHold = onHoldThread)
                 }
                 // Simple mode (ui/model/SimpleMode): where to write, then the three ways to add
                 // somewhere — create a group, scan a code, paste a link. No public or hashtag
@@ -120,7 +123,7 @@ fun ChannelAddSheet(
                     )
                     Spacer(Modifier.height(8.dp))
                     if (newChat) {
-                        ExistingThreads(vm, search = false, onPick = open)
+                        ExistingThreads(vm, onPick = open, onHold = onHoldThread)
                         HorizontalDivider(Modifier.padding(vertical = 8.dp))
                     }
                     ChoiceRow(R.drawable.ic_group, stringResource(R.string.simple_create_group), stringResource(R.string.simple_create_group_sub)) {
@@ -131,7 +134,7 @@ fun ChannelAddSheet(
                     }
                     ChoiceRow(R.drawable.ic_content_paste, stringResource(R.string.newchat_paste), stringResource(R.string.newchat_paste_sub)) {
                         clipboard.paste {
-                            vm.importPastedText(it, openChat = newChat)
+                            vm.importPastedText(it, if (newChat) io.alvaroedo.meshconnect.ui.model.ScanOrigin.Chats else io.alvaroedo.meshconnect.ui.model.ScanOrigin.Elsewhere)
                             onDismiss()
                         }
                     }
@@ -185,7 +188,7 @@ fun ChannelAddSheet(
                             stringResource(R.string.newchat_paste_sub),
                         ) {
                             clipboard.paste {
-                                vm.importPastedText(it, openChat = newChat)
+                                vm.importPastedText(it, if (newChat) io.alvaroedo.meshconnect.ui.model.ScanOrigin.Chats else io.alvaroedo.meshconnect.ui.model.ScanOrigin.Elsewhere)
                                 onDismiss()
                             }
                         }
@@ -207,14 +210,16 @@ fun ChannelAddSheet(
 }
 
 /**
- * People, rooms and channels to write to, alphabetical (NewChatList); a tap opens the
- * conversation. Simple mode shows it straight away and leaves channels anyone can join out.
+ * People, rooms and channels to write to (NewChatList): search on top, Favourites, then a
+ * section per letter, as Signal's new-message list. A tap opens the conversation; a hold opens
+ * the card. Simple mode shows it straight away and leaves channels anyone can join out.
  */
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 private fun ExistingThreads(
     vm: MeshCoreViewModel,
-    search: Boolean,
     onPick: (io.alvaroedo.meshconnect.ui.model.NewChatList.Entry) -> Unit,
+    onHold: (io.alvaroedo.meshconnect.ui.model.NewChatList.Entry) -> Unit,
 ) {
     var query by remember { mutableStateOf("") }
     val mode = LocalAppMode.current
@@ -226,16 +231,14 @@ private fun ExistingThreads(
         kinds = vm.channelKinds.collectAsState().value,
         query = query,
     )
-    if (search) {
-        MeshTextField(
-            value = query,
-            onValueChange = { query = it },
-            placeholder = stringResource(R.string.newchat_search),
-            leadingIcon = { Icon(painterResource(R.drawable.ic_search), null) },
-            modifier = Modifier.fillMaxWidth(),
-        )
-        Spacer(Modifier.height(8.dp))
-    }
+    MeshTextField(
+        value = query,
+        onValueChange = { query = it },
+        placeholder = stringResource(R.string.search),
+        leadingIcon = { Icon(painterResource(R.drawable.ic_search), null) },
+        modifier = Modifier.fillMaxWidth(),
+    )
+    Spacer(Modifier.height(4.dp))
     if (entries.isEmpty()) {
         Text(
             stringResource(if (simple) R.string.simple_newchat_none else R.string.newchat_none),
@@ -244,45 +247,53 @@ private fun ExistingThreads(
             modifier = Modifier.padding(vertical = 16.dp),
         )
     }
-    for (e in entries.take(300)) {
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .clip(androidx.compose.foundation.shape.RoundedCornerShape(12.dp))
-                .clickable { onPick(e) }
-                .padding(horizontal = 4.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            NodeAvatar(
-                // The seeds Chats uses, so a thread keeps its colour from one list to the other.
-                seed = if (e.isChannel) "channel|${e.key}|${e.title}" else e.key,
-                label = e.title,
-                type = e.contactType,
-                isChannel = e.isChannel,
-                channelKind = e.channelKind,
-                size = 40.dp,
-            )
-            Spacer(Modifier.width(16.dp))
-            Column(Modifier.weight(1f)) {
-                Text(e.title, style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                // What it is, in the full app; Simple mode does not make anyone care.
-                val what = when {
-                    simple -> null
-                    e.isChannel -> e.channelKind?.let {
-                        stringResource(
-                            when (it) {
-                                ChannelKind.Public -> R.string.ch_kind_public
-                                ChannelKind.Hashtag -> R.string.ch_kind_hashtag
-                                ChannelKind.Private -> R.string.ch_kind_private
-                            },
-                        )
+    for (section in io.alvaroedo.meshconnect.ui.model.NewChatList.sections(entries.take(300))) {
+        Text(
+            section.letter ?: stringResource(R.string.newchat_favourites),
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.padding(start = 4.dp, top = 12.dp, bottom = 2.dp),
+        )
+        for (e in section.entries) {
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .clip(androidx.compose.foundation.shape.RoundedCornerShape(12.dp))
+                    .combinedClickable(onClick = { onPick(e) }, onLongClick = { onHold(e) })
+                    .padding(horizontal = 4.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                NodeAvatar(
+                    // The seeds Chats uses, so a thread keeps its colour from one list to the other.
+                    seed = if (e.isChannel) "channel|${e.key}|${e.title}" else e.key,
+                    label = e.title,
+                    type = e.contactType,
+                    isChannel = e.isChannel,
+                    channelKind = e.channelKind,
+                    size = 40.dp,
+                )
+                Spacer(Modifier.width(16.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(e.title, style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    // What it is, in the full app; Simple mode does not make anyone care.
+                    val what = when {
+                        simple -> null
+                        e.isChannel -> e.channelKind?.let {
+                            stringResource(
+                                when (it) {
+                                    ChannelKind.Public -> R.string.ch_kind_public
+                                    ChannelKind.Hashtag -> R.string.ch_kind_hashtag
+                                    ChannelKind.Private -> R.string.ch_kind_private
+                                },
+                            )
+                        }
+                        e.contactType == io.github.thatsfguy.meshcore.protocol.Codes.ADV_TYPE_ROOM -> stringResource(R.string.kind_room)
+                        else -> null
                     }
-                    e.contactType == io.github.thatsfguy.meshcore.protocol.Codes.ADV_TYPE_ROOM -> stringResource(R.string.kind_room)
-                    else -> null
-                }
-                val line = listOfNotNull(what, e.heard.takeIf { it > 0 }?.let { relativeAge(it) }).joinToString(" · ")
-                if (line.isNotEmpty()) {
-                    Text(line, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    val line = listOfNotNull(what, e.heard.takeIf { it > 0 }?.let { relativeAge(it) }).joinToString(" · ")
+                    if (line.isNotEmpty()) {
+                        Text(line, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
                 }
             }
         }

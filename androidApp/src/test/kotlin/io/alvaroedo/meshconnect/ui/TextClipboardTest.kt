@@ -72,7 +72,7 @@ class TextClipboardTest {
             .filter { it.readText().contains("LocalClipboardManager") }.map { it.name }.toList()
         assertEquals(emptyList(), offenders)
         val sheets = File("src/main/kotlin/io/alvaroedo/meshconnect/ui/screens/ChannelSheets.kt").readText()
-        assertTrue(sheets.contains("clipboard.paste {\n                                vm.importPastedText(it, openChat = newChat)\n                                onDismiss()"))
-        assertFalse(sheets.contains("vm.importPastedText(it, openChat = newChat)\n                            }\n                            onDismiss()"))
+        assertTrue(sheets.contains("clipboard.paste {\n                                vm.importPastedText(it, if (newChat) io.alvaroedo.meshconnect.ui.model.ScanOrigin.Chats else io.alvaroedo.meshconnect.ui.model.ScanOrigin.Elsewhere)\n                                onDismiss()"))
+        assertFalse(sheets.contains("vm.importPastedText(it, if (newChat) io.alvaroedo.meshconnect.ui.model.ScanOrigin.Chats else io.alvaroedo.meshconnect.ui.model.ScanOrigin.Elsewhere)\n                            }\n                            onDismiss()"))
     }
 }

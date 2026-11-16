@@ -87,7 +87,7 @@ class DmRequestTextTest {
     @Test
     fun `nothing is posted that would arrive cut short`() {
         val vm = src("ui/MeshCoreViewModel.kt")
-        for (fn in listOf("fun askToMessagePrivately(", "fun acceptDmRequest(", "fun tellBack(")) {
+        for (fn in listOf("fun askToMessagePrivately(", "fun acceptDmRequest(")) {
             val body = vm.substringAfter(fn).substringBefore("\n    }\n")
             val fits = body.indexOf("DmRequest.fits(")
             val send = body.indexOf("sendChannelMessage(")

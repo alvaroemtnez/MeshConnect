@@ -531,6 +531,8 @@ private fun AppShell(
         // flag set for a screen that was not listening — and it applies
         // to contact cards, channel shares and settings codes alike.
         ScanConfirmations(vm)
+        // A node card asked for by a scanned code or a held New chat row, over any screen.
+        io.alvaroedo.meshconnect.ui.screens.NodeCardHost(vm, nav)
     }
     }
 }
