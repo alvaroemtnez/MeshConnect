@@ -2163,8 +2163,22 @@ class MeshCoreEngine(
                 timestampSeconds = 0L,
             ),
         )
-        if (ok) syncContacts()
+        // Read back the one contact, as addDiscovered does, rather than the whole list: on a
+        // radio with a few hundred contacts the sweep took seconds, and the chat a scanned
+        // code opens waited for it. Only if that read gets no answer, the full sweep.
+        if (ok && !readBackContact(pubKey)) syncContacts()
         return ok
+    }
+
+    /** CMD_GET_CONTACT_BY_KEY for [pubKey], awaited; true when the radio answered with it. */
+    private suspend fun readBackContact(pubKey: ByteArray): Boolean {
+        val key = pubKey.toHex()
+        val ev = runCatching {
+            sendAndAwait(Frames.getContactByKey(pubKey), timeoutMs = 10_000) {
+                (it is DeviceEvent.ContactReceived && it.contact.publicKeyHex == key) || it is DeviceEvent.Err
+            }
+        }.getOrNull()
+        return ev is DeviceEvent.ContactReceived
     }
 
     enum class AddOutcome { Added, TableFull, Unverified, Failed }
@@ -2241,10 +2255,25 @@ class MeshCoreEngine(
     suspend fun setChannel(index: Int, name: String, psk: ByteArray): Boolean {
         val ev = sendAndAwait(Frames.setChannel(index, name, psk)) { it is DeviceEvent.Ok }
         if (ev is DeviceEvent.Ok) {
-            syncChannels()
+            // Read back the slot just written, not every slot: the sweep is one round trip per
+            // slot (40 on most builds), and the chat a join opens waited for all of them. The
+            // reply goes through ChannelList.applySlot like the sweep's, which drops a cleared
+            // slot. CMD_GET_CHANNEL answers RESP_CODE_CHANNEL_INFO for any slot below
+            // MAX_GROUP_CHANNELS (companion_radio/MyMesh.cpp:1752). No answer: the sweep.
+            if (!readBackChannel(index)) syncChannels()
             return true
         }
         return false
+    }
+
+    /** CMD_GET_CHANNEL for [index], awaited; true when the radio answered with that slot. */
+    private suspend fun readBackChannel(index: Int): Boolean {
+        val ev = runCatching {
+            sendAndAwait(Frames.getChannel(index)) {
+                (it is DeviceEvent.ChannelInfoReceived && it.channel.index == index) || it is DeviceEvent.Err
+            }
+        }.getOrNull()
+        return ev is DeviceEvent.ChannelInfoReceived
     }
 
     suspend fun clearChannel(index: Int): Boolean = setChannel(index, "", ByteArray(16))

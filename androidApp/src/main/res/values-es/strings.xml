@@ -1408,7 +1408,7 @@
     <string name="gps_on_hint">La radio actualiza su posición con el GPS en cada lectura.</string>
     <string name="gps_waiting_fix">Esperando señal del GPS. Al aire libre, con vista al cielo, suele tardar unos minutos.</string>
     <string name="gps_off_hint">El GPS de la radio está apagado, así que la posición se queda como la fijes.</string>
-    <string name="gps_none_hint">Esta radio no tiene GPS: la posición es la que se fija aquí.</string>
+    <string name="gps_none_hint">Esta radio no informa de ningún GPS a las apps. Si tiene uno, sus propios ajustes deciden si una lectura sustituye la posición fijada aquí.</string>
     <string name="dmreq_choose_private">Elegir un canal privado</string>
     <string name="dmreq_choose_title">Pedírselo a %1$s en un grupo</string>
     <string name="dmreq_choose_body">Solo los miembros del grupo verán la petición. Elige uno en el que también esté esa persona.</string>

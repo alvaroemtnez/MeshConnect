@@ -78,6 +78,9 @@ Brings in MeshCore Hardened 0.10.16, 0.10.17 and 0.11.0.
 - **GPS in Identity.** On a radio with GPS: "From the radio's GPS" (the position follows each
   fix, read again while the screen is open) or "Set by hand" (GPS off, so a typed position
   stays). Also in Simple mode. A radio without GPS works as before.
+- **Adding opens faster.** After adding someone or joining a channel, the app reads back only
+  what changed instead of the radio's whole contact list or every channel slot, so the chat
+  opens sooner (most noticeable on a radio with many contacts).
 - **Settings → Advanced.** Map tiles, the diagnostics log and the channel datagram tool moved
   here from Appearance and alerts. New chat's "Message a contact" is now "Existing contact,
   group or room", one alphabetical list of all three. Disconnect is red, and About shows the

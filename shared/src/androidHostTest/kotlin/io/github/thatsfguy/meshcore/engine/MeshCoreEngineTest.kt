@@ -3446,8 +3446,120 @@ class MeshCoreEngineTest {
         assertEquals("held", added[strangerKey.toHex()]?.name, "the RADIO's record, not the push's")
     }
 
+
+    // ---- After a write, read back what changed, not everything (2026-11-16) ----
+
+    /** The standard radio, but a written slot reads back as written, or not at all. */
+    private fun slotRadio(radio: FakeRadio, answerRead: Boolean): (ByteArray) -> List<ByteArray> {
+        val base = standardResponder(radio)
+        val written = HashMap<Int, Pair<String, ByteArray>>()
+        return { frame ->
+            when (frame[0].toInt() and 0xFF) {
+                Codes.CMD_SET_CHANNEL -> {
+                    val idx = frame[1].toInt()
+                    written[idx] = frame.copyOfRange(2, 34).decodeToString().trimEnd('\u0000') to frame.copyOfRange(34, 50)
+                    listOf(byteArrayOf(Codes.RESP_CODE_OK.toByte()))
+                }
+                Codes.CMD_GET_CHANNEL -> {
+                    val idx = frame[1].toInt()
+                    val w = written[idx]
+                    when {
+                        w != null && !answerRead -> listOf(byteArrayOf(Codes.RESP_CODE_ERR.toByte(), 2))
+                        w != null -> listOf(channelInfoFrame(idx, w.first, w.second))
+                        else -> base(frame)
+                    }
+                }
+                else -> base(frame)
+            }
+        }
+    }
+
+    @Test
+    fun `writing a channel reads back only its slot`() = runTest {
+        val radio = FakeRadio()
+        radio.responder = slotRadio(radio, answerRead = true)
+        val engine = MeshCoreEngine(backgroundScope, crypto, { now })
+        engine.attach(radio)
+        radio.connect()
+        engine.awaitReady()
+        val before = radio.countOf(Codes.CMD_GET_CHANNEL)
+
+        assertTrue(engine.setChannel(2, "Family", ByteArray(16) { 7 }))
+
+        // One read, of slot 2 — not a sweep of all four.
+        assertEquals(1, radio.countOf(Codes.CMD_GET_CHANNEL) - before)
+        assertEquals(2, radio.sentFrames.last { it[0].toInt() == Codes.CMD_GET_CHANNEL }[1].toInt())
+        assertEquals("Family", engine.channels.value.firstOrNull { it.index == 2 }?.name)
+    }
+
+    @Test
+    fun `a slot that will not read back falls back to the sweep`() = runTest {
+        val radio = FakeRadio()
+        radio.responder = slotRadio(radio, answerRead = false)
+        val engine = MeshCoreEngine(backgroundScope, crypto, { now })
+        engine.attach(radio)
+        radio.connect()
+        engine.awaitReady()
+        val before = radio.countOf(Codes.CMD_GET_CHANNEL)
+
+        assertTrue(engine.setChannel(2, "Family", ByteArray(16) { 7 }))
+
+        // The single read, then every slot of the radio's four.
+        assertTrue(radio.countOf(Codes.CMD_GET_CHANNEL) - before > 1)
+    }
+
+    /** The standard radio, answering a by-key read with the added contact, or refusing it. */
+    private fun contactRadio(radio: FakeRadio, answerRead: Boolean): (ByteArray) -> List<ByteArray> {
+        val base = standardResponder(radio)
+        return { frame ->
+            when (frame[0].toInt() and 0xFF) {
+                Codes.CMD_GET_CONTACT_BY_KEY ->
+                    if (answerRead) {
+                        listOf(contactFrame(frame.copyOfRange(1, 33), "Joan"))
+                    } else {
+                        listOf(byteArrayOf(Codes.RESP_CODE_ERR.toByte(), 2))
+                    }
+                else -> base(frame)
+            }
+        }
+    }
+
+    @Test
+    fun `adding from a code reads back only that contact`() = runTest {
+        val radio = FakeRadio()
+        radio.responder = contactRadio(radio, answerRead = true)
+        val engine = MeshCoreEngine(backgroundScope, crypto, { now })
+        engine.attach(radio)
+        radio.connect()
+        engine.awaitReady()
+        val sweeps = radio.countOf(Codes.CMD_GET_CONTACTS)
+        val joan = ByteArray(32) { (it + 90).toByte() }
+
+        assertTrue(engine.addContactFromCard(joan, "Joan", Codes.ADV_TYPE_CHAT))
+
+        assertEquals(1, radio.countOf(Codes.CMD_GET_CONTACT_BY_KEY))
+        assertEquals(sweeps, radio.countOf(Codes.CMD_GET_CONTACTS))
+        assertEquals("Joan", engine.contacts.value[joan.toHex()]?.name)
+    }
+
+    @Test
+    fun `a contact that will not read back falls back to the sweep`() = runTest {
+        val radio = FakeRadio()
+        radio.responder = contactRadio(radio, answerRead = false)
+        val engine = MeshCoreEngine(backgroundScope, crypto, { now })
+        engine.attach(radio)
+        radio.connect()
+        engine.awaitReady()
+        val sweeps = radio.countOf(Codes.CMD_GET_CONTACTS)
+
+        assertTrue(engine.addContactFromCard(ByteArray(32) { (it + 90).toByte() }, "Joan", Codes.ADV_TYPE_CHAT))
+
+        assertEquals(sweeps + 1, radio.countOf(Codes.CMD_GET_CONTACTS))
+    }
+
 }
 
 /** Lowercase hex, local to the tests. */
 private fun ByteArray.toHex(): String =
-    joinToString("") { ((it.toInt() and 0xFF) + 0x100).toString(16).substring(1) }
+    joinToString("") { ((it.toInt() and 0xFF) + 0x100).toString(16).substring(1)
+}

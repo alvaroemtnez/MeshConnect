@@ -9,6 +9,14 @@ package io.alvaroedo.meshconnect.ui.model
  *   (EnvironmentSensorManager::loop), so a position set by hand (CMD_SET_ADVERT_LATLON) lasts
  *   only until the next one. With GPS off, a position set by hand stays.
  *
+ * Firmware that drives its GPS itself (Squatch Mesh on the T-Lora Pager: its own "follow gps live"
+ * setting, writing node_lat directly) lists no variable and looks like a radio without one.
+ *
+ * Firmware that drives its GPS itself lists no variable, and looks like a radio without one:
+ * Squatch Mesh (T-Lora Pager) has its own "gps on" and "follow gps live" settings and writes
+ * node_lat directly, never through the sensor manager. Nothing in the companion protocol
+ * reports those settings, so the no-GPS hint only says the radio may still override.
+ *
  * So Identity offers "From the radio's GPS" or "Set by hand" only when there is a GPS, and a
  * position set by hand means switching GPS off first, or it would quietly be undone.
  */

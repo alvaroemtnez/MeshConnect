@@ -1411,7 +1411,7 @@
     <string name="gps_on_hint">The radio updates its position from its GPS on every fix.</string>
     <string name="gps_waiting_fix">Waiting for a GPS fix. Outdoors, with a view of the sky, it usually takes a few minutes.</string>
     <string name="gps_off_hint">The radio\'s GPS is off, so the position stays as you set it.</string>
-    <string name="gps_none_hint">This radio has no GPS: the position is the one set here.</string>
+    <string name="gps_none_hint">This radio doesn\'t report a GPS to apps. If it has one, its own settings decide whether a fix replaces the position set here.</string>
     <string name="dmreq_choose_private">Choose a private channel</string>
     <string name="dmreq_choose_title">Ask %1$s in a group</string>
     <string name="dmreq_choose_body">Only the group\'s members will see the request. Pick one they\'re in too.</string>

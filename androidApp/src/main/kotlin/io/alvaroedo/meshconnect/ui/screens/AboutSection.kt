@@ -305,6 +305,7 @@ private val CHANGELOG: List<Pair<String, List<String>>> = listOf(
         "Ask someone to add you over the mesh, through MeshConnect's hidden #mcn-internal channel or a shared group.",
         "The tab bar slides with its screen; Nodes search finds nicknames.",
         "Identity: the position from the radio's GPS, or set by hand.",
+        "Adding someone or joining a channel opens the chat sooner: only what changed is read back.",
         "Map tiles, the diagnostics log and datagrams moved to Settings → Advanced; Disconnect is red.",
         "Fixed: on first run, tapping a tab blanked the screen and reloaded it; recent repeaters said \"in 0 minutes\".",
     ),
