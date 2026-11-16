@@ -75,6 +75,9 @@ Brings in MeshCore Hardened 0.10.16, 0.10.17 and 0.11.0.
   the name, and shows the start of their key.
 - **The tab bar moves with its screen**, instead of vanishing the moment another screen
   starts sliding in. Nodes search finds nicknames too.
+- **GPS in Identity.** On a radio with GPS: "From the radio's GPS" (the position follows each
+  fix, read again while the screen is open) or "Set by hand" (GPS off, so a typed position
+  stays). Also in Simple mode. A radio without GPS works as before.
 - **Settings → Advanced.** Map tiles, the diagnostics log and the channel datagram tool moved
   here from Appearance and alerts. New chat's "Message a contact" is now "Existing contact,
   group or room", one alphabetical list of all three. Disconnect is red, and About shows the

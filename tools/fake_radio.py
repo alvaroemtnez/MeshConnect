@@ -85,6 +85,9 @@ def cstr(s: str, n: int) -> bytes:
     return b + b"\0" * (n - len(b))
 
 
+# The radio's GPS (custom variable "gps"), as the app last set it.
+GPS = {"on": "0"}
+
 # Contacts the app added (CMD_ADD_UPDATE_CONTACT), by key: (name, type). Kept for the life of
 # the process, so a code scanned in the app lands in the next contact sync, as on a radio.
 ADDED = {}
@@ -319,7 +322,12 @@ class Session:
         elif cmd == CMD_GET_BATT:
             self.send(bytes([RESP_BATT]) + struct.pack("<HII", BATTERY_MV, 512, 4096))
         elif cmd == CMD_GET_CUSTOM_VAR:
-            self.send(bytes([RESP_CUSTOM_VARS]) + b"gps:0\0")
+            self.send(bytes([RESP_CUSTOM_VARS]) + f"gps:{GPS['on']}".encode() + b"\0")
+        elif cmd == 41:  # CMD_SET_CUSTOM_VAR: "key:value"
+            k, _, v = bytes(frame[1:]).split(b"\0")[0].decode(errors="replace").partition(":")
+            if k == "gps":
+                GPS["on"] = "1" if v == "1" else "0"
+            self.send(bytes([RESP_OK]))
         elif cmd == 27 and len(frame) >= 33:  # CMD_SEND_STATUS_REQ: [27][pubkey 32]
             # SENT, then PUSH_CODE_STATUS_RESPONSE [0x87][reserved][prefix 6][stats 52]
             # (RepeaterStatus.kt's StatusCodec reads them in this order).

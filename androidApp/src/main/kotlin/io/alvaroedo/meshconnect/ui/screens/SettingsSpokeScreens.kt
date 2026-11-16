@@ -148,7 +148,8 @@ fun SettingsIdentityScreen(vm: MeshCoreViewModel, nav: NavController) {
         vm,
         nav,
     ) {
-        QueryOnEntry(vm, query = { vm.querySelfInfo() }) {
+        // The custom variables too: they say whether the radio has a GPS (RadioGps).
+        QueryOnEntry(vm, query = { vm.querySelfInfo(); vm.queryCustomVars() }) {
             IdentitySection(vm, onShowSelfQr = { showSelfQr = true })
         }
     }

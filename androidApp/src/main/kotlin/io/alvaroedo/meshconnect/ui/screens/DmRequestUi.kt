@@ -1,6 +1,9 @@
 package io.alvaroedo.meshconnect.ui.screens
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -47,46 +50,67 @@ fun AskToBeAddedDialog(vm: MeshCoreViewModel, name: String, shownName: String = 
     val kinds by vm.channelKinds.collectAsState()
     // Groups only: a hashtag or Public channel is as open as ours and has more people on it.
     val groups = channels.filter { kinds[it.idx] == ChannelKind.Private && it.name.isNotBlank() }
-    var via by remember { mutableStateOf<Int?>(null) }
+    // The channel list replaces the explanation when asked for; no selector by default.
+    var choosing by remember { mutableStateOf(false) }
+    fun send(via: Int?) {
+        vm.askToBeAdded(name, via)
+        onDismiss()
+    }
     AlertDialog(
         onDismissRequest = onDismiss,
         icon = { Icon(painterResource(R.drawable.ic_person_add), null) },
-        title = { Text(stringResource(R.string.dmreq_ask_title, shownName)) },
+        title = {
+            Text(stringResource(if (choosing) R.string.dmreq_choose_title else R.string.dmreq_ask_title, shownName))
+        },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState())) {
-                Text(stringResource(R.string.dmreq_ask_body, shownName))
-                if (groups.isNotEmpty()) {
-                    Spacer(Modifier.height(12.dp))
-                    Text(stringResource(R.string.dmreq_ask_where), style = MaterialTheme.typography.titleSmall)
-                    Column(Modifier.selectableGroup()) {
-                        ViaRow(stringResource(R.string.dmreq_via_internal), via == null) { via = null }
-                        for (g in groups) ViaRow(stringResource(R.string.dmreq_via_group, g.name), via == g.idx) { via = g.idx }
+                if (!choosing) {
+                    Text(stringResource(R.string.dmreq_ask_body, shownName))
+                    if (groups.isNotEmpty()) {
+                        Spacer(Modifier.height(16.dp))
+                        androidx.compose.material3.FilledTonalButton(
+                            onClick = { choosing = true },
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Icon(painterResource(R.drawable.ic_lock), null, Modifier.size(18.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text(stringResource(R.string.dmreq_choose_private))
+                        }
+                    }
+                } else {
+                    Text(stringResource(R.string.dmreq_choose_body), style = MaterialTheme.typography.bodyMedium)
+                    Spacer(Modifier.height(8.dp))
+                    for (g in groups) {
+                        Row(
+                            Modifier
+                                .fillMaxWidth()
+                                .clickable { send(g.idx) }
+                                .padding(vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            NodeAvatar(
+                                seed = "channel|${g.idx}|${g.name}",
+                                label = g.name,
+                                isChannel = true,
+                                channelKind = ChannelKind.Private,
+                                size = 36.dp,
+                            )
+                            Spacer(Modifier.width(12.dp))
+                            Text(g.name, style = MaterialTheme.typography.bodyLarge)
+                        }
                     }
                 }
             }
         },
         confirmButton = {
-            Button(onClick = {
-                vm.askToBeAdded(name, via)
-                onDismiss()
-            }) { Text(stringResource(R.string.dm_ask_send)) }
+            if (!choosing) Button(onClick = { send(null) }) { Text(stringResource(R.string.dm_ask_send)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
+        dismissButton = {
+            TextButton(onClick = { if (choosing) choosing = false else onDismiss() }) {
+                Text(stringResource(if (choosing) R.string.back else R.string.cancel))
+            }
+        },
     )
-}
-
-@Composable
-private fun ViaRow(label: String, selected: Boolean, onClick: () -> Unit) {
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .selectable(selected = selected, onClick = onClick, role = Role.RadioButton),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        RadioButton(selected = selected, onClick = null)
-        Spacer(Modifier.width(8.dp))
-        Text(label)
-    }
 }
 
 /**

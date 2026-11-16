@@ -1,5 +1,9 @@
 package io.alvaroedo.meshconnect.ui.screens
 
+import androidx.compose.foundation.selection.selectableGroup
+
+import androidx.compose.foundation.selection.selectable
+
 import io.alvaroedo.meshconnect.R
 import androidx.compose.ui.res.stringResource
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -229,6 +233,21 @@ internal fun IdentitySection(vm: MeshCoreViewModel, onShowSelfQr: () -> Unit) {
             onDismiss = { pickPosition = false },
         )
     }
+    // Where the position comes from (ui/model/RadioGps). A radio with GPS hardware lists a
+    // `gps` variable; with it on, every fix overwrites the position, so typing one only makes
+    // sense with it off — the choice says that instead of letting a typed position vanish.
+    val gps = io.alvaroedo.meshconnect.ui.model.RadioGps.of(vm.customVars.collectAsState().value)
+    val editable = io.alvaroedo.meshconnect.ui.model.RadioGps.editable(gps)
+    if (gps == io.alvaroedo.meshconnect.ui.model.RadioGps.State.On) {
+        // The position moves with the radio: read it again while this screen is open. Over
+        // Bluetooth only; nothing goes on the air.
+        androidx.compose.runtime.LaunchedEffect(Unit) {
+            while (true) {
+                kotlinx.coroutines.delay(io.alvaroedo.meshconnect.ui.model.RadioGps.REFRESH_MS)
+                vm.querySelfInfo()
+            }
+        }
+    }
     // Picking on the map fills the two fields, so it sits on their heading.
     Row(Modifier.padding(top = 6.dp), verticalAlignment = Alignment.CenterVertically) {
         Text(
@@ -237,40 +256,72 @@ internal fun IdentitySection(vm: MeshCoreViewModel, onShowSelfQr: () -> Unit) {
             color = MaterialTheme.colorScheme.primary,
             modifier = Modifier.weight(1f),
         )
-        TextButton(onClick = { pickPosition = true }) {
-            androidx.compose.material3.Icon(
-                androidx.compose.ui.res.painterResource(R.drawable.ic_add_location),
-                null,
-                modifier = Modifier.size(18.dp),
-            )
-            Spacer(Modifier.width(6.dp))
-            Text(stringResource(R.string.set_pick_on_map))
+        if (editable) {
+            TextButton(onClick = { pickPosition = true }) {
+                androidx.compose.material3.Icon(
+                    androidx.compose.ui.res.painterResource(R.drawable.ic_add_location),
+                    null,
+                    modifier = Modifier.size(18.dp),
+                )
+                Spacer(Modifier.width(6.dp))
+                Text(stringResource(R.string.set_pick_on_map))
+            }
+        }
+    }
+    if (gps != io.alvaroedo.meshconnect.ui.model.RadioGps.State.None) {
+        Column(Modifier.selectableGroup()) {
+            for ((on, label) in listOf(true to R.string.gps_from_radio, false to R.string.gps_by_hand)) {
+                val selected = (gps == io.alvaroedo.meshconnect.ui.model.RadioGps.State.On) == on
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .selectable(
+                            selected = selected,
+                            onClick = { if (!selected) vm.setRadioGps(on) },
+                            role = androidx.compose.ui.semantics.Role.RadioButton,
+                        )
+                        .padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    androidx.compose.material3.RadioButton(selected = selected, onClick = null)
+                    Spacer(Modifier.width(8.dp))
+                    Text(stringResource(label))
+                }
+            }
         }
     }
     Row(verticalAlignment = Alignment.CenterVertically) {
         FormField(
             value = lat, onValueChange = { lat = it },
             label = { Text(stringResource(R.string.set_latitude)) }, singleLine = true, modifier = Modifier.weight(1f),
+            readOnly = !editable,
         )
         Spacer(Modifier.width(8.dp))
         FormField(
             value = lon, onValueChange = { lon = it },
             label = { Text(stringResource(R.string.set_longitude)) }, singleLine = true, modifier = Modifier.weight(1f),
+            readOnly = !editable,
         )
-        Spacer(Modifier.width(8.dp))
-        FilledTonalButton(onClick = {
-            val la = lat.toDoubleOrNull()
-            val lo = lon.toDoubleOrNull()
-            if (la != null && lo != null && la in -90.0..90.0 && lo in -180.0..180.0) {
-                vm.setAdvertLocation(la, lo)
-            }
-        }) { Text(stringResource(R.string.set_set)) }
+        if (editable) {
+            Spacer(Modifier.width(8.dp))
+            FilledTonalButton(onClick = {
+                val la = lat.toDoubleOrNull()
+                val lo = lon.toDoubleOrNull()
+                if (la != null && lo != null && la in -90.0..90.0 && lo in -180.0..180.0) {
+                    vm.setAdvertLocation(la, lo)
+                }
+            }) { Text(stringResource(R.string.set_set)) }
+        }
     }
-    if (!fixed) {
-        HintText(
-            stringResource(R.string.set_no_position),
-        )
-    }
+    HintText(
+        when {
+            gps == io.alvaroedo.meshconnect.ui.model.RadioGps.State.On && !fixed -> stringResource(R.string.gps_waiting_fix)
+            gps == io.alvaroedo.meshconnect.ui.model.RadioGps.State.On -> stringResource(R.string.gps_on_hint)
+            gps == io.alvaroedo.meshconnect.ui.model.RadioGps.State.Off -> stringResource(R.string.gps_off_hint)
+            !fixed -> stringResource(R.string.set_no_position)
+            else -> stringResource(R.string.gps_none_hint)
+        },
+    )
 
     // Simple mode joins people by link or QR, not by announcing (SimpleMode.showsAdverts).
     if (!io.alvaroedo.meshconnect.ui.model.SimpleMode.showsAdverts(LocalAppMode.current)) return

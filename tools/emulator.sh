@@ -52,7 +52,9 @@ INI
 case "${1:-start}" in
     start)
         [ -f "$ANDROID_AVD_HOME/$AVD.avd/config.ini" ] || create
+        # EMU_CORES / EMU_RAM_MB lighten the load (e.g. 2 / 3072) on a machine that struggles.
         nohup "$ANDROID_HOME/emulator/emulator" -avd "$AVD" -no-window -no-audio -no-boot-anim -gpu swangle_indirect \
+            -cores "${EMU_CORES:-4}" -memory "${EMU_RAM_MB:-4096}" \
             -no-snapshot-save > "$ROOT/.tools/emulator.log" 2>&1 &
         "$ADB" wait-for-device
         until [ "$("$ADB" shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" = 1 ]; do sleep 2; done

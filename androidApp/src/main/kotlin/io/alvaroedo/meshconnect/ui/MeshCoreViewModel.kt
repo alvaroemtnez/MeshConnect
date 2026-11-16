@@ -3921,6 +3921,20 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
     fun setPathHashMode(mode: Int) =
         deviceAction(str(R.string.vm_hash_mode_set, mode, mode + 1)) { it.setPathHashMode(mode) }
 
+    /**
+     * Turn the radio's GPS on or off (RadioGps), then read back what it now says: the variable,
+     * and the position, which a fix may have just moved.
+     */
+    fun setRadioGps(on: Boolean) {
+        val svc = _service.value ?: return
+        viewModelScope.launch {
+            val ok = runCatching { svc.engine.setCustomVar("gps:${if (on) "1" else "0"}") }.getOrDefault(false)
+            if (!ok) transientMessage.value = str(R.string.vm_change_rejected)
+            queryCustomVars()
+            querySelfInfo()
+        }
+    }
+
     fun setCustomVar(key: String, value: String) =
         deviceAction("$key updated") { it.setCustomVar("$key:$value") }
 
