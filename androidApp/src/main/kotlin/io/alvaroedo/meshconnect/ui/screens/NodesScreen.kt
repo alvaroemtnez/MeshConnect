@@ -150,6 +150,8 @@ fun NodesScreen(vm: MeshCoreViewModel, nav: NavController) {
         }
     }
     var staleOpen by remember { mutableStateOf(false) }
+    // The heard sheet's Add on a far heard-only node: handed to the list's confirm dialog.
+    var farAddRequest by remember { mutableStateOf<io.alvaroedo.meshconnect.storage.DiscoveredEntity?>(null) }
 
     val scanLauncher = rememberLauncherForActivityResult(io.alvaroedo.meshconnect.platform.ScanQr()) { result ->
         result?.let { vm.importScannedCode(it) }
@@ -258,6 +260,7 @@ fun NodesScreen(vm: MeshCoreViewModel, nav: NavController) {
             )
             val newCounts = NodeTabsModel.counts(discovered, hidden = hideHeard)
             val signals by vm.heardSignals.collectAsState()
+            val reach by vm.reachability.collectAsState()
             // In the list's sort (upstream 0.10.16). On the two time sorts, useful ones
             // first — relayed your traffic or heard direct — then the rest, each group
             // newest first (the sort is stable); a sort the user picked by name, hops or
@@ -279,6 +282,19 @@ fun NodesScreen(vm: MeshCoreViewModel, nav: NavController) {
             }
             fun distanceOf(lat: Double?, lon: Double?): String? =
                 ownPosition.metresTo(lat, lon)?.let { Units.distance(it, units) }
+            // Heard only, and 4+ hops or 100+ km away: on the owner's mesh, Chicago nodes
+            // heard all day that never answer (upstream 0.11.0). Folded under their own
+            // header, folded by default; unknown hops or position is never "far".
+            fun isFar(d: io.alvaroedo.meshconnect.storage.DiscoveredEntity): Boolean =
+                reach[d.keyHex]?.let {
+                    io.github.thatsfguy.meshcore.presentation.Reachability.isFarHeardOnly(
+                        it.verdict, d.minHops, ownPosition.metresTo(d.latitude, d.longitude),
+                    )
+                } == true
+            val farHeard = heard.filter(::isFar)
+            val farKeys = farHeard.mapTo(HashSet()) { it.keyHex }
+            val nearHeard = heard.filterNot { it.keyHex in farKeys }
+            var farCollapsed by remember { mutableStateOf(vm.prefs.nodesFarCollapsed) }
 
             KindChips(
                 selected = kind,
@@ -306,6 +322,9 @@ fun NodesScreen(vm: MeshCoreViewModel, nav: NavController) {
             // coming back doesn't fold it away again.
             var heardRevealed by rememberSaveable { mutableStateOf(false) }
             var confirmDismiss by remember { mutableStateOf<List<String>?>(null) }
+            // A far heard-only node waiting on "Add anyway?".
+            var confirmFarAdd by remember { mutableStateOf<io.alvaroedo.meshconnect.storage.DiscoveredEntity?>(null) }
+            farAddRequest?.let { confirmFarAdd = it; farAddRequest = null }
             val radioFull by vm.contactsFull.collectAsState()
             // With newcomers hidden, the -1 row is a quiet reminder that they are, in place
             // of the header (2026-11-13). It was a line under the chips with a Show button,
@@ -338,15 +357,40 @@ fun NodesScreen(vm: MeshCoreViewModel, nav: NavController) {
                         }
                     }
                     if (hasHeard && heardRevealed) {
-                        items(heard, key = { "heard_${it.keyHex}" }) { d ->
+                        items(nearHeard, key = { "heard_${it.keyHex}" }) { d ->
                             DiscoveredRow(
                                 node = d,
                                 distance = distanceOf(d.latitude, d.longitude),
+                                reach = reach[d.keyHex]?.takeIf { it.verdict.isTwoWay }?.let { reachShort(it.state) },
                                 signals = signals[d.keyHex],
                                 onOpen = { heardDetail = d },
                                 onAdd = { vm.addDiscovered(d.keyHex) },
                                 onDismiss = { vm.dismissDiscovered(d.keyHex) },
                             )
+                        }
+                        if (farHeard.isNotEmpty()) {
+                            item(key = "far_header") {
+                                FarHeader(
+                                    count = farHeard.size,
+                                    collapsed = farCollapsed,
+                                    onToggle = {
+                                        farCollapsed = !farCollapsed
+                                        vm.prefs.nodesFarCollapsed = farCollapsed
+                                    },
+                                )
+                            }
+                            if (!farCollapsed) {
+                                items(farHeard, key = { "far_${it.keyHex}" }) { d ->
+                                    DiscoveredRow(
+                                        node = d,
+                                        distance = distanceOf(d.latitude, d.longitude),
+                                        signals = signals[d.keyHex],
+                                        onOpen = { heardDetail = d },
+                                        onAdd = { confirmFarAdd = d },
+                                        onDismiss = { vm.dismissDiscovered(d.keyHex) },
+                                    )
+                                }
+                            }
                         }
                         item(key = "heard_divider") { HorizontalDivider() }
                     }
@@ -378,12 +422,35 @@ fun NodesScreen(vm: MeshCoreViewModel, nav: NavController) {
                         ContactRow(
                             c = c,
                             distance = distanceOf(c.latitude, c.longitude),
+                            reach = reachShort(reach[c.keyHex]?.state),
                             onClick = { detail = c },
                             onLongClick = { detail = c },
                         )
                     }
                     item(key = "fab_clearance") { Spacer(Modifier.height(88.dp)) }
                 }
+            }
+
+            confirmFarAdd?.let { node ->
+                val where = listOfNotNull(
+                    node.minHops?.let { pluralStringResource(R.plurals.hops, it, it) },
+                    distanceOf(node.latitude, node.longitude),
+                ).joinToString(", ")
+                AlertDialog(
+                    onDismissRequest = { confirmFarAdd = null },
+                    icon = { Icon(painterResource(R.drawable.ic_person_add), null) },
+                    title = { Text(stringResource(R.string.far_add_title, node.name.ifBlank { node.keyHex.take(12) })) },
+                    text = { Text(stringResource(R.string.far_add_body, where)) },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            confirmFarAdd = null
+                            vm.addDiscovered(node.keyHex)
+                        }) { Text(stringResource(R.string.far_add_anyway)) }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { confirmFarAdd = null }) { Text(stringResource(R.string.cancel)) }
+                    },
+                )
             }
 
             confirmDismiss?.let { keys ->
@@ -436,8 +503,20 @@ fun NodesScreen(vm: MeshCoreViewModel, nav: NavController) {
             onDismiss = { heardDetail = null },
             onAdd = {
                 heardDetail = null
-                openWhenAdded = node.keyHex
-                vm.addDiscovered(node.keyHex)
+                val info = vm.reachability.value[node.keyHex]
+                val self = vm.selfInfo.value
+                val far = info != null && io.github.thatsfguy.meshcore.presentation.Reachability.isFarHeardOnly(
+                    info.verdict,
+                    node.minHops,
+                    io.github.thatsfguy.meshcore.presentation.SelfPosition(self?.latitude, self?.longitude)
+                        .metresTo(node.latitude, node.longitude),
+                )
+                if (far) {
+                    farAddRequest = node
+                } else {
+                    openWhenAdded = node.keyHex
+                    vm.addDiscovered(node.keyHex)
+                }
             },
             onForget = {
                 heardDetail = null
@@ -666,6 +745,8 @@ private fun SortFilterMenu(
 private fun DiscoveredRow(
     node: io.alvaroedo.meshconnect.storage.DiscoveredEntity,
     distance: String? = null,
+    /** Only a two-way verdict: nearly every heard node is "heard only", which says nothing. */
+    reach: String? = null,
     signals: io.github.thatsfguy.meshcore.presentation.RepeaterSignals.Signals? = null,
     onOpen: () -> Unit,
     onAdd: () -> Unit,
@@ -700,6 +781,7 @@ private fun DiscoveredRow(
             Text(
                 listOfNotNull(
                     stringResource(singleKindLabel(node.type)),
+                    reach,
                     SharedText.heardReach(androidx.compose.ui.platform.LocalResources.current, node.minHops, node.directSnr),
                     distance,
                     DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(node.lastHeardAt)),
@@ -731,6 +813,31 @@ internal fun singleKindLabel(type: Int): Int = when (type) {
     Codes.ADV_TYPE_ROOM -> R.string.kind_room
     Codes.ADV_TYPE_SENSOR -> R.string.kind_sensor
     else -> R.string.kind_contact
+}
+
+/** The fold for far heard-only nodes inside the heard section; folded by default. */
+@Composable
+private fun FarHeader(count: Int, collapsed: Boolean, onToggle: () -> Unit) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onToggle)
+            .padding(start = 28.dp, end = 16.dp, top = 8.dp, bottom = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(stringResource(R.string.far_header, count), style = MaterialTheme.typography.titleSmall)
+            Text(
+                stringResource(R.string.far_hint),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        Icon(
+            painterResource(if (collapsed) R.drawable.ic_expand_more else R.drawable.ic_expand_less),
+            stringResource(if (collapsed) R.string.show else R.string.heard_hide),
+        )
+    }
 }
 
 /**
@@ -798,6 +905,7 @@ internal fun typeLabel(type: Int): String = when (type) {
 private fun ContactRow(
     c: ContactEntity,
     distance: String? = null,
+    reach: String? = null,
     onClick: () -> Unit,
     onLongClick: (() -> Unit)? = null,
 ) {
@@ -825,12 +933,14 @@ private fun ContactRow(
                 overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
             )
             Text(
+                // The verdict first, the key prefix last, where the ellipsis takes it.
                 listOfNotNull(
-                    c.keyHex.take(12),
+                    reach,
                     PathCodec.decodePathLen(c.pathLen).let { info ->
                         if (info.isFlood) stringResource(R.string.flood) else stringResource(R.string.hops_path, info.hops)
                     },
                     distance,
+                    c.keyHex.take(12),
                 ).joinToString(" · "),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -954,6 +1064,7 @@ private fun HeardDetailSheet(
                     }) { Icon(painterResource(R.drawable.ic_content_copy), stringResource(R.string.copy)) }
                 },
             )
+            ReachSection(vm, node.keyHex, node.type, allowCheck = false)
             // Hops, and the node's own signal only when heard direct: after a relay
             // the latest SNR is the last repeater's (HeardReach). Local arrival times,
             // never the advert's own timestamp, which is the node's clock (LastHeard).
@@ -1133,6 +1244,7 @@ fun ContactDetailSheet(
                     }) { Icon(painterResource(R.drawable.ic_content_copy), stringResource(R.string.copy)) }
                 },
             )
+            ReachSection(vm, contact.keyHex, contact.type)
             val pathInfo = PathCodec.decodePathLen(live?.pathLen ?: contact.pathLen)
             // The contact's own record says how wide ITS hashes are; the device
             // setting only applies to new paths.

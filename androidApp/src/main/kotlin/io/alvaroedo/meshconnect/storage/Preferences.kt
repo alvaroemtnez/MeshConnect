@@ -144,6 +144,43 @@ class Preferences(context: Context) {
 
     fun isRoutePinned(keyHex: String): Boolean = keyHex.lowercase() in pinnedRoutes
 
+    /**
+     * When each node last ANSWERED us (a ping, sign-in, telemetry or reachability check),
+     * per own radio, epoch seconds. Kept because an answer proves both directions and the
+     * screen that showed it forgets it (Reachability, upstream 0.11.0). Stored as
+     * "selfKey|nodeKey|seconds", newest [MAX_REACH_PROOFS] kept, under an explicit radio key
+     * rather than [scoped] so a proof lands on the radio it was earned on.
+     */
+    fun reachProofs(selfKey: String): Map<String, Long> {
+        val prefix = "${selfKey.lowercase()}|"
+        return (prefs.getStringSet("reach_proofs", emptySet()) ?: emptySet())
+            .filter { it.startsWith(prefix) }
+            .mapNotNull { row ->
+                val parts = row.split('|')
+                if (parts.size != 3) return@mapNotNull null
+                val at = parts[2].toLongOrNull() ?: return@mapNotNull null
+                parts[1] to at
+            }
+            .groupBy({ it.first }, { it.second })
+            .mapValues { (_, times) -> times.max() }
+    }
+
+    fun recordReachProof(selfKey: String, nodeKey: String, atSeconds: Long) {
+        val self = selfKey.lowercase()
+        val node = nodeKey.lowercase()
+        if (self.isEmpty() || node.isEmpty()) return
+        val kept = (prefs.getStringSet("reach_proofs", emptySet()) ?: emptySet())
+            .filterNot { it.startsWith("$self|$node|") }
+            .sortedByDescending { it.substringAfterLast('|').toLongOrNull() ?: 0L }
+            .take(MAX_REACH_PROOFS - 1)
+        prefs.edit().putStringSet("reach_proofs", (kept + "$self|$node|$atSeconds").toSet()).apply()
+    }
+
+    /** The "far away, heard only" fold on the Nodes list. Folded by default. */
+    var nodesFarCollapsed: Boolean
+        get() = prefs.getBoolean("nodes_far_collapsed", true)
+        set(v) { prefs.edit().putBoolean("nodes_far_collapsed", v).apply() }
+
     var lastKind: String?
         get() = prefs.getString("last_kind", null)
         set(v) { prefs.edit().putString("last_kind", v).apply() }
@@ -800,6 +837,7 @@ class Preferences(context: Context) {
         private val ACTIVE_RADIO = MutableStateFlow("")
         private val THREAD_LIST_REVISION = MutableStateFlow(0)
         private const val MIGRATED_FLAG = "radio_scoped_migrated"
+        const val MAX_REACH_PROOFS = 500
 
         /** Keys stored per radio, by base name; slot-keyed ones by prefix. */
         private val RADIO_SCOPED_KEYS = setOf(

@@ -522,6 +522,137 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
             }
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
 
+    // ------------------------------------------------------------------
+    // "Can I talk to this node?" (Reachability, upstream 0.11.0)
+    // ------------------------------------------------------------------
+
+    /** When each node last answered us, for this radio; see Preferences.reachProofs. */
+    private val reachProofs = MutableStateFlow<Map<String, Long>>(emptyMap())
+
+    /** Bumped when a route is pinned or unpinned: a pinned route proves nothing about them. */
+    private val pinnedRoutesTick = MutableStateFlow(0)
+
+    init {
+        viewModelScope.launch {
+            selfKey.collect { key -> reachProofs.value = if (key.isEmpty()) emptyMap() else prefs.reachProofs(key) }
+        }
+    }
+
+    /** [keyHex] answered something we sent: both directions work, as of now. */
+    private fun recordReachProof(keyHex: String) {
+        val self = selfKey.value
+        if (self.isEmpty()) return
+        prefs.recordReachProof(self, keyHex, nowSeconds())
+        reachProofs.value = prefs.reachProofs(self)
+    }
+
+    /**
+     * A verdict for every contact and heard node, from evidence already held and without
+     * transmitting: delivered messages (path history), answered requests (reach proofs),
+     * repeaters heard relaying our own packets, and routes the node sent back.
+     */
+    val reachability: StateFlow<Map<String, io.alvaroedo.meshconnect.ui.model.ReachText.Info>> =
+        selfKey.flatMapLatest { key ->
+            if (key.isEmpty()) {
+                flowOf(emptyMap())
+            } else {
+                val since = System.currentTimeMillis() -
+                    io.github.thatsfguy.meshcore.presentation.RepeaterSignals.RELAY_WINDOW_MS
+                combine(
+                    dbContacts,
+                    discovered,
+                    db.paths().summaries(key),
+                    db.messages().observeRoutes(key, since),
+                    combine(reachProofs, pinnedRoutesTick) { proofs, _ -> proofs },
+                ) { contacts, heard, summaries, routes, proofs ->
+                    reachabilityOf(contacts, heard, summaries, routes, proofs)
+                }
+            }
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
+
+    private fun reachabilityOf(
+        contacts: List<ContactEntity>,
+        heard: List<io.alvaroedo.meshconnect.storage.DiscoveredEntity>,
+        summaries: List<io.alvaroedo.meshconnect.storage.PathSummary>,
+        routes: List<io.alvaroedo.meshconnect.storage.RouteRow>,
+        proofs: Map<String, Long>,
+    ): Map<String, io.alvaroedo.meshconnect.ui.model.ReachText.Info> {
+        val signals = io.github.thatsfguy.meshcore.presentation.RepeaterSignals
+        val reach = io.github.thatsfguy.meshcore.presentation.Reachability
+        val counts = signals.relayCounts(
+            routes.map { io.github.thatsfguy.meshcore.presentation.RepeaterSignals.RouteSample(it.arrivalPathHex, it.arrivalHashWidth) },
+        )
+        val known = contacts.map { it.keyHex } + heard.map { it.keyHex }
+        fun repeatsUs(keyHex: String, type: Int) =
+            type == Codes.ADV_TYPE_REPEATER && signals.signalsFor(keyHex, null, counts, known).provenRelay
+        val byKey = summaries.associateBy { it.contactKey }
+        val now = nowSeconds()
+        val out = HashMap<String, io.alvaroedo.meshconnect.ui.model.ReachText.Info>()
+        fun put(keyHex: String, e: io.github.thatsfguy.meshcore.presentation.Reachability.Evidence) {
+            out[keyHex] = io.alvaroedo.meshconnect.ui.model.ReachText.Info(reach.of(e, now), e)
+        }
+        for (c in contacts) {
+            val s = byKey[c.keyHex]
+            val delivered = s?.lastWorkedAt?.takeIf { it > 0 }?.div(1000)
+            put(
+                c.keyHex,
+                io.github.thatsfguy.meshcore.presentation.Reachability.Evidence(
+                    confirmedAt = listOfNotNull(delivered, proofs[c.keyHex]).maxOrNull(),
+                    repeatsUs = repeatsUs(c.keyHex, c.type),
+                    routeFromThem = !PathCodec.decodePathLen(c.pathLen).isFlood && !prefs.isRoutePinned(c.keyHex),
+                    heardThem = c.lastSeen > 0,
+                    tried = s != null && (s.attempts > 0 || s.lastUsedAt > 0),
+                ),
+            )
+        }
+        for (d in heard) {
+            if (d.keyHex in out) continue
+            put(
+                d.keyHex,
+                io.github.thatsfguy.meshcore.presentation.Reachability.Evidence(
+                    confirmedAt = proofs[d.keyHex],
+                    repeatsUs = repeatsUs(d.keyHex, d.type),
+                    heardThem = true,
+                ),
+            )
+        }
+        return out
+    }
+
+    /** The answer to "Check if they can hear you". */
+    sealed class ReachCheck {
+        data object NotConnected : ReachCheck()
+
+        /**
+         * Nothing came back. [asksPermission]: people and sensors answer only if their
+         * owner allows it (and has added us), so silence from them proves nothing.
+         */
+        data class NoAnswer(val asksPermission: Boolean) : ReachCheck()
+
+        /** Both routes, hop names in order; empty is direct. */
+        data class TwoWay(val out: List<String>, val back: List<String>) : ReachCheck()
+    }
+
+    /**
+     * Path discovery to [keyHex] (CMD_SEND_PATH_DISCOVERY_REQ): one flooded request whose
+     * answer carries the route both ways. Costs airtime, so only ever on a tap.
+     */
+    suspend fun checkReachability(keyHex: String, type: Int): ReachCheck {
+        val svc = _service.value ?: return ReachCheck.NotConnected
+        val key = hexToBytesOrNull(keyHex) ?: return ReachCheck.NoAnswer(asksPermission = true)
+        val asksPermission = type == Codes.ADV_TYPE_CHAT || type == Codes.ADV_TYPE_SENSOR
+        val result = runCatching { svc.engine.discoverPath(key) }.getOrNull()
+            ?: return ReachCheck.NoAnswer(asksPermission)
+        recordReachProof(keyHex)
+        // A hop is named only on a unique match; otherwise its hash is shown, never a guess.
+        val names = svc.engine.contacts.value.mapValues { (_, c) -> c.name }
+        fun labels(path: ByteArray, width: Int) =
+            io.github.thatsfguy.meshcore.protocol.PathCodec.resolveHops(path, width, names).map { hop ->
+                if (hop.isResolved) hop.candidates[0] else hop.hashHex.uppercase()
+            }
+        return ReachCheck.TwoWay(labels(result.outPath, result.outHashWidth), labels(result.inPath, result.inHashWidth))
+    }
+
     /** Switch an app-side repeater auto-add rule, and act on it at once. */
     fun setRepeaterRule(relaysMyTraffic: Boolean? = null, heardDirect: Boolean? = null) {
         relaysMyTraffic?.let { prefs.autoAddRelayingRepeaters = it }
@@ -1287,6 +1418,7 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
                     keyHex,
                     mode == io.github.thatsfguy.meshcore.protocol.RoutingMode.Manual,
                 )
+                pinnedRoutesTick.value++
             }
             transientMessage.value =
                 if (ok) str(R.string.vm_routing_set) else str(R.string.vm_route_rejected)
@@ -1402,6 +1534,9 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
         } else {
             0
         }
+        // A ping that came back went to the node and back: proof both ways. A trace
+        // towards a person stops at the last repeater, so it proves nothing about them.
+        if (forwards && result != null) recordReachProof(keyHex)
         return TraceRun(hops, result, elapsed, sharedHash = shared)
     }
 
@@ -2151,6 +2286,8 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
         // signed straight back into still described as advertising
         // for an update.
         if (outcome.answered) setUpdateMode(keyHex, false)
+        // Any answer, a refusal included, means it heard us and we heard it.
+        if (outcome.answered) recordReachProof(keyHex)
         if (granted == AdminSession.None) {
             // A refusal and a silence are different problems with
             // different fixes — check the password, or get closer.
@@ -2311,6 +2448,7 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
         return if (readings == null) {
             TelemetryFetch.NoAnswer(clientTable = gated)
         } else {
+            recordReachProof(keyHex)
             TelemetryFetch.Readings(readings)
         }
     }
