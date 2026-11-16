@@ -109,6 +109,7 @@ fun SettingsScreen(vm: MeshCoreViewModel, nav: NavController) {
     )
 
     Scaffold(
+        bottomBar = { LocalTabBar.current("settings") },
         topBar = {
             AppTopBar(
                 title = stringResource(R.string.nav_settings),

@@ -349,7 +349,14 @@ class MeshCoreService : Service() {
                         // counts what Chats shows. Kinds come from the radio's own keys.
                         prefs.appModeChanges(),
                         engine.channels.map { list -> channelKinds(list) }.distinctUntilChanged(),
-                    ) { (cs, chs, latest), mode, kinds ->
+                    ) { (cs, allChs, allLatest), mode, kinds ->
+                        // #mcn-internal is not a chat (InternalChannel).
+                        val internal = internalSlots() +
+                            allChs.filter { io.alvaroedo.meshconnect.ui.model.InternalChannel.isNamed(it.name) }.map { it.idx }
+                        val chs = allChs.filter { it.idx !in internal }
+                        val latest = allLatest.filterNot {
+                            it.kind == MessageRepository.KIND_CHANNEL && it.peerKey.toIntOrNull() in internal
+                        }
                         // The Chats list's rule, not a sum of every row (ChatThreads).
                         val unread = io.alvaroedo.meshconnect.ui.model.ChatThreads.unreadTotal(latest, cs, chs, mode, kinds)
                         val last = io.alvaroedo.meshconnect.ui.model.ChatThreads
@@ -843,6 +850,45 @@ class MeshCoreService : Service() {
             .build()
     }
 
+    private val internalPsk by lazy { io.alvaroedo.meshconnect.ui.model.InternalChannel.psk(kindCrypto) }
+
+    /** Slots holding #mcn-internal on the connected radio (InternalChannel). */
+    private fun internalSlots(): Set<Int> =
+        engine.channels.value.filter {
+            it.psk.contentEquals(internalPsk) || io.alvaroedo.meshconnect.ui.model.InternalChannel.isNamed(it.name)
+        }.map { it.index }.toSet()
+
+    /**
+     * "Marta wants to message you privately", for a request addressed to us on #mcn-internal.
+     * Opens the app, where the prompt waits (ScanConfirmations). Null when it is not one.
+     */
+    private fun postInternalRequestNotification(senderName: String?, text: String): Unit? {
+        val parsed = io.github.thatsfguy.meshcore.presentation.DmRequest.parse(text)
+            as? io.github.thatsfguy.meshcore.presentation.DmRequest.Parsed.Request ?: return null
+        val me = engine.selfInfo.value ?: return null
+        val asked = io.github.thatsfguy.meshcore.presentation.DmRequest.decide(
+            parsed, senderName, me.name, me.publicKeyHex,
+            io.github.thatsfguy.meshcore.presentation.DmRequest.Outstanding.NONE, 0,
+        ) as? io.github.thatsfguy.meshcore.presentation.DmRequest.Action.AskedMe ?: return null
+        val intent = PendingIntent.getActivity(
+            this, DMREQ_NOTIF_BASE,
+            Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP),
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+        )
+        val line = getString(R.string.dmreq_incoming_title, asked.requesterName.ifBlank { asked.requesterKeyHex.take(8) })
+        val notification = NotificationCompat.Builder(this, MSG_CHANNEL)
+            .setSmallIcon(R.drawable.ic_stat_message)
+            .setContentTitle(getString(R.string.app_name_full))
+            .setContentText(line)
+            .setContentIntent(intent)
+            .setAutoCancel(true)
+            .setCategory(NotificationCompat.CATEGORY_MESSAGE)
+            .build()
+        (getSystemService(NOTIFICATION_SERVICE) as NotificationManager)
+            .notify(DMREQ_NOTIF_BASE + 1 + asked.requesterKeyHex.hashCode().and(0xFFF), notification)
+        return Unit
+    }
+
     /** Each channel slot's kind, from the key the radio holds (ChannelKinds). */
     private fun channelKinds(
         channels: List<io.github.thatsfguy.meshcore.model.Channel>,
@@ -876,6 +922,11 @@ class MeshCoreService : Service() {
         }
 
         val isChannel = kind == MessageRepository.KIND_CHANNEL
+        // #mcn-internal (InternalChannel) is not a conversation: only a request to us there
+        // notifies, as itself; anything else on it is silent.
+        if (isChannel && peerKey.toIntOrNull()?.let { it in internalSlots() } == true) {
+            return postInternalRequestNotification(senderName, text) ?: skip("#mcn-internal traffic")
+        }
         // Three levels, narrowest last: the per-kind switch, then the
         // per-thread mute. Muted threads still count unread — silence is
         // about interruption, not about hiding that something arrived.
@@ -1011,6 +1062,9 @@ class MeshCoreService : Service() {
         private const val NOTIF_ID = 1
         private const val BATTERY_NOTIF_ID = 2
         private const val MSG_NOTIF_BASE = 1000
+
+        /** #mcn-internal requests, one per asker: clear of the per-thread ids above. */
+        private const val DMREQ_NOTIF_BASE = 200_000
 
         /**
          * Stable id per thread: repeated messages update one entry

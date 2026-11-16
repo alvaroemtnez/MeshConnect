@@ -123,17 +123,25 @@ fun ScanConfirmations(vm: MeshCoreViewModel) {
     // message's long-press is unchanged.
     val addBack by vm.pendingAddBack.collectAsState()
     var showOwnQr by remember { mutableStateOf(false) }
+    var askFor by remember { mutableStateOf<String?>(null) }
     addBack?.let { name ->
         AlertDialog(
             onDismissRequest = { vm.pendingAddBack.value = null },
             icon = { Icon(painterResource(R.drawable.ic_person_add), null) },
             title = { Text(stringResource(R.string.addback_title, name)) },
-            text = { Text(stringResource(R.string.addback_body, name)) },
+            text = { Text(stringResource(R.string.addback_body_ask, name)) },
             confirmButton = {
-                TextButton(onClick = {
-                    vm.pendingAddBack.value = null
-                    showOwnQr = true
-                }) { Text(stringResource(R.string.addback_show_qr)) }
+                Row {
+                    // Over the mesh, when they are not here to scan (#mcn-internal, or a group).
+                    TextButton(onClick = {
+                        vm.pendingAddBack.value = null
+                        askFor = name
+                    }) { Text(stringResource(R.string.addback_ask)) }
+                    TextButton(onClick = {
+                        vm.pendingAddBack.value = null
+                        showOwnQr = true
+                    }) { Text(stringResource(R.string.addback_show_qr)) }
+                }
             },
             dismissButton = {
                 TextButton(onClick = { vm.pendingAddBack.value = null }) { Text(stringResource(R.string.ok)) }
@@ -141,6 +149,10 @@ fun ScanConfirmations(vm: MeshCoreViewModel) {
         )
     }
     if (showOwnQr) SelfQrDialog(vm, onDismiss = { showOwnQr = false })
+    askFor?.let { AskToBeAddedDialog(vm, it, onDismiss = { askFor = null }) }
+
+    // Someone asked us on #mcn-internal, which shows nowhere else.
+    InternalDmRequestPrompt(vm)
 
     // A scanned settings code. This dialog is the whole safety story:
     // nothing about the code is authenticated, and applying it decides

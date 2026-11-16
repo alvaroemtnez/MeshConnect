@@ -125,6 +125,10 @@ def device_info() -> bytes:
 # (it drops a repeat by content) and notifications can be tested.
 TAG = ""
 
+# --internal-request: once the app has written #mcn-internal, Joan asks us there for a DM, so
+# the app's prompt and notification for it can be driven (ui/model/InternalChannel).
+INTERNAL_REQUEST = False
+
 
 def channel_msg(idx, sender, text, hops=2) -> bytes:
     text = text + TAG
@@ -393,8 +397,25 @@ class Session:
             except OSError:
                 return
 
+    def internal_request(self):
+        # After seed_messages (4 s in), which replaces the queue rather than adding to it.
+        time.sleep(8)
+        for _ in range(60):
+            time.sleep(1)
+            slot = next((c[0] for c in CHANNELS if c[1].lower() == "#mcn-internal"), None)
+            if slot is not None:
+                time.sleep(2)
+                self.queue.append(channel_msg(slot, "Joan", f"DM request for @[{SELF_NAME}] mch:r:{key('Joan').hex()}"))
+                try:
+                    self.send(bytes([PUSH_MSG_WAITING]))
+                except OSError:
+                    pass
+                return
+
     def run(self):
         threading.Thread(target=self.noise, daemon=True).start()
+        if INTERNAL_REQUEST:
+            threading.Thread(target=self.internal_request, daemon=True).start()
         buf = b""
         while True:
             data = self.conn.recv(4096)
@@ -419,9 +440,11 @@ def main():
     ap.add_argument("--port", type=int, default=5000)
     ap.add_argument("--battery", type=int, default=3870, help="reported millivolts")
     ap.add_argument("--tag", default="", help="appended to every seeded message, e.g. ' #2'")
+    ap.add_argument("--internal-request", action="store_true", help="Joan asks for a DM on #mcn-internal")
     args = ap.parse_args()
-    global TAG
+    global TAG, INTERNAL_REQUEST
     TAG = args.tag
+    INTERNAL_REQUEST = args.internal_request
     srv = socket.socket()
     srv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     global BATTERY_MV

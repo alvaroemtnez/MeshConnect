@@ -150,6 +150,9 @@ fun ConversationScreen(
     // A room needs a session to work at all — see roomAccessNotice.
     val roomSession = vm.adminSessions.collectAsState().value[peerKey] ?: AdminSession.None
     var roomSignIn by remember { mutableStateOf(false) }
+    // "Ask to be added" (AskToBeAddedDialog), for a person who may not have us.
+    var askToAdd by remember { mutableStateOf(false) }
+    val isPerson = !isChannel && contacts.firstOrNull { it.keyHex == peerKey }?.type == io.github.thatsfguy.meshcore.protocol.Codes.ADV_TYPE_CHAT
     // Opened unsigned: sign in with the saved password, quietly (RoomAutoSignIn).
     LaunchedEffect(peerKey, isRoom) { if (isRoom) vm.signInToRoomIfSaved(peerKey) }
 
@@ -309,6 +312,7 @@ fun ConversationScreen(
                 stringResource(if (!technical && isRoom) R.string.simple_room_details else R.string.conv_contact_details),
                 icon = R.drawable.ic_person,
             ) { showContact = true },
+            if (isPerson) MenuAction(stringResource(R.string.dmreq_menu), icon = R.drawable.ic_person_add) { askToAdd = true } else null,
             if (technical) MenuAction(stringResource(R.string.conv_routing), icon = R.drawable.ic_alt_route) { showRouting = true } else null,
             if (technical) MenuAction(stringResource(R.string.trace_route), icon = R.drawable.ic_route) { nav.navigate(traceRoute(peerKey)) } else null,
             MenuAction(stringResource(R.string.conv_clear), destructive = true, icon = R.drawable.ic_delete_sweep) { clearConfirm = true },
@@ -669,6 +673,12 @@ fun ConversationScreen(
             onDismiss = { pickOnMap = false },
             forAdvert = false,
         )
+    }
+
+    if (askToAdd) {
+        contacts.firstOrNull { it.keyHex == peerKey }?.let { c ->
+            AskToBeAddedDialog(vm, c.name, shownName = title, onDismiss = { askToAdd = false })
+        } ?: run { askToAdd = false }
     }
 
     if (roomSignIn) {

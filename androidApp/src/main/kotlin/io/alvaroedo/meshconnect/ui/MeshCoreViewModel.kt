@@ -453,13 +453,21 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
     /** A node the Map should centre on when it next shows; it clears it once done. */
     val mapFocus = MutableStateFlow<String?>(null)
 
+    /** Nodes being signed into without a tap (RoomAutoSignIn): their result is not announced. */
+    private val quietLogins = java.util.concurrent.ConcurrentHashMap.newKeySet<String>()
+
     init {
         viewModelScope.launch {
             _service.flatMapLatest { it?.engine?.meshEvents ?: flowOf() }.collect { ev ->
                 when (ev) {
-                    is MeshEvent.LoginResult ->
-                        transientMessage.value =
-                            if (ev.success) str(R.string.vm_login_ok) else str(R.string.vm_login_failed)
+                    is MeshEvent.LoginResult -> {
+                        val prefix = ev.pubKeyPrefixHex?.lowercase().orEmpty()
+                        val quiet = prefix.isNotEmpty() && quietLogins.any { it.startsWith(prefix) }
+                        if (!quiet) {
+                            transientMessage.value =
+                                if (ev.success) str(R.string.vm_login_ok) else str(R.string.vm_login_failed)
+                        }
+                    }
                     else -> Unit
                 }
             }
@@ -732,8 +740,30 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
         }
     }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
-    val dbChannels: StateFlow<List<ChannelEntity>> = selfKey.flatMapLatest { key ->
+    /** Every channel slot in the database, `#mcn-internal` included. */
+    private val allDbChannels: StateFlow<List<ChannelEntity>> = selfKey.flatMapLatest { key ->
         if (key.isEmpty()) flowOf(emptyList()) else db.channels().all(key)
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
+    private val internalPsk: ByteArray by lazy {
+        io.alvaroedo.meshconnect.ui.model.InternalChannel.psk(io.github.thatsfguy.meshcore.platform.androidCryptoProvider())
+    }
+
+    /**
+     * The slot(s) holding `#mcn-internal` (InternalChannel): by key on the radio, and by name in
+     * the database so it is hidden from the first frame, before the radio has answered.
+     */
+    val internalSlots: StateFlow<Set<Int>> = combine(
+        _service.flatMapLatest { it?.engine?.channels ?: flowOf(emptyList()) },
+        allDbChannels,
+    ) { live, stored ->
+        live.filter { it.psk.contentEquals(internalPsk) }.map { it.index }.toSet() +
+            stored.filter { io.alvaroedo.meshconnect.ui.model.InternalChannel.isNamed(it.name) }.map { it.idx }
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, emptySet())
+
+    /** The channels people use: every slot but `#mcn-internal`, which shows nowhere. */
+    val dbChannels: StateFlow<List<ChannelEntity>> = combine(allDbChannels, internalSlots) { all, internal ->
+        all.filter { it.idx !in internal }
     }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     /**
@@ -768,7 +798,7 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
     /** Bumped when a private nickname changes, so [conversations] recomputes. */
     private val nicknameRevision = MutableStateFlow(0)
 
-    val conversations: StateFlow<List<ConversationRow>> = combine(
+    private val conversationRows: StateFlow<List<ConversationRow>> = combine(
         selfKey.flatMapLatest { key ->
             if (key.isEmpty()) flowOf(emptyList()) else db.messages().latestPerThread(key)
         },
@@ -840,6 +870,11 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
         }
         rows.map { if (Inbox.threadKey(it.kind, it.key) in marked) it.copy(markedUnread = true) else it }
             .sortedByDescending { it.timestamp }
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
+    /** Every conversation, without `#mcn-internal`'s (InternalChannel): it is not one. */
+    val conversations: StateFlow<List<ConversationRow>> = combine(conversationRows, internalSlots) { rows, internal ->
+        rows.filterNot { it.isChannel && it.key.toIntOrNull() in internal }
     }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     /**
@@ -1923,6 +1958,10 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
     private fun offerChannel(share: ShareUri.Decoded.ChannelShare, origin: ScanOrigin) {
         val svc = _service.value ?: return
         val psk = hexToBytesOrNull(share.pskHex)
+        if (isInternalChannel(share.name, psk)) {
+            transientMessage.value = str(R.string.vm_internal_reserved)
+            return
+        }
         if (psk != null) {
             val kind = io.github.thatsfguy.meshcore.protocol.ChannelKinds.of(
                 share.name, psk, io.github.thatsfguy.meshcore.platform.androidCryptoProvider(),
@@ -2033,6 +2072,86 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
         markDmRequestHandled(requesterKeyHex)
     }
 
+    // ------------------------------------------------------------------
+    // #mcn-internal (ui/model/InternalChannel)
+    // ------------------------------------------------------------------
+
+    private var internalJoinJob: kotlinx.coroutines.Job? = null
+
+    init {
+        // Joined once per connection if the radio lacks it, in its highest free slot. Waits
+        // for the channel sweep: before it, every slot looks free and writing one could
+        // overwrite a channel the radio will not give back (nextFreeChannelIndex says why).
+        viewModelScope.launch {
+            engineState.collect { state ->
+                internalJoinJob?.cancel()
+                if (state != EngineState.Ready) return@collect
+                internalJoinJob = viewModelScope.launch {
+                    val svc = _service.value ?: return@launch
+                    val known = kotlinx.coroutines.withTimeoutOrNull(30_000) {
+                        while (!svc.engine.channelsKnown) kotlinx.coroutines.delay(500)
+                        true
+                    } ?: return@launch
+                    if (!known) return@launch
+                    val live = svc.engine.channels.value
+                    if (live.any { it.psk.contentEquals(internalPsk) }) return@launch
+                    val max = svc.engine.deviceInfo.value?.maxChannels?.takeIf { it > 0 } ?: return@launch
+                    val slot = io.alvaroedo.meshconnect.ui.model.InternalChannel.slotFor(
+                        live.filterNot { it.isEmpty }.map { it.index }.toSet(), max,
+                    )
+                    if (slot == null) {
+                        transientMessage.value = str(R.string.vm_internal_no_slot)
+                        return@launch
+                    }
+                    val ok = runCatching {
+                        svc.engine.setChannel(slot, io.alvaroedo.meshconnect.ui.model.InternalChannel.NAME, internalPsk)
+                    }.getOrDefault(false)
+                    if (!ok) transientMessage.value = str(R.string.vm_internal_failed)
+                }
+            }
+        }
+    }
+
+    /** True when [name] or [psk] is `#mcn-internal`, which is not joined or shared by hand. */
+    private fun isInternalChannel(name: String, psk: ByteArray?): Boolean =
+        io.alvaroedo.meshconnect.ui.model.InternalChannel.isNamed(name) || (psk != null && psk.contentEquals(internalPsk))
+
+    /**
+     * Ask [contact] to add us, so direct messages work (DmRequest), on `#mcn-internal` or on
+     * [viaChannel], a private channel the two share. The request is addressed to the name they
+     * advertise, which is what their app matches; our nickname for them means nothing there.
+     */
+    fun askToBeAdded(advertisedName: String, viaChannel: Int? = null) {
+        val slot = viaChannel ?: internalSlots.value.minOrNull()
+        if (slot == null) {
+            transientMessage.value = str(R.string.vm_internal_missing)
+            return
+        }
+        askToMessagePrivately(slot, advertisedName)
+    }
+
+    /** Requests to us that came on `#mcn-internal`, unanswered, oldest first. */
+    val internalDmRequests: StateFlow<List<io.alvaroedo.meshconnect.ui.model.InternalChannel.Pending>> =
+        combine(selfKey, internalSlots) { key, slots -> key to slots.minOrNull() }
+            .flatMapLatest { (key, slot) ->
+                if (key.isEmpty() || slot == null) {
+                    flowOf(emptyList())
+                } else {
+                    combine(db.messages().thread(key, MessageRepository.KIND_CHANNEL, slot.toString()), dmRequestsHandled, selfInfo) { msgs, handled, me ->
+                        io.alvaroedo.meshconnect.ui.model.InternalChannel.pending(
+                            msgs, me?.name, key, handled, System.currentTimeMillis() / 1000,
+                        )
+                    }
+                }
+            }
+            .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
+    /** Accept one from `#mcn-internal`: add them, and answer on the same channel. */
+    fun acceptInternalDmRequest(request: io.alvaroedo.meshconnect.ui.model.InternalChannel.Pending) {
+        val slot = internalSlots.value.minOrNull() ?: return
+        acceptDmRequest(slot, request.name, request.keyHex)
+    }
+
     private fun markDmRequestHandled(requesterKeyHex: String) {
         prefs.dmRequestsHandled = prefs.dmRequestsHandled + requesterKeyHex.lowercase()
         dmHandledRevision.value++
@@ -2126,6 +2245,11 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
 
     private fun addChannelWithKey(name: String, psk: ByteArray, regionScope: String, origin: ScanOrigin) {
         val svc = _service.value ?: return
+        // The app's own channel is joined by the app, in its own slot, and never by hand.
+        if (isInternalChannel(name, psk)) {
+            transientMessage.value = str(R.string.vm_internal_reserved)
+            return
+        }
         viewModelScope.launch {
             // Joining is idempotent, and keyed on the SECRET rather than
             // the name — the key is the channel; the name is a local
@@ -2571,7 +2695,16 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
     /** One attempt, no snackbar: a silent room keeps its banner, with the reason under it. */
     private suspend fun signInQuietly(keyHex: String, password: String) {
         if (keyHex in _loginInFlight.value) return
-        performLogin(keyHex, password, savePassword = false, maxAttempts = 1)
+        quietLogins += keyHex.lowercase()
+        try {
+            performLogin(keyHex, password, savePassword = false, maxAttempts = 1)
+        } finally {
+            // A moment longer: the result event can trail the reply that ends the login.
+            viewModelScope.launch {
+                kotlinx.coroutines.delay(2_000)
+                quietLogins -= keyHex.lowercase()
+            }
+        }
     }
 
     /**

@@ -58,6 +58,7 @@ fun SimpleContactSheet(vm: MeshCoreViewModel, contact: ContactEntity, onDismiss:
     var removeConfirm by remember { mutableStateOf(false) }
     var blockConfirm by remember { mutableStateOf(false) }
     var shareQrOpen by remember { mutableStateOf(false) }
+    var askToAdd by remember { mutableStateOf(false) }
 
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(
@@ -99,6 +100,9 @@ fun SimpleContactSheet(vm: MeshCoreViewModel, contact: ContactEntity, onDismiss:
 
             HorizontalDivider(Modifier.padding(top = 16.dp, bottom = 4.dp))
             SheetActionRow(R.drawable.ic_qr_code, stringResource(R.string.simple_show_qr)) { shareQrOpen = true }
+            if (contact.type == Codes.ADV_TYPE_CHAT) {
+                SheetActionRow(R.drawable.ic_person_add, stringResource(R.string.dmreq_menu)) { askToAdd = true }
+            }
             SheetActionRow(R.drawable.ic_edit, stringResource(R.string.node_rename)) { renameOpen = true }
             val blocked = vm.isBlocked(contact.keyHex)
             if (BlockList.isBlockableNodeType(contact.type) || blocked) {
@@ -115,6 +119,7 @@ fun SimpleContactSheet(vm: MeshCoreViewModel, contact: ContactEntity, onDismiss:
     }
 
     if (shareQrOpen) ContactQrDialog(vm, contact, onDismiss = { shareQrOpen = false })
+    if (askToAdd) AskToBeAddedDialog(vm, contact.name, shownName = vm.displayName(contact), onDismiss = { askToAdd = false })
 
     if (renameOpen) ContactRenameDialog(vm, contact, onDismiss = { renameOpen = false })
     if (blockConfirm) ContactBlockConfirm(vm, contact, onDismiss = { blockConfirm = false })

@@ -173,6 +173,7 @@ fun NodesScreen(vm: MeshCoreViewModel, nav: NavController) {
     var sortMenu by remember { mutableStateOf(false) }
 
     Scaffold(
+        bottomBar = { LocalTabBar.current("nodes") },
         topBar = {
             AppTopBar(
                 title = stringResource(R.string.nav_nodes),
@@ -262,6 +263,8 @@ fun NodesScreen(vm: MeshCoreViewModel, nav: NavController) {
                 filters = filters,
                 nowSeconds = vm.nowSeconds(),
                 self = ownPosition,
+                // Your nickname for them is searched and sorted on too (Rename on their card).
+                alias = { nicknames[it.keyHex] },
             )
             val newCounts = NodeTabsModel.counts(discovered, hidden = hideHeard)
             val signals by vm.heardSignals.collectAsState()
@@ -1150,6 +1153,7 @@ fun ContactDetailSheet(
     var removeConfirm by remember { mutableStateOf(false) }
     var blockConfirm by remember { mutableStateOf(false) }
     var shareQrOpen by remember { mutableStateOf(false) }
+    var askToAdd by remember { mutableStateOf(false) }
     var updateModeOpen by remember { mutableStateOf(false) }
     var updateModeNote by remember { mutableStateOf<String?>(null) }
     var updateModeBusy by remember { mutableStateOf(false) }
@@ -1324,6 +1328,10 @@ fun ContactDetailSheet(
             SheetHeading(stringResource(R.string.node_more))
             SheetActionRow(R.drawable.ic_route, stringResource(R.string.conv_routing)) { routingOpen = true }
             SheetActionRow(R.drawable.ic_edit, stringResource(R.string.node_rename)) { renameOpen = true }
+            // They may not have us: ask over the mesh (AskToBeAddedDialog).
+            if (contact.type == Codes.ADV_TYPE_CHAT) {
+                SheetActionRow(R.drawable.ic_person_add, stringResource(R.string.dmreq_menu)) { askToAdd = true }
+            }
             SheetActionRow(R.drawable.ic_policy, stringResource(R.string.node_permissions_row)) {
                 permissionsOpen = !permissionsOpen
             }
@@ -1426,6 +1434,7 @@ fun ContactDetailSheet(
     // Rename is a nickname on this phone (ContactRenameDialog); the radio's record is
     // overwritten by the contact's next advert, so renaming it there never stuck.
     if (renameOpen) ContactRenameDialog(vm, contact, onDismiss = { renameOpen = false })
+    if (askToAdd) AskToBeAddedDialog(vm, contact.name, shownName = vm.displayName(contact), onDismiss = { askToAdd = false })
     if (blockConfirm) ContactBlockConfirm(vm, contact, onDismiss = { blockConfirm = false })
     if (removeConfirm) ContactRemoveConfirm(vm, contact, onDismiss = { removeConfirm = false }, onRemoved = onDismiss)
 }

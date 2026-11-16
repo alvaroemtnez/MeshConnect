@@ -15,6 +15,9 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
@@ -288,27 +291,15 @@ private fun AppShell(
     ).filter { it.route in shownTabs }
     val unreadLabel = stringResource(R.string.unread_count, unreadBadge)
     val backdrop = remember { io.alvaroedo.meshconnect.ui.screens.BackdropBlur() }
-
-    androidx.compose.runtime.CompositionLocalProvider(
-        io.alvaroedo.meshconnect.ui.screens.LocalBackdropBlur provides backdrop,
-        io.alvaroedo.meshconnect.ui.screens.LocalAppMode provides mode,
-    ) {
-    Scaffold(
-        modifier = Modifier.backdropBlur(backdrop),
-        snackbarHost = { SnackbarHost(snackbar) },
-        // Edge-to-edge: the shell adds no system-bar padding of its own.
-        // Each screen's top bar pads for the status bar, the NavigationBar
-        // for the gesture bar, and screens without it pad themselves.
-        contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        bottomBar = {
-            val backStack by nav.currentBackStackEntryAsState()
-            val currentRoute = backStack?.destination?.route
-            // Hide the bar inside conversation/repeater routes.
-            if (tabs.any { it.route == currentRoute }) {
+    // Drawn by each tab screen (LocalTabBar), so it leaves with its screen on a push.
+    // [route] is the screen's own, not the back stack's current one: while a pushed screen
+    // slides in, the tab screen under it keeps its bar and its selection.
+    val tabBar: @Composable (String) -> Unit = { route ->
+            run {
                 NavigationBar {
                     for (tab in tabs) {
                         NavigationBarItem(
-                            selected = currentRoute == tab.route,
+                            selected = route == tab.route,
                             onClick = {
                                 nav.navigate(tab.route) {
                                     // Chats, not the graph's start destination. On first run
@@ -355,7 +346,31 @@ private fun AppShell(
                     }
                 }
             }
+    }
+    val currentRoute = nav.currentBackStackEntryAsState().value?.destination?.route
+
+    androidx.compose.runtime.CompositionLocalProvider(
+        io.alvaroedo.meshconnect.ui.screens.LocalBackdropBlur provides backdrop,
+        io.alvaroedo.meshconnect.ui.screens.LocalAppMode provides mode,
+        io.alvaroedo.meshconnect.ui.screens.LocalTabBar provides tabBar,
+    ) {
+    Scaffold(
+        modifier = Modifier.backdropBlur(backdrop),
+        // Above the tab bar on a tab screen, where the bar now belongs to the screen.
+        snackbarHost = {
+            SnackbarHost(
+                snackbar,
+                if (tabs.any { it.route == currentRoute }) {
+                    Modifier.windowInsetsPadding(WindowInsets.navigationBars).padding(bottom = 80.dp)
+                } else {
+                    Modifier
+                },
+            )
         },
+        // Edge-to-edge: the shell adds no system-bar padding of its own.
+        // Each screen's top bar pads for the status bar, the NavigationBar
+        // for the gesture bar, and screens without it pad themselves.
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
     ) { padding ->
         // Decided once. Read on every recomposition, it changed from "setup" to "chats"
         // when setup finished, and the next recomposition (the first message sent, which

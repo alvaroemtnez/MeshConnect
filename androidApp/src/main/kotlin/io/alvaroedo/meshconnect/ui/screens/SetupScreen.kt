@@ -246,6 +246,13 @@ private fun FinishStep(vm: MeshCoreViewModel, onFinish: () -> Unit) {
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+            // The app writes #mcn-internal to the radio once connected (InternalChannel):
+            // said before it happens, since it takes one of the radio's slots.
+            Text(
+                stringResource(R.string.onb_internal_note),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
         Spacer(Modifier.height(12.dp))
         Button(

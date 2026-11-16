@@ -111,6 +111,7 @@ fun MapScreen(vm: MeshCoreViewModel, nav: NavController) {
     }
 
     Scaffold(
+        bottomBar = { LocalTabBar.current("map") },
         topBar = {
             AppTopBar(
                 title = stringResource(R.string.nav_map),

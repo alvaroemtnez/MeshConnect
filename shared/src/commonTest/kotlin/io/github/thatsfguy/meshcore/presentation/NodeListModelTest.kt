@@ -400,4 +400,24 @@ class NodeListModelTest {
         assertFalse(NodeListModel.isFavorite(Node("aa", flags = 0)))
         assertFalse(NodeListModel.isFavorite(Node("aa", flags = favourite.inv())))
     }
+
+    // --- an alias (a local nickname) ---------------------------------------
+
+    @Test
+    fun `search matches the alias as well as the advertised name`() {
+        val nodes = listOf(Node("aa", name = "Marta"), Node("bb", name = "Pau"))
+        val alias = mapOf("aa" to "Mum")
+        val found = { q: String -> NodeListModel.arrange(nodes, q, Sort.Name, emptySet(), now, alias = { alias[it.keyHex] }).map { it.keyHex } }
+        assertEquals(listOf("aa"), found("mum"))
+        assertEquals(listOf("aa"), found("marta"))
+        // Positive control: without the alias, the nickname finds nobody.
+        assertEquals(emptyList(), NodeListModel.arrange(nodes, "mum", Sort.Name, emptySet(), now).map { it.keyHex })
+    }
+
+    @Test
+    fun `the name sort uses the name shown`() {
+        val nodes = listOf(Node("aa", name = "Zoe"), Node("bb", name = "Mia"))
+        val sorted = NodeListModel.arrange(nodes, "", Sort.Name, emptySet(), now, alias = { if (it.keyHex == "aa") "Ana" else null })
+        assertEquals(listOf("aa", "bb"), sorted.map { it.keyHex })
+    }
 }

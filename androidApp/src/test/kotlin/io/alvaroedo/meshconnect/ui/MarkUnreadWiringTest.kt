@@ -39,7 +39,8 @@ class MarkUnreadWiringTest {
 
     @Test
     fun `the conversation list recomputes when a mark changes`() {
-        val conversations = vm.substringAfter("val conversations: StateFlow<List<ConversationRow>> = combine(")
+        // The rows are built in conversationRows; conversations only drops #mcn-internal from them.
+        val conversations = vm.substringAfter("private val conversationRows: StateFlow<List<ConversationRow>> = combine(")
             .substringBefore(".stateIn(")
         assertTrue(conversations.contains("prefs.threadListRevision"))
         assertTrue(conversations.contains("copy(markedUnread = true)"))

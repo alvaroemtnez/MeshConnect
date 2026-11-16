@@ -67,6 +67,14 @@ Brings in MeshCore Hardened 0.10.16, 0.10.17 and 0.11.0.
 - The ongoing notification says the radio's battery. The battery icon turns red at 15% and
   blinks at 10%. Simple mode refuses radio-settings codes, and no longer shows the Public
   channel for a moment when the app starts.
+- **Ask someone to add you, over the mesh.** After adding a person, from their card, or from
+  their chat's ⋮: MeshConnect posts a short request that their MeshConnect shows as a prompt
+  and a notification, and accepting adds you both. It goes on `#mcn-internal`, a channel
+  MeshConnect keeps on the radio for itself (in the last free slot, hidden everywhere, said so
+  during setup), or in a group you share. The prompt says whether their radio has confirmed
+  the name, and shows the start of their key.
+- **The tab bar moves with its screen**, instead of vanishing the moment another screen
+  starts sliding in. Nodes search finds nicknames too.
 - **Settings → Advanced.** Map tiles, the diagnostics log and the channel datagram tool moved
   here from Appearance and alerts. New chat's "Message a contact" is now "Existing contact,
   group or room", one alphabetical list of all three. Disconnect is red, and About shows the

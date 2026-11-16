@@ -89,6 +89,7 @@ fun ChatsScreen(vm: MeshCoreViewModel, nav: NavController, archivedView: Boolean
     }
 
     Scaffold(
+        bottomBar = { if (!archivedView) LocalTabBar.current("chats") },
         topBar = {
             val picked = selection
             if (picked != null) {

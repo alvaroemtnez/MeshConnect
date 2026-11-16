@@ -160,6 +160,10 @@ object NodeListModel {
      * prefix; blank matches everything. [nowSeconds] is required rather
      * than defaulted because [Filter.ActiveDay] is meaningless without
      * it, and a defaulted 0 would silently empty the list.
+     *
+     * [alias] is a name the app shows instead of the advertised one (a
+     * local nickname, say): search matches either, and the name sort uses
+     * the one shown. Null, the default, is just the advertised name.
      */
     fun <T : NodeListItem> arrange(
         items: List<T>,
@@ -168,15 +172,17 @@ object NodeListModel {
         filters: Set<Filter>,
         nowSeconds: Long,
         self: SelfPosition? = null,
+        alias: (T) -> String? = { null },
     ): List<T> = items
-        .filter { matchesQuery(it, query) }
+        .filter { matchesQuery(it, query, alias(it)) }
         .filter { item -> filters.all { keeps(item, it, nowSeconds) } }
-        .sortedWith(comparatorFor(sort, self))
+        .sortedWith(comparatorFor(sort, self, alias))
 
-    private fun matchesQuery(item: NodeListItem, query: String): Boolean {
+    private fun matchesQuery(item: NodeListItem, query: String, alias: String?): Boolean {
         val q = query.trim()
         if (q.isEmpty()) return true
         return item.name.contains(q, ignoreCase = true) ||
+            alias?.contains(q, ignoreCase = true) == true ||
             item.keyHex.startsWith(q.lowercase())
     }
 
@@ -191,8 +197,12 @@ object NodeListModel {
             now - LastHeard.seconds(item) <= ACTIVE_WINDOW_SECONDS
     }
 
-    private fun <T : NodeListItem> comparatorFor(sort: Sort, self: SelfPosition?): Comparator<T> {
-        val byName = compareBy<T> { it.name.ifBlank { it.keyHex }.lowercase() }
+    private fun <T : NodeListItem> comparatorFor(
+        sort: Sort,
+        self: SelfPosition?,
+        alias: (T) -> String? = { null },
+    ): Comparator<T> {
+        val byName = compareBy<T> { (alias(it) ?: it.name).ifBlank { it.keyHex }.lowercase() }
             .thenBy { it.keyHex }
         return when (sort) {
             Sort.Activity ->
