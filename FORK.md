@@ -2,6 +2,7 @@
 
 MeshConnect is a fork of [MeshCore Hardened](https://github.com/thatSFguy/meshcore-mobile-app)
 by thatSFguy, forked at upstream commit `8f226db` (0.10.15, 2026-11-09).
+Last merged from upstream: `d731bfd` (0.11.0), on 2026-11-16.
 
 ## Where things live
 

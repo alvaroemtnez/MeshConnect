@@ -234,6 +234,10 @@ class Session:
             channel_msg(0, "Pau", "meshcore://channel/add?name=%23valencia&secret=" + CHANNELS[1][2].hex()),
             channel_msg(1, "Marta", "39.47520,-0.37900"),
             channel_msg(1, "Pau", "meshcore://channel/add?name=%23fallas&secret=" + key("#fallas")[:16].hex()),
+            # A direct-message request to this radio, and one between two others (DmRequest):
+            # one line with Accept / Decline, one plain line.
+            channel_msg(1, "Joan", f"DM request for @[{SELF_NAME}] mch:r:{key('Joan').hex()}"),
+            channel_msg(1, "Marta", f"DM request for @[Pau] mch:r:{key('Marta').hex()}"),
             contact_msg("Marta", "Hi! Are you coming to the meetup?"),
             contact_msg("Marta", f"<{key('Pau').hex()}:1:Pau>"),
             contact_msg("Marta", "39.46990,-0.37630"),
@@ -312,6 +316,8 @@ class Session:
         elif cmd == 56 and len(frame) > 1 and frame[1] == 1:  # CMD_GET_STATS, STATS_TYPE_RADIO
             self.send(bytes([24, 1]) + struct.pack("<hbbII", random.randint(-118, -108),
                                                     random.randint(-110, -70), random.randint(-40, 40), 1234, 5678))
+        elif cmd == 56 and len(frame) > 1 and frame[1] == 2:  # STATS_TYPE_PACKETS: seven u32
+            self.send(bytes([24, 2]) + struct.pack("<7I", 1204, 9, 3, 6, 1100, 104, 3))
         elif cmd == CMD_SEND_TRACE_PATH:
             self.trace(frame)
         elif cmd == 26:  # CMD_SEND_LOGIN: [26][pubkey 32][password]

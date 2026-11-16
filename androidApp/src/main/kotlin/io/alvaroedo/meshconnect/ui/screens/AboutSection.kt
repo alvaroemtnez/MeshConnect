@@ -285,6 +285,17 @@ private fun AboutGroup(title: String) {
  * fork is in docs/upstream/CHANGELOG-MeshCoreHardened.md.
  */
 private val CHANGELOG: List<Pair<String, List<String>>> = listOf(
+    "1.3.0" to listOf(
+        "MeshCore Hardened 0.10.16 to 0.11.0 brought in.",
+        "Simple mode: Chats and Settings only, for someone who just talks on a group's channel. It only hides.",
+        "Ask someone for a DM from a channel: long-press their message, Message privately; on Accept both radios add each other.",
+        "Nodes: each contact says whether you can talk to them (Two-way, Heard only…), from what the app already knows.",
+        "Check if they can hear you, on people and sensors; far heard-only nodes fold away and ask before adding.",
+        "Distance on node rows, sort by nearest, and the heard section follows the sort.",
+        "Codes and links from other apps confirm before adding, and a link waits for the radio.",
+        "Radio readings add packet counters; relayed messages show the last hop's SNR.",
+        "Reconnects when Bluetooth dies under a live link; no crash when Android refuses the background service.",
+    ),
     "1.2.1" to listOf(
         "Adding someone or a channel from New chat opens the conversation; Settings and Nodes still add without leaving.",
         "Map: what is shown (kinds, labels, links) moved to its own filter icon; the ⋮ keeps the actions, with icons.",

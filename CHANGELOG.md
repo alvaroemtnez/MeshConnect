@@ -11,6 +11,54 @@ MeshConnect is a fork of [MeshCore Hardened](https://github.com/thatSFguy/meshco
 Its history up to the fork point (0.10.15) is in
 [docs/upstream/CHANGELOG-MeshCoreHardened.md](docs/upstream/CHANGELOG-MeshCoreHardened.md).
 
+## 1.3.0
+
+Brings in MeshCore Hardened 0.10.16, 0.10.17 and 0.11.0.
+
+- **Simple mode.** For handing the app to someone who only needs to talk on a group's
+  channel. Choose it on the last first-run step or with the tile at the top of Settings. It
+  shows Chats and Settings only, leaves out the Public channel and repeater and room threads,
+  and hides hop counts, signal, routing and node detail. It only hides: nothing is changed,
+  and one tap shows the full app again.
+- **Ask someone for a DM from a channel.** Long-press their channel message and choose
+  "Message privately". They get Accept or Decline; on Accept, both radios add each other, so
+  direct messages work even with auto-add off. Everyone on the channel can see that you asked.
+  An accept only counts if you asked that person in the last 7 days, or shared your own code
+  in that time, so nobody can add themselves with a faked reply. In the thread, requests and
+  replies read as a small grey line in your language, not as a key. After adding someone from
+  a code or link, the app offers to post the same note on a channel you share, so they add you
+  back. It works with MeshCore Hardened.
+- **Can I talk to them?** Each contact on the Nodes list reads Two-way, Two-way before,
+  They've heard you, Heard only or No answer yet, worked out from what the app already knows
+  and without airtime: delivered messages, answered pings, sign-ins and telemetry, repeaters
+  heard relaying you, and routes a node sent back. The node card says what it rests on.
+- **Check if they can hear you.** People and sensors have a button on their card that asks
+  them for the route both ways. Most radios only answer if their owner allows it, so no answer
+  is explained rather than taken as proof they can't hear you.
+- **Far away, heard only.** Heard nodes that show no sign of hearing you and are 4 or more
+  hops or over 100 km away fold into their own group. Adding one asks first.
+- **Distance on node rows, and sort by nearest.** The heard section now follows the chosen
+  sort too, so "Fewest hops" no longer looks like it does nothing.
+- **Codes and links from other apps confirm before adding.** A signed contact code was added
+  straight away, and with auto-add off was reported as "Contact imported" when the radio had
+  declined it. It now gets the usual confirm card and really is added. A link tapped before the
+  radio connects waits until it does.
+- **Radio readings.** The top-bar sheet adds packets received and sent and receive errors,
+  shows "Measuring…" and "-120 dBm or lower" instead of misleading numbers, and stops asking
+  radios whose firmware has no readings.
+- **Message signal says whose it is.** On a relayed message the SNR is the last repeater's,
+  so it reads "last hop X dB". Channel messages that queued on the radio while the app was
+  closed keep their SNR.
+- **Ping** warns when other known nodes share the hop hash, since any of them could have
+  answered. On a mesh with 3-byte hop hashes, ping and trace now say they can't run instead of
+  sending a trace no node would answer.
+- **Reconnects when Bluetooth dies under it.** If the phone's Bluetooth restarted while
+  connected, the app kept saying "connected" with nothing getting through. A failed send now
+  counts as a lost link, and turning Bluetooth off drops the link at once.
+- **No crash when Android refuses the background service.** On Android 17 the app could crash
+  in a loop when the system restarted it in the background. It now stops quietly and starts
+  again the next time you open it.
+
 ## 1.2.1
 
 - **New chat opens the chat.** Adding someone from the New chat button (by scanning their code
