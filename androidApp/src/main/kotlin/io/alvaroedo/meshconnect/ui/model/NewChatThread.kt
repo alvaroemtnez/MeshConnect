@@ -1,8 +1,6 @@
 package io.alvaroedo.meshconnect.ui.model
 
 import io.alvaroedo.meshconnect.storage.MessageRepository
-import io.github.thatsfguy.meshcore.engine.MeshCoreEngine
-import io.github.thatsfguy.meshcore.protocol.Advert
 import io.github.thatsfguy.meshcore.protocol.Codes
 
 /**
@@ -25,13 +23,6 @@ object NewChatThread {
         pubKeyHex.lowercase()
             .takeIf { type == Codes.ADV_TYPE_CHAT && it.length == Codes.PUB_KEY_SIZE * 2 }
             ?.let { MessageRepository.KIND_DM to it }
-
-    /** A signed advert blob (a raw packet), read the same way the engine verifies it. */
-    fun forAdvert(blob: ByteArray): Pair<String, String>? {
-        val payload = MeshCoreEngine.extractAdvertPayload(blob) ?: return null
-        val info = Advert.parse(payload) ?: return null
-        return forContact(info.publicKeyHex, info.type)
-    }
 
     /** A channel slot — the one just written, or the one already holding that key. */
     fun forChannel(index: Int): Pair<String, String>? =

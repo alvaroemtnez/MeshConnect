@@ -2,10 +2,7 @@ package io.alvaroedo.meshconnect.ui
 
 import io.alvaroedo.meshconnect.storage.MessageRepository
 import io.alvaroedo.meshconnect.ui.model.NewChatThread
-import io.github.thatsfguy.meshcore.platform.androidCryptoProvider
-import io.github.thatsfguy.meshcore.protocol.Advert
 import io.github.thatsfguy.meshcore.protocol.Codes
-import io.github.thatsfguy.meshcore.util.toHex
 import java.io.File
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -45,34 +42,18 @@ class NewChatThreadTest {
         assertNull(NewChatThread.forChannel(-1))
     }
 
-    /** A signed advert, wrapped as the packet a `meshcore://<hex>` code carries. */
-    private fun advertPacket(type: Int): Pair<ByteArray, String> {
-        val crypto = androidCryptoProvider()
-        val seed = ByteArray(32) { (it + 1).toByte() }
-        val payload = Advert.build(
-            crypto,
-            seed,
-            timestamp = 1_700_000_000L,
-            appData = Advert.buildAppData(type, "Alice", null, null),
-        )
-        val header = (Codes.PAYLOAD_TYPE_ADVERT shl 2) or 0x01
-        return (byteArrayOf(header.toByte(), 0) + payload) to crypto.ed25519PublicKey(seed).toHex()
-    }
-
     @Test
-    fun `an advert code opens the DM of the key it carries`() {
-        val (blob, pub) = advertPacket(Codes.ADV_TYPE_CHAT)
-        assertEquals(MessageRepository.KIND_DM to pub, NewChatThread.forAdvert(blob))
-    }
-
-    @Test
-    fun `a repeater's advert opens nothing, and nor does junk`() {
-        assertNull(NewChatThread.forAdvert(advertPacket(Codes.ADV_TYPE_REPEATER).first))
-        assertNull(NewChatThread.forAdvert(ByteArray(3)))
-        // The bare payload, not a packet: the engine would refuse it, so must this.
-        val crypto = androidCryptoProvider()
-        val bare = Advert.build(crypto, ByteArray(32) { 7 }, 1L, Advert.buildAppData(Codes.ADV_TYPE_CHAT, "x", null, null))
-        assertNull(NewChatThread.forAdvert(bare))
+    fun `an advert code becomes a confirm card, and the card opens the chat`() {
+        // Advert codes are verified into a contact card (contactCardFromAdvert, tested in
+        // shared) and added through confirmContactCard, which opens via forContact.
+        val vm = File("src/main/kotlin/io/alvaroedo/meshconnect/ui/MeshCoreViewModel.kt").readText()
+        val advert = vm.substringAfter("private fun importAdvertBlob(").substringBefore("/** Commit a contact card")
+        assertTrue(advert.contains("svc.engine.contactCardFromAdvert(blob)"))
+        assertTrue(advert.contains("pendingOpensChat = openChat"))
+        assertTrue(advert.contains("pendingContactCard.value = card"))
+        assertFalse(vm.contains("engine.importContact("))
+        val confirm = vm.substringAfter("fun confirmContactCard(").substringBefore("fun dismissContactCard(")
+        assertTrue(confirm.contains("NewChatThread.forContact(card.pubKeyHex, card.type)"))
     }
 
     // ---- wiring: only New chat asks ----

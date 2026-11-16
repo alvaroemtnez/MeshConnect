@@ -34,6 +34,20 @@ class SharedTextResourcesTest {
     }
 
     @Test
+    fun `a relayed message's SNR is the last hop's, a direct one is the sender's`() {
+        val en = resources("en")
+        assertEquals("6.5 dB", SharedText.snrFooter(en, 6.5, hops = 0))
+        assertEquals("last hop 6.5 dB", SharedText.snrFooter(en, 6.5, hops = 2))
+        // Routed (-1) and unknown (null) are not known to be direct either.
+        assertEquals("last hop -3.2 dB", SharedText.snrFooter(en, -3.2, hops = -1))
+        assertEquals("last hop 1.0 dB", SharedText.snrFooter(en, 1.0, hops = null))
+        assertEquals(null, SharedText.snrFooter(en, null, hops = 0))
+        assertEquals("último salto 6.5 dB", SharedText.snrFooter(resources("es"), 6.5, hops = 3))
+        assertEquals("SNR, the sender's own", SharedText.snrInfoLabel(en, 0))
+        assertEquals("SNR of the last repeater", SharedText.snrInfoLabel(en, 1))
+    }
+
+    @Test
     fun `no composable hands SharedText a Context`() {
         val screens = File("src/main/kotlin/io/alvaroedo/meshconnect/ui/screens")
         val calls = Regex("""SharedText\.\w+\(\s*([\w.]+)""")

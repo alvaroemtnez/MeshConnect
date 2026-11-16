@@ -96,6 +96,7 @@
     <string name="trace_waiting">Waiting for the reply…</string>
     <string name="trace_no_reply">No reply. The node may be out of range, or the stored route may be stale.</string>
     <string name="trace_direct">There\'s no repeater between you to trace: messages to this contact go direct or flood.</string>
+    <string name="trace_width_unsupported">This mesh uses 3-byte hop hashes, which a trace can\'t carry (only 1, 2 or 4), so it can\'t be pinged or traced.</string>
     <string name="trace_unknown">This node isn\'t on the radio\'s contact list.</string>
     <string name="trace_done">Round trip %1$s s · %2$d hops</string>
     <string name="widget_description">Your radio at a glance: connection, battery, signal and new messages.</string>
@@ -673,6 +674,7 @@
     <string name="vm_clipboard_empty">Nothing on the clipboard</string>
     <string name="vm_clipboard_no_code">No MeshCore code on the clipboard</string>
     <string name="vm_code_newer">This settings code needs a newer version of the app (format v%1$d)</string>
+    <string name="vm_link_held">This link will open once your radio is connected</string>
     <string name="vm_not_meshcore">Not a MeshCore code: expected a contact, channel, settings or community QR</string>
     <string name="vm_advert_bad_signature">Not added: this code\'s signature doesn\'t check out</string>
     <string name="vm_shared_channel">Shared channel</string>
@@ -1255,6 +1257,18 @@
     <string name="link_last_rssi">Last RSSI</string>
     <string name="link_last_snr">Last SNR</string>
     <string name="link_airtime_label">Airtime sent / received</string>
+    <string name="snr_last_hop">last hop %1$s</string>
+    <string name="info_snr_direct">SNR, the sender\'s own</string>
+    <string name="info_snr_last_hop">SNR of the last repeater</string>
+    <string name="link_noise_measuring">Measuring…</string>
+    <string name="link_noise_clamp">%1$d dBm or lower</string>
+    <string name="link_noise_range">Noise floor low %1$d · high %2$d dBm while this is open.</string>
+    <string name="link_packets_label">Packets received / sent</string>
+    <string name="link_rx_errors">Receive errors</string>
+    <string name="link_last_hint">Last RSSI and SNR are from whichever node your radio heard last, not from any one link.</string>
+    <string name="link_last_nothing">Nothing received since the radio started.</string>
+    <string name="link_stats_unsupported">This radio\'s firmware doesn\'t report signal readings.</string>
+    <string name="link_stats_no_answer">The radio didn\'t answer.</string>
     <string name="link_repeaters">Repeaters heard directly</string>
     <string name="link_repeaters_hint">The last relay of each flooded packet your radio received, strongest first. Only the last 15 minutes count.</string>
     <string name="link_no_repeaters">No repeater heard in the last 15 minutes.</string>
@@ -1400,6 +1414,10 @@
     <plurals name="via_flooded">
         <item quantity="one">Flooded across %1$d hop, but which repeater carried it isn\'t known: the message frame states a count only.</item>
         <item quantity="other">Flooded across %1$d hops, but which repeaters carried it isn\'t known: the message frame states a count only.</item>
+    </plurals>
+    <plurals name="trace_shared_hash">
+        <item quantity="one">%1$d other known node shares this hop hash, so the reply may have come from it.</item>
+        <item quantity="other">%1$d other known nodes share this hop hash, so the reply may have come from one of them.</item>
     </plurals>
     <plurals name="hops">
         <item quantity="one">%1$d hop</item>

@@ -32,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -180,6 +181,14 @@ fun TraceScreen(vm: MeshCoreViewModel, nav: NavController, keyHex: String) {
                         Text(stringResource(R.string.trace_again))
                     }
                 }
+                run?.sharedHash?.takeIf { it > 0 && !running }?.let { n ->
+                    Text(
+                        pluralStringResource(R.plurals.trace_shared_hash, n, n),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.padding(horizontal = 16.dp).padding(bottom = 8.dp),
+                    )
+                }
                 LazyColumn(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(0.dp)) {
                     itemsIndexed(legs ?: emptyList()) { _, leg ->
                         val from = leg.fromHash?.let { nameOf(resolve(it), it) } ?: stringResource(R.string.trace_you)
@@ -215,6 +224,7 @@ private fun traceSummary(run: MeshCoreViewModel.TraceRun?, running: Boolean): St
     run.refused == MeshCoreViewModel.TraceRefusal.NotConnected -> stringResource(R.string.link_not_connected)
     run.refused == MeshCoreViewModel.TraceRefusal.UnknownNode -> stringResource(R.string.trace_unknown)
     run.refused == MeshCoreViewModel.TraceRefusal.NoRepeater -> stringResource(R.string.trace_direct)
+    run.refused == MeshCoreViewModel.TraceRefusal.WidthUnsupported -> stringResource(R.string.trace_width_unsupported)
     run.result == null -> stringResource(R.string.trace_no_reply)
     else -> stringResource(
         R.string.trace_done,

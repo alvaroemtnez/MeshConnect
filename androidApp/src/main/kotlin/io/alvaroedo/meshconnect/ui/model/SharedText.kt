@@ -49,6 +49,21 @@ object SharedText {
         else -> res.getQuantityString(R.plurals.hops, hops, hops)
     }
 
+    /**
+     * A received message's SNR under its bubble. The radio reports the signal of the LAST
+     * transmission it heard: after a relay that is the last repeater's, not the sender's, so
+     * anything not known to be direct says so (upstream 0.10.16, MessageSignal).
+     */
+    fun snrFooter(res: Resources, snr: Double?, hops: Int?): String? {
+        snr ?: return null
+        val db = String.format(java.util.Locale.ROOT, "%.1f dB", snr)
+        return if (hops == 0) db else res.getString(R.string.snr_last_hop, db)
+    }
+
+    /** The info sheet's label for that SNR: the sender's own only when heard direct. */
+    fun snrInfoLabel(res: Resources, hops: Int?): String =
+        res.getString(if (hops == 0) R.string.info_snr_direct else R.string.info_snr_last_hop)
+
     /** ConversationScreen.arrivalLabel (the info sheet). */
     fun arrival(res: Resources, hops: Int?): String? = when {
         hops == null -> null

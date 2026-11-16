@@ -1342,9 +1342,20 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
         val roundTripMs: Long,
         /** Why nothing was sent, when nothing was. */
         val refused: TraceRefusal? = null,
+        /**
+         * On a ping that answered: how many OTHER known nodes share the target's hop
+         * hash. Each of them forwards a trace addressed to it, so the reply proves that
+         * *a* node with this hash answered, not necessarily this one (upstream Ping).
+         */
+        val sharedHash: Int = 0,
     )
 
-    enum class TraceRefusal { NotConnected, UnknownNode, NoRepeater }
+    /**
+     * [WidthUnsupported]: a trace's flags carry log2 of the hop-hash width in two bits,
+     * so only 1, 2 and 4 bytes exist on the wire; a 3-byte mesh would be sent a trace
+     * declaring 4-byte hops, which no node matches (Ping.TRACE_WIDTHS).
+     */
+    enum class TraceRefusal { NotConnected, UnknownNode, NoRepeater, WidthUnsupported }
 
     /**
      * Ping a repeater/room/sensor, or trace towards a person, along the
@@ -1355,6 +1366,9 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
         val contact = svc.engine.contacts.value[keyHex]
             ?: return TraceRun(emptyList(), null, 0, TraceRefusal.UnknownNode)
         val width = deviceInfo.value?.pathHashByteWidth ?: 1
+        if (width !in io.github.thatsfguy.meshcore.presentation.Ping.TRACE_WIDTHS) {
+            return TraceRun(emptyList(), null, 0, TraceRefusal.WidthUnsupported)
+        }
         val info = contact.pathInfo
         // The stored route is only usable at the mesh's own width: a trace
         // declares one width for every hop.
@@ -1378,7 +1392,17 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
         val result = runCatching {
             svc.engine.tracePath(tag, io.alvaroedo.meshconnect.ui.model.TraceRoutes.toBytes(hops), width)
         }.getOrNull()
-        return TraceRun(hops, result, android.os.SystemClock.elapsedRealtime() - started)
+        val elapsed = android.os.SystemClock.elapsedRealtime() - started
+        val shared = if (forwards && result != null) {
+            io.github.thatsfguy.meshcore.presentation.Ping.sharedPrefixCount(
+                io.alvaroedo.meshconnect.ui.model.TraceRoutes.hashOf(keyHex, width),
+                keyHex,
+                svc.engine.contacts.value.keys + discovered.value.map { it.keyHex },
+            )
+        } else {
+            0
+        }
+        return TraceRun(hops, result, elapsed, sharedHash = shared)
     }
 
     fun resetPath(keyHex: String) {
@@ -1559,6 +1583,33 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
             return
         }
         importScannedCode(code, openChat)
+    }
+
+    /**
+     * A meshcore:// link tapped in another app. Decoded into the scanner's
+     * confirmations, never applied on its own, and held until the radio is connected:
+     * adding a contact or joining a channel writes to the radio, and the commonest
+     * way to open a link is cold, seconds before the radio has reconnected. Waiting
+     * only for the service let the add fail at the confirm (upstream 0.11.0, LinkInbox).
+     */
+    fun openIncomingLink(raw: String?) {
+        when (val offer = linkInbox.offer(raw, engineState.value == EngineState.Ready)) {
+            is io.github.thatsfguy.meshcore.presentation.LinkInbox.Offer.Open -> importScannedCode(offer.link)
+            io.github.thatsfguy.meshcore.presentation.LinkInbox.Offer.Held ->
+                transientMessage.value = str(R.string.vm_link_held)
+            io.github.thatsfguy.meshcore.presentation.LinkInbox.Offer.Ignored ->
+                transientMessage.value = str(R.string.vm_not_meshcore)
+        }
+    }
+
+    private val linkInbox = io.github.thatsfguy.meshcore.presentation.LinkInbox()
+
+    init {
+        viewModelScope.launch {
+            engineState.collect { state ->
+                if (state == EngineState.Ready) linkInbox.onReady()?.let { importScannedCode(it) }
+            }
+        }
     }
 
     /** [openChat]: the code came from New chat — see [pendingOpensChat]. */

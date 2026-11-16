@@ -93,6 +93,7 @@
     <string name="trace_waiting">Esperando la respuesta…</string>
     <string name="trace_no_reply">Sin respuesta. Puede que el nodo esté fuera de alcance o que la ruta guardada esté obsoleta.</string>
     <string name="trace_direct">No hay ningún repetidor entre vosotros que trazar: los mensajes a este contacto van directos o por inundación.</string>
+    <string name="trace_width_unsupported">Esta malla usa hashes de salto de 3 bytes, que una traza no puede llevar (solo 1, 2 o 4), así que no se puede hacer ping ni trazar.</string>
     <string name="trace_unknown">Este nodo no está en la lista de contactos de la radio.</string>
     <string name="trace_done">Ida y vuelta %1$s s · %2$d saltos</string>
     <string name="widget_description">Tu radio de un vistazo: conexión, batería, señal y mensajes nuevos.</string>
@@ -670,6 +671,7 @@
     <string name="vm_clipboard_empty">No hay nada en el portapapeles</string>
     <string name="vm_clipboard_no_code">No hay ningún código de MeshCore en el portapapeles</string>
     <string name="vm_code_newer">Este código de ajustes necesita una versión más nueva de la app (formato v%1$d)</string>
+    <string name="vm_link_held">Este enlace se abrirá cuando la radio esté conectada</string>
     <string name="vm_not_meshcore">No es un código de MeshCore: se esperaba un QR de contacto, canal, ajustes o comunidad</string>
     <string name="vm_advert_bad_signature">No se ha añadido: la firma de este código no es válida</string>
     <string name="vm_shared_channel">Canal compartido</string>
@@ -1252,6 +1254,18 @@
     <string name="link_last_rssi">Último RSSI</string>
     <string name="link_last_snr">Último SNR</string>
     <string name="link_airtime_label">Tiempo en el aire enviado / recibido</string>
+    <string name="snr_last_hop">último salto %1$s</string>
+    <string name="info_snr_direct">SNR, del remitente</string>
+    <string name="info_snr_last_hop">SNR del último repetidor</string>
+    <string name="link_noise_measuring">Midiendo…</string>
+    <string name="link_noise_clamp">%1$d dBm o menos</string>
+    <string name="link_noise_range">Ruido de fondo mínimo %1$d · máximo %2$d dBm mientras esto está abierto.</string>
+    <string name="link_packets_label">Paquetes recibidos / enviados</string>
+    <string name="link_rx_errors">Errores de recepción</string>
+    <string name="link_last_hint">El último RSSI y SNR son del nodo que tu radio oyó por última vez, no de un enlace concreto.</string>
+    <string name="link_last_nothing">No se ha recibido nada desde que se encendió la radio.</string>
+    <string name="link_stats_unsupported">El firmware de esta radio no informa de lecturas de señal.</string>
+    <string name="link_stats_no_answer">La radio no ha respondido.</string>
     <string name="link_repeaters">Repetidores oídos directamente</string>
     <string name="link_repeaters_hint">El último salto de cada paquete en inundación que ha recibido tu radio, del más fuerte al más débil. Solo cuentan los últimos 15 minutos.</string>
     <string name="link_no_repeaters">Ningún repetidor oído en los últimos 15 minutos.</string>
@@ -1415,6 +1429,11 @@
         <item quantity="one">Por inundación con %1$d salto, pero no se sabe qué repetidor lo llevó: la trama solo indica el número.</item>
         <item quantity="many">Por inundación con %1$d saltos, pero no se sabe qué repetidores lo llevaron: la trama solo indica el número.</item>
         <item quantity="other">Por inundación con %1$d saltos, pero no se sabe qué repetidores lo llevaron: la trama solo indica el número.</item>
+    </plurals>
+    <plurals name="trace_shared_hash">
+        <item quantity="one">%1$d nodo conocido más comparte este hash de salto, así que la respuesta puede venir de él.</item>
+        <item quantity="many">%1$d nodos conocidos más comparten este hash de salto, así que la respuesta puede venir de uno de ellos.</item>
+        <item quantity="other">%1$d nodos conocidos más comparten este hash de salto, así que la respuesta puede venir de uno de ellos.</item>
     </plurals>
     <plurals name="hops">
         <item quantity="one">%1$d salto</item>

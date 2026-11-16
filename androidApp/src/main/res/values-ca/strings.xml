@@ -93,6 +93,7 @@
     <string name="trace_waiting">Esperant la resposta…</string>
     <string name="trace_no_reply">Sense resposta. Pot ser que el node estiga fora d\'abast o que la ruta guardada estiga obsoleta.</string>
     <string name="trace_direct">No hi ha cap repetidor entre vosaltres per a traçar: els missatges a aquest contacte van directes o per inundació.</string>
+    <string name="trace_width_unsupported">Aquesta malla usa hashes de salt de 3 bytes, que una traça no pot portar (només 1, 2 o 4), així que no es pot fer ping ni traçar.</string>
     <string name="trace_unknown">Aquest node no està en la llista de contactes de la ràdio.</string>
     <string name="trace_done">Anada i tornada %1$s s · %2$d salts</string>
     <string name="widget_description">La teua ràdio d\'un colp d\'ull: connexió, bateria, senyal i missatges nous.</string>
@@ -670,6 +671,7 @@
     <string name="vm_clipboard_empty">No hi ha res en el porta-retalls</string>
     <string name="vm_clipboard_no_code">No hi ha cap codi de MeshCore en el porta-retalls</string>
     <string name="vm_code_newer">Aquest codi d\'ajustos necessita una versió més nova de l\'aplicació (format v%1$d)</string>
+    <string name="vm_link_held">Aquest enllaç s\'obrirà quan la ràdio estiga connectada</string>
     <string name="vm_not_meshcore">No és un codi de MeshCore: s\'esperava un QR de contacte, canal, ajustos o comunitat</string>
     <string name="vm_advert_bad_signature">No s\'ha afegit: la signatura d\'aquest codi no és vàlida</string>
     <string name="vm_shared_channel">Canal compartit</string>
@@ -1252,6 +1254,18 @@
     <string name="link_last_rssi">Últim RSSI</string>
     <string name="link_last_snr">Últim SNR</string>
     <string name="link_airtime_label">Temps en l\'aire enviat / rebut</string>
+    <string name="snr_last_hop">últim salt %1$s</string>
+    <string name="info_snr_direct">SNR, del remitent</string>
+    <string name="info_snr_last_hop">SNR de l\'últim repetidor</string>
+    <string name="link_noise_measuring">Mesurant…</string>
+    <string name="link_noise_clamp">%1$d dBm o menys</string>
+    <string name="link_noise_range">Soroll de fons mínim %1$d · màxim %2$d dBm mentre açò està obert.</string>
+    <string name="link_packets_label">Paquets rebuts / enviats</string>
+    <string name="link_rx_errors">Errors de recepció</string>
+    <string name="link_last_hint">L\'últim RSSI i SNR són del node que la teua ràdio va escoltar per última vegada, no d\'un enllaç concret.</string>
+    <string name="link_last_nothing">No s\'ha rebut res des que es va encendre la ràdio.</string>
+    <string name="link_stats_unsupported">El firmware d\'aquesta ràdio no informa de lectures de senyal.</string>
+    <string name="link_stats_no_answer">La ràdio no ha respost.</string>
     <string name="link_repeaters">Repetidors escoltats directament</string>
     <string name="link_repeaters_hint">L\'últim salt de cada paquet en inundació que ha rebut la teua ràdio, del més fort al més feble. Només compten els últims 15 minuts.</string>
     <string name="link_no_repeaters">Cap repetidor escoltat en els últims 15 minuts.</string>
@@ -1415,6 +1429,11 @@
         <item quantity="one">Per inundació amb %1$d salt, però no se sap quin repetidor el va portar: la trama només indica el nombre.</item>
         <item quantity="many">Per inundació amb %1$d salts, però no se sap quins repetidors el van portar: la trama només indica el nombre.</item>
         <item quantity="other">Per inundació amb %1$d salts, però no se sap quins repetidors el van portar: la trama només indica el nombre.</item>
+    </plurals>
+    <plurals name="trace_shared_hash">
+        <item quantity="one">%1$d node conegut més comparteix aquest hash de salt, així que la resposta pot vindre d\'ell.</item>
+        <item quantity="many">%1$d nodes coneguts més compartixen aquest hash de salt, així que la resposta pot vindre d\'un d\'ells.</item>
+        <item quantity="other">%1$d nodes coneguts més compartixen aquest hash de salt, així que la resposta pot vindre d\'un d\'ells.</item>
     </plurals>
     <plurals name="hops">
         <item quantity="one">%1$d salt</item>

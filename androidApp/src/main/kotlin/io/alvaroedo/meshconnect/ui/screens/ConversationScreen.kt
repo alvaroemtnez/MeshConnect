@@ -1596,7 +1596,13 @@ private fun MessageInfoSheet(
                 Spacer(Modifier.height(8.dp))
                 TileRow {
                     arrival?.let { InfoTile(stringResource(R.string.info_arrival), it, Modifier.weight(1f).fillMaxHeight()) }
-                    m.snr?.let { InfoTile("SNR", "%.1f dB".format(it), Modifier.weight(1f).fillMaxHeight()) }
+                    m.snr?.let {
+                        InfoTile(
+                            io.alvaroedo.meshconnect.ui.model.SharedText.snrInfoLabel(androidx.compose.ui.platform.LocalResources.current, m.hops),
+                            String.format(java.util.Locale.ROOT, "%.1f dB", it),
+                            Modifier.weight(1f).fillMaxHeight(),
+                        )
+                    }
                 }
             }
             copiesLabel(m.copies)?.let {
@@ -1909,7 +1915,7 @@ private fun MessageFooter(m: MessageEntity) {
             // Who picked this up off the air; absent is not "nobody".
             if (m.outgoing) MessageRepeats.badge(m.repeatHopsHex, m.repeatHashWidth)?.let { add(it) }
             io.alvaroedo.meshconnect.ui.model.SharedText.footerHops(androidx.compose.ui.platform.LocalResources.current, m.hops)?.let { add(it) }
-            m.snr?.let { add(String.format(java.util.Locale.ROOT, "%.1f dB", it)) }
+            io.alvaroedo.meshconnect.ui.model.SharedText.snrFooter(androidx.compose.ui.platform.LocalResources.current, m.snr, m.hops)?.let { add(it) }
         }
         if (extras.isNotEmpty()) {
             Text("  ·  " + extras.joinToString("  ·  "), style = style, color = ink, maxLines = 1)

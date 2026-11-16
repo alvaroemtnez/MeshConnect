@@ -1,5 +1,7 @@
 package io.alvaroedo.meshconnect.ui.screens
 
+import io.alvaroedo.meshconnect.ui.model.RadioReadings
+import io.github.thatsfguy.meshcore.presentation.SignalPoll
 import androidx.activity.compose.BackHandler
 import androidx.annotation.DrawableRes
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -558,41 +560,27 @@ private fun LinkSheet(vm: MeshCoreViewModel, onDismiss: () -> Unit) {
                     colors = rows,
                 )
             }
-            // Live while the sheet is open; firmware before v8 has no stats.
-            var stats by remember { mutableStateOf<io.github.thatsfguy.meshcore.protocol.RadioStats.Radio?>(null) }
+            // Live while the sheet is open. The poll's rules are upstream's SignalPoll:
+            // firmware before v8 refuses stats every time, so an Unsupported before any
+            // reading stops the loop; silence keeps the last reading on screen.
+            val poll = remember { io.github.thatsfguy.meshcore.presentation.SignalPoll() }
+            val noiseRange = remember { io.alvaroedo.meshconnect.ui.model.RadioReadings.NoiseRange() }
+            var view by remember { mutableStateOf(poll.view) }
+            var range by remember { mutableStateOf<Pair<Int, Int>?>(null) }
             LaunchedEffect(Unit) {
                 while (true) {
-                    stats = (vm.radioStats() as? io.github.thatsfguy.meshcore.engine.MeshCoreEngine.Stats.Reading)?.radio ?: stats
+                    val result = vm.radioStats()
+                    val keepGoing = poll.onResult(result)
+                    (result as? io.github.thatsfguy.meshcore.engine.MeshCoreEngine.Stats.Reading)?.let {
+                        noiseRange.add(it.radio.noiseFloorDbm)
+                        range = noiseRange.range()
+                    }
+                    view = poll.view
+                    if (!keepGoing) break
                     kotlinx.coroutines.delay(3_000)
                 }
             }
-            stats?.let { st ->
-                // Readings as labelled tiles, two to a row: the paragraph they were
-                // wrapped mid-phrase on a phone ("last / SNR 8.00 dB").
-                SheetSection(stringResource(R.string.link_radio))
-                Column(
-                    Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        StatTile(stringResource(R.string.link_noise), "${st.noiseFloorDbm} dBm", Modifier.weight(1f))
-                        StatTile(stringResource(R.string.link_last_rssi), "${st.lastRssiDbm} dBm", Modifier.weight(1f))
-                    }
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        StatTile(
-                            stringResource(R.string.link_last_snr),
-                            String.format(java.util.Locale.ROOT, "%.1f dB", st.lastSnrDb),
-                            Modifier.weight(1f),
-                        )
-                        StatTile(
-                            stringResource(R.string.link_airtime_label),
-                            android.text.format.DateUtils.formatElapsedTime(st.txAirSecs) + " / " +
-                                android.text.format.DateUtils.formatElapsedTime(st.rxAirSecs),
-                            Modifier.weight(1f),
-                        )
-                    }
-                }
-            }
+            RadioReadingsSection(view, range)
             HorizontalDivider(Modifier.padding(top = 12.dp, bottom = 4.dp))
             SheetSection(stringResource(R.string.link_repeaters))
             Text(
@@ -659,6 +647,82 @@ private fun SheetSection(title: String) {
 }
 
 /** One reading: a small label over its value, on a tinted rounded tile. */
+/** The connected radio's own readings, as tiles; see [io.alvaroedo.meshconnect.ui.model.RadioReadings]. */
+@Composable
+private fun RadioReadingsSection(
+    view: SignalPoll.View,
+    range: Pair<Int, Int>?,
+) {
+    when (view) {
+        // Nothing to show until the first answer; a spinner here would flash on every open.
+        SignalPoll.View.Waiting -> return
+        SignalPoll.View.NoAnswer, SignalPoll.View.Unsupported -> {
+            SheetSection(stringResource(R.string.link_radio))
+            Text(
+                stringResource(if (view == SignalPoll.View.Unsupported) R.string.link_stats_unsupported else R.string.link_stats_no_answer),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 24.dp, vertical = 4.dp),
+            )
+            return
+        }
+        is SignalPoll.View.Showing -> Unit
+    }
+    val radio = view.reading.radio
+    val packets = view.reading.packets
+    val nothing = RadioReadings.nothingHeard(radio, packets)
+    // Readings as labelled tiles, two to a row: the paragraph they were
+    // wrapped mid-phrase on a phone ("last / SNR 8.00 dB").
+    SheetSection(stringResource(R.string.link_radio))
+    Column(
+        Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            val noise = when (val n = RadioReadings.noise(radio.noiseFloorDbm)) {
+                RadioReadings.Noise.Measuring -> stringResource(R.string.link_noise_measuring)
+                is RadioReadings.Noise.AtClamp -> stringResource(R.string.link_noise_clamp, n.dbm)
+                is RadioReadings.Noise.Value -> "${n.dbm} dBm"
+            }
+            StatTile(stringResource(R.string.link_noise), noise, Modifier.weight(1f))
+            StatTile(
+                stringResource(R.string.link_last_rssi),
+                if (nothing) "—" else "${radio.lastRssiDbm} dBm",
+                Modifier.weight(1f),
+            )
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            StatTile(
+                stringResource(R.string.link_last_snr),
+                if (nothing) "—" else String.format(java.util.Locale.ROOT, "%.1f dB", radio.lastSnrDb),
+                Modifier.weight(1f),
+            )
+            StatTile(
+                stringResource(R.string.link_airtime_label),
+                android.text.format.DateUtils.formatElapsedTime(radio.txAirSecs) + " / " +
+                    android.text.format.DateUtils.formatElapsedTime(radio.rxAirSecs),
+                Modifier.weight(1f),
+            )
+        }
+        packets?.let { p ->
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                StatTile(stringResource(R.string.link_packets_label), "${p.received} / ${p.sent}", Modifier.weight(1f))
+                StatTile(stringResource(R.string.link_rx_errors), "${p.receiveErrors}", Modifier.weight(1f))
+            }
+        }
+    }
+    val notes = buildList {
+        range?.let { (low, high) -> add(stringResource(R.string.link_noise_range, low, high)) }
+        add(stringResource(if (nothing) R.string.link_last_nothing else R.string.link_last_hint))
+    }
+    Text(
+        notes.joinToString("\n"),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(horizontal = 24.dp, vertical = 4.dp),
+    )
+}
+
 @Composable
 private fun StatTile(label: String, value: String, modifier: Modifier = Modifier) {
     Surface(

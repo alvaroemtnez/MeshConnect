@@ -84,4 +84,31 @@ class TraceRoutesTest {
         assertNull(TraceRoutes.legs(listOf("b389"), listOf(1.0)))
         assertNull(TraceRoutes.legs(listOf("b389"), listOf(1.0, 2.0, 3.0)))
     }
+
+    private val vm = java.io.File("src/main/kotlin/io/alvaroedo/meshconnect/ui/MeshCoreViewModel.kt").readText()
+    private val traceNode = vm.substringAfter("suspend fun traceNode(").substringBefore("fun resetPath(")
+
+    @Test
+    fun `a 3-byte mesh is refused before anything is sent`() {
+        // The flags byte can only declare 1, 2 or 4 (TracePath.flagsForHashWidth(3) is 2,
+        // i.e. 4-byte hops), so a trace on a 3-byte mesh would go out malformed.
+        assertEquals(setOf(1, 2, 4), io.github.thatsfguy.meshcore.presentation.Ping.TRACE_WIDTHS)
+        val refusal = traceNode.indexOf("TraceRefusal.WidthUnsupported")
+        val send = traceNode.indexOf("svc.engine.tracePath(")
+        assert(refusal in 0 until send)
+    }
+
+    @Test
+    fun `an answered ping counts the other known nodes on its hash`() {
+        assert(traceNode.contains("Ping.sharedPrefixCount("))
+        assert(traceNode.contains("if (forwards && result != null)"))
+        assertEquals(
+            1,
+            io.github.thatsfguy.meshcore.presentation.Ping.sharedPrefixCount(
+                "b3",
+                "b3" + "00".repeat(31),
+                listOf("b3" + "00".repeat(31), "B3" + "11".repeat(31), "c9" + "00".repeat(31)),
+            ),
+        )
+    }
 }

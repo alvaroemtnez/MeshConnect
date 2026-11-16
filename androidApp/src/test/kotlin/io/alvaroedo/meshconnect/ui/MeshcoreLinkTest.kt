@@ -7,7 +7,8 @@ import org.junit.Test
 /**
  * meshcore:// links open the app (2026-11-10): a camera app's QR scan or a tapped link went to
  * whichever other app claimed the scheme. They take the in-app scanner's path, so the same
- * confirmations apply, and wait for the radio service, which a cold start does not have yet.
+ * confirmations apply, and wait until the radio is connected, which a cold start is not yet
+ * (LinkInbox, upstream 0.11.0).
  */
 class MeshcoreLinkTest {
 
@@ -22,10 +23,16 @@ class MeshcoreLinkTest {
         assertTrue(main.contains("android:scheme=\"meshcore\""))
     }
 
+    private val vm = File("src/main/kotlin/io/alvaroedo/meshconnect/ui/MeshCoreViewModel.kt").readText()
+
     @Test
-    fun `a link is imported through the scanner once the service is bound`() {
-        assertTrue(shell.contains("if (service == null) return@LaunchedEffect"))
-        assertTrue(shell.contains("vm.importScannedCode(text)"))
+    fun `a link waits for the radio, then goes through the scanner`() {
+        assertTrue(shell.contains("vm.openIncomingLink(text)"))
+        val open = vm.substringAfter("fun openIncomingLink(").substringBefore("private val linkInbox")
+        assertTrue(open.contains("linkInbox.offer(raw, engineState.value == EngineState.Ready)"))
+        assertTrue(open.contains("is io.github.thatsfguy.meshcore.presentation.LinkInbox.Offer.Open -> importScannedCode(offer.link)"))
+        // The held link opens when the radio is ready, at most once (LinkInbox.onReady).
+        assertTrue(vm.contains("if (state == EngineState.Ready) linkInbox.onReady()?.let { importScannedCode(it) }"))
         // Both a cold start and a running app's new intent deliver it.
         assertTrue(shell.contains("if (savedInstanceState == null) openLink.value = linkFrom(intent)"))
         assertTrue(shell.contains("linkFrom(intent)?.let { openLink.value = it }"))

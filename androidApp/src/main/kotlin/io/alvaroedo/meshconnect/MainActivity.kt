@@ -245,16 +245,14 @@ private fun AppShell(
         }
     }
 
-    // A meshcore:// link from outside, imported once the radio service is bound (a link
-    // that starts the app arrives before it is, and the import needs it). Through the
-    // scanner's path, so it gets the scanner's confirmations.
+    // A meshcore:// link from outside. The view model holds it until the radio is
+    // connected (a link that starts the app arrives well before), then sends it through
+    // the scanner's path, so it gets the scanner's confirmations.
     val link by openLink.collectAsStateWithLifecycle()
-    val service by vm.service.collectAsStateWithLifecycle()
-    LaunchedEffect(link, service) {
+    LaunchedEffect(link) {
         val text = link ?: return@LaunchedEffect
-        if (service == null) return@LaunchedEffect
         openLink.value = null
-        vm.importScannedCode(text)
+        vm.openIncomingLink(text)
     }
 
     val transient by vm.transientMessage.collectAsStateWithLifecycle()
