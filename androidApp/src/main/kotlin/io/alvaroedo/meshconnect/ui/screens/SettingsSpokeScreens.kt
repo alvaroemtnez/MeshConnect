@@ -238,17 +238,58 @@ fun SettingsAppScreen(vm: MeshCoreViewModel, nav: NavController) {
                 .verticalScroll(rememberScrollState()),
         ) {
             SettingsGroupHeader(stringResource(R.string.set_appearance))
+            SimpleModeSwitch(vm)
+            Spacer(Modifier.height(12.dp))
             AppearanceSection(vm)
             AddWidgetButton()
             SettingsGroupHeader(stringResource(R.string.set_notifications))
             NotificationsSection(vm)
-            SettingsGroupHeader(stringResource(R.string.set_privacy))
+            SettingsGroupHeader(stringResource(R.string.set_storage_privacy))
             PrivacySection(vm)
-            SettingsGroupHeader(stringResource(R.string.set_diagnostics))
-            DiagnosticsSection(vm)
             Spacer(Modifier.height(24.dp))
         }
     }
+}
+
+/**
+ * Map tiles, the diagnostics log and the datagram tool, moved off Appearance and alerts
+ * (2026-11-16): none of them is about how the app looks or when it alerts you, and Simple
+ * mode hides this screen's tile, so they are out of the way of someone who only wants to talk.
+ */
+@Composable
+fun SettingsAdvancedScreen(vm: MeshCoreViewModel, nav: NavController) {
+    SettingsSpoke(stringResource(R.string.hub_advanced), vm, nav, scroll = false) {
+        Column(
+            Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState()),
+        ) {
+            SettingsGroupHeader(stringResource(R.string.set_network))
+            MapTilesSection(vm)
+            SettingsGroupHeader(stringResource(R.string.set_diagnostics))
+            DiagnosticsSection(vm)
+            Spacer(Modifier.height(16.dp))
+            ChannelDatagramTool(vm)
+            Spacer(Modifier.height(24.dp))
+        }
+    }
+}
+
+/**
+ * Simple mode (ui/model/SimpleMode) as an ordinary switch. It was a tile at the top of the
+ * Settings hub that toggled on tap, the one hub row that did not open anything.
+ */
+@Composable
+private fun SimpleModeSwitch(vm: MeshCoreViewModel) {
+    val mode by vm.prefs.appModeFlow.collectAsState()
+    SettingRow(stringResource(R.string.mode_simple), mode == io.github.thatsfguy.meshcore.presentation.AppMode.Simple) { on ->
+        vm.prefs.appMode = if (on) {
+            io.github.thatsfguy.meshcore.presentation.AppMode.Simple
+        } else {
+            io.github.thatsfguy.meshcore.presentation.AppMode.Full
+        }
+    }
+    HintText(stringResource(R.string.mode_simple_hint))
 }
 
 @Composable

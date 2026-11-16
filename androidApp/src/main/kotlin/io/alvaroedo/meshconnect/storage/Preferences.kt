@@ -9,6 +9,8 @@ import io.github.thatsfguy.meshcore.transport.ConnectionMemory
 import io.github.thatsfguy.meshcore.transport.SavedNode
 import io.github.thatsfguy.meshcore.presentation.UnitSystem
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.StateFlow
 import io.github.thatsfguy.meshcore.presentation.NodeListModel
 
@@ -191,6 +193,21 @@ class Preferences(context: Context) {
             prefs.edit().putString("app_mode", v.name).apply()
             appModeFlow.value = v
         }
+
+    /**
+     * [appMode] as it changes, from ANY Preferences instance: the service has its own, and
+     * [appModeFlow] only hears this one. Android hands every instance the same
+     * SharedPreferences object, so its change listener does. Used for the widget's count.
+     */
+    fun appModeChanges(): kotlinx.coroutines.flow.Flow<io.github.thatsfguy.meshcore.presentation.AppMode> =
+        kotlinx.coroutines.flow.callbackFlow {
+            val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+                if (key == "app_mode") trySend(appMode)
+            }
+            prefs.registerOnSharedPreferenceChangeListener(listener)
+            send(appMode)
+            awaitClose { prefs.unregisterOnSharedPreferenceChangeListener(listener) }
+        }.distinctUntilChanged()
 
     // --- Direct-message requests (presentation/DmRequest) ---
 

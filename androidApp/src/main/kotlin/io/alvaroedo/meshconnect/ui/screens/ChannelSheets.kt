@@ -68,30 +68,74 @@ fun ChannelAddSheet(
     vm: MeshCoreViewModel,
     onDismiss: () -> Unit,
     /**
-     * Given, the sheet is Chats' "New chat" (2026-11-10): a person first, then the channel
-     * choices, then one scanner for any code. Settings → Channels leaves it out.
+     * Given, the sheet is Chats' "New chat" (2026-11-10): somewhere to write first, then the
+     * channel choices, then one scanner for any code. Settings → Channels leaves it out.
+     * Called with a conversation's kind and key (MessageRepository.KIND_DM / KIND_CHANNEL).
      */
-    onMessageContact: ((ContactEntity) -> Unit)? = null,
+    onOpenThread: ((kind: String, key: String) -> Unit)? = null,
 ) {
     var choice by remember { mutableStateOf<AddChannelChoice?>(null) }
-    var pickingContact by remember { mutableStateOf(false) }
+    var pickingExisting by remember { mutableStateOf(false) }
     val clipboard = io.alvaroedo.meshconnect.ui.rememberTextClipboard()
-    val newChat = onMessageContact != null
+    val newChat = onOpenThread != null
+    val simple = io.alvaroedo.meshconnect.ui.model.SimpleMode.isSimple(LocalAppMode.current)
 
     val communityScanLauncher = rememberLauncherForActivityResult(io.alvaroedo.meshconnect.platform.ScanQr()) { result ->
         result?.let { vm.importScannedCode(it, openChat = newChat) }
         onDismiss()
     }
-
     val scanPrompt = stringResource(R.string.scan_prompt)
+    val open: (io.alvaroedo.meshconnect.ui.model.NewChatList.Entry) -> Unit = { entry ->
+        onDismiss()
+        onOpenThread?.invoke(entry.kind, entry.key)
+    }
+
     ModalBottomSheet(onDismissRequest = onDismiss) {
-        Column(Modifier.padding(horizontal = 24.dp).padding(bottom = 32.dp)) {
+        // Scrolls: the list of people can be longer than the screen, and the scanner and the
+        // clipboard come after it.
+        Column(
+            Modifier
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 24.dp)
+                .padding(bottom = 32.dp),
+        ) {
             when (val c = choice) {
-                null if pickingContact && onMessageContact != null -> ContactPicker(
-                    vm,
-                    onBack = { pickingContact = false },
-                    onPick = { onDismiss(); onMessageContact(it) },
-                )
+                null if pickingExisting && newChat -> {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        androidx.compose.material3.IconButton(onClick = { pickingExisting = false }) {
+                            Icon(painterResource(R.drawable.ic_arrow_back), stringResource(R.string.back))
+                        }
+                        Text(stringResource(R.string.newchat_existing), style = MaterialTheme.typography.titleLarge)
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    ExistingThreads(vm, search = true, onPick = open)
+                }
+                // Simple mode (ui/model/SimpleMode): where to write, then the three ways to add
+                // somewhere — create a group, scan a code, paste a link. No public or hashtag
+                // channels, no keys typed by hand.
+                null if simple -> {
+                    Text(
+                        stringResource(if (newChat) R.string.newchat_title else R.string.simple_add_group),
+                        style = MaterialTheme.typography.headlineSmall,
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    if (newChat) {
+                        ExistingThreads(vm, search = false, onPick = open)
+                        HorizontalDivider(Modifier.padding(vertical = 8.dp))
+                    }
+                    ChoiceRow(R.drawable.ic_group, stringResource(R.string.simple_create_group), stringResource(R.string.simple_create_group_sub)) {
+                        choice = AddChannelChoice.CreatePrivate
+                    }
+                    ChoiceRow(R.drawable.ic_qr_code_scanner, stringResource(R.string.newchat_scan), stringResource(R.string.simple_scan_sub)) {
+                        communityScanLauncher.launch(scanPrompt)
+                    }
+                    ChoiceRow(R.drawable.ic_content_paste, stringResource(R.string.newchat_paste), stringResource(R.string.newchat_paste_sub)) {
+                        clipboard.paste {
+                            vm.importPastedText(it, openChat = newChat)
+                            onDismiss()
+                        }
+                    }
+                }
                 null -> {
                     Text(
                         stringResource(if (newChat) R.string.newchat_title else R.string.ch_add_title),
@@ -99,8 +143,8 @@ fun ChannelAddSheet(
                     )
                     if (newChat) {
                         SheetHeading(stringResource(R.string.newchat_people))
-                        ChoiceRow(R.drawable.ic_person, stringResource(R.string.newchat_contact), stringResource(R.string.newchat_contact_sub)) {
-                            pickingContact = true
+                        ChoiceRow(R.drawable.ic_forum, stringResource(R.string.newchat_existing), stringResource(R.string.newchat_existing_sub)) {
+                            pickingExisting = true
                         }
                         SheetHeading(stringResource(R.string.newchat_channels))
                     } else {
@@ -146,66 +190,99 @@ fun ChannelAddSheet(
                             }
                         }
                     }
-                    Spacer(Modifier.height(8.dp))
-                    Text(
-                        stringResource(R.string.ch_add_warning),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
                 }
-                else -> AddChannelForm(vm, c, openChat = newChat, onBack = { choice = null }, onDone = onDismiss)
+                else -> AddChannelForm(vm, c, openChat = newChat, simple = simple, onBack = { choice = null }, onDone = onDismiss)
+            }
+            // Under every choice: what a channel's key does and does not protect.
+            if (choice == null && !pickingExisting) {
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    stringResource(R.string.ch_add_warning),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
         }
     }
 }
 
-/** People the radio can message, searchable; a tap opens the conversation. */
+/**
+ * People, rooms and channels to write to, alphabetical (NewChatList); a tap opens the
+ * conversation. Simple mode shows it straight away and leaves channels anyone can join out.
+ */
 @Composable
-private fun ContactPicker(vm: MeshCoreViewModel, onBack: () -> Unit, onPick: (ContactEntity) -> Unit) {
+private fun ExistingThreads(
+    vm: MeshCoreViewModel,
+    search: Boolean,
+    onPick: (io.alvaroedo.meshconnect.ui.model.NewChatList.Entry) -> Unit,
+) {
     var query by remember { mutableStateOf("") }
-    val people = vm.dbContacts.collectAsState().value
-        .filter { it.type == io.github.thatsfguy.meshcore.protocol.Codes.ADV_TYPE_CHAT }
-        .filter { query.isBlank() || it.name.contains(query.trim(), ignoreCase = true) }
-        .sortedWith(compareByDescending<ContactEntity> { it.flags and io.github.thatsfguy.meshcore.protocol.Codes.CONTACT_FLAG_FAVORITE != 0 }.thenBy { it.name.lowercase() })
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        androidx.compose.material3.IconButton(onClick = onBack) {
-            Icon(painterResource(R.drawable.ic_arrow_back), stringResource(R.string.back))
-        }
-        Text(stringResource(R.string.newchat_contact), style = MaterialTheme.typography.titleLarge)
-    }
-    Spacer(Modifier.height(8.dp))
-    MeshTextField(
-        value = query,
-        onValueChange = { query = it },
-        placeholder = stringResource(R.string.newchat_search),
-        leadingIcon = { Icon(painterResource(R.drawable.ic_search), null) },
-        modifier = Modifier.fillMaxWidth(),
+    val mode = LocalAppMode.current
+    val simple = io.alvaroedo.meshconnect.ui.model.SimpleMode.isSimple(mode)
+    val entries = io.alvaroedo.meshconnect.ui.model.NewChatList.entries(
+        mode = mode,
+        contacts = vm.dbContacts.collectAsState().value,
+        channels = vm.dbChannels.collectAsState().value,
+        kinds = vm.channelKinds.collectAsState().value,
+        query = query,
     )
-    Spacer(Modifier.height(8.dp))
-    if (people.isEmpty()) {
+    if (search) {
+        MeshTextField(
+            value = query,
+            onValueChange = { query = it },
+            placeholder = stringResource(R.string.newchat_search),
+            leadingIcon = { Icon(painterResource(R.drawable.ic_search), null) },
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Spacer(Modifier.height(8.dp))
+    }
+    if (entries.isEmpty()) {
         Text(
-            stringResource(R.string.newchat_none),
+            stringResource(if (simple) R.string.simple_newchat_none else R.string.newchat_none),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(vertical = 16.dp),
         )
     }
-    for (c in people.take(200)) {
+    for (e in entries.take(300)) {
         Row(
             Modifier
                 .fillMaxWidth()
                 .clip(androidx.compose.foundation.shape.RoundedCornerShape(12.dp))
-                .clickable { onPick(c) }
+                .clickable { onPick(e) }
                 .padding(horizontal = 4.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            NodeAvatar(seed = c.keyHex, label = c.name.ifBlank { c.keyHex }, type = c.type, size = 40.dp)
+            NodeAvatar(
+                // The seeds Chats uses, so a thread keeps its colour from one list to the other.
+                seed = if (e.isChannel) "channel|${e.key}|${e.title}" else e.key,
+                label = e.title,
+                type = e.contactType,
+                isChannel = e.isChannel,
+                channelKind = e.channelKind,
+                size = 40.dp,
+            )
             Spacer(Modifier.width(16.dp))
             Column(Modifier.weight(1f)) {
-                Text(c.name.ifBlank { c.keyHex.take(12) }, style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                val heard = io.github.thatsfguy.meshcore.presentation.LastHeard.seconds(c)
-                if (heard > 0) {
-                    Text(relativeAge(heard), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(e.title, style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                // What it is, in the full app; Simple mode does not make anyone care.
+                val what = when {
+                    simple -> null
+                    e.isChannel -> e.channelKind?.let {
+                        stringResource(
+                            when (it) {
+                                ChannelKind.Public -> R.string.ch_kind_public
+                                ChannelKind.Hashtag -> R.string.ch_kind_hashtag
+                                ChannelKind.Private -> R.string.ch_kind_private
+                            },
+                        )
+                    }
+                    e.contactType == io.github.thatsfguy.meshcore.protocol.Codes.ADV_TYPE_ROOM -> stringResource(R.string.kind_room)
+                    else -> null
+                }
+                val line = listOfNotNull(what, e.heard.takeIf { it > 0 }?.let { relativeAge(it) }).joinToString(" · ")
+                if (line.isNotEmpty()) {
+                    Text(line, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }
@@ -261,6 +338,8 @@ private fun AddChannelForm(
     /** From Chats' New chat: open the channel once it is in (NewChatThread). */
     openChat: Boolean,
     onBack: () -> Unit,
+    /** Simple mode calls a private channel a group. */
+    simple: Boolean = false,
     onDone: () -> Unit,
 ) {
     var name by remember(choice) { mutableStateOf("") }
@@ -268,7 +347,7 @@ private fun AddChannelForm(
 
     val title = when (choice) {
         AddChannelChoice.Public -> stringResource(R.string.ch_public)
-        AddChannelChoice.CreatePrivate -> stringResource(R.string.ch_create_private)
+        AddChannelChoice.CreatePrivate -> stringResource(if (simple) R.string.simple_create_group else R.string.ch_create_private)
         AddChannelChoice.JoinPrivate -> stringResource(R.string.ch_join_private)
         AddChannelChoice.Hashtag -> stringResource(R.string.ch_hashtag)
     }
@@ -289,7 +368,7 @@ private fun AddChannelForm(
     when (choice) {
         AddChannelChoice.Public -> Explain(stringResource(R.string.ch_public_explain))
         AddChannelChoice.Hashtag -> Explain(stringResource(R.string.ch_hashtag_explain))
-        AddChannelChoice.CreatePrivate -> Explain(stringResource(R.string.ch_create_explain))
+        AddChannelChoice.CreatePrivate -> Explain(stringResource(if (simple) R.string.simple_create_group_explain else R.string.ch_create_explain))
         AddChannelChoice.JoinPrivate -> Explain(stringResource(R.string.ch_join_explain))
     }
 
@@ -370,6 +449,10 @@ fun ChannelEditSheet(vm: MeshCoreViewModel, channel: ChannelEntity, onDismiss: (
     val kind = vm.channelKinds.collectAsState().value[channel.idx]
     val keyLocked = ChannelEditRules.keyLocked(kind)
     val nameLocked = ChannelEditRules.nameLocked(kind)
+    // Simple mode: rename, share, remove. The key is still loaded, never shown: saving writes
+    // it back unchanged and the QR carries it, as in the full sheet. The region scope is not
+    // offered, and the code keeps sharing whatever scope the channel already has.
+    val simple = io.alvaroedo.meshconnect.ui.model.SimpleMode.isSimple(LocalAppMode.current)
 
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(
@@ -382,7 +465,8 @@ fun ChannelEditSheet(vm: MeshCoreViewModel, channel: ChannelEntity, onDismiss: (
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 NodeAvatar(
-                    seed = "ch${channel.idx}",
+                    // Chats' seed, so the channel wears the same colour here as in the list.
+                    seed = "channel|${channel.idx}|${channel.name}",
                     label = name.ifBlank { "#" },
                     isChannel = true,
                     channelKind = kind,
@@ -396,7 +480,7 @@ fun ChannelEditSheet(vm: MeshCoreViewModel, channel: ChannelEntity, onDismiss: (
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
-                    Text(
+                    if (!simple) Text(
                         listOfNotNull(
                             kind?.let {
                                 stringResource(
@@ -423,7 +507,7 @@ fun ChannelEditSheet(vm: MeshCoreViewModel, channel: ChannelEntity, onDismiss: (
                 trailingIcon = if (nameLocked) { { Icon(painterResource(R.drawable.ic_lock), null) } } else null,
                 modifier = Modifier.fillMaxWidth(),
             )
-            FormField(
+            if (!simple) FormField(
                 value = pskHex,
                 onValueChange = { pskHex = it },
                 label = { Text(stringResource(if (pskLoaded) R.string.ch_secret_key else R.string.ch_loading_key)) },
@@ -447,7 +531,7 @@ fun ChannelEditSheet(vm: MeshCoreViewModel, channel: ChannelEntity, onDismiss: (
             // The region is local-only routing state (PARITY §8): it
             // scopes which repeaters carry this channel's traffic and is
             // never written to the radio's channel slot.
-            ChannelRegionPicker(vm, channel.idx)
+            if (!simple) ChannelRegionPicker(vm, channel.idx)
             Button(
                 onClick = {
                     vm.editChannel(channel.idx, (if (nameLocked) channel.name else name).trim(), pskHex.trim())
@@ -457,10 +541,10 @@ fun ChannelEditSheet(vm: MeshCoreViewModel, channel: ChannelEntity, onDismiss: (
                 modifier = Modifier.fillMaxWidth(),
             ) { Text(stringResource(R.string.save)) }
             Column {
-                SheetActionRow(R.drawable.ic_qr_code, stringResource(R.string.ch_share_qr)) {
+                SheetActionRow(R.drawable.ic_qr_code, stringResource(if (simple) R.string.simple_share_group_qr else R.string.ch_share_qr)) {
                     if (pskLoaded && pskHex.isNotBlank()) shareConfirm = true
                 }
-                SheetActionRow(R.drawable.ic_delete, stringResource(R.string.ch_remove), destructive = true) {
+                SheetActionRow(R.drawable.ic_delete, stringResource(if (simple) R.string.simple_remove_group else R.string.ch_remove), destructive = true) {
                     vm.deleteChannel(channel.idx)
                     onDismiss()
                 }

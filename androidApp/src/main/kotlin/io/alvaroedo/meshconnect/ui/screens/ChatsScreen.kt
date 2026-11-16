@@ -81,6 +81,7 @@ fun ChatsScreen(vm: MeshCoreViewModel, nav: NavController, archivedView: Boolean
         selection = selection?.let { if (k in it) it - k else it + k }?.ifEmpty { null }
     }
     val channels by vm.dbChannels.collectAsState()
+    val simple = io.alvaroedo.meshconnect.ui.model.SimpleMode.isSimple(LocalAppMode.current)
 
     val communityScanLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
         io.alvaroedo.meshconnect.platform.ScanQr(),
@@ -120,7 +121,7 @@ fun ChatsScreen(vm: MeshCoreViewModel, nav: NavController, archivedView: Boolean
                     onActiveChange = { searching = it },
                     hint = stringResource(R.string.chats_search_hint),
                 ),
-                menuActions = listOf(
+                menuActions = listOfNotNull(
                     // Adverts live here as well as on Settings -> Identity.
                     // Announcing yourself is a frequent, situational thing
                     // ("nobody can see me, say hello again"), and the tidy
@@ -128,10 +129,11 @@ fun ChatsScreen(vm: MeshCoreViewModel, nav: NavController, archivedView: Boolean
                     // it three taps deep behind a settings page. Being
                     // reachable from the screen you are already on beats
                     // being filed correctly.
-                    MenuAction(stringResource(R.string.chats_advert_zero_hop), icon = R.drawable.ic_sensors) {
+                    // Not in Simple mode, which joins people by link or QR (SimpleMode.showsAdverts).
+                    if (simple) null else MenuAction(stringResource(R.string.chats_advert_zero_hop), icon = R.drawable.ic_sensors) {
                         vm.sendSelfAdvert(flood = false)
                     },
-                    MenuAction(stringResource(R.string.chats_advert_flood), icon = R.drawable.ic_campaign) {
+                    if (simple) null else MenuAction(stringResource(R.string.chats_advert_flood), icon = R.drawable.ic_campaign) {
                         vm.sendSelfAdvert(flood = true)
                     },
                     MenuAction(stringResource(R.string.chats_new_chat), icon = R.drawable.ic_edit_square) { showChannelSheet = true },
@@ -194,7 +196,13 @@ fun ChatsScreen(vm: MeshCoreViewModel, nav: NavController, archivedView: Boolean
                         onToggleRead = {
                             if (row.unread > 0 || row.markedUnread) vm.markRead(row.kind, row.key) else vm.markUnread(row.kind, row.key)
                         },
-                        onEdit = { if (row.isChannel) editChannel = row.key.toIntOrNull() else nicknameFor = row },
+                        // Simple mode edits a group from its conversation's ⋮ only, where the
+                        // sheet is the simple one; a long-press is easy to make by accident.
+                        onEdit = if (row.isChannel && simple) {
+                            null
+                        } else {
+                            { if (row.isChannel) editChannel = row.key.toIntOrNull() else nicknameFor = row }
+                        },
                         onSelect = { selection = setOf(k) },
                         onToggleSelected = { toggle(k) },
                         onDelete = { confirmDelete = listOf(row) },
@@ -236,7 +244,7 @@ fun ChatsScreen(vm: MeshCoreViewModel, nav: NavController, archivedView: Boolean
         ChannelAddSheet(
             vm,
             onDismiss = { showChannelSheet = false },
-            onMessageContact = { nav.navigate(conversationRoute(io.alvaroedo.meshconnect.storage.MessageRepository.KIND_DM, it.keyHex)) },
+            onOpenThread = { kind, key -> nav.navigate(conversationRoute(kind, key)) },
         )
     }
 
@@ -305,7 +313,8 @@ private fun ConversationRowItem(
     onTogglePin: () -> Unit = {},
     onToggleArchive: () -> Unit = {},
     onToggleRead: () -> Unit = {},
-    onEdit: () -> Unit = {},
+    /** Null leaves the edit entry out of the long-press menu. */
+    onEdit: (() -> Unit)? = {},
     onSelect: () -> Unit = {},
     onToggleSelected: () -> Unit = {},
     onDelete: () -> Unit = {},
@@ -425,10 +434,12 @@ private fun ConversationRowItem(
             ) { menuOpen = false; onToggleArchive() }
             // A channel edits the way Settings → Channels does; a DM has only its
             // private nickname to edit.
-            ChatMenuRow(
-                R.drawable.ic_edit,
-                stringResource(if (row.isChannel) R.string.conv_channel_settings else R.string.chats_nickname_menu),
-            ) { menuOpen = false; onEdit() }
+            if (onEdit != null) {
+                ChatMenuRow(
+                    R.drawable.ic_edit,
+                    stringResource(if (row.isChannel) R.string.conv_channel_settings else R.string.chats_nickname_menu),
+                ) { menuOpen = false; onEdit() }
+            }
             ChatMenuRow(R.drawable.ic_select, stringResource(R.string.conv_select)) { menuOpen = false; onSelect() }
             ChatMenuRow(R.drawable.ic_delete, stringResource(R.string.delete), destructive = true) {
                 menuOpen = false

@@ -165,7 +165,12 @@ fun AppTopBar(
             actions = {
                 // Sub-screens (with a back arrow) get the icons only, so a long
                 // title keeps its room (MeshCore Hardened issue #8).
-                if (info != null) info() else ConnectionStatus(vm, compact = nav != null)
+                // Simple mode: always the icons only — signal and battery, no hash or percent.
+                if (info != null) {
+                    info()
+                } else {
+                    ConnectionStatus(vm, compact = nav != null || io.alvaroedo.meshconnect.ui.model.SimpleMode.isSimple(LocalAppMode.current))
+                }
                 actions()
                 if (search != null) {
                     IconButton(onClick = { search.onActiveChange(true) }) {
@@ -497,7 +502,12 @@ private fun LinkSheet(vm: MeshCoreViewModel, onDismiss: () -> Unit) {
     val rows = ListItemDefaults.colors(containerColor = Color.Transparent)
     val context = androidx.compose.ui.platform.LocalContext.current
 
+    val simple = io.alvaroedo.meshconnect.ui.model.SimpleMode.isSimple(LocalAppMode.current)
     ModalBottomSheet(onDismissRequest = onDismiss) {
+        if (simple) {
+            SimpleLinkSheet(vm, onDismiss)
+            return@ModalBottomSheet
+        }
         Column(
             Modifier
                 .navigationBarsPadding()
@@ -614,25 +624,137 @@ private fun LinkSheet(vm: MeshCoreViewModel, onDismiss: () -> Unit) {
             }
             // Switch to another saved radio, or a new one, without going through Settings.
             HorizontalDivider(Modifier.padding(vertical = 4.dp))
-            var switching by remember { mutableStateOf(false) }
+            SwitchOrDisconnect(vm, onDismiss)
+        }
+    }
+}
+
+/** Add or switch radio, and Disconnect — in red: it drops the link. Both versions of the sheet end with it. */
+@Composable
+private fun SwitchOrDisconnect(vm: MeshCoreViewModel, onDismiss: () -> Unit) {
+    var switching by remember { mutableStateOf(false) }
+    Column(Modifier.padding(horizontal = 24.dp, vertical = 8.dp)) {
+        if (!switching) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                androidx.compose.material3.FilledTonalButton(onClick = { switching = true }) {
+                    Icon(painterResource(R.drawable.ic_swap_horiz), null, Modifier.size(18.dp))
+                    Spacer(Modifier.size(8.dp))
+                    Text(stringResource(R.string.picker_more))
+                }
+                androidx.compose.material3.TextButton(
+                    onClick = {
+                        vm.disconnect()
+                        onDismiss()
+                    },
+                    colors = androidx.compose.material3.ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error,
+                    ),
+                ) { Text(stringResource(R.string.set_disconnect)) }
+            }
+        } else {
+            RadioPicker(vm, onPicked = onDismiss)
+        }
+    }
+}
+
+/**
+ * The radio card in Simple mode (2026-11-16): which radio, how it is connected and its
+ * battery, the repeaters it hears, and the two buttons. No radio parameters, no readings and
+ * so no stats poll; no headings, since the icons say what each line is.
+ */
+@Composable
+private fun SimpleLinkSheet(vm: MeshCoreViewModel, onDismiss: () -> Unit) {
+    val engineState by vm.engineState.collectAsStateWithLifecycle()
+    val self by vm.selfInfo.collectAsStateWithLifecycle()
+    val battery by vm.battery.collectAsStateWithLifecycle()
+    val label by vm.connectionLabel.collectAsStateWithLifecycle()
+    val repeaters by vm.directRepeaters.collectAsStateWithLifecycle()
+    val contacts by vm.liveContacts.collectAsStateWithLifecycle()
+    val plaintext by vm.plaintextLink.collectAsStateWithLifecycle()
+    val now = rememberNow()
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val ink = MaterialTheme.colorScheme.onSurfaceVariant
+
+    Column(
+        Modifier
+            .navigationBarsPadding()
+            .verticalScroll(androidx.compose.foundation.rememberScrollState())
+            .padding(bottom = 16.dp),
+    ) {
+        Text(
+            self?.name ?: stringResource(R.string.link_title),
+            style = MaterialTheme.typography.titleLarge,
+            modifier = Modifier.padding(horizontal = 24.dp),
+        )
+        if (engineState != EngineState.Ready) {
             Column(Modifier.padding(horizontal = 24.dp, vertical = 8.dp)) {
-                if (!switching) {
-                    androidx.compose.foundation.layout.Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        androidx.compose.material3.FilledTonalButton(onClick = { switching = true }) {
-                            Icon(painterResource(R.drawable.ic_swap_horiz), null, Modifier.size(18.dp))
-                            androidx.compose.foundation.layout.Spacer(Modifier.size(8.dp))
-                            Text(stringResource(R.string.picker_more))
-                        }
-                        androidx.compose.material3.TextButton(onClick = {
-                            vm.disconnect()
-                            onDismiss()
-                        }) { Text(stringResource(R.string.set_disconnect)) }
+                RadioPicker(vm, onPicked = onDismiss)
+            }
+            return@Column
+        }
+        // Link and battery side by side, each an icon and its value.
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(24.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            label?.let {
+                Row(Modifier.weight(1f, fill = false), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        painterResource(
+                            when {
+                                plaintext -> R.drawable.ic_warning
+                                it.startsWith("USB") -> R.drawable.ic_usb
+                                else -> R.drawable.ic_bluetooth
+                            },
+                        ),
+                        // The TCP warning is the one line here that must be read aloud.
+                        if (plaintext) stringResource(R.string.status_tcp_plain) else null,
+                        tint = if (plaintext) MaterialTheme.colorScheme.error else ink,
+                        modifier = Modifier.size(20.dp),
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        it,
+                        color = if (plaintext) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
+            battery?.let { b ->
+                val pct = BatteryLevel.percent(b.batteryMillivolts)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    BatteryGlyph(pct)
+                    if (pct != null) {
+                        Spacer(Modifier.width(8.dp))
+                        Text("$pct%", maxLines = 1)
                     }
-                } else {
-                    RadioPicker(vm, onPicked = onDismiss)
                 }
             }
         }
+        // The repeaters heard directly: bars, name, and how long ago, nothing else.
+        for (r in LinkMeter.fresh(repeaters, now)) {
+            val name = LinkMeter.nameFor(r.prefixHex, contacts.values)
+                ?: stringResource(R.string.link_unknown_repeater)
+            Row(
+                Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                SignalBars(LinkMeter.bars(r.snr, self?.sf), live = true)
+                Spacer(Modifier.width(16.dp))
+                Text(name, Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Spacer(Modifier.width(12.dp))
+                Text(
+                    io.alvaroedo.meshconnect.ui.model.Ago.of(context, r.lastHeardMs, now),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = ink,
+                    maxLines = 1,
+                )
+            }
+        }
+        HorizontalDivider(Modifier.padding(vertical = 4.dp))
+        SwitchOrDisconnect(vm, onDismiss)
     }
 }
 

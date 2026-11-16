@@ -9,7 +9,6 @@ import io.github.thatsfguy.meshcore.presentation.connectionSubtitle
 import io.github.thatsfguy.meshcore.presentation.firmwareSubtitle
 import io.github.thatsfguy.meshcore.presentation.identitySubtitle
 import io.github.thatsfguy.meshcore.presentation.radioSubtitle
-import io.github.thatsfguy.meshcore.presentation.settingsGroups
 import io.github.thatsfguy.meshcore.presentation.transportsSubtitle
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -54,7 +53,7 @@ import io.github.thatsfguy.meshcore.engine.EngineState
  * section to an existing screen costs nothing and making a screen
  * feels like work (LESSONS §13, REBUILD-PLAYBOOK §6.2).
  *
- * The structure is [settingsGroups]; the tiles report their current
+ * The structure is upstream's settingsGroups, via [SettingsHubText.groups]; the tiles report their current
  * value so the common question — *is TCP on? is the map fetching
  * tiles? what frequency am I on?* — is answered without opening
  * anything.
@@ -74,6 +73,7 @@ fun SettingsScreen(vm: MeshCoreViewModel, nav: NavController) {
     val blocked by vm.blockedKeys.collectAsState()
     val isReady = engineState == EngineState.Ready
     val mode by vm.prefs.appModeFlow.collectAsState()
+    val kinds by vm.channelKinds.collectAsState()
 
     // Read once per composition — these are plain prefs, not flows, and
     // the hub recomposes when it is returned to.
@@ -96,7 +96,10 @@ fun SettingsScreen(vm: MeshCoreViewModel, nav: NavController) {
             capable = vm.firmwareUpdatesSupported(),
             connected = isReady,
         ),
-        "channels" to SettingsHubText.channels(channels.size),
+        // What Settings → Channels lists: Simple mode leaves Public and hashtags out.
+        "channels" to SettingsHubText.channels(
+            channels.count { io.alvaroedo.meshconnect.ui.model.SimpleMode.showsChannel(mode, kinds[it.idx]) },
+        ),
         "blocking" to SettingsHubText.blocking(blocked.size),
         "app" to SettingsHubText.app(
             theme = vm.prefs.theme,
@@ -120,26 +123,10 @@ fun SettingsScreen(vm: MeshCoreViewModel, nav: NavController) {
                 .padding(padding)
                 .verticalScroll(rememberScrollState()),
         ) {
-            // Simple mode (presentation/AppMode): chats and channels only. It only hides, so
-            // switching back is one tap and needs no PIN.
-            val simple = mode == io.github.thatsfguy.meshcore.presentation.AppMode.Simple
-            SettingsCard(Modifier.padding(horizontal = 16.dp).padding(top = 8.dp)) {
-                SettingsTileRow(
-                    title = stringResource(if (simple) R.string.mode_simple_on else R.string.mode_simple),
-                    subtitle = stringResource(if (simple) R.string.mode_simple_on_sub else R.string.mode_simple_sub),
-                    dimmed = false,
-                    icon = R.drawable.ic_chat,
-                    onClick = {
-                        vm.prefs.appMode = if (simple) {
-                            io.github.thatsfguy.meshcore.presentation.AppMode.Full
-                        } else {
-                            io.github.thatsfguy.meshcore.presentation.AppMode.Simple
-                        }
-                    },
-                )
-            }
-            for ((index, group) in settingsGroups().withIndex()) {
-                val tiles = group.tiles.filter { io.github.thatsfguy.meshcore.presentation.AppModes.showsSettingsTile(mode, it.route) }
+            // Simple mode's switch is a normal one, on Appearance and alerts (2026-11-16): a
+            // hub tile that toggled something instead of opening a screen was the odd one out.
+            for ((index, group) in SettingsHubText.groups().withIndex()) {
+                val tiles = group.tiles.filter { io.alvaroedo.meshconnect.ui.model.SimpleMode.showsSettingsTile(mode, it.route) }
                 if (tiles.isEmpty()) continue
                 GroupLabel(SettingsHubText.group(index, group.title))
                 SettingsCard {
@@ -216,6 +203,7 @@ internal fun settingsIcon(route: String): Int = when (route) {
     "channels" -> R.drawable.ic_tag
     "blocking" -> R.drawable.ic_block
     "app" -> R.drawable.ic_palette
+    "advanced" -> R.drawable.ic_build
     "backup" -> R.drawable.ic_backup
     "data" -> R.drawable.ic_database
     "about" -> R.drawable.ic_info

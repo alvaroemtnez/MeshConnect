@@ -4,7 +4,9 @@ import io.alvaroedo.meshconnect.storage.ChannelEntity
 import io.alvaroedo.meshconnect.storage.ContactEntity
 import io.alvaroedo.meshconnect.storage.MessageEntity
 import io.alvaroedo.meshconnect.storage.MessageRepository
+import io.github.thatsfguy.meshcore.presentation.AppMode
 import io.github.thatsfguy.meshcore.presentation.Inbox
+import io.github.thatsfguy.meshcore.protocol.ChannelKind
 import io.github.thatsfguy.meshcore.protocol.Codes
 
 /**
@@ -23,9 +25,25 @@ object ChatThreads {
     /** A direct thread with this peer is a chat; a repeater's is its admin console, kept in the repeater screen. */
     fun isChatPeer(contact: ContactEntity?): Boolean = contact?.type != Codes.ADV_TYPE_REPEATER
 
-    /** [latest] (one message per thread) without the threads the Chats list leaves out. */
-    fun chatLatest(latest: List<MessageEntity>, contacts: Map<String, ContactEntity>): List<MessageEntity> =
-        latest.filter { it.kind == MessageRepository.KIND_CHANNEL || isChatPeer(contacts[it.peerKey]) }
+    /**
+     * [latest] (one message per thread) without the threads the Chats list leaves out: a
+     * repeater's console always, and in Simple mode what SimpleMode hides — so the widget's
+     * last message is never one from a thread Chats does not show.
+     */
+    fun chatLatest(
+        latest: List<MessageEntity>,
+        contacts: Map<String, ContactEntity>,
+        mode: AppMode = AppMode.Full,
+        kinds: Map<Int, ChannelKind> = emptyMap(),
+    ): List<MessageEntity> =
+        latest.filter {
+            if (it.kind == MessageRepository.KIND_CHANNEL) {
+                SimpleMode.showsChannel(mode, it.peerKey.toIntOrNull()?.let { idx -> kinds[idx] })
+            } else {
+                val contact = contacts[it.peerKey]
+                isChatPeer(contact) && SimpleMode.showsContactType(mode, contact?.type)
+            }
+        }
 
     /**
      * The unread count of each row the Chats list shows, the same numbers the rows carry: every
@@ -36,14 +54,16 @@ object ChatThreads {
         latest: List<MessageEntity>,
         contacts: List<ContactEntity>,
         channels: List<ChannelEntity>,
+        mode: AppMode = AppMode.Full,
+        kinds: Map<Int, ChannelKind> = emptyMap(),
     ): List<Int> {
         val byKey = contacts.associateBy { it.keyHex }
-        val direct = chatLatest(latest, byKey)
+        val direct = chatLatest(latest, byKey, mode, kinds)
             .filter { it.kind != MessageRepository.KIND_CHANNEL }
             .map { it.peerKey }
             .distinct()
             .map { byKey[it]?.unread ?: 0 }
-        return channels.map { it.unread } + direct
+        return channels.filter { SimpleMode.showsChannel(mode, kinds[it.idx]) }.map { it.unread } + direct
     }
 
     /** The total the widget shows: the Chats tab badge's number, before the badge's "99+". */
@@ -51,5 +71,7 @@ object ChatThreads {
         latest: List<MessageEntity>,
         contacts: List<ContactEntity>,
         channels: List<ChannelEntity>,
-    ): Int = Inbox.unreadTotal(unreadCounts(latest, contacts, channels))
+        mode: AppMode = AppMode.Full,
+        kinds: Map<Int, ChannelKind> = emptyMap(),
+    ): Int = Inbox.unreadTotal(unreadCounts(latest, contacts, channels, mode, kinds))
 }

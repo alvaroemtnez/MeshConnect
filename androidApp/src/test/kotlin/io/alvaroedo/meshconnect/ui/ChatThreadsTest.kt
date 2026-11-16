@@ -92,7 +92,8 @@ class ChatThreadsTest {
 
     @Test
     fun `the widget counts with the shared rule, not a sum of every row`() {
-        assertTrue(service.contains("ChatThreads.unreadTotal(latest, cs, chs)"))
+        // With the mode and channel kinds: Simple mode counts what it shows (SimpleModeTest).
+        assertTrue(service.contains("ChatThreads.unreadTotal(latest, cs, chs, mode, kinds)"))
         assertTrue(service.contains(".chatLatest(latest,"))
         assertFalse("the service must not sum unread counts itself", service.contains("sumOf { it.unread }"))
     }

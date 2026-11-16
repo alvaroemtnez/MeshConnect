@@ -173,6 +173,9 @@ private const val SLIDE_MS = 250
 private const val TAB_FADE_MS = 120
 private val TAB_ROUTES = setOf("chats", "nodes", "map", "settings")
 
+/** The bottom of the back stack once setup is done, whatever the graph started on. */
+internal const val TAB_ROOT = "chats"
+
 /**
  * Screens that show one radio's conversation or one of its nodes, which mean nothing once
  * another radio is connected. Settings screens follow whichever radio is connected, and stay.
@@ -288,6 +291,7 @@ private fun AppShell(
 
     androidx.compose.runtime.CompositionLocalProvider(
         io.alvaroedo.meshconnect.ui.screens.LocalBackdropBlur provides backdrop,
+        io.alvaroedo.meshconnect.ui.screens.LocalAppMode provides mode,
     ) {
     Scaffold(
         modifier = Modifier.backdropBlur(backdrop),
@@ -307,7 +311,14 @@ private fun AppShell(
                             selected = currentRoute == tab.route,
                             onClick = {
                                 nav.navigate(tab.route) {
-                                    popUpTo(nav.graph.startDestinationId) { saveState = true }
+                                    // Chats, not the graph's start destination. On first run
+                                    // the start is "setup", which finishing setup pops, so
+                                    // popUpTo(start) found nothing and was ignored, and every
+                                    // tap — even on the tab already shown — pushed a fresh
+                                    // screen: a blank frame and a slide-in, until the app
+                                    // was restarted with "chats" as its start (reproduced
+                                    // 2026-11-16). Chats is the bottom of the stack either way.
+                                    popUpTo(TAB_ROOT) { saveState = true }
                                     launchSingleTop = true
                                     restoreState = true
                                 }
@@ -457,6 +468,7 @@ private fun AppShell(
             composable("settings/channels") { SettingsChannelsScreen(vm, nav) }
             composable("settings/blocking") { SettingsBlockingScreen(vm, nav) }
             composable("settings/app") { SettingsAppScreen(vm, nav) }
+            composable("settings/advanced") { io.alvaroedo.meshconnect.ui.screens.SettingsAdvancedScreen(vm, nav) }
             composable("settings/backup") { SettingsBackupScreen(vm, nav) }
             composable("settings/data") { SettingsDataScreen(vm, nav) }
             composable("settings/about") { AboutScreen(vm, nav) }

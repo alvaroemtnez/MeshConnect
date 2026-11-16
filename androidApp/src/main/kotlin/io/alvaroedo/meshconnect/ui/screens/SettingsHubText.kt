@@ -15,6 +15,28 @@ import io.github.thatsfguy.meshcore.engine.EngineState
  */
 object SettingsHubText {
 
+    /**
+     * Upstream's hub groups, plus MeshConnect's Advanced tile after "Appearance and alerts":
+     * map tiles, the diagnostics log and the datagram tool, which a person who only wants to
+     * talk never needs. Upstream's AppModes does not list it, so Simple mode hides it.
+     */
+    fun groups(): List<io.github.thatsfguy.meshcore.presentation.SettingsGroup> =
+        io.github.thatsfguy.meshcore.presentation.settingsGroups().map { group ->
+            val at = group.tiles.indexOfFirst { it.route == "app" }
+            if (at < 0) {
+                group
+            } else {
+                group.copy(
+                    tiles = group.tiles.toMutableList().apply {
+                        add(at + 1, io.github.thatsfguy.meshcore.presentation.SettingsTile("advanced", "Advanced", "Map tiles, diagnostics log, datagrams"))
+                    },
+                )
+            }
+        }
+
+    /** Every route [groups] reaches. */
+    fun routes(): List<String> = groups().flatMap { it.tiles }.map { it.route }
+
     @Composable
     fun group(index: Int, fallback: String): String = when (index) {
         0 -> stringResource(R.string.hub_group_link)
@@ -39,6 +61,7 @@ object SettingsHubText {
         "channels" -> stringResource(R.string.hub_channels)
         "blocking" -> stringResource(R.string.hub_blocking)
         "app" -> stringResource(R.string.hub_app)
+        "advanced" -> stringResource(R.string.hub_advanced)
         "backup" -> stringResource(R.string.hub_backup)
         "data" -> stringResource(R.string.hub_data)
         "about" -> stringResource(R.string.about_title)
@@ -61,6 +84,7 @@ object SettingsHubText {
         "channels" -> stringResource(R.string.hub_channels_sub)
         "blocking" -> stringResource(R.string.hub_blocking_sub)
         "app" -> stringResource(R.string.hub_app_sub)
+        "advanced" -> stringResource(R.string.hub_advanced_sub)
         "backup" -> stringResource(R.string.hub_backup_sub)
         "data" -> stringResource(R.string.hub_data_sub)
         "about" -> stringResource(R.string.hub_about_sub)

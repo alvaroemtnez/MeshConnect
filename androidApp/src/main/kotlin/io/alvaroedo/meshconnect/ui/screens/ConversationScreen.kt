@@ -285,7 +285,8 @@ fun ConversationScreen(
                 }
             },
             MenuAction(stringResource(R.string.conv_mark_unread), icon = R.drawable.ic_mark_unread) { vm.markUnread(kind, peerKey); nav.popBackStack() },
-            if (technical) MenuAction(stringResource(R.string.conv_channel_settings), icon = R.drawable.ic_tune) { showChannelEditor = true } else null,
+            // In both modes; Simple mode's sheet only renames, shares and removes (ChannelEditSheet).
+            MenuAction(stringResource(if (technical) R.string.conv_channel_settings else R.string.simple_group_settings), icon = R.drawable.ic_tune) { showChannelEditor = true },
             MenuAction(stringResource(R.string.conv_names_seen), icon = R.drawable.ic_group) { showSendersSheet = true },
             MenuAction(stringResource(R.string.conv_clear), destructive = true, icon = R.drawable.ic_delete_sweep) { clearConfirm = true },
         )

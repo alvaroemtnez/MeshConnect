@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """A fake MeshCore companion radio on TCP, for driving the app without hardware.
 
-    python3 tools/fake_radio.py [--port 5000] [--battery MV]
+    python3 tools/fake_radio.py [--port 5000] [--battery MV] [--tag ' #2']
 
 --battery sets the millivolts the radio reports (default 3870, ~68%);
 3400 (~19%) or 3250 (~8%) shows the low-battery alert.
@@ -74,6 +74,8 @@ CHANNELS = [
     (1, "#valencia", key("#valencia")[:16]),
     # Long on purpose: MeshCore Hardened issue #8 (a long name showed as "#").
     (2, "#comunitat-valenciana-mesh", key("#comunitat-valenciana-mesh")[:16]),
+    # A private channel: the only kind Simple mode lists (a "group").
+    (3, "Family", key("fake-radio-family-secret")[:16]),
 ]
 MAX_CHANNELS = 8
 
@@ -112,7 +114,13 @@ def device_info() -> bytes:
     )
 
 
+# --tag: appended to every seeded message, so a reconnect delivers text the app has not seen
+# (it drops a repeat by content) and notifications can be tested.
+TAG = ""
+
+
 def channel_msg(idx, sender, text, hops=2) -> bytes:
+    text = text + TAG
     return (
         bytes([RESP_CHANNEL_MSG_V3, (random.randint(-40, 40)) & 0xFF, 0, 0, idx,
                ((HASH_WIDTH - 1) << 6) | hops, 0])
@@ -121,6 +129,7 @@ def channel_msg(idx, sender, text, hops=2) -> bytes:
 
 
 def contact_msg(sender, text, path_len=1) -> bytes:
+    text = text + TAG
     return (
         bytes([RESP_CONTACT_MSG_V3, 24, 0, 0]) + key(sender)[:6] + bytes([path_len, 0])
         + struct.pack("<I", int(time.time())) + text.encode() + b"\0"
@@ -238,6 +247,7 @@ class Session:
             # one line with Accept / Decline, one plain line.
             channel_msg(1, "Joan", f"DM request for @[{SELF_NAME}] mch:r:{key('Joan').hex()}"),
             channel_msg(1, "Marta", f"DM request for @[Pau] mch:r:{key('Marta').hex()}"),
+            channel_msg(3, "Marta", "Dinner at ours on Sunday?"),
             contact_msg("Marta", "Hi! Are you coming to the meetup?"),
             contact_msg("Marta", f"<{key('Pau').hex()}:1:Pau>"),
             contact_msg("Marta", "39.46990,-0.37630"),
@@ -380,7 +390,10 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--port", type=int, default=5000)
     ap.add_argument("--battery", type=int, default=3870, help="reported millivolts")
+    ap.add_argument("--tag", default="", help="appended to every seeded message, e.g. ' #2'")
     args = ap.parse_args()
+    global TAG
+    TAG = args.tag
     srv = socket.socket()
     srv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     global BATTERY_MV

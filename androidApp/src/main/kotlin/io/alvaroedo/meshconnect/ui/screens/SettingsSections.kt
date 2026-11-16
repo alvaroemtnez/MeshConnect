@@ -94,7 +94,14 @@ internal fun ConnectionSection(vm: MeshCoreViewModel, onAddNode: () -> Unit) {
     ButtonFlowRow {
         FilledTonalButton(onClick = onAddNode) { Text(stringResource(R.string.set_add_node)) }
         if (engineState != EngineState.Detached) {
-            FilledTonalButton(onClick = { vm.disconnect() }) { Text(stringResource(R.string.set_disconnect)) }
+            // Red, as on the radio card: it drops the link to the radio.
+            FilledTonalButton(
+                onClick = { vm.disconnect() },
+                colors = androidx.compose.material3.ButtonDefaults.filledTonalButtonColors(
+                    containerColor = MaterialTheme.colorScheme.errorContainer,
+                    contentColor = MaterialTheme.colorScheme.onErrorContainer,
+                ),
+            ) { Text(stringResource(R.string.set_disconnect)) }
         }
     }
     SavedNodesList(vm)
@@ -259,6 +266,8 @@ internal fun IdentitySection(vm: MeshCoreViewModel, onShowSelfQr: () -> Unit) {
         )
     }
 
+    // Simple mode joins people by link or QR, not by announcing (SimpleMode.showsAdverts).
+    if (!io.alvaroedo.meshconnect.ui.model.SimpleMode.showsAdverts(LocalAppMode.current)) return
     SheetHeading(stringResource(R.string.set_announce), Modifier.padding(top = 0.dp))
     HintText(stringResource(R.string.set_announce_hint))
     Row(horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)) {
@@ -705,8 +714,15 @@ internal fun CustomVarsSection(vm: MeshCoreViewModel) {
 
 @Composable
 internal fun ChannelsSection(vm: MeshCoreViewModel, onEdit: (ChannelEntity) -> Unit) {
-    val channels by vm.dbChannels.collectAsState()
+    val all by vm.dbChannels.collectAsState()
+    val kinds by vm.channelKinds.collectAsState()
+    val mode = LocalAppMode.current
+    val simple = io.alvaroedo.meshconnect.ui.model.SimpleMode.isSimple(mode)
     var showAdd by remember { mutableStateOf(false) }
+    // Simple mode leaves Public and hashtag channels off the list. Only the row: the slot,
+    // its index and its key stay on the radio exactly as they are, so switching back shows
+    // them again and nothing that addresses a channel by slot shifts.
+    val channels = all.filter { io.alvaroedo.meshconnect.ui.model.SimpleMode.showsChannel(mode, kinds[it.idx]) }
 
     if (channels.isEmpty()) {
         HintText(stringResource(R.string.hub_channels_none))
@@ -716,12 +732,13 @@ internal fun ChannelsSection(vm: MeshCoreViewModel, onEdit: (ChannelEntity) -> U
             Modifier.fillMaxWidth().padding(vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text("${ch.idx}: ${ch.name.ifBlank { "–" }}", Modifier.weight(1f))
+            // The slot number is for the full app; a group is its name.
+            Text(if (simple) ch.name.ifBlank { "–" } else "${ch.idx}: ${ch.name.ifBlank { "–" }}", Modifier.weight(1f))
             FilledTonalButton(onClick = { onEdit(ch) }) { Text(stringResource(R.string.set_edit)) }
         }
     }
     ButtonFlowRow {
-        FilledTonalButton(onClick = { showAdd = true }) { Text(stringResource(R.string.chats_add_channel)) }
+        FilledTonalButton(onClick = { showAdd = true }) { Text(stringResource(if (simple) R.string.simple_add_group else R.string.chats_add_channel)) }
     }
 
     if (showAdd) {
@@ -810,8 +827,11 @@ internal fun PrivacySection(vm: MeshCoreViewModel) {
             color = MaterialTheme.colorScheme.error,
         )
     }
+}
 
-    Spacer(Modifier.height(12.dp))
+/** Whether the map fetches tiles: the app's only outbound traffic besides firmware. */
+@Composable
+internal fun MapTilesSection(vm: MeshCoreViewModel) {
     var tiles by remember { mutableStateOf(vm.prefs.mapTilesEnabled) }
     SettingRow(stringResource(R.string.map_load_tiles), tiles) {
         tiles = it
@@ -878,8 +898,6 @@ internal fun DiagnosticsSection(vm: MeshCoreViewModel) {
     if (diagnostics) {
         DiagnosticsViewer(vm)
     }
-    Spacer(Modifier.height(16.dp))
-    ChannelDatagramTool(vm)
 }
 
 /**
@@ -895,7 +913,7 @@ internal fun DiagnosticsSection(vm: MeshCoreViewModel) {
  * text is the mistake PARITY §12 exists to prevent.
  */
 @Composable
-private fun ChannelDatagramTool(vm: MeshCoreViewModel) {
+internal fun ChannelDatagramTool(vm: MeshCoreViewModel) {
     val channels by vm.dbChannels.collectAsState()
     val connected by vm.engineState.collectAsState()
     var channelIdx by remember { mutableStateOf("0") }

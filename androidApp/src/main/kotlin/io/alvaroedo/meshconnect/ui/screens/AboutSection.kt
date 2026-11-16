@@ -121,19 +121,22 @@ fun AboutScreen(vm: MeshCoreViewModel, nav: NavController) {
                 verticalArrangement = Arrangement.spacedBy(2.dp),
             ) {
                 Box(
-                    // primary, not primaryContainer: the bubble is white, as on the
-                    // launcher's teal, and white on a pale container barely showed.
+                    // The launcher's own teal (R.color.icon_background, the brand colour),
+                    // not the dynamic theme's primary: this is the app's logo, shown as the
+                    // home screen shows it (2026-11-16).
                     Modifier.size(96.dp).clip(RoundedCornerShape(28.dp))
-                        .background(MaterialTheme.colorScheme.primary),
+                        .background(androidx.compose.ui.res.colorResource(R.color.icon_background)),
                     contentAlignment = Alignment.Center,
                 ) {
-                    // The bubble is 40 of the foreground's 108 units (the rest is the
-                    // adaptive-icon safe zone), so the image is drawn larger than its tile:
-                    // 176 dp puts a 65 dp bubble in the 96 dp tile, as on the launcher.
+                    // The launcher's proportion. An adaptive icon shows the middle 72 of the
+                    // foreground's 108 units, so the 96 dp tile is that middle: the image is
+                    // drawn at 96 × 108 / 72 = 144 dp and the 40-unit bubble comes out 53 dp,
+                    // 56% of the tile, as on the home screen. It was 176 dp (a 65 dp bubble,
+                    // 68%), which read as too big.
                     Image(
                         painterResource(R.drawable.ic_launcher_foreground),
                         contentDescription = null,
-                        modifier = Modifier.requiredSize(176.dp),
+                        modifier = Modifier.requiredSize(144.dp),
                     )
                 }
                 Spacer(Modifier.height(8.dp))
@@ -287,7 +290,7 @@ private fun AboutGroup(title: String) {
 private val CHANGELOG: List<Pair<String, List<String>>> = listOf(
     "1.3.0" to listOf(
         "MeshCore Hardened 0.10.16 to 0.11.0 brought in.",
-        "Simple mode: Chats and Settings only, for someone who just talks on a group's channel. It only hides.",
+        "Simple mode: contacts, groups and rooms, added by link or QR; switch it on in Appearance and alerts. It only hides.",
         "Ask someone for a DM from a channel: long-press their message, Message privately; on Accept both radios add each other.",
         "Nodes: each contact says whether you can talk to them (Two-way, Heard only…), from what the app already knows.",
         "Check if they can hear you, on people and sensors; far heard-only nodes fold away and ask before adding.",
@@ -295,6 +298,8 @@ private val CHANGELOG: List<Pair<String, List<String>>> = listOf(
         "Codes and links from other apps confirm before adding, and a link waits for the radio.",
         "Radio readings add packet counters; relayed messages show the last hop's SNR.",
         "Reconnects when Bluetooth dies under a live link; no crash when Android refuses the background service.",
+        "Map tiles, the diagnostics log and datagrams moved to Settings → Advanced; Disconnect is red.",
+        "Fixed: on first run, tapping a tab blanked the screen and reloaded it; recent repeaters said \"in 0 minutes\".",
     ),
     "1.2.1" to listOf(
         "Adding someone or a channel from New chat opens the conversation; Settings and Nodes still add without leaving.",

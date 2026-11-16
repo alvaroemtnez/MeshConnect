@@ -199,7 +199,7 @@ S = {
 "hub_firmware_sub": ("Update this radio over Bluetooth", "Actualizar esta radio por Bluetooth", "Actualitzar aquesta ràdio per Bluetooth"),
 "hub_channels_sub": ("Shared-key groups", "Grupos con clave compartida", "Grups amb clau compartida"),
 "hub_blocking_sub": ("Whose messages are dropped", "De quién se descartan los mensajes", "De qui es descarten els missatges"),
-"hub_app_sub": ("Theme, notifications, privacy, logs", "Tema, notificaciones, privacidad, registros", "Tema, notificacions, privadesa, registres"),
+"hub_app_sub": ("Simple mode, theme, notifications, privacy", "Modo sencillo, tema, notificaciones, privacidad", "Mode senzill, tema, notificacions, privadesa"),
 "hub_backup_sub": ("Export or restore configuration", "Exportar o restaurar la configuración", "Exportar o restaurar la configuració"),
 "hub_data_sub": ("How long messages are kept", "Cuánto tiempo se guardan los mensajes", "Quant de temps es guarden els missatges"),
 "hub_about_sub": ("Version, licences, what this app is", "Versión, licencias, qué es esta app", "Versió, llicències, què és aquesta aplicació"),
@@ -1368,11 +1368,8 @@ S = {
 "nodes_nearest_no_position": ("Your radio has no position set, so nothing can be ordered by distance.", "Tu radio no tiene posición, así que no se puede ordenar por distancia.", "La teua ràdio no té posició, així que no es pot ordenar per distància."),
 # Simple mode (upstream 0.11.0)
 "mode_simple": ("Simple mode", "Modo sencillo", "Mode senzill"),
-"mode_simple_sub": ("Just chats and channels, for people who only want to talk", "Solo chats y canales, para quien solo quiere hablar", "Només xats i canals, per a qui només vol parlar"),
-"mode_simple_on": ("Simple mode is on", "El modo sencillo está activado", "El mode senzill està activat"),
-"mode_simple_on_sub": ("Tap to show the full app. Nothing is lost either way.", "Toca para ver la app completa. No se pierde nada en ningún caso.", "Toca per a veure l'aplicació completa. No es perd res en cap cas."),
 "mode_question": ("How will you use it?", "¿Cómo la vas a usar?", "Com la faràs servir?"),
-"mode_choice_simple": ("Simple: chats and channels with my group", "Sencillo: chats y canales con mi grupo", "Senzill: xats i canals amb el meu grup"),
+"mode_choice_simple": ("Simple: chats, groups and rooms", "Sencillo: chats, grupos y salas", "Senzill: xats, grups i sales"),
 "mode_choice_full": ("Full: nodes, map, repeaters and radio settings", "Completo: nodos, mapa, repetidores y ajustes de radio", "Complet: nodes, mapa, repetidors i ajustos de ràdio"),
 "mode_switch_later": ("You can switch at any time in Settings. Nothing is lost either way.", "Puedes cambiarlo cuando quieras en Ajustes. No se pierde nada en ningún caso.", "Pots canviar-ho quan vulgues en Ajustos. No es perd res en cap cas."),
 # Direct-message requests over a channel (upstream 0.11.0)
@@ -1581,8 +1578,6 @@ S = {
 "newchat_title": ("New chat", "Nuevo chat", "Xat nou"),
 "newchat_people": ("People", "Personas", "Persones"),
 "newchat_channels": ("Channels", "Canales", "Canals"),
-"newchat_contact": ("Message a contact", "Escribir a un contacto", "Escriure a un contacte"),
-"newchat_contact_sub": ("Pick someone from your radio's contacts.", "Elige a alguien de los contactos de tu radio.", "Tria algú dels contactes de la teua ràdio."),
 "newchat_search": ("Search contacts", "Buscar contactos", "Buscar contactes"),
 "newchat_none": ("No contacts to message yet. Add people from Nodes, or scan their code.", "Aún no hay contactos a los que escribir. Añade personas desde Nodos o escanea su código.", "Encara no hi ha contactes a qui escriure. Afig persones des de Nodes o escaneja el seu codi."),
 "newchat_scan": ("Scan a QR code", "Escanear un código QR", "Escanejar un codi QR"),
@@ -1613,6 +1608,25 @@ S = {
 "radio_cr": ("Coding rate", "Codificación", "Codificació"),
 "newchat_paste": ("Get from clipboard", "Obtener del portapapeles", "Obtindre del porta-retalls"),
 "newchat_paste_sub": ("A meshcore:// link you copied: a contact or a channel.", "Un enlace meshcore:// que hayas copiado: un contacto o un canal.", "Un enllaç meshcore:// que hages copiat: un contacte o un canal."),
+
+# Simple mode, MeshConnect's (2026-11-16): ui/model/SimpleMode
+"mode_simple_hint": ("Only chats, groups and rooms, added by link or QR code. It only hides things: nothing changes on the radio.", "Solo chats, grupos y salas, añadidos con un enlace o un código QR. Solo oculta cosas: no cambia nada en la radio.", "Només xats, grups i sales, afegits amb un enllaç o un codi QR. Només amaga coses: no canvia res en la ràdio."),
+"hub_advanced": ("Advanced", "Avanzado", "Avançat"),
+"hub_advanced_sub": ("Map tiles, diagnostics log, datagrams", "Mapas, registro de diagnóstico, datagramas", "Mapes, registre de diagnòstic, datagrames"),
+"set_storage_privacy": ("Privacy", "Privacidad", "Privadesa"),
+"set_network": ("Network", "Red", "Xarxa"),
+"newchat_existing": ("Existing contact, group or room", "Contacto, grupo o sala existente", "Contacte, grup o sala existent"),
+"newchat_existing_sub": ("Write to someone or somewhere your radio already knows.", "Escribe a alguien o en algún sitio que tu radio ya conoce.", "Escriu a algú o en algun lloc que la teua ràdio ja coneix."),
+"simple_add_group": ("Add a group", "Añadir un grupo", "Afegir un grup"),
+"simple_create_group": ("Create a group", "Crear un grupo", "Crear un grup"),
+"simple_create_group_sub": ("Then share its QR code with the people in it.", "Luego comparte su código QR con quienes estén en él.", "Després compartix el seu codi QR amb qui hi estiga."),
+"simple_create_group_explain": ("Give the group a name. Then, from the group's ⋮ menu, show its QR code to the people who should join.", "Ponle un nombre al grupo. Después, desde el menú ⋮ del grupo, enseña su código QR a quienes deban unirse.", "Posa-li un nom al grup. Després, des del menú ⋮ del grup, mostra el seu codi QR a qui s'hi haja d'unir."),
+"simple_group_settings": ("Group settings", "Ajustes del grupo", "Ajustos del grup"),
+"simple_share_group_qr": ("Share group QR…", "Compartir QR del grupo…", "Compartir QR del grup…"),
+"simple_remove_group": ("Remove group", "Eliminar grupo", "Eliminar grup"),
+"simple_scan_sub": ("A person's or a group's code that someone shows you.", "El código de una persona o de un grupo que te enseñen.", "El codi d'una persona o d'un grup que et mostren."),
+"simple_newchat_none": ("No one to write to yet. Scan someone's QR code, or create a group.", "Aún no hay nadie a quien escribir. Escanea el código QR de alguien o crea un grupo.", "Encara no hi ha ningú a qui escriure. Escaneja el codi QR d'algú o crea un grup."),
+"cd_group": ("Group", "Grupo", "Grup"),
 }
 
 # key -> ((one, other) en, (one, other) es, (one, other) ca)

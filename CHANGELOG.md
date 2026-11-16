@@ -15,11 +15,16 @@ Its history up to the fork point (0.10.15) is in
 
 Brings in MeshCore Hardened 0.10.16, 0.10.17 and 0.11.0.
 
-- **Simple mode.** For handing the app to someone who only needs to talk on a group's
-  channel. Choose it on the last first-run step or with the tile at the top of Settings. It
-  shows Chats and Settings only, leaves out the Public channel and repeater and room threads,
-  and hides hop counts, signal, routing and node detail. It only hides: nothing is changed,
-  and one tap shows the full app again.
+- **Simple mode.** For handing the app to someone who only needs to talk to their people:
+  contacts, groups and rooms, added by link or QR code. Choose it on the last first-run step
+  or with the switch in Settings → Appearance and alerts. It shows Chats and Settings only;
+  leaves out Public and hashtag channels (in Chats, in Settings → Channels and in their
+  notifications) and repeater threads; shows groups and rooms with one group icon; and hides
+  hop counts, signal, routing, node detail and the announce buttons. New chat is one list of
+  everyone and every group, then Create a group, Scan a QR code and Get from clipboard. A
+  group's ⋮ → Group settings renames it, shows its QR code or removes it. The radio card
+  shows the radio's name, its link and battery, and the repeaters it hears. It only hides:
+  nothing changes on the radio, and switching back shows everything as it was.
 - **Ask someone for a DM from a channel.** Long-press their channel message and choose
   "Message privately". They get Accept or Decline; on Accept, both radios add each other, so
   direct messages work even with auto-add off. Everyone on the channel can see that you asked.
@@ -37,6 +42,12 @@ Brings in MeshCore Hardened 0.10.16, 0.10.17 and 0.11.0.
   is explained rather than taken as proof they can't hear you.
 - **Far away, heard only.** Heard nodes that show no sign of hearing you and are 4 or more
   hops or over 100 km away fold into their own group. Adding one asks first.
+- **Settings → Advanced.** Map tiles, the diagnostics log and the channel datagram tool moved
+  here from Appearance and alerts. New chat's "Message a contact" is now "Existing contact,
+  group or room", one alphabetical list of all three. Disconnect is red, and About shows the
+  logo in the launcher's teal at the launcher's size.
+- **Fixed:** on a fresh install, tapping a tab at the bottom blanked the screen and slid it in
+  again until the app was restarted. The radio card said a repeater was heard "in 0 minutes".
 - **Distance on node rows, and sort by nearest.** The heard section now follows the chosen
   sort too, so "Fewest hops" no longer looks like it does nothing.
 - **Codes and links from other apps confirm before adding.** A signed contact code was added

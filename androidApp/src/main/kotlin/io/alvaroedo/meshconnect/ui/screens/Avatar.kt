@@ -52,6 +52,24 @@ fun NodeAvatar(
      */
     typeIcon: Boolean = false,
 ) {
+    // Simple mode: a group is a group, whether a channel's key or a room server is behind it.
+    // One icon on the thread's own colour; people keep their initials (SimpleMode.groupAvatar).
+    if (io.alvaroedo.meshconnect.ui.model.SimpleMode.groupAvatar(LocalAppMode.current, isChannel, type)) {
+        val c = avatarColors(seed)
+        Box(
+            modifier = Modifier.size(size).background(Color(c.backgroundArgb), CircleShape),
+            contentAlignment = Alignment.Center,
+        ) {
+            androidx.compose.material3.Icon(
+                androidx.compose.ui.res.painterResource(R.drawable.ic_group),
+                contentDescription = stringResource(R.string.cd_group),
+                tint = if (c.useDarkText) Color.Black else Color.White,
+                modifier = Modifier.size(size * 0.55f),
+            )
+        }
+        return
+    }
+
     // Infrastructure nodes reuse the MAP marker artwork (same colors +
     // glyphs) so a repeater looks identical in the list and on the map.
     if (type == Codes.ADV_TYPE_REPEATER ||

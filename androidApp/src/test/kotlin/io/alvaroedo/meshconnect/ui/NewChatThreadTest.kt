@@ -75,13 +75,13 @@ class NewChatThreadTest {
             "vm.createPrivateChannel(okName!!, openChat)",
             "vm.joinPrivateChannel(okName!!, okKey!!, openChat)",
         )) assertTrue(call, sheets.contains(call))
-        // newChat is exactly "Chats gave a contact callback", which Settings does not.
-        assertTrue(sheets.contains("val newChat = onMessageContact != null"))
+        // newChat is exactly "Chats gave a thread callback", which Settings does not.
+        assertTrue(sheets.contains("val newChat = onOpenThread != null"))
     }
 
     @Test
     fun `Settings and the Chats top-bar scanner never ask`() {
-        assertTrue("Settings must not pass a contact callback", settings.contains("ChannelAddSheet(") && !settings.contains("onMessageContact"))
+        assertTrue("Settings must not pass a thread callback", settings.contains("ChannelAddSheet(") && !settings.contains("onOpenThread"))
         assertTrue(chats.contains("result?.let { vm.importScannedCode(it) }"))
         assertFalse(chats.contains("openChat"))
     }

@@ -337,11 +337,19 @@ class MeshCoreService : Service() {
                 if (key.isEmpty()) {
                     flowOf(Triple(0, null as String?, null as io.alvaroedo.meshconnect.storage.MessageEntity?))
                 } else {
-                    combine(db.contacts().all(key), db.channels().all(key), db.messages().latestPerThread(key)) { cs, chs, latest ->
+                    combine(
+                        combine(db.contacts().all(key), db.channels().all(key), db.messages().latestPerThread(key)) { cs, chs, latest ->
+                            Triple(cs, chs, latest)
+                        },
+                        // Simple mode hides channels anyone can join (SimpleMode); the widget
+                        // counts what Chats shows. Kinds come from the radio's own keys.
+                        prefs.appModeChanges(),
+                        engine.channels.map { list -> channelKinds(list) }.distinctUntilChanged(),
+                    ) { (cs, chs, latest), mode, kinds ->
                         // The Chats list's rule, not a sum of every row (ChatThreads).
-                        val unread = io.alvaroedo.meshconnect.ui.model.ChatThreads.unreadTotal(latest, cs, chs)
+                        val unread = io.alvaroedo.meshconnect.ui.model.ChatThreads.unreadTotal(latest, cs, chs, mode, kinds)
                         val last = io.alvaroedo.meshconnect.ui.model.ChatThreads
-                            .chatLatest(latest, cs.associateBy { it.keyHex })
+                            .chatLatest(latest, cs.associateBy { it.keyHex }, mode, kinds)
                             .filter { !it.outgoing }.maxByOrNull { it.timestamp }
                         val from = last?.let { m ->
                             if (m.kind == MessageRepository.KIND_CHANNEL) {
@@ -827,6 +835,16 @@ class MeshCoreService : Service() {
             .build()
     }
 
+    /** Each channel slot's kind, from the key the radio holds (ChannelKinds). */
+    private fun channelKinds(
+        channels: List<io.github.thatsfguy.meshcore.model.Channel>,
+    ): Map<Int, io.github.thatsfguy.meshcore.protocol.ChannelKind> =
+        channels.filter { !it.isEmpty }.associate {
+            it.index to io.github.thatsfguy.meshcore.protocol.ChannelKinds.of(it.name, it.psk, kindCrypto)
+        }
+
+    private val kindCrypto by lazy { androidCryptoProvider() }
+
     /**
      * System notification for a genuinely-new inbound message (invoked
      * by the repository AFTER dedup + not-the-open-thread checks, so a
@@ -859,6 +877,28 @@ class MeshCoreService : Service() {
             return skip("channel $peerKey muted")
         }
         if (!isChannel && prefs.isContactMuted(peerKey)) return skip("contact muted")
+        // Simple mode notifies only for the threads it shows (SimpleMode.showsThread): no
+        // Public or hashtag channels. App-side only — nothing about the channel on the radio
+        // changes, so switching modes back and forth leaves the radio as it was.
+        val mode = prefs.appMode
+        if (io.alvaroedo.meshconnect.ui.model.SimpleMode.isSimple(mode)) {
+            val channelKind = if (isChannel) {
+                peerKey.toIntOrNull()?.let { idx -> channelKinds(engine.channels.value)[idx] }
+            } else {
+                null
+            }
+            val contactType = if (isChannel) {
+                null
+            } else {
+                (
+                    engine.contacts.value[peerKey]
+                        ?: engine.contacts.value.values.firstOrNull { it.publicKeyHex.startsWith(peerKey) }
+                    )?.type
+            }
+            if (!io.alvaroedo.meshconnect.ui.model.SimpleMode.showsThread(mode, isChannel, channelKind, contactType)) {
+                return skip("thread hidden in Simple mode")
+            }
+        }
         val title = if (isChannel) {
             val idx = peerKey.toIntOrNull()
             val name = engine.channels.value.firstOrNull { it.index == idx }?.name
