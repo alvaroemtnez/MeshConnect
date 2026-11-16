@@ -1,5 +1,6 @@
 package io.alvaroedo.meshconnect.ui.screens
 
+import io.github.thatsfguy.meshcore.presentation.DmRequest
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.safeDrawing
@@ -51,6 +52,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.FilledTonalButton
+import io.alvaroedo.meshconnect.ui.theme.MonoFontFamily
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -245,6 +249,25 @@ fun ConversationScreen(
     val quotePrefix = replyingTo?.let { quotePrefixFor(it) }.orEmpty()
     val bodyBudget = (maxBytes - quotePrefix.encodeToByteArray().size).coerceAtLeast(0)
 
+    val dmHandled by vm.dmRequestsHandled.collectAsState()
+    // The name a "Message privately" request is about to be sent to, awaiting confirmation.
+    var askDmOf by remember(peerKey) { mutableStateOf<String?>(null) }
+    askDmOf?.let { name ->
+        AlertDialog(
+            onDismissRequest = { askDmOf = null },
+            icon = { Icon(painterResource(R.drawable.ic_chat), null) },
+            title = { Text(stringResource(R.string.dm_ask_title, name)) },
+            text = { Text(stringResource(R.string.dm_ask_body, name)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    askDmOf = null
+                    peerKey.toIntOrNull()?.let { vm.askToMessagePrivately(it, name) }
+                }) { Text(stringResource(R.string.dm_ask_send)) }
+            },
+            dismissButton = { TextButton(onClick = { askDmOf = null }) { Text(stringResource(R.string.cancel)) } },
+        )
+    }
+
     var muted by remember(peerKey) {
         mutableStateOf(peerKey.toIntOrNull()?.let { vm.prefs.isChannelMuted(it) } ?: false)
     }
@@ -344,7 +367,30 @@ fun ConversationScreen(
                 modifier = Modifier.weight(1f),
                 onLoadOlder = { pageSize += PAGE_SIZE },
             ) { m ->
-                MessageBubble(
+                // A direct-message request or reply (DmRequest) reads as a quiet line, not a
+                // bubble with a hex key in it; a request addressed to us carries the buttons.
+                val dm = if (isChannel) remember(m.text) { DmRequest.parse(m.text) } else null
+                if (dm != null) {
+                    val myKey = selfInfo?.publicKeyHex.orEmpty()
+                    val askedMe = if (m.outgoing) {
+                        null
+                    } else {
+                        (
+                            DmRequest.decide(dm, m.senderName, selfName, myKey, DmRequest.Outstanding.NONE, 0)
+                                as? DmRequest.Action.AskedMe
+                            )?.takeIf { it.requesterKeyHex !in dmHandled }
+                    }
+                    DmRequestLine(
+                        line = io.alvaroedo.meshconnect.ui.model.DmRequestText.describe(
+                            androidx.compose.ui.platform.LocalResources.current, dm, m.senderName, m.outgoing, selfName, myKey,
+                        ),
+                        keyPrefix = askedMe?.requesterKeyHex?.take(DmRequest.PREFIX_HEX),
+                        onAccept = askedMe?.let { a ->
+                            { peerKey.toIntOrNull()?.let { vm.acceptDmRequest(it, a.requesterName, a.requesterKeyHex) } }
+                        },
+                        onDecline = askedMe?.let { a -> { vm.declineDmRequest(a.requesterKeyHex) } },
+                    )
+                } else MessageBubble(
                     m,
                     selecting = selection != null,
                     selected = selection?.contains(m.id) == true,
@@ -373,6 +419,12 @@ fun ConversationScreen(
                     onReact = { emoji -> vm.sendReaction(m.id, emoji) },
                     onMoreEmoji = { reactingTo = m },
                     onReply = { replyingTo = m },
+                    // Ask them for a private conversation, over this channel (DmRequest).
+                    onAskDm = if (isChannel && !m.outgoing && Mentions.canMention(m.senderName.orEmpty())) {
+                        { askDmOf = m.senderName?.trim() }
+                    } else {
+                        null
+                    },
                     onInfo = { details = m },
                     routeLabel = if (m.outgoing) null else routeChipLabel(m, routeNames),
                     onRoute = { routeOf = m },
@@ -540,6 +592,8 @@ fun ConversationScreen(
                 when (a) {
                     Attachment.MyContact -> {
                         val me = vm.selfInfo.value
+                        // An invitation: whoever adds it may answer, and that answer adds them.
+                        vm.noteSharedOwnCode()
                         sendAttachment(AttachmentText.myContact(me?.publicKeyHex, me?.name))
                     }
                     Attachment.Contact -> pickContact = true
@@ -827,6 +881,47 @@ private const val QUOTE_MAX_CHARS = Quoting.QUOTE_MAX_CHARS
  */
 internal fun splitQuote(text: String): Pair<String?, String> = Quoting.split(text)
 
+/**
+ * A direct-message request or reply, as a line: smaller, italic and greyed, so it reads as
+ * something that happened on the channel rather than as a message. A request to us shows
+ * the asker's key prefix (names are display text anyone can type) and Accept / Decline.
+ */
+@Composable
+private fun DmRequestLine(
+    line: String,
+    keyPrefix: String?,
+    onAccept: (() -> Unit)?,
+    onDecline: (() -> Unit)?,
+) {
+    val faint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+    Column(
+        Modifier.fillMaxWidth().padding(horizontal = 32.dp, vertical = 6.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(
+            line,
+            style = MaterialTheme.typography.bodySmall,
+            fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
+            color = faint,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+        )
+        if (keyPrefix != null) {
+            Text(
+                stringResource(R.string.dm_key_starts, keyPrefix.uppercase()),
+                style = MaterialTheme.typography.labelSmall,
+                fontFamily = MonoFontFamily,
+                color = faint,
+            )
+        }
+        if (onAccept != null && onDecline != null) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 4.dp)) {
+                OutlinedButton(onClick = onDecline) { Text(stringResource(R.string.dm_decline)) }
+                FilledTonalButton(onClick = onAccept) { Text(stringResource(R.string.dm_accept)) }
+            }
+        }
+    }
+}
+
 @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 private fun MessageBubble(
@@ -844,6 +939,8 @@ private fun MessageBubble(
     onReact: (String) -> Unit = {},
     onMoreEmoji: () -> Unit = {},
     onReply: () -> Unit = {},
+    /** "Message privately" (DmRequest); null where it does not apply. */
+    onAskDm: (() -> Unit)? = null,
     onInfo: () -> Unit = {},
     /** "via A › B" when the arrival route is known (RouteChip), else null. */
     routeLabel: String? = null,
@@ -1035,6 +1132,7 @@ private fun MessageBubble(
                 onReact = { emoji -> showActions = false; onReact(emoji) },
                 onMoreEmoji = { showActions = false; onMoreEmoji() },
                 onReply = { showActions = false; onReply() },
+                onAskDm = onAskDm?.let { ask -> { showActions = false; ask() } },
                 onMention = { showActions = false; onMention() },
                 onCopy = {
                     showActions = false
@@ -1160,6 +1258,7 @@ private fun MessageFocusOverlay(
     onReact: (String) -> Unit,
     onMoreEmoji: () -> Unit,
     onReply: () -> Unit,
+    onAskDm: (() -> Unit)?,
     onMention: () -> Unit,
     onCopy: () -> Unit,
     onInfo: () -> Unit,
@@ -1209,7 +1308,7 @@ private fun MessageFocusOverlay(
                 )
                 Box { if (canReact) ReactionPill(onReact, onMoreEmoji) }
                 Box { bubble() }
-                ActionMenu(canMention, canResend, onReply, onMention, onCopy, onSelect, onInfo, onResend, onDelete)
+                ActionMenu(canMention, canResend, onReply, onAskDm, onMention, onCopy, onSelect, onInfo, onResend, onDelete)
             },
         ) { measurables, constraints ->
             val w = constraints.maxWidth
@@ -1275,6 +1374,7 @@ private fun ActionMenu(
     canMention: Boolean,
     canResend: Boolean,
     onReply: () -> Unit,
+    onAskDm: (() -> Unit)?,
     onMention: () -> Unit,
     onCopy: () -> Unit,
     onSelect: () -> Unit,
@@ -1293,6 +1393,7 @@ private fun ActionMenu(
             // Separate from Reply on purpose: Reply quotes the text being answered, which
             // costs those bytes out of a ~150-byte frame; Mention costs only the name.
             if (canMention) MenuRow(R.drawable.ic_alternate_email, stringResource(R.string.conv_mention), onMention)
+            onAskDm?.let { MenuRow(R.drawable.ic_chat, stringResource(R.string.dm_message_privately), it) }
             MenuRow(R.drawable.ic_content_copy, stringResource(R.string.copy), onCopy)
             MenuRow(R.drawable.ic_select, stringResource(R.string.conv_select), onSelect)
             MenuRow(R.drawable.ic_info, stringResource(R.string.conv_info), onInfo)

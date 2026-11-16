@@ -779,7 +779,8 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
                     ConversationRow(
                         kind = m.kind, key = m.peerKey,
                         title = ch?.name?.ifBlank { null } ?: str(R.string.ch_numbered, idx),
-                        subtitle = (m.senderName?.plus(": ") ?: "") + previewOf(m),
+                        // A DM request reads as its line, which already names the sender.
+                        subtitle = dmRequestLine(m) ?: ((m.senderName?.plus(": ") ?: "") + previewOf(m)),
                         timestamp = m.timestamp,
                         unread = ch?.unread ?: 0,
                         isChannel = true,
@@ -1015,6 +1016,13 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
      * found its target is still a message row, so render it the way the
      * thread does rather than leaking "r:1a2b:00" into the list.
      */
+    private fun dmRequestLine(m: io.alvaroedo.meshconnect.storage.MessageEntity): String? {
+        val me = selfInfo.value ?: return null
+        return io.alvaroedo.meshconnect.ui.model.DmRequestText.lineFor(
+            getApplication<android.app.Application>().resources, m.text, m.senderName, m.outgoing, me.name, me.publicKeyHex,
+        )
+    }
+
     private fun previewOf(m: io.alvaroedo.meshconnect.storage.MessageEntity): String {
         io.github.thatsfguy.meshcore.protocol.AnyReaction.emojiOf(m.text)
             ?.let { return "$it reacted" }
@@ -1592,6 +1600,7 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
     suspend fun selfShareUri(): String? {
         val info = selfInfo.value ?: return null
         val key = info.publicKeyHex.ifBlank { return null }
+        noteSharedOwnCode()
         return ShareUri.encodeContact(
             name = info.name,
             pubKeyHex = key,
@@ -1822,7 +1831,104 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
             }.getOrDefault(false)
             transientMessage.value = if (ok) str(R.string.vm_contact_added) else str(R.string.vm_add_failed)
             if (ok) openAfterAdd(openChat, NewChatThread.forContact(card.pubKeyHex, card.type))
+            // They may not have us, and until they do their radio drops our direct
+            // messages. Offer to answer on a shared channel so their app adds us back
+            // (DmRequest): only for a person, only with a channel to use. Hosted in the
+            // shell, so it shows over the chat New chat opens too.
+            if (ok && card.type == Codes.ADV_TYPE_CHAT && dbChannels.value.isNotEmpty()) {
+                pendingTellBack.value = card
+            }
         }
+    }
+
+    // ------------------------------------------------------------------
+    // Direct-message requests over a channel (DmRequest, upstream 0.11.0)
+    // ------------------------------------------------------------------
+
+    private fun nowSec() = System.currentTimeMillis() / 1000
+
+    private val dmHandledRevision = MutableStateFlow(0)
+
+    /** Requesters whose request to us was accepted or declined: no buttons for them. */
+    val dmRequestsHandled: StateFlow<Set<String>> = dmHandledRevision
+        .map { prefs.dmRequestsHandled }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, prefs.dmRequestsHandled)
+
+    val selfKeyHex: StateFlow<String> get() = selfKey
+
+    /**
+     * Showing or sending our own code is an invitation: whoever adds it may answer on a
+     * shared channel, and that answer should add them here (Outstanding.ANYONE, 7 days).
+     */
+    fun noteSharedOwnCode() {
+        prefs.dmRequestsOutstanding = prefs.dmRequestsOutstanding.sharedLink(nowSec())
+    }
+
+    /** Post a request on [channelIndex] asking [targetName] for a private conversation. */
+    fun askToMessagePrivately(channelIndex: Int, targetName: String) {
+        val me = selfInfo.value ?: return
+        val text = io.github.thatsfguy.meshcore.presentation.DmRequest.request(targetName, me.publicKeyHex)
+        // A channel message longer than 160 bytes with its "name: " prefix is cut short
+        // by the firmware, and a key cut short is worse than no key.
+        if (text == null || !io.github.thatsfguy.meshcore.presentation.DmRequest.fits(me.name, text)) {
+            transientMessage.value = str(R.string.vm_dm_cant_ask)
+            return
+        }
+        prefs.dmRequestsOutstanding = prefs.dmRequestsOutstanding.asked(targetName, nowSec())
+        sendChannelMessage(channelIndex, text)
+        transientMessage.value = str(R.string.vm_dm_asked, targetName.trim())
+    }
+
+    /** Accept a request: add them on our radio, then post the reply that adds us on theirs. */
+    fun acceptDmRequest(channelIndex: Int, requesterName: String, requesterKeyHex: String) {
+        val svc = _service.value ?: return
+        val me = selfInfo.value ?: return
+        val key = hexToBytesOrNull(requesterKeyHex) ?: return
+        val reply = io.github.thatsfguy.meshcore.presentation.DmRequest
+            .accept(requesterName, requesterKeyHex, me.publicKeyHex)
+        if (reply == null || !io.github.thatsfguy.meshcore.presentation.DmRequest.fits(me.name, reply)) {
+            transientMessage.value = str(R.string.vm_dm_cant_answer)
+            return
+        }
+        viewModelScope.launch {
+            val added = runCatching {
+                svc.engine.addContactFromCard(key, requesterName.trim(), Codes.ADV_TYPE_CHAT)
+            }.getOrDefault(false)
+            if (!added) {
+                transientMessage.value = str(R.string.vm_dm_add_failed, requesterName.trim())
+                return@launch
+            }
+            sendChannelMessage(channelIndex, reply)
+            markDmRequestHandled(requesterKeyHex)
+            transientMessage.value = str(R.string.vm_dm_accepted, requesterName.trim())
+        }
+    }
+
+    /** Decline: nothing is posted; the buttons just go away for good. */
+    fun declineDmRequest(requesterKeyHex: String) {
+        markDmRequestHandled(requesterKeyHex)
+    }
+
+    private fun markDmRequestHandled(requesterKeyHex: String) {
+        prefs.dmRequestsHandled = prefs.dmRequestsHandled + requesterKeyHex.lowercase()
+        dmHandledRevision.value++
+    }
+
+    /** A person just added from a code, who may not have us: offer to tell them. */
+    val pendingTellBack = MutableStateFlow<ShareUri.Decoded.Contact?>(null)
+
+    /** Post the reply form on [channelIndex], which their app treats as an accept. */
+    fun tellBack(card: ShareUri.Decoded.Contact, channelIndex: Int) {
+        pendingTellBack.value = null
+        val me = selfInfo.value ?: return
+        val reply = io.github.thatsfguy.meshcore.presentation.DmRequest
+            .accept(card.name, card.pubKeyHex, me.publicKeyHex)
+        if (reply == null || !io.github.thatsfguy.meshcore.presentation.DmRequest.fits(me.name, reply)) {
+            transientMessage.value = str(R.string.vm_tell_back_cant)
+            return
+        }
+        sendChannelMessage(channelIndex, reply)
+        transientMessage.value = str(R.string.vm_tell_back_posted)
     }
 
     fun dismissContactCard() {

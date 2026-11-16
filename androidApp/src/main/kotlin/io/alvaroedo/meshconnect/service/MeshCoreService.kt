@@ -246,6 +246,20 @@ class MeshCoreService : Service() {
         repository.onNewMessage = { kind, peerKey, senderName, text ->
             postMessageNotification(kind, peerKey, senderName, text)
         }
+        repository.dmOutstanding = { prefs.dmRequestsOutstanding }
+        repository.onDmAccepted = { name, keyHex ->
+            scope.launch {
+                val key = io.github.thatsfguy.meshcore.util.hexToBytesOrNull(keyHex) ?: return@launch
+                val added = runCatching {
+                    engine.addContactFromCard(key, name, io.github.thatsfguy.meshcore.protocol.Codes.ADV_TYPE_CHAT)
+                }.getOrDefault(false)
+                diagnostics.log("Inbox", "DM request accepted by $name: contact added: $added")
+                if (added) {
+                    prefs.dmRequestsOutstanding = prefs.dmRequestsOutstanding
+                        .answered(name, System.currentTimeMillis() / 1000)
+                }
+            }
+        }
 
         androidx.core.content.ContextCompat.registerReceiver(
             this,
@@ -376,7 +390,12 @@ class MeshCoreService : Service() {
                     unread = unread,
                     lastFrom = from,
                     lastText = last?.let {
-                        io.alvaroedo.meshconnect.ui.model.RichPreview.of(this@MeshCoreService, it.text)
+                        self?.let { me ->
+                            io.alvaroedo.meshconnect.ui.model.DmRequestText.lineFor(
+                                resources, it.text, it.senderName, it.outgoing, me.name, me.publicKeyHex,
+                            )
+                        }
+                            ?: io.alvaroedo.meshconnect.ui.model.RichPreview.of(this@MeshCoreService, it.text)
                             ?: io.github.thatsfguy.meshcore.protocol.Quoting.previewBody(it.text).take(120)
                     },
                     lastAtMs = (last?.timestamp ?: 0L) * 1000,
@@ -874,7 +893,18 @@ class MeshCoreService : Service() {
         // the collapsed line showing the wrong half of it.
         val notice = MessageNotice.forMessage(text)
         // A shared contact, channel or place reads as what it is.
-        val card = io.alvaroedo.meshconnect.ui.model.RichPreview.of(this, text)
+        // A direct-message request reads as what it is, not as its wire text with a key.
+        val card = (
+            if (isChannel) {
+                engine.selfInfo.value?.let { me ->
+                    io.alvaroedo.meshconnect.ui.model.DmRequestText.lineFor(
+                        resources, text, senderName, outgoing = false, myName = me.name, myKeyHex = me.publicKeyHex,
+                    )
+                }
+            } else {
+                null
+            }
+            ) ?: io.alvaroedo.meshconnect.ui.model.RichPreview.of(this, text)
         val notification = NotificationCompat.Builder(this, MSG_CHANNEL)
             .setSmallIcon(R.drawable.ic_stat_message)
             .setContentTitle(title)

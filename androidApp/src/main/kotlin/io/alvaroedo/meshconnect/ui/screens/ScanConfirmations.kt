@@ -115,6 +115,48 @@ fun ScanConfirmations(vm: MeshCoreViewModel) {
         )
     }
 
+    // Just added someone from a code or link. Their radio drops our direct messages until
+    // they add us too, so offer to answer them on a channel we share (DmRequest). A private
+    // channel first: that is the group. Simple mode hides Public, so it isn't offered there.
+    val tellBack by vm.pendingTellBack.collectAsState()
+    tellBack?.let { card ->
+        val channels by vm.dbChannels.collectAsState()
+        val kinds by vm.channelKinds.collectAsState()
+        val mode by vm.prefs.appModeFlow.collectAsState()
+        val ordered = channels.filter {
+            io.github.thatsfguy.meshcore.presentation.AppModes.showsThread(mode, true, kinds[it.idx], null)
+        }.sortedBy {
+            when (kinds[it.idx]) {
+                io.github.thatsfguy.meshcore.protocol.ChannelKind.Private -> 0
+                io.github.thatsfguy.meshcore.protocol.ChannelKind.Hashtag -> 1
+                else -> 2
+            }
+        }
+        AlertDialog(
+            onDismissRequest = { vm.pendingTellBack.value = null },
+            icon = { Icon(painterResource(R.drawable.ic_person_add), null) },
+            title = {
+                Text(stringResource(R.string.tell_back_title, card.name.ifBlank { stringResource(R.string.tell_back_them) }))
+            },
+            text = {
+                Column(Modifier.verticalScroll(rememberScrollState())) {
+                    Text(stringResource(R.string.tell_back_body))
+                    Spacer(Modifier.height(8.dp))
+                    if (ordered.isEmpty()) Text(stringResource(R.string.tell_back_no_channel))
+                    for (ch in ordered) {
+                        TextButton(onClick = { vm.tellBack(card, ch.idx) }) {
+                            Text(stringResource(R.string.tell_back_post_on, ch.name.ifBlank { stringResource(R.string.ch_numbered, ch.idx) }))
+                        }
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = { vm.pendingTellBack.value = null }) { Text(stringResource(R.string.onb_later)) }
+            },
+        )
+    }
+
     // A scanned settings code. This dialog is the whole safety story:
     // nothing about the code is authenticated, and applying it decides
     // whether this radio is on a mesh at all — and what frequency it

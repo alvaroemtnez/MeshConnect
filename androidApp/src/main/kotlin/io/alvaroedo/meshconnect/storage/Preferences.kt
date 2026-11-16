@@ -176,6 +176,50 @@ class Preferences(context: Context) {
         prefs.edit().putStringSet("reach_proofs", (kept + "$self|$node|$atSeconds").toSet()).apply()
     }
 
+    /**
+     * Simple or full app (presentation/AppMode). [appModeFlow] mirrors it so the tab bar,
+     * Chats and Settings change the moment it is switched. Not per radio: it is about who
+     * holds the phone, not which radio it talks to.
+     */
+    val appModeFlow: MutableStateFlow<io.github.thatsfguy.meshcore.presentation.AppMode> by lazy {
+        MutableStateFlow(appMode)
+    }
+
+    var appMode: io.github.thatsfguy.meshcore.presentation.AppMode
+        get() = io.github.thatsfguy.meshcore.presentation.AppMode.of(prefs.getString("app_mode", null))
+        set(v) {
+            prefs.edit().putString("app_mode", v.name).apply()
+            appModeFlow.value = v
+        }
+
+    // --- Direct-message requests (presentation/DmRequest) ---
+
+    /**
+     * Requests this phone has made and not yet seen answered, as name -> when-asked
+     * (epoch seconds), or [DmRequest.Outstanding.ANYONE] after sharing our own code.
+     * Read back through [DmRequest.Outstanding], which also drops lapsed entries.
+     */
+    var dmRequestsOutstanding: io.github.thatsfguy.meshcore.presentation.DmRequest.Outstanding
+        get() = io.github.thatsfguy.meshcore.presentation.DmRequest.Outstanding(
+            (prefs.getStringSet("dm_requests_outstanding", emptySet()) ?: emptySet()).mapNotNull { e ->
+                val cut = e.lastIndexOf('|')
+                if (cut <= 0) return@mapNotNull null
+                e.substring(cut + 1).toLongOrNull()?.let { e.substring(0, cut) to it }
+            }.toMap(),
+        )
+        set(v) {
+            val enc = v.toMap().entries.sortedByDescending { it.value }.take(64).map { "${it.key}|${it.value}" }.toSet()
+            prefs.edit().putStringSet("dm_requests_outstanding", enc).apply()
+        }
+
+    /**
+     * Requests to us that have been answered (accepted or declined), by the requester's
+     * key, so the buttons do not come back on the next visit.
+     */
+    var dmRequestsHandled: Set<String>
+        get() = prefs.getStringSet("dm_requests_handled", emptySet()) ?: emptySet()
+        set(v) { prefs.edit().putStringSet("dm_requests_handled", v.take(BlockList.MAX_ENTRIES).toSet()).apply() }
+
     /** The "far away, heard only" fold on the Nodes list. Folded by default. */
     var nodesFarCollapsed: Boolean
         get() = prefs.getBoolean("nodes_far_collapsed", true)
