@@ -559,10 +559,10 @@ private fun LinkSheet(vm: MeshCoreViewModel, onDismiss: () -> Unit) {
                 )
             }
             // Live while the sheet is open; firmware before v8 has no stats.
-            var stats by remember { mutableStateOf<io.github.thatsfguy.meshcore.protocol.RadioStats?>(null) }
+            var stats by remember { mutableStateOf<io.github.thatsfguy.meshcore.protocol.RadioStats.Radio?>(null) }
             LaunchedEffect(Unit) {
                 while (true) {
-                    stats = vm.radioStats() ?: stats
+                    stats = (vm.radioStats() as? io.github.thatsfguy.meshcore.engine.MeshCoreEngine.Stats.Reading)?.radio ?: stats
                     kotlinx.coroutines.delay(3_000)
                 }
             }

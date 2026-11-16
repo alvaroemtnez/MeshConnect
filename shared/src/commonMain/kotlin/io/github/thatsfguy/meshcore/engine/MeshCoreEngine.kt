@@ -11,6 +11,8 @@ import io.github.thatsfguy.meshcore.protocol.Advert
 import io.github.thatsfguy.meshcore.protocol.AdvertInfo
 import io.github.thatsfguy.meshcore.protocol.BufferReader
 import io.github.thatsfguy.meshcore.protocol.ChannelCrypto
+import io.github.thatsfguy.meshcore.protocol.RadioStats
+import io.github.thatsfguy.meshcore.protocol.ShareUri
 import io.github.thatsfguy.meshcore.protocol.CliExchange
 import io.github.thatsfguy.meshcore.protocol.CliResend
 import io.github.thatsfguy.meshcore.protocol.CliStragglers
@@ -28,6 +30,7 @@ import io.github.thatsfguy.meshcore.protocol.FloodScope
 import io.github.thatsfguy.meshcore.protocol.RadioDefaultScope
 import io.github.thatsfguy.meshcore.protocol.NodeDiscovery
 import io.github.thatsfguy.meshcore.protocol.PathCodec
+import io.github.thatsfguy.meshcore.protocol.PathDiscovery
 import io.github.thatsfguy.meshcore.protocol.PathRecovery
 import io.github.thatsfguy.meshcore.protocol.Regions
 import io.github.thatsfguy.meshcore.protocol.RoutingMode
@@ -782,6 +785,7 @@ class MeshCoreEngine(
                     } else {
                         PathCodec.decodeArrival(event.pathLen).storedHops
                     },
+                    snr = event.snr,
                 )
             }
 
@@ -2096,22 +2100,34 @@ class MeshCoreEngine(
     }
 
     /**
-     * Import a contact from an advert blob (QR-scanned).
-     * SECURITY: verifies the embedded advert signature FIRST — an
-     * unsigned/forged blob is rejected before it reaches the radio.
+     * The contact an advert code describes, for the user to confirm — or
+     * null when the code is malformed or its signature does not verify.
+     *
+     * SECURITY: the embedded advert's Ed25519 signature is checked FIRST,
+     * so a forged code never reaches the confirmation, let alone the radio.
+     *
+     * This replaced handing the blob to CMD_IMPORT_CONTACT. The firmware
+     * replays an imported advert through its normal receive path
+     * (`BaseChatMesh::importContact`, `BaseChatMesh.cpp:588-595`), where the
+     * auto-add filter applies (`:158-162`). With auto-add off, the node is
+     * only noted as heard, yet the command still answers OK — so the app
+     * said "Contact imported" and nothing had been added. The verified card
+     * goes through [addContactFromCard] (CMD_ADD_UPDATE_CONTACT) instead,
+     * which adds whatever the auto-add setting.
      */
-    suspend fun importContact(advertBlob: ByteArray): Boolean {
-        val payload = extractAdvertPayload(advertBlob) ?: return false
-        if (!Advert.verifySignature(crypto, payload)) {
-            log("importContact: advert signature verification FAILED — rejected")
-            return false
+    fun contactCardFromAdvert(advertBlob: ByteArray): ShareUri.Decoded.Contact? {
+        val payload = extractAdvertPayload(advertBlob) ?: return null
+        val info = Advert.parseVerified(crypto, payload)
+        if (info == null) {
+            log("contactCardFromAdvert: advert signature verification FAILED — rejected")
+            return null
         }
-        val ok = sendAndAwait(Frames.importContact(advertBlob)) { it is DeviceEvent.Ok }
-        if (ok is DeviceEvent.Ok) {
-            syncContacts()
-            return true
-        }
-        return false
+        return ShareUri.Decoded.Contact(
+            name = info.name,
+            pubKeyHex = info.publicKeyHex,
+            type = info.type,
+            signed = true,
+        )
     }
 
     /**
@@ -2319,6 +2335,35 @@ class MeshCoreEngine(
         val ok = sendAndAwait(Frames.setAutoAddConfig(flags)) { it is DeviceEvent.Ok } is DeviceEvent.Ok
         if (ok) requestAutoAddConfig()
         return ok
+    }
+
+    /**
+     * The connected radio's own stats (companion v8+). A local query — no
+     * airtime. [Stats.Unsupported] when the radio refuses the command
+     * (older firmware), null when it does not answer at all.
+     */
+    suspend fun getRadioStats(): Stats? {
+        val radio = sendAndAwait(Frames.getStats(Codes.STATS_TYPE_RADIO)) {
+            (it is DeviceEvent.Stats && it.statsType == Codes.STATS_TYPE_RADIO) || it is DeviceEvent.Err
+        } ?: return null
+        if (radio is DeviceEvent.Err) return Stats.Unsupported
+        val parsedRadio = (radio as DeviceEvent.Stats)
+            .let { RadioStats.parseRadio(it.statsType, it.payload) } ?: return null
+        // Packet counters are optional to the screen; a radio that answers
+        // one sub-type answers both, but a missing reply must not hide the
+        // reading we do have.
+        val packets = (
+            sendAndAwait(Frames.getStats(Codes.STATS_TYPE_PACKETS)) {
+                (it is DeviceEvent.Stats && it.statsType == Codes.STATS_TYPE_PACKETS) ||
+                    it is DeviceEvent.Err
+            } as? DeviceEvent.Stats
+            )?.let { RadioStats.parsePackets(it.statsType, it.payload) }
+        return Stats.Reading(parsedRadio, packets)
+    }
+
+    sealed class Stats {
+        data class Reading(val radio: RadioStats.Radio, val packets: RadioStats.Packets?) : Stats()
+        data object Unsupported : Stats()
     }
 
     suspend fun requestAutoAddConfig() {
@@ -2727,6 +2772,29 @@ class MeshCoreEngine(
     }
 
 
+    /**
+     * Ask [pubKey] for both routes between us (see [PathDiscovery]).
+     * Null when nothing came back — which, for a person, usually means
+     * they don't share telemetry, not that they can't hear us.
+     *
+     * The push carries no tag, only the node's key prefix, so that is what
+     * the answer is matched on. The radio keeps one discovery pending at
+     * a time and drops the previous one when a new one starts
+     * (MyMesh.cpp:1669), so there is nothing to gain from overlapping them.
+     */
+    suspend fun discoverPath(
+        pubKey: ByteArray,
+        timeoutMs: Long = BinaryRequestBudget.MAX_BUDGET_MS,
+    ): PathDiscovery.Result? {
+        val prefix = pubKey.copyOf(6).toHex()
+        return sendThenAwait(
+            timeoutMs = timeoutMs,
+            buildFrame = { Frames.sendPathDiscovery(pubKey) },
+        ) { event, _ ->
+            (event as? DeviceEvent.PathDiscovered)?.result?.takeIf { it.keyPrefixHex == prefix }
+        }
+    }
+
     /** u32 tag echoed in a PUSH_CODE_BINARY_RESPONSE, or null if short. */
     private fun binaryResponseTag(payload: ByteArray): Long? {
         if (payload.size < Codes.BINARY_RESPONSE_BODY_OFFSET) return null
@@ -2772,17 +2840,6 @@ class MeshCoreEngine(
         return ok
     }
 
-    /**
-     * The companion radio's noise floor, last RSSI/SNR and airtime
-     * (CMD_GET_STATS, STATS_TYPE_RADIO). Null on firmware without stats
-     * (before v8) or on no answer.
-     */
-    suspend fun radioStats(): io.github.thatsfguy.meshcore.protocol.RadioStats? {
-        val ev = sendAndAwait(io.github.thatsfguy.meshcore.protocol.RadioStats.request(), timeoutMs = 4_000) {
-            (it is DeviceEvent.Stats && it.statsType == Codes.STATS_TYPE_RADIO) || it is DeviceEvent.Err
-        }
-        return (ev as? DeviceEvent.Stats)?.let { io.github.thatsfguy.meshcore.protocol.RadioStats.parse(it.payload) }
-    }
 
     /** Escape hatch for commands without a 1:1 wrapper (e.g. contact
      *  rename via CMD_ADD_UPDATE_CONTACT). Sends and awaits OK. */

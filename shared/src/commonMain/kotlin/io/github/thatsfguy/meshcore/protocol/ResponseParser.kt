@@ -202,6 +202,12 @@ object ResponseParser {
             DeviceEvent.TelemetryResponse(frame.copyOfRange(1, frame.size))
         Codes.PUSH_CODE_BINARY_RESPONSE ->
             DeviceEvent.BinaryResponse(frame.copyOfRange(1, frame.size))
+        // Malformed (short, or a path length the firmware itself would
+        // refuse) is dropped, not half-read: a route that is wrong is
+        // worse than no route.
+        Codes.PUSH_CODE_PATH_DISCOVERY_RESPONSE ->
+            PathDiscovery.parse(frame)?.let { DeviceEvent.PathDiscovered(it) }
+                ?: DeviceEvent.Unknown(code, frame)
         Codes.PUSH_CODE_CONTROL_DATA ->
             DeviceEvent.ControlData(frame.copyOfRange(1, frame.size))
 
@@ -375,6 +381,7 @@ object ResponseParser {
         val pathLen: Int
         val txtType: Int
         var pathHashWidth: Int? = null
+        var snr: Double? = null
         if (code == Codes.RESP_CODE_CHANNEL_MSG_RECV_V3) {
             // SNR, then TWO RESERVED BYTES. The firmware writes them as
             // literal zeros:
@@ -387,7 +394,13 @@ object ResponseParser {
             // work only because reserved1 is always 0. No path is ever
             // forwarded to the host on any receive frame; only path_len
             // is. Found 2026-09-22.
-            r.skipBytes(3) // SNR + reserved1 + reserved2
+            // The SNR is real — `(int8_t)(pkt->getSNR() * 4)`
+            // (companion_radio/MyMesh.cpp:563) — and was skipped along with
+            // the reserved pair, so a channel message arriving by this
+            // route showed no signal while the same message decrypted from
+            // the RX log did.
+            snr = r.readInt8() / 4.0
+            r.skipBytes(2) // reserved1 + reserved2
             channelIdx = r.readByte()
             // Top 2 bits = hash-width mode, low 6 bits = hop count — but
             // ONLY on a flooded arrival. 0xFF means the packet came down
@@ -416,6 +429,7 @@ object ResponseParser {
             timestamp = timestamp,
             pathLen = pathLen,
             pathHashWidth = pathHashWidth,
+            snr = snr,
         )
     }
 

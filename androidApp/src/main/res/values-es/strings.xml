@@ -671,8 +671,7 @@
     <string name="vm_clipboard_no_code">No hay ningún código de MeshCore en el portapapeles</string>
     <string name="vm_code_newer">Este código de ajustes necesita una versión más nueva de la app (formato v%1$d)</string>
     <string name="vm_not_meshcore">No es un código de MeshCore: se esperaba un QR de contacto, canal, ajustes o comunidad</string>
-    <string name="vm_contact_imported">Contacto importado</string>
-    <string name="vm_import_failed">Importación fallida (¿firma incorrecta?)</string>
+    <string name="vm_advert_bad_signature">No se ha añadido: la firma de este código no es válida</string>
     <string name="vm_shared_channel">Canal compartido</string>
     <string name="vm_already_in">Ya estás en %1$s</string>
     <string name="vm_channels_reading">Aún se están leyendo los canales de la radio. Prueba de nuevo en un momento.</string>
@@ -1219,6 +1218,7 @@
     <string name="sort_last_heard">Oído por última vez</string>
     <string name="sort_name">Nombre (A–Z)</string>
     <string name="sort_hops">Menos saltos</string>
+    <string name="sort_distance">Más cerca</string>
     <string name="filter_favorites">Favoritos</string>
     <string name="filter_unread">Sin leer</string>
     <string name="filter_active_day">Oídos en las últimas 24 h</string>

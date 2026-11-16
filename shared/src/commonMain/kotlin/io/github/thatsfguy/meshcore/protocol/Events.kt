@@ -88,6 +88,8 @@ sealed class DeviceEvent {
         val timestamp: Long,
         val pathLen: Int,
         val pathHashWidth: Int?,
+        /** dB at this radio; null on pre-V3 frames, which carry none. */
+        val snr: Double? = null,
     ) : DeviceEvent() {
         override val isPush get() = false
     }
@@ -238,6 +240,11 @@ sealed class DeviceEvent {
     }
 
     data class BinaryResponse(val payload: ByteArray) : DeviceEvent() {
+        override val isPush get() = true
+    }
+
+    /** PUSH_CODE_PATH_DISCOVERY_RESPONSE, already parsed; see [PathDiscovery]. */
+    data class PathDiscovered(val result: PathDiscovery.Result) : DeviceEvent() {
         override val isPush get() = true
     }
 

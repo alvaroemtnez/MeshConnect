@@ -253,7 +253,14 @@ class MeshCoreService : Service() {
             IntentFilter(UsbManager.ACTION_USB_DEVICE_DETACHED),
             androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED,
         )
-        startAsForeground()
+        if (!startAsForeground()) {
+            // Refused (see startAsForeground). Running on as a plain background
+            // service would only get the process killed again mid-connection; stop
+            // cleanly, and the app starts the service again the next time it is
+            // opened, from the foreground.
+            stopSelf()
+            return
+        }
 
         // Cold-start auto-reconnect from the persisted last connection.
         prefs.resolveReconnect()?.let { memory ->
@@ -576,9 +583,12 @@ class MeshCoreService : Service() {
         supervisor = ReconnectSupervisor(
             scope = scope,
             build = factory,
-            onTransport = { transport ->
-                _activeTransport.value = transport
-                engine.attach(transport)
+            // The engine gets the write-watched wrapper, so a write that fails on a
+            // link still claiming to be up tears it down (upstream 0.10.17); the raw
+            // transport is kept for what needs its real type (firmware updates).
+            onTransport = { raw, forEngine ->
+                _activeTransport.value = raw
+                engine.attach(forEngine)
             },
             onError = { _lastError.value = it },
             log = { diagnostics.log("Service", it) },
@@ -710,7 +720,29 @@ class MeshCoreService : Service() {
     // Foreground notification
     // ------------------------------------------------------------------
 
-    private fun startAsForeground() {
+    /**
+     * False when Android refuses to let the service run in the foreground.
+     *
+     * That happens when the system itself restarts the service (START_STICKY) after
+     * killing the process and the app may not start foreground services from the
+     * background (battery "Restricted", or Android deciding so). Android 17 throws
+     * ForegroundServiceStartNotAllowedException (an IllegalStateException) out of
+     * onCreate, and the app crashed in a loop (upstream 0.10.17, seen on a Pixel
+     * 2026-11-15). A missing permission for the declared type is a SecurityException
+     * on 14+, the same kind of refusal.
+     */
+    private fun startAsForeground(): Boolean = try {
+        startForegroundNow()
+        true
+    } catch (t: IllegalStateException) {
+        diagnostics.log("Service", "Android refused the foreground service: ${t.message}")
+        false
+    } catch (t: SecurityException) {
+        diagnostics.log("Service", "Android refused the foreground service: ${t.message}")
+        false
+    }
+
+    private fun startForegroundNow() {
         val manager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         // No launcher badge for the connection status. It is an ongoing
         // notification that exists for as long as the service runs — which

@@ -508,6 +508,7 @@ private fun sortLabel(s: NodeListModel.Sort): String = stringResource(
         NodeListModel.Sort.LastHeard -> R.string.sort_last_heard
         NodeListModel.Sort.Name -> R.string.sort_name
         NodeListModel.Sort.Hops -> R.string.sort_hops
+        NodeListModel.Sort.Distance -> R.string.sort_distance
     },
 )
 

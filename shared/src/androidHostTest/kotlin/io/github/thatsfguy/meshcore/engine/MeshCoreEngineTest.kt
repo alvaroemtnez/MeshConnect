@@ -34,6 +34,7 @@ import kotlinx.coroutines.yield
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
+import kotlin.test.assertIs
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
@@ -730,6 +731,146 @@ class MeshCoreEngineTest {
         assertEquals("carol", msg.senderName)
         assertEquals("off grid", msg.text)
         assertEquals(0, msg.channelIndex)
+    }
+
+    @Test
+    fun radioStatsReadBothSubtypesFromTheRadio() = runTest {
+        val radio = FakeRadio()
+        val base = standardResponder(radio)
+        radio.responder = { frame ->
+            if ((frame[0].toInt() and 0xFF) == Codes.CMD_GET_STATS) {
+                when (frame[1].toInt()) {
+                    Codes.STATS_TYPE_RADIO -> listOf(
+                        byteArrayOf(24, 1, 0x90.toByte(), 0xFF.toByte(), (-87).toByte(), 26) +
+                            ByteArray(8),
+                    )
+                    Codes.STATS_TYPE_PACKETS -> listOf(
+                        byteArrayOf(24, 2) + ByteArray(28).also { it[0] = 12; it[24] = 3 },
+                    )
+                    else -> listOf(byteArrayOf(Codes.RESP_CODE_ERR.toByte(), 6))
+                }
+            } else {
+                base(frame)
+            }
+        }
+        val engine = MeshCoreEngine(backgroundScope, crypto, { now })
+        engine.attach(radio)
+        radio.connect()
+        engine.awaitReady()
+
+        val s = assertIs<MeshCoreEngine.Stats.Reading>(engine.getRadioStats())
+        assertEquals(-112, s.radio.noiseFloorDbm)
+        assertEquals(-87, s.radio.lastRssiDbm)
+        assertEquals(6.5, s.radio.lastSnrDb)
+        assertEquals(12, s.packets?.received)
+        assertEquals(3, s.packets?.receiveErrors)
+    }
+
+    @Test
+    fun olderFirmwareRefusingStatsIsUnsupportedNotSilence() = runTest {
+        // Pre-v8 firmware has no CMD_GET_STATS and answers with an error.
+        // That must read as "not supported" — a definite answer — so the
+        // screen stops asking, rather than as a radio that went quiet.
+        val radio = FakeRadio()
+        val base = standardResponder(radio)
+        radio.responder = { frame ->
+            if ((frame[0].toInt() and 0xFF) == Codes.CMD_GET_STATS) {
+                listOf(byteArrayOf(Codes.RESP_CODE_ERR.toByte(), 1))
+            } else {
+                base(frame)
+            }
+        }
+        val engine = MeshCoreEngine(backgroundScope, crypto, { now })
+        engine.attach(radio)
+        radio.connect()
+        engine.awaitReady()
+
+        assertEquals(MeshCoreEngine.Stats.Unsupported, engine.getRadioStats())
+    }
+
+    @Test
+    fun radioStatsWithoutPacketCountersStillShowTheRadioReading() = runTest {
+        // The packet counters are a second request. If that one goes
+        // unanswered, the noise floor already in hand must not be thrown
+        // away with it.
+        val radio = FakeRadio()
+        val base = standardResponder(radio)
+        radio.responder = { frame ->
+            if ((frame[0].toInt() and 0xFF) == Codes.CMD_GET_STATS) {
+                if (frame[1].toInt() == Codes.STATS_TYPE_RADIO) {
+                    listOf(byteArrayOf(24, 1, 0x90.toByte(), 0xFF.toByte(), (-87).toByte(), 26) + ByteArray(8))
+                } else {
+                    emptyList() // PACKETS: silence
+                }
+            } else {
+                base(frame)
+            }
+        }
+        val engine = MeshCoreEngine(backgroundScope, crypto, { now })
+        engine.attach(radio)
+        radio.connect()
+        engine.awaitReady()
+
+        val s = assertIs<MeshCoreEngine.Stats.Reading>(engine.getRadioStats())
+        assertEquals(-112, s.radio.noiseFloorDbm)
+        assertNull(s.packets)
+    }
+
+    @Test
+    fun aSilentRadioIsNoReadingNotUnsupported() = runTest {
+        // Silence is not a refusal: Unsupported would make the screen stop
+        // asking for good, over what may be one dropped frame.
+        val radio = FakeRadio()
+        val base = standardResponder(radio)
+        radio.responder = { frame ->
+            if ((frame[0].toInt() and 0xFF) == Codes.CMD_GET_STATS) emptyList() else base(frame)
+        }
+        val engine = MeshCoreEngine(backgroundScope, crypto, { now })
+        engine.attach(radio)
+        radio.connect()
+        engine.awaitReady()
+
+        assertNull(engine.getRadioStats())
+    }
+
+    @Test
+    fun aQueuedChannelMessageKeepsItsSnr() = runTest {
+        // The same message reaches the app two ways: decrypted from the RX
+        // log (which always carried SNR) or as RESP_CODE_CHANNEL_MSG_RECV_V3,
+        // whose byte 1 is `(int8_t)(pkt->getSNR() * 4)`
+        // (companion_radio/MyMesh.cpp:563). The parser skipped that byte,
+        // so which route won decided whether the bubble showed a signal.
+        // This pins it all the way through to the event the UI stores.
+        val radio = FakeRadio()
+        radio.responder = standardResponder(radio)
+        val engine = MeshCoreEngine(backgroundScope, crypto, { now })
+        engine.attach(radio)
+        radio.connect()
+        engine.awaitReady()
+
+        val w = BufferWriter()
+        w.writeByte(Codes.RESP_CODE_CHANNEL_MSG_RECV_V3)
+        w.writeByte(0xE6)            // -26 quarter-dB = -6.5 dB
+        w.writeByte(0)               // reserved1
+        w.writeByte(0)               // reserved2
+        w.writeByte(0)               // channel 0
+        w.writeByte(0x02)            // flooded, 2 hops, 1-byte hashes
+        w.writeByte(Codes.TXT_TYPE_PLAIN)
+        w.writeUInt32LE(4321L)
+        w.writeString("dave: queued")
+        w.writeByte(0)
+
+        val waiter = async {
+            withTimeout(5_000) {
+                engine.meshEvents.first { it is MeshEvent.ChannelMessageReceived }
+            }
+        }
+        yield()
+        radio.push(w.toBytes())
+        val msg = waiter.await() as MeshEvent.ChannelMessageReceived
+        assertEquals("queued", msg.text)
+        assertEquals(2, msg.hops)
+        assertEquals(-6.5, msg.snr)
     }
 
     @Test
@@ -2085,6 +2226,75 @@ class MeshCoreEngineTest {
         assertEquals(24.2, readings[1].value, 1e-9)
     }
 
+    /**
+     * The push as the firmware writes it (companion_radio/MyMesh.cpp:793-801):
+     * `[0x8D][0][key prefix x6][out_len][out path][in_len][in path]`.
+     */
+    private fun pathDiscoveryFrame(
+        key: ByteArray,
+        outLen: Int,
+        outPath: ByteArray,
+        inLen: Int,
+        inPath: ByteArray,
+    ): ByteArray =
+        byteArrayOf(Codes.PUSH_CODE_PATH_DISCOVERY_RESPONSE.toByte(), 0) +
+            key.copyOf(6) + byteArrayOf(outLen.toByte()) + outPath +
+            byteArrayOf(inLen.toByte()) + inPath
+
+    @Test
+    fun pathDiscoveryReturnsBothRoutesForTheNodeAsked() = runTest {
+        // Positive control: a real answer must come through, with each
+        // route at its own hash width. 0x42 = 2 hops of 2 bytes, 0x01 = 1
+        // hop of 1 byte. An answer for another node (a stale discovery)
+        // arrives first and must be skipped.
+        val radio = FakeRadio()
+        val other = ByteArray(32) { 7 }
+        radio.responder = { frame ->
+            when (frame[0].toInt() and 0xFF) {
+                Codes.CMD_SEND_PATH_DISCOVERY_REQ -> listOf(
+                    binarySentFrame(0x01020304L),
+                    pathDiscoveryFrame(other, 0x01, byteArrayOf(0x11), 0x00, ByteArray(0)),
+                    pathDiscoveryFrame(
+                        peerKey,
+                        0x42, byteArrayOf(0xB3.toByte(), 0x89.toByte(), 0xC9.toByte(), 0x85.toByte()),
+                        0x01, byteArrayOf(0x5A),
+                    ),
+                )
+                else -> standardResponder(radio)(frame)
+            }
+        }
+        val engine = readyEngine(radio)
+
+        val found = assertNotNull(engine.discoverPath(peerKey))
+
+        // Built as the firmware reads it: [52][0][pubkey] (MyMesh.cpp:1651-1652).
+        val sent = radio.sentFrames.single { (it[0].toInt() and 0xFF) == Codes.CMD_SEND_PATH_DISCOVERY_REQ }
+        assertContentEquals(byteArrayOf(52, 0) + peerKey, sent)
+        assertEquals(peerKey.copyOf(6).toHex(), found.keyPrefixHex)
+        assertEquals("b389c985", found.outPath.toHex())
+        assertEquals(2, found.outHashWidth)
+        assertEquals(2, found.outHops)
+        assertEquals("5a", found.inPath.toHex())
+        assertEquals(1, found.inHops)
+    }
+
+    @Test
+    fun pathDiscoverySilenceIsNull() = runTest {
+        // A person who doesn't share telemetry never answers
+        // (BaseChatMesh.cpp:314-316). That must come back as "no answer",
+        // and within the radio's own estimate, not hang.
+        val radio = FakeRadio()
+        radio.responder = { frame ->
+            when (frame[0].toInt() and 0xFF) {
+                Codes.CMD_SEND_PATH_DISCOVERY_REQ -> listOf(binarySentFrame(0x01020304L, estTimeoutMs = 2_000))
+                else -> standardResponder(radio)(frame)
+            }
+        }
+        val engine = readyEngine(radio)
+
+        assertNull(engine.discoverPath(peerKey))
+    }
+
     @Test
     fun ownerInfoSilenceIsNullNotAnEmptyOwner() = runTest {
         // A repeater older than FIRMWARE_VER_LEVEL 2 returns 0 from
@@ -2259,40 +2469,57 @@ class MeshCoreEngineTest {
     }
 
     @Test
-    fun scanningAnAdvertUriImportsTheContact() = runTest {
-        // End to end, the way another client's QR arrives: hex of a raw
-        // advert packet behind the bare `meshcore://` scheme. This is
-        // the path that had no encoder pointed at it and so was never
-        // exercised — ShareUri.encodeAdvert has no callers.
+    fun anAdvertCodeBecomesASignedCardToConfirmThenAnAddNotAnImport() = runTest {
+        // End to end, the way another client's QR or link arrives: hex of a
+        // raw advert packet behind the bare `meshcore://` scheme.
+        //
+        // This used to go to CMD_IMPORT_CONTACT, which the firmware replays
+        // through its receive path, where the auto-add filter applies
+        // (BaseChatMesh.cpp:588-595, :158-162). With auto-add off the node
+        // is only noted as heard and the radio still answers OK, so the app
+        // reported "Contact imported" for a contact that did not exist. The
+        // old test pinned that: it asserted the OK. A fake radio cannot
+        // show the silent decline, so what is pinned here is the command
+        // that does not depend on it.
         val radio = FakeRadio()
         radio.responder = standardResponder(radio)
         val engine = readyEngine(radio)
 
         val them = MeshIdentity.generate(crypto)
         val blob = advertPacket(signedAdvert(them, "Someone"))
-        val decoded = ShareUri.decode(ShareUri.encodeAdvert(blob))
-        assertTrue(decoded is ShareUri.Decoded.Advert, "decoded as $decoded")
+        val decoded = assertIs<ShareUri.Decoded.Advert>(ShareUri.decode(ShareUri.encodeAdvert(blob)))
 
-        assertTrue(engine.importContact((decoded as ShareUri.Decoded.Advert).blob))
+        val card = assertNotNull(engine.contactCardFromAdvert(decoded.blob))
+        assertEquals(
+            ShareUri.Decoded.Contact("Someone", them.publicKeyHex, Codes.ADV_TYPE_CHAT, signed = true),
+            card,
+        )
+        // Decoding asked the radio for nothing: the user has not confirmed.
+        assertTrue(radio.sentFrames.none { (it[0].toInt() and 0xFF) == Codes.CMD_IMPORT_CONTACT })
 
-        // The RADIO must receive the packet, not the payload: the
-        // firmware's importContact() parses it with readFrom().
-        val sent = radio.sentFrames.last { (it[0].toInt() and 0xFF) == Codes.CMD_IMPORT_CONTACT }
-        assertContentEquals(blob, sent.copyOfRange(1, sent.size))
+        assertTrue(engine.addContactFromCard(them.publicKey, card.name, card.type))
+        val add = radio.sentFrames.last { (it[0].toInt() and 0xFF) == Codes.CMD_ADD_UPDATE_CONTACT }
+        assertContentEquals(them.publicKey, add.copyOfRange(1, 33))
+        assertTrue(radio.sentFrames.none { (it[0].toInt() and 0xFF) == Codes.CMD_IMPORT_CONTACT })
     }
 
     @Test
-    fun aForgedAdvertUriIsStillRejected() {
-        // The verification this fix moved must still bite. Flip a byte
-        // in the signed region: extraction succeeds, verification does
-        // not, and importContact refuses before anything reaches the
-        // radio.
+    fun aForgedAdvertCodeYieldsNoCard() = runTest {
+        // Flip a byte in the signed region: extraction succeeds,
+        // verification does not, and there is nothing to confirm.
+        val radio = FakeRadio()
+        radio.responder = standardResponder(radio)
+        val engine = readyEngine(radio)
+
         val them = MeshIdentity.generate(crypto)
         val payload = signedAdvert(them, "Someone").copyOf()
         payload[35] = (payload[35] + 1).toByte()   // last byte of the timestamp
-        val extracted = MeshCoreEngine.extractAdvertPayload(advertPacket(payload))
-        assertNotNull(extracted)
-        assertFalse(Advert.verifySignature(crypto, extracted))
+        val blob = advertPacket(payload)
+        assertNotNull(MeshCoreEngine.extractAdvertPayload(blob))
+        assertNull(engine.contactCardFromAdvert(blob))
+        // Garbage of every shape is refused rather than thrown.
+        assertNull(engine.contactCardFromAdvert(ByteArray(0)))
+        assertNull(engine.contactCardFromAdvert(byteArrayOf(0x11, 0x00)))
     }
 
     // ------------------------------------------------------------------

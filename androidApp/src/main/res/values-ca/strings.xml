@@ -671,8 +671,7 @@
     <string name="vm_clipboard_no_code">No hi ha cap codi de MeshCore en el porta-retalls</string>
     <string name="vm_code_newer">Aquest codi d\'ajustos necessita una versió més nova de l\'aplicació (format v%1$d)</string>
     <string name="vm_not_meshcore">No és un codi de MeshCore: s\'esperava un QR de contacte, canal, ajustos o comunitat</string>
-    <string name="vm_contact_imported">Contacte importat</string>
-    <string name="vm_import_failed">Importació fallida (signatura incorrecta?)</string>
+    <string name="vm_advert_bad_signature">No s\'ha afegit: la signatura d\'aquest codi no és vàlida</string>
     <string name="vm_shared_channel">Canal compartit</string>
     <string name="vm_already_in">Ja estàs en %1$s</string>
     <string name="vm_channels_reading">Encara s\'estan llegint els canals de la ràdio. Torna-ho a provar d\'ací a un moment.</string>
@@ -1219,6 +1218,7 @@
     <string name="sort_last_heard">Escoltat per última vegada</string>
     <string name="sort_name">Nom (A–Z)</string>
     <string name="sort_hops">Menys salts</string>
+    <string name="sort_distance">Més a prop</string>
     <string name="filter_favorites">Preferits</string>
     <string name="filter_unread">Sense llegir</string>
     <string name="filter_active_day">Escoltats en les últimes 24 h</string>

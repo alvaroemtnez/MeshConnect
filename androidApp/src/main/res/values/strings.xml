@@ -674,8 +674,7 @@
     <string name="vm_clipboard_no_code">No MeshCore code on the clipboard</string>
     <string name="vm_code_newer">This settings code needs a newer version of the app (format v%1$d)</string>
     <string name="vm_not_meshcore">Not a MeshCore code: expected a contact, channel, settings or community QR</string>
-    <string name="vm_contact_imported">Contact imported</string>
-    <string name="vm_import_failed">Import failed (bad signature?)</string>
+    <string name="vm_advert_bad_signature">Not added: this code\'s signature doesn\'t check out</string>
     <string name="vm_shared_channel">Shared channel</string>
     <string name="vm_already_in">Already in %1$s</string>
     <string name="vm_channels_reading">Still reading the radio\'s channels. Try again in a moment.</string>
@@ -1222,6 +1221,7 @@
     <string name="sort_last_heard">Last heard</string>
     <string name="sort_name">Name (A–Z)</string>
     <string name="sort_hops">Fewest hops</string>
+    <string name="sort_distance">Nearest</string>
     <string name="filter_favorites">Favourites</string>
     <string name="filter_unread">Unread</string>
     <string name="filter_active_day">Heard in last 24 h</string>

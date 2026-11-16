@@ -11,6 +11,84 @@ Every entry describes what is in **that tagged build**. A feature that landed af
 belongs in the next section, not this one — 0.3.0 was once credited with four features that
 shipped after it, which misled nobody so much as the author, three months later.
 
+## 0.11.0
+
+**Simple mode.** For handing the app to someone who just needs to talk on a group's channel,
+such as a first-responder team. Choose it at first run or in Settings.
+
+- Shows Chats and Settings only. The Public channel, repeater and room threads, signal detail and
+  routing actions are hidden.
+- It only hides things and never changes a setting. Switching back to Full shows everything again.
+
+**Links from other apps.** A `meshcore://` link tapped in another app opens the same confirmation
+a scanned QR code does. Nothing is added without a tap, and a link that arrives before the radio
+connects waits until it does.
+
+- Contact codes from other apps were reported as "Contact imported" when the radio had in fact
+  declined them (it does when auto-add is off). They now go through the normal confirm-and-add
+  step and really are added.
+- Your own QR code has a "Send link" button.
+
+**Ask someone for a DM from a channel.** Long-press their channel message and choose "Message
+privately". They get Accept or Decline; on Accept, both phones add each other.
+
+- An accept only counts if this phone asked that person in the last 7 days, so nobody can add
+  themselves with a faked reply.
+- Chats + now offers "Message a contact".
+
+**Can I talk to them?** The Nodes list now answers that for every node, from what the app already
+knows and without using airtime.
+
+- Each contact reads Two-way, Two-way before, They've heard you, Heard only, or No answer yet. A
+  delivered message or an answered ping, sign-in or telemetry request counts as two-way for 7 days.
+- Nodes you hear but that show no sign of hearing you, and are 4 or more hops or over 100 km
+  away, fold into a collapsed "Far away, heard only" group. Adding one asks first.
+- People and sensors have a "Check if they can hear you" button. Most radios only answer it if
+  their owner allows it, so no answer is not taken as proof they can't hear you.
+
+## 0.10.17
+
+Two fixes for a phone that looked connected but wasn't.
+
+- **Reconnects when Bluetooth dies under it.** If the phone's Bluetooth service restarted while
+  the app was connected, the app went on showing "connected" with nothing getting through either
+  way. Sends failed silently and incoming messages waited on the radio until the app was
+  force-stopped. A failed send now counts as a lost link, and the app reconnects on its own.
+- **Drops the link when Bluetooth is turned off**, straight away, rather than waiting to notice.
+- **No more crash when Android restarts the app in the background.** On Android 17 the app could
+  crash in a loop when the system restarted it in the background and refused it a foreground
+  service. It now stops quietly and starts again the next time you open it.
+
+## 0.10.16
+
+**Signal readings for your own radio (#6).** Settings → Radio now ends with a Signal section,
+read from the connected radio every 2 seconds while the screen is open. It uses no airtime.
+
+- **Noise floor**, with the low and high over recent readings. Move the radio next to a charger,
+  USB hub or the phone itself and watch it climb.
+- **Last packet heard**: RSSI and SNR from whichever node the radio heard last, not from any one
+  link.
+- **Since boot**: packets received, sent, and receive errors.
+
+Firmware too old to report these says so instead of showing blanks.
+
+**Ping a repeater or room server (#5).** Its sheet on the Nodes screen has a Ping button. A
+reply means the two of you can hear each other directly, and gives the signal in each
+direction. No reply is not proof the node is down. If other known nodes share its hop hash, the
+result says the reply may have come from one of them.
+
+**Message signal says whose it is.** On a relayed message the SNR is the last repeater's signal
+at your radio, not the sender's, so the bubble now reads "last hop X dB". Messages heard direct
+show the plain value. Channel messages that queued on the radio while the app was closed were
+losing their SNR. They keep it now.
+
+**Nodes: distance and nearest-first.** Repeaters you have heard but not added now show their
+distance, and the list can be sorted by nearest. The heard section follows the chosen sort,
+which is why sorting by hops looked like it did nothing.
+
+**Long channel names fit the top bar (#8).** A long name with no spaces showed only "#". Titles
+now stay on one line and end in "…".
+
 ## 0.10.15
 
 **Telemetry asks first and no longer signs in up front.** 0.10.14 signed in to a repeater, room or

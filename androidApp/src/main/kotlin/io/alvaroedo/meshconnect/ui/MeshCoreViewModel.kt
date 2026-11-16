@@ -1327,9 +1327,13 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
         return runCatching { svc.engine.tracePath(tag, path, width) }.getOrNull()
     }
 
-    /** The companion radio's own noise floor and last RSSI/SNR (upstream issue #6). */
-    suspend fun radioStats(): io.github.thatsfguy.meshcore.protocol.RadioStats? =
-        _service.value?.engine?.takeIf { it.isReady }?.let { runCatching { it.radioStats() }.getOrNull() }
+    /**
+     * The companion radio's own readings and packet counters (upstream issue #6):
+     * a reading, [MeshCoreEngine.Stats.Unsupported] on firmware without stats, or
+     * null on no answer. A local query: no airtime.
+     */
+    suspend fun radioStats(): MeshCoreEngine.Stats? =
+        _service.value?.engine?.takeIf { it.isReady }?.let { runCatching { it.getRadioStats() }.getOrNull() }
 
     /** What a ping or trace sent, and what came back. */
     data class TraceRun(
@@ -1599,14 +1603,25 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    /**
+     * A signed advert code: checked, then shown on the same confirm card as a plain
+     * contact code, and added through [confirmContactCard] (CMD_ADD_UPDATE_CONTACT).
+     *
+     * It used to go straight to CMD_IMPORT_CONTACT with no tap, from any app that
+     * fired a link at us, and the radio's auto-add filter applies to an import: with
+     * auto-add off it only notes the node as heard yet still answers OK, so the app
+     * said "Contact imported" and nothing had been added (upstream 0.11.0,
+     * `MeshCoreEngine.contactCardFromAdvert`).
+     */
     private fun importAdvertBlob(blob: ByteArray, openChat: Boolean = false) {
         val svc = _service.value ?: return
-        viewModelScope.launch {
-            val ok = runCatching { svc.engine.importContact(blob) }.getOrDefault(false)
-            transientMessage.value =
-                if (ok) str(R.string.vm_contact_imported) else str(R.string.vm_import_failed)
-            if (ok) openAfterAdd(openChat, NewChatThread.forAdvert(blob))
+        val card = svc.engine.contactCardFromAdvert(blob)
+        if (card == null) {
+            transientMessage.value = str(R.string.vm_advert_bad_signature)
+            return
         }
+        pendingOpensChat = openChat
+        pendingContactCard.value = card
     }
 
     /** Commit a contact card the user has confirmed. */
