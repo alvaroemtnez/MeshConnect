@@ -1221,6 +1221,14 @@
     <string name="sort_name">Nom (A–Z)</string>
     <string name="sort_hops">Menys salts</string>
     <string name="nodes_nearest_no_position">La teua ràdio no té posició, així que no es pot ordenar per distància.</string>
+    <string name="mode_simple">Mode senzill</string>
+    <string name="mode_simple_sub">Només xats i canals, per a qui només vol parlar</string>
+    <string name="mode_simple_on">El mode senzill està activat</string>
+    <string name="mode_simple_on_sub">Toca per a veure l\'aplicació completa. No es perd res en cap cas.</string>
+    <string name="mode_question">Com la faràs servir?</string>
+    <string name="mode_choice_simple">Senzill: xats i canals amb el meu grup</string>
+    <string name="mode_choice_full">Complet: nodes, mapa, repetidors i ajustos de ràdio</string>
+    <string name="mode_switch_later">Pots canviar-ho quan vulgues en Ajustos. No es perd res en cap cas.</string>
     <string name="dm_someone">Algú</string>
     <string name="dm_req_you_asked">Has demanat a %1$s parlar en privat.</string>
     <string name="dm_req_asked_you">%1$s vol parlar amb tu en privat.</string>

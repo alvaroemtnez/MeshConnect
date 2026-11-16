@@ -830,6 +830,26 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
             .sortedByDescending { it.timestamp }
     }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
+    /**
+     * [conversations] as the current mode shows them: Simple mode leaves out the Public
+     * channel and direct threads that are not with a person (AppModes.showsThread). It only
+     * hides; nothing is muted, read or deleted.
+     */
+    val shownConversations: StateFlow<List<ConversationRow>> = combine(
+        conversations,
+        prefs.appModeFlow,
+        channelKinds,
+    ) { rows, mode, kinds ->
+        rows.filter { row ->
+            io.github.thatsfguy.meshcore.presentation.AppModes.showsThread(
+                mode,
+                row.isChannel,
+                if (row.isChannel) row.key.toIntOrNull()?.let { kinds[it] } else null,
+                row.contactType,
+            )
+        }
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
     fun thread(kind: String, peerKey: String): StateFlow<List<MessageEntity>> =
         selfKey.flatMapLatest { key ->
             if (key.isEmpty()) flowOf(emptyList()) else db.messages().thread(key, kind, peerKey)

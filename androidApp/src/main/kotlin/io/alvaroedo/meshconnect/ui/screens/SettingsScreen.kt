@@ -73,6 +73,7 @@ fun SettingsScreen(vm: MeshCoreViewModel, nav: NavController) {
     val channels by vm.dbChannels.collectAsState()
     val blocked by vm.blockedKeys.collectAsState()
     val isReady = engineState == EngineState.Ready
+    val mode by vm.prefs.appModeFlow.collectAsState()
 
     // Read once per composition — these are plain prefs, not flows, and
     // the hub recomposes when it is returned to.
@@ -119,10 +120,30 @@ fun SettingsScreen(vm: MeshCoreViewModel, nav: NavController) {
                 .padding(padding)
                 .verticalScroll(rememberScrollState()),
         ) {
+            // Simple mode (presentation/AppMode): chats and channels only. It only hides, so
+            // switching back is one tap and needs no PIN.
+            val simple = mode == io.github.thatsfguy.meshcore.presentation.AppMode.Simple
+            SettingsCard(Modifier.padding(horizontal = 16.dp).padding(top = 8.dp)) {
+                SettingsTileRow(
+                    title = stringResource(if (simple) R.string.mode_simple_on else R.string.mode_simple),
+                    subtitle = stringResource(if (simple) R.string.mode_simple_on_sub else R.string.mode_simple_sub),
+                    dimmed = false,
+                    icon = R.drawable.ic_chat,
+                    onClick = {
+                        vm.prefs.appMode = if (simple) {
+                            io.github.thatsfguy.meshcore.presentation.AppMode.Full
+                        } else {
+                            io.github.thatsfguy.meshcore.presentation.AppMode.Simple
+                        }
+                    },
+                )
+            }
             for ((index, group) in settingsGroups().withIndex()) {
+                val tiles = group.tiles.filter { io.github.thatsfguy.meshcore.presentation.AppModes.showsSettingsTile(mode, it.route) }
+                if (tiles.isEmpty()) continue
                 GroupLabel(SettingsHubText.group(index, group.title))
                 SettingsCard {
-                    for (tile in group.tiles) {
+                    for (tile in tiles) {
                         SettingsTileRow(
                             title = SettingsHubText.title(tile.route, tile.title),
                             subtitle = subtitles[tile.route] ?: SettingsHubText.subtitle(tile.route, tile.subtitle),
@@ -136,7 +157,7 @@ fun SettingsScreen(vm: MeshCoreViewModel, nav: NavController) {
                     }
                     // Rebooting the radio is a device action with a home: This node. It
                     // lived in the overflow menu, where nobody looks for it.
-                    if (isNodeGroup(group.tiles.map { it.route }) && isReady) {
+                    if (isNodeGroup(tiles.map { it.route }) && isReady) {
                         SettingsTileRow(
                             title = stringResource(R.string.hub_reboot_menu).trimEnd('…'),
                             subtitle = stringResource(R.string.hub_reboot_sub),

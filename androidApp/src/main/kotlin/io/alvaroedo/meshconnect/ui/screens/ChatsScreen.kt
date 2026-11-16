@@ -57,7 +57,8 @@ import java.util.Date
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatsScreen(vm: MeshCoreViewModel, nav: NavController, archivedView: Boolean = false) {
-    val conversations by vm.conversations.collectAsState()
+    // Simple mode leaves some threads out (presentation/AppMode).
+    val conversations by vm.shownConversations.collectAsState()
     val engineState by vm.engineState.collectAsState()
     var showChannelSheet by remember { mutableStateOf(false) }
     // Saveable, not remember: opening a node or a conversation takes this

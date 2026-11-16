@@ -268,7 +268,11 @@ private fun AppShell(
     // the other three tabs, which is the only place it changes anyone's
     // behaviour — a message that arrives while you are on Map or Nodes
     // was otherwise invisible until you happened to look.
-    val conversations by vm.conversations.collectAsStateWithLifecycle()
+    // Counted over the threads this mode SHOWS: a badge for a hidden Public channel is a
+    // number with nothing behind it to tap (presentation/AppMode).
+    val conversations by vm.shownConversations.collectAsStateWithLifecycle()
+    val mode by vm.prefs.appModeFlow.collectAsStateWithLifecycle()
+    val shownTabs = io.github.thatsfguy.meshcore.presentation.AppModes.tabs(mode)
     val unreadBadge = Inbox.badgeLabel(Inbox.unreadTotal(conversations.map { it.unread }))
     // Nothing to count, but a chat marked unread by hand: a dot.
     val unreadDot = unreadBadge.isEmpty() && conversations.any { it.markedUnread }
@@ -278,7 +282,7 @@ private fun AppShell(
         Tab("nodes", stringResource(R.string.nav_nodes)) { Icon(painterResource(R.drawable.ic_hub), null) },
         Tab("map", stringResource(R.string.nav_map)) { Icon(painterResource(R.drawable.ic_map), null) },
         Tab("settings", stringResource(R.string.nav_settings)) { Icon(painterResource(R.drawable.ic_settings), null) },
-    )
+    ).filter { it.route in shownTabs }
     val unreadLabel = stringResource(R.string.unread_count, unreadBadge)
     val backdrop = remember { io.alvaroedo.meshconnect.ui.screens.BackdropBlur() }
 

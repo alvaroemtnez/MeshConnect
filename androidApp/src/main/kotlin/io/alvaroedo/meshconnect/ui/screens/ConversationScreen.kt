@@ -249,6 +249,10 @@ fun ConversationScreen(
     val quotePrefix = replyingTo?.let { quotePrefixFor(it) }.orEmpty()
     val bodyBudget = (maxBytes - quotePrefix.encodeToByteArray().size).coerceAtLeast(0)
 
+    // Simple mode hides hop counts, signal and routing (presentation/AppMode).
+    val appMode by vm.prefs.appModeFlow.collectAsState()
+    val technical = io.github.thatsfguy.meshcore.presentation.AppModes.showsTechnicalActions(appMode)
+    val signalDetail = io.github.thatsfguy.meshcore.presentation.AppModes.showsSignalDetail(appMode)
     val dmHandled by vm.dmRequestsHandled.collectAsState()
     // The name a "Message privately" request is about to be sent to, awaiting confirmation.
     var askDmOf by remember(peerKey) { mutableStateOf<String?>(null) }
@@ -273,7 +277,7 @@ fun ConversationScreen(
     }
     val channelRegions by vm.channelRegions.collectAsState()
     val menu = if (isChannel) {
-        listOf(
+        listOfNotNull(
             MenuAction(stringResource(R.string.conv_mute), checked = muted, icon = R.drawable.ic_notifications_off) {
                 peerKey.toIntOrNull()?.let {
                     muted = !muted
@@ -281,7 +285,7 @@ fun ConversationScreen(
                 }
             },
             MenuAction(stringResource(R.string.conv_mark_unread), icon = R.drawable.ic_mark_unread) { vm.markUnread(kind, peerKey); nav.popBackStack() },
-            MenuAction(stringResource(R.string.conv_channel_settings), icon = R.drawable.ic_tune) { showChannelEditor = true },
+            if (technical) MenuAction(stringResource(R.string.conv_channel_settings), icon = R.drawable.ic_tune) { showChannelEditor = true } else null,
             MenuAction(stringResource(R.string.conv_names_seen), icon = R.drawable.ic_group) { showSendersSheet = true },
             MenuAction(stringResource(R.string.conv_clear), destructive = true, icon = R.drawable.ic_delete_sweep) { clearConfirm = true },
         )
@@ -290,14 +294,14 @@ fun ConversationScreen(
             MenuAction(stringResource(R.string.conv_mark_unread), icon = R.drawable.ic_mark_unread) { vm.markUnread(kind, peerKey); nav.popBackStack() },
             // A room's admin tools live inside the room: the hub, which
             // is gated on this same session.
-            if (isRoom && roomSession.isAdmin) {
+            if (technical && isRoom && roomSession.isAdmin) {
                 MenuAction(stringResource(R.string.conv_manage_room), icon = R.drawable.ic_tune) { nav.navigate("repeater/$peerKey") }
             } else {
                 null
             },
-            MenuAction(stringResource(R.string.conv_contact_details), icon = R.drawable.ic_person) { showContact = true },
-            MenuAction(stringResource(R.string.conv_routing), icon = R.drawable.ic_alt_route) { showRouting = true },
-            MenuAction(stringResource(R.string.trace_route), icon = R.drawable.ic_route) { nav.navigate(traceRoute(peerKey)) },
+            if (technical) MenuAction(stringResource(R.string.conv_contact_details), icon = R.drawable.ic_person) { showContact = true } else null,
+            if (technical) MenuAction(stringResource(R.string.conv_routing), icon = R.drawable.ic_alt_route) { showRouting = true } else null,
+            if (technical) MenuAction(stringResource(R.string.trace_route), icon = R.drawable.ic_route) { nav.navigate(traceRoute(peerKey)) } else null,
             MenuAction(stringResource(R.string.conv_clear), destructive = true, icon = R.drawable.ic_delete_sweep) { clearConfirm = true },
         )
     }
@@ -426,7 +430,9 @@ fun ConversationScreen(
                         null
                     },
                     onInfo = { details = m },
-                    routeLabel = if (m.outgoing) null else routeChipLabel(m, routeNames),
+                    routeLabel = if (m.outgoing || !signalDetail) null else routeChipLabel(m, routeNames),
+                    showSignal = signalDetail,
+                    canInfo = technical,
                     onRoute = { routeOf = m },
                     onDelete = { vm.deleteMessage(m.id) },
                     onResend = { vm.resendMessage(m.id) },
@@ -945,6 +951,10 @@ private fun MessageBubble(
     /** "via A › B" when the arrival route is known (RouteChip), else null. */
     routeLabel: String? = null,
     onRoute: () -> Unit = {},
+    /** Hops, SNR and repeat badges under the bubble; off in Simple mode. */
+    showSignal: Boolean = true,
+    /** The Info entry (route, signal, attempts); off in Simple mode. */
+    canInfo: Boolean = true,
     onDelete: () -> Unit = {},
     onResend: () -> Unit = {},
     onHttpLink: (String) -> Unit = {},
@@ -1057,7 +1067,7 @@ private fun MessageBubble(
                 }
                 if (reactions.isNotEmpty()) ReactionChips(reactions)
                 routeLabel?.let { HeardViaChip(it, onRoute) }
-                MessageFooter(m)
+                MessageFooter(m, showSignal)
             }
         }
     }
@@ -1138,7 +1148,7 @@ private fun MessageBubble(
                     showActions = false
                     clipboard.copy(m.text)
                 },
-                onInfo = { showActions = false; onInfo() },
+                onInfo = if (canInfo) ({ showActions = false; onInfo() }) else null,
                 onDelete = { showActions = false; onDelete() },
                 onResend = { showActions = false; onResend() },
                 onSelect = { showActions = false; onStartSelecting() },
@@ -1261,7 +1271,7 @@ private fun MessageFocusOverlay(
     onAskDm: (() -> Unit)?,
     onMention: () -> Unit,
     onCopy: () -> Unit,
-    onInfo: () -> Unit,
+    onInfo: (() -> Unit)?,
     onDelete: () -> Unit,
     onResend: () -> Unit,
     onSelect: () -> Unit,
@@ -1378,7 +1388,7 @@ private fun ActionMenu(
     onMention: () -> Unit,
     onCopy: () -> Unit,
     onSelect: () -> Unit,
-    onInfo: () -> Unit,
+    onInfo: (() -> Unit)?,
     onResend: () -> Unit,
     onDelete: () -> Unit,
 ) {
@@ -1396,7 +1406,7 @@ private fun ActionMenu(
             onAskDm?.let { MenuRow(R.drawable.ic_chat, stringResource(R.string.dm_message_privately), it) }
             MenuRow(R.drawable.ic_content_copy, stringResource(R.string.copy), onCopy)
             MenuRow(R.drawable.ic_select, stringResource(R.string.conv_select), onSelect)
-            MenuRow(R.drawable.ic_info, stringResource(R.string.conv_info), onInfo)
+            onInfo?.let { MenuRow(R.drawable.ic_info, stringResource(R.string.conv_info), it) }
             if (canResend) MenuRow(R.drawable.ic_refresh, stringResource(R.string.conv_resend), onResend)
             MenuRow(R.drawable.ic_delete, stringResource(R.string.delete), onDelete, destructive = true)
         }
@@ -1994,7 +2004,7 @@ private fun RichContentCard(
  * how strong it landed.
  */
 @Composable
-private fun MessageFooter(m: MessageEntity) {
+private fun MessageFooter(m: MessageEntity, showSignal: Boolean = true) {
     val ink = MaterialTheme.colorScheme.onSurfaceVariant
     val style = MaterialTheme.typography.labelSmall
     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -2014,9 +2024,11 @@ private fun MessageFooter(m: MessageEntity) {
             // Retries make a struggling route visible.
             tryLabel?.let { add(it) }
             // Who picked this up off the air; absent is not "nobody".
-            if (m.outgoing) MessageRepeats.badge(m.repeatHopsHex, m.repeatHashWidth)?.let { add(it) }
-            io.alvaroedo.meshconnect.ui.model.SharedText.footerHops(androidx.compose.ui.platform.LocalResources.current, m.hops)?.let { add(it) }
-            io.alvaroedo.meshconnect.ui.model.SharedText.snrFooter(androidx.compose.ui.platform.LocalResources.current, m.snr, m.hops)?.let { add(it) }
+            if (showSignal) {
+                if (m.outgoing) MessageRepeats.badge(m.repeatHopsHex, m.repeatHashWidth)?.let { add(it) }
+                io.alvaroedo.meshconnect.ui.model.SharedText.footerHops(androidx.compose.ui.platform.LocalResources.current, m.hops)?.let { add(it) }
+                io.alvaroedo.meshconnect.ui.model.SharedText.snrFooter(androidx.compose.ui.platform.LocalResources.current, m.snr, m.hops)?.let { add(it) }
+            }
         }
         if (extras.isNotEmpty()) {
             Text("  ·  " + extras.joinToString("  ·  "), style = style, color = ink, maxLines = 1)

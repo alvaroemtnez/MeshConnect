@@ -1,5 +1,7 @@
 package io.alvaroedo.meshconnect.ui.screens
 
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -211,6 +213,39 @@ private fun FinishStep(vm: MeshCoreViewModel, onFinish: () -> Unit) {
                     ExpandableHint(stringResource(R.string.onb_legal_short)) { DetailText(stringResource(R.string.regulatory_caveat)) }
                 }
             }
+            // Simple or full (presentation/AppMode). Whole rows are the targets: a radio
+            // button alone left a tap on the words doing nothing.
+            val mode by vm.prefs.appModeFlow.collectAsState()
+            Text(stringResource(R.string.mode_question), style = MaterialTheme.typography.titleMedium)
+            SettingsCard(Modifier) {
+                Column(Modifier.selectableGroup().padding(vertical = 4.dp)) {
+                    for ((choice, label) in listOf(
+                        io.github.thatsfguy.meshcore.presentation.AppMode.Simple to R.string.mode_choice_simple,
+                        io.github.thatsfguy.meshcore.presentation.AppMode.Full to R.string.mode_choice_full,
+                    )) {
+                        androidx.compose.foundation.layout.Row(
+                            Modifier
+                                .fillMaxWidth()
+                                .selectable(
+                                    selected = mode == choice,
+                                    onClick = { vm.prefs.appMode = choice },
+                                    role = androidx.compose.ui.semantics.Role.RadioButton,
+                                )
+                                .padding(horizontal = 16.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            androidx.compose.material3.RadioButton(selected = mode == choice, onClick = null)
+                            Spacer(Modifier.width(12.dp))
+                            Text(stringResource(label), style = MaterialTheme.typography.bodyLarge)
+                        }
+                    }
+                }
+            }
+            Text(
+                stringResource(R.string.mode_switch_later),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
         Spacer(Modifier.height(12.dp))
         Button(

@@ -1224,6 +1224,14 @@
     <string name="sort_name">Name (A–Z)</string>
     <string name="sort_hops">Fewest hops</string>
     <string name="nodes_nearest_no_position">Your radio has no position set, so nothing can be ordered by distance.</string>
+    <string name="mode_simple">Simple mode</string>
+    <string name="mode_simple_sub">Just chats and channels, for people who only want to talk</string>
+    <string name="mode_simple_on">Simple mode is on</string>
+    <string name="mode_simple_on_sub">Tap to show the full app. Nothing is lost either way.</string>
+    <string name="mode_question">How will you use it?</string>
+    <string name="mode_choice_simple">Simple: chats and channels with my group</string>
+    <string name="mode_choice_full">Full: nodes, map, repeaters and radio settings</string>
+    <string name="mode_switch_later">You can switch at any time in Settings. Nothing is lost either way.</string>
     <string name="dm_someone">Someone</string>
     <string name="dm_req_you_asked">You asked %1$s to message privately.</string>
     <string name="dm_req_asked_you">%1$s wants to message you privately.</string>

@@ -1221,6 +1221,14 @@
     <string name="sort_name">Nombre (A–Z)</string>
     <string name="sort_hops">Menos saltos</string>
     <string name="nodes_nearest_no_position">Tu radio no tiene posición, así que no se puede ordenar por distancia.</string>
+    <string name="mode_simple">Modo sencillo</string>
+    <string name="mode_simple_sub">Solo chats y canales, para quien solo quiere hablar</string>
+    <string name="mode_simple_on">El modo sencillo está activado</string>
+    <string name="mode_simple_on_sub">Toca para ver la app completa. No se pierde nada en ningún caso.</string>
+    <string name="mode_question">¿Cómo la vas a usar?</string>
+    <string name="mode_choice_simple">Sencillo: chats y canales con mi grupo</string>
+    <string name="mode_choice_full">Completo: nodos, mapa, repetidores y ajustes de radio</string>
+    <string name="mode_switch_later">Puedes cambiarlo cuando quieras en Ajustes. No se pierde nada en ningún caso.</string>
     <string name="dm_someone">Alguien</string>
     <string name="dm_req_you_asked">Has pedido a %1$s hablar en privado.</string>
     <string name="dm_req_asked_you">%1$s quiere hablar contigo en privado.</string>

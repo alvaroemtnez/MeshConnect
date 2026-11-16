@@ -1366,6 +1366,15 @@ S = {
 "sort_name": ("Name (A–Z)", "Nombre (A–Z)", "Nom (A–Z)"),
 "sort_hops": ("Fewest hops", "Menos saltos", "Menys salts"),
 "nodes_nearest_no_position": ("Your radio has no position set, so nothing can be ordered by distance.", "Tu radio no tiene posición, así que no se puede ordenar por distancia.", "La teua ràdio no té posició, així que no es pot ordenar per distància."),
+# Simple mode (upstream 0.11.0)
+"mode_simple": ("Simple mode", "Modo sencillo", "Mode senzill"),
+"mode_simple_sub": ("Just chats and channels, for people who only want to talk", "Solo chats y canales, para quien solo quiere hablar", "Només xats i canals, per a qui només vol parlar"),
+"mode_simple_on": ("Simple mode is on", "El modo sencillo está activado", "El mode senzill està activat"),
+"mode_simple_on_sub": ("Tap to show the full app. Nothing is lost either way.", "Toca para ver la app completa. No se pierde nada en ningún caso.", "Toca per a veure l'aplicació completa. No es perd res en cap cas."),
+"mode_question": ("How will you use it?", "¿Cómo la vas a usar?", "Com la faràs servir?"),
+"mode_choice_simple": ("Simple: chats and channels with my group", "Sencillo: chats y canales con mi grupo", "Senzill: xats i canals amb el meu grup"),
+"mode_choice_full": ("Full: nodes, map, repeaters and radio settings", "Completo: nodos, mapa, repetidores y ajustes de radio", "Complet: nodes, mapa, repetidors i ajustos de ràdio"),
+"mode_switch_later": ("You can switch at any time in Settings. Nothing is lost either way.", "Puedes cambiarlo cuando quieras en Ajustes. No se pierde nada en ningún caso.", "Pots canviar-ho quan vulgues en Ajustos. No es perd res en cap cas."),
 # Direct-message requests over a channel (upstream 0.11.0)
 "dm_someone": ("Someone", "Alguien", "Algú"),
 "dm_req_you_asked": ("You asked %1$s to message privately.", "Has pedido a %1$s hablar en privado.", "Has demanat a %1$s parlar en privat."),
