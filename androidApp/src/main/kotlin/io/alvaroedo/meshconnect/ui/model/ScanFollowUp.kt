@@ -68,6 +68,9 @@ object ScanFollowUp {
     /** A channel code Simple mode turns away: Public and hashtags (SimpleMode.showsChannel). */
     fun refusesChannel(mode: AppMode, kind: ChannelKind): Boolean = !SimpleMode.showsChannel(mode, kind)
 
+    /** A radio-settings code: never in Simple mode, which has no radio settings at all. */
+    fun refusesRadioSettings(mode: AppMode): Boolean = mode == AppMode.Simple
+
     /**
      * After adding a PERSON who was not a contact yet: their radio drops our direct messages
      * until they add us too, so say so. A room learns who we are when we sign in.

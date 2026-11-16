@@ -109,6 +109,7 @@
     <string name="widget_compact_label">MeshConnect compact</string>
     <string name="widget_open_to_read">Open the app to read it</string>
     <string name="setup_connected_to">Connected to %1$s.</string>
+    <string name="svc_connected_battery">Connected to %1$s. Battery: %2$d%%.</string>
     <string name="setup_node_name">Node name</string>
     <string name="setup_radio_current">Currently on %1$s.</string>
     <string name="setup_pick_preset">Pick a regional preset…</string>
@@ -1180,10 +1181,6 @@
     <string name="chats_archived_count">Archived · %1$d</string>
     <string name="chats_pin">Pin to top</string>
     <string name="chats_unpin">Unpin</string>
-    <string name="chats_nickname_menu">Private nickname…</string>
-    <string name="chats_nickname_title">Private nickname</string>
-    <string name="chats_nickname_body">Shown only on this phone, in place of \"%1$s\". Nothing is sent to the radio or the mesh.</string>
-    <string name="chats_nickname">Nickname</string>
     <string name="save">Save</string>
     <string name="nav_chats">Chats</string>
     <string name="nav_nodes">Nodes</string>
@@ -1409,7 +1406,17 @@
     <string name="simple_scan_sub">A person\'s or a group\'s code that someone shows you.</string>
     <string name="simple_newchat_none">No one to write to yet. Scan someone\'s QR code, or create a group.</string>
     <string name="cd_group">Group</string>
+    <string name="set_room_auto_sign_in">Sign in to rooms automatically</string>
+    <string name="set_room_auto_sign_in_hint">With each room\'s saved password, once when the radio connects and when you open a room. One short exchange per room; nothing on a timer.</string>
+    <string name="conv_delete_one_title">Delete this message?</string>
+    <string name="ch_remove_title">Remove %1$s?</string>
+    <string name="ch_remove_body">The channel leaves this radio and its messages stop arriving. To join again you need its key or its QR code.</string>
+    <string name="simple_remove_group_body">You leave the group and its messages stop arriving. To join again, someone in it has to show you its QR code.</string>
+    <string name="block_confirm_title">Block %1$s?</string>
+    <string name="block_confirm_body">Their messages are dropped on this phone, without a notification. You can unblock them in Settings → Blocked senders.</string>
+    <string name="node_rename_local_hint">Only on this phone. They keep the name they chose, and others still see that one.</string>
     <string name="simple_refuse_node">That code is for a %1$s. Simple mode only adds people, groups and rooms: turn it off in Settings → Appearance and alerts to add it.</string>
+    <string name="simple_refuse_radio">That code changes the radio\'s settings. Simple mode doesn\'t: turn it off in Settings → Appearance and alerts to use it.</string>
     <string name="simple_refuse_channel">That code is for a public channel. Simple mode only joins groups: turn it off in Settings → Appearance and alerts to join it.</string>
     <string name="addback_title">Ask %1$s to add you too</string>
     <string name="addback_body">%1$s won\'t receive your messages until they add you as a contact too. The easiest way is to let them scan your QR code.</string>

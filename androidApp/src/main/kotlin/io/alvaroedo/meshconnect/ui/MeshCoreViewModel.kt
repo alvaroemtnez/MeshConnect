@@ -74,6 +74,8 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.transformLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -740,18 +742,27 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
      * without a kind rather than guessed at from its name.
      */
     val channelKinds: StateFlow<Map<Int, io.github.thatsfguy.meshcore.protocol.ChannelKind>> =
-        combine(dbChannels, _service) { channels, svc -> channels to svc }
-            .mapLatest { (channels, svc) ->
-                val secrets = svc?.secrets ?: return@mapLatest emptyMap()
+        combine(dbChannels, _service, selfKey) { channels, svc, key -> Triple(channels, svc, key) }
+            .transformLatest { (channels, svc, key) ->
+                // The kinds remembered from last time first (2026-11-16): unsealing every key
+                // takes a moment, and until it finished Simple mode drew the Public channel and
+                // then hid it — a flash on every start. Then the real ones, which are kept.
+                val remembered = prefs.rememberedChannelKinds(key)
+                emit(remembered)
+                val secrets = svc?.secrets ?: return@transformLatest
+                if (channels.isEmpty()) return@transformLatest
                 val crypto = io.github.thatsfguy.meshcore.platform.androidCryptoProvider()
-                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
+                val kinds = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
                     channels.mapNotNull { ch ->
                         if (ch.pskSealed.isEmpty()) return@mapNotNull null
                         val psk = secrets.unsealPsk(ch.pskSealed) ?: return@mapNotNull null
                         ch.idx to io.github.thatsfguy.meshcore.protocol.ChannelKinds.of(ch.name, psk, crypto)
                     }.toMap()
                 }
+                if (kinds != remembered) prefs.rememberChannelKinds(key, kinds)
+                emit(kinds)
             }
+            .distinctUntilChanged()
             .stateIn(viewModelScope, SharingStarted.Eagerly, emptyMap())
 
     /** Bumped when a private nickname changes, so [conversations] recomputes. */
@@ -1057,6 +1068,32 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
 
     /** Local-only display name for a contact; see [Preferences.nicknameFor]. */
     fun nicknameFor(keyHex: String): String? = prefs.nicknameFor(keyHex)
+
+    /**
+     * Every nickname, by key, live. Rename on a contact's card sets one (2026-11-16): the radio's
+     * own record is overwritten by that contact's next advert (BaseChatMesh::onAdvertRecv copies
+     * the advert's name in), so a rename there never stuck. This one stays, on this phone.
+     */
+    val nicknames: StateFlow<Map<String, String>> by lazy {
+        nicknameRevision.map { prefs.allNicknames() }.stateIn(viewModelScope, SharingStarted.Eagerly, prefs.allNicknames())
+    }
+
+    /** What to call a contact: their nickname here, else the name they advertise. */
+    fun displayName(contact: io.alvaroedo.meshconnect.storage.ContactEntity): String =
+        nicknames.value[contact.keyHex] ?: contact.name
+
+    private val favouriteChannelRevision = MutableStateFlow(0)
+
+    /** Favourite channel slots on the active radio (Preferences.favouriteChannels), live. */
+    val favouriteChannels: StateFlow<Set<Int>> by lazy {
+        combine(prefs.activeRadio, favouriteChannelRevision) { _, _ -> prefs.favouriteChannels }
+            .stateIn(viewModelScope, SharingStarted.Eagerly, prefs.favouriteChannels)
+    }
+
+    fun setChannelFavourite(idx: Int, favourite: Boolean) {
+        prefs.setChannelFavourite(idx, favourite)
+        favouriteChannelRevision.value++
+    }
 
     fun setNickname(keyHex: String, nickname: String?) {
         prefs.setNickname(keyHex, nickname)
@@ -1815,7 +1852,13 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
             // NEVER applied here. A settings code retunes the radio, so
             // it goes to a confirmation that shows every value first —
             // see pendingRadioConfig.
-            is ShareUri.Decoded.RadioConfig -> pendingRadioConfig.value = decoded
+            // Simple mode never retunes the radio (2026-11-16): it is "connect the little box,
+            // scan my code to message me". Not even with the confirmation.
+            is ShareUri.Decoded.RadioConfig -> if (ScanFollowUp.refusesRadioSettings(prefs.appMode)) {
+                transientMessage.value = str(R.string.simple_refuse_radio)
+            } else {
+                pendingRadioConfig.value = decoded
+            }
             is ShareUri.Decoded.UnsupportedVersion ->
                 transientMessage.value = str(R.string.vm_code_newer, decoded.version)
             ShareUri.Decoded.NotAContactCode ->
@@ -2388,6 +2431,7 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
         keyHex: String,
         password: String,
         savePassword: Boolean,
+        maxAttempts: Int = SendRetry.DEFAULT_MAX_ATTEMPTS,
     ): LoginResult {
         // Say why nothing happened. These two returns used to be silent,
         // which was survivable when the password row sat on the admin
@@ -2411,6 +2455,7 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
                 svc.engine.sendLoginWithRetry(
                     key,
                     password,
+                    maxAttempts = maxAttempts,
                     floodFallbackEnabled = prefs.floodFallbackOnLastRetry,
                 )
             }.getOrDefault(io.github.thatsfguy.meshcore.engine.LoginOutcome.NoAnswer)
@@ -2473,6 +2518,60 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
                 )
         }
         return LoginResult(granted, answered = outcome.answered, sealFailed = sealFailed)
+    }
+
+    // ------------------------------------------------------------------
+    // Rooms: signing in without a tap (ui/model/RoomAutoSignIn says why this is enough)
+    // ------------------------------------------------------------------
+
+    private var roomSignInJob: kotlinx.coroutines.Job? = null
+
+    init {
+        viewModelScope.launch {
+            engineState.collect { state ->
+                roomSignInJob?.cancel()
+                if (state == EngineState.Ready && prefs.roomAutoSignIn) {
+                    roomSignInJob = viewModelScope.launch {
+                        kotlinx.coroutines.delay(io.alvaroedo.meshconnect.ui.model.RoomAutoSignIn.SETTLE_MS)
+                        val svc = _service.value ?: return@launch
+                        val saved = dbContacts.value
+                            .filter { it.type == Codes.ADV_TYPE_ROOM }
+                            .associate { it.keyHex to (savedLoginPassword(it.keyHex)?.takeIf { pw -> pw.isNotEmpty() }) }
+                        val rooms = io.alvaroedo.meshconnect.ui.model.RoomAutoSignIn.candidates(
+                            enabled = prefs.roomAutoSignIn,
+                            contacts = dbContacts.value,
+                            sessions = _adminSessions.value,
+                            hasSavedPassword = { saved[it] != null },
+                        )
+                        for ((i, key) in rooms.withIndex()) {
+                            if (engineState.value != EngineState.Ready || _service.value !== svc) return@launch
+                            if (i > 0) kotlinx.coroutines.delay(io.alvaroedo.meshconnect.ui.model.RoomAutoSignIn.SPACING_MS)
+                            signInQuietly(key, saved[key] ?: continue)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * A room opened while not signed in: sign in with its saved password, quietly, once. The
+     * banner stays for a room with no saved password, or one that does not answer.
+     */
+    fun signInToRoomIfSaved(keyHex: String) {
+        if (!prefs.roomAutoSignIn) return
+        if ((_adminSessions.value[keyHex] ?: AdminSession.None) != AdminSession.None) return
+        if (keyHex in _loginInFlight.value) return
+        viewModelScope.launch {
+            val password = savedLoginPassword(keyHex)?.takeIf { it.isNotEmpty() } ?: return@launch
+            signInQuietly(keyHex, password)
+        }
+    }
+
+    /** One attempt, no snackbar: a silent room keeps its banner, with the reason under it. */
+    private suspend fun signInQuietly(keyHex: String, password: String) {
+        if (keyHex in _loginInFlight.value) return
+        performLogin(keyHex, password, savePassword = false, maxAttempts = 1)
     }
 
     /**

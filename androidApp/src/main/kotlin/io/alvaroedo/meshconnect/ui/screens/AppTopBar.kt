@@ -55,6 +55,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.CornerRadius
@@ -453,12 +454,27 @@ fun SignalBars(bars: Int, live: Boolean, modifier: Modifier = Modifier) {
     }
 }
 
-/** A horizontal battery outline filled to [percent]; error colour at 15% or less. */
+/**
+ * A horizontal battery outline filled to [percent]. At 15% or less it turns the error colour,
+ * outline and all; at 10% or less it also blinks slowly, so it is seen without looking for it.
+ */
 @Composable
 fun BatteryGlyph(percent: Int?, modifier: Modifier = Modifier) {
-    val ink = MaterialTheme.colorScheme.onSurface
-    val fillColor = if (percent != null && percent <= 15) MaterialTheme.colorScheme.error else ink
-    Canvas(modifier.size(width = 22.dp, height = 12.dp)) {
+    val low = io.alvaroedo.meshconnect.ui.model.BatteryAlarm.isLow(percent)
+    val ink = if (low) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
+    val fillColor = ink
+    val blink = if (io.alvaroedo.meshconnect.ui.model.BatteryAlarm.blinks(percent)) {
+        val t = rememberInfiniteTransition(label = "batteryBlink")
+        t.animateFloat(
+            initialValue = 1f,
+            targetValue = 0.25f,
+            animationSpec = infiniteRepeatable(tween(700), RepeatMode.Reverse),
+            label = "batteryBlinkAlpha",
+        ).value
+    } else {
+        1f
+    }
+    Canvas(modifier.size(width = 22.dp, height = 12.dp).graphicsLayer { alpha = blink }) {
         val stroke = 1.2.dp.toPx()
         val nub = 2.dp.toPx()
         val body = Size(size.width - nub, size.height)

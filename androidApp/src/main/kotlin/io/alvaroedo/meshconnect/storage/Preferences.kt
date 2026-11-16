@@ -477,6 +477,48 @@ class Preferences(context: Context) {
             prefs.edit().putStringSet(scoped("muted_channels"), v.map { it.toString() }.toSet()).apply()
         }
 
+    /**
+     * Channel slots marked favourite, per radio (2026-11-16). App-only: the radio's channel
+     * record has no flag for it, unlike a contact's. New chat lists them under Favourites.
+     */
+    var favouriteChannels: Set<Int>
+        get() = prefs.getStringSet(scoped("favourite_channels"), emptySet())!!
+            .mapNotNull { it.toIntOrNull() }.toSet()
+        set(v) {
+            prefs.edit().putStringSet(scoped("favourite_channels"), v.map { it.toString() }.toSet()).apply()
+        }
+
+    fun setChannelFavourite(idx: Int, favourite: Boolean) {
+        favouriteChannels = if (favourite) favouriteChannels + idx else favouriteChannels - idx
+    }
+
+    /**
+     * Each channel slot's kind (Public, hashtag, private) as last worked out from its key, for
+     * the radio [selfKey], so lists can be drawn right before the keys are unsealed. Only the
+     * kind is kept, never anything from the key: it is the same fact the avatar already shows.
+     */
+    fun rememberedChannelKinds(selfKey: String): Map<Int, io.github.thatsfguy.meshcore.protocol.ChannelKind> {
+        if (selfKey.isEmpty()) return emptyMap()
+        return prefs.getString("channel_kinds@$selfKey", null).orEmpty().split(',').mapNotNull { pair ->
+            val (idx, kind) = pair.split(':').takeIf { it.size == 2 } ?: return@mapNotNull null
+            val k = io.github.thatsfguy.meshcore.protocol.ChannelKind.entries.firstOrNull { it.name == kind }
+            idx.toIntOrNull()?.let { i -> k?.let { i to it } }
+        }.toMap()
+    }
+
+    fun rememberChannelKinds(selfKey: String, kinds: Map<Int, io.github.thatsfguy.meshcore.protocol.ChannelKind>) {
+        if (selfKey.isEmpty()) return
+        prefs.edit().putString("channel_kinds@$selfKey", kinds.entries.joinToString(",") { "${it.key}:${it.value.name}" }).apply()
+    }
+
+    /**
+     * Sign in to rooms with their saved password when the radio connects and when a room is
+     * opened (ui/model/RoomAutoSignIn). On by default; off means the banner's Sign in, as before.
+     */
+    var roomAutoSignIn: Boolean
+        get() = prefs.getBoolean("room_auto_sign_in", true)
+        set(v) { prefs.edit().putBoolean("room_auto_sign_in", v).apply() }
+
     /** Contact keys whose notifications are muted (PARITY §3). */
     var mutedContacts: Set<String>
         get() = prefs.getStringSet("muted_contacts", emptySet())!!
@@ -572,6 +614,12 @@ class Preferences(context: Context) {
     fun nicknameFor(keyHex: String): String? =
         prefs.getString("nick_$keyHex", null)?.takeIf { it.isNotBlank() }
 
+    /** Every nickname, by contact key. */
+    fun allNicknames(): Map<String, String> =
+        prefs.all.mapNotNull { (k, v) ->
+            if (k.startsWith("nick_") && v is String && v.isNotBlank()) k.removePrefix("nick_") to v else null
+        }.toMap()
+
     fun setNickname(keyHex: String, nickname: String?) {
         prefs.edit().apply {
             if (nickname.isNullOrBlank()) remove("nick_$keyHex") else putString("nick_$keyHex", nickname)
@@ -661,6 +709,10 @@ class Preferences(context: Context) {
     fun forgetChannelSlot(idx: Int) {
         setChannelRegion(idx, null)
         setChannelRetention(idx, null)
+        // Sets of slots, which the suffix scan below cannot see: the next channel given this
+        // slot must not arrive muted or favourite.
+        setChannelMuted(idx, false)
+        setChannelFavourite(idx, false)
     }
 
     /**
@@ -903,7 +955,7 @@ class Preferences(context: Context) {
         /** Keys stored per radio, by base name; slot-keyed ones by prefix. */
         private val RADIO_SCOPED_KEYS = setOf(
             "pinned_routes", "muted_channels", "pinned_threads", "archived_threads",
-            "marked_unread_threads", "floodScope",
+            "marked_unread_threads", "floodScope", "favourite_channels",
         )
         private val RADIO_SCOPED_PREFIXES = listOf("channel_region_", "retention_ch_")
 

@@ -300,6 +300,8 @@ private val CHANGELOG: List<Pair<String, List<String>>> = listOf(
         "Reconnects when Bluetooth dies under a live link; no crash when Android refuses the background service.",
         "Codes and links open the chat (from Chats) or the card (from Nodes), skip the confirmation for what you already have, and remind you to be added back.",
         "Simple cards for people and rooms; hold a row in New chat for its card; Favourites and letter sections.",
+        "Rename gives someone a name on this phone; rooms sign in on their own; favourite groups; every removal asks first.",
+        "Battery in the ongoing notification; the battery icon blinks at 10%.",
         "Map tiles, the diagnostics log and datagrams moved to Settings → Advanced; Disconnect is red.",
         "Fixed: on first run, tapping a tab blanked the screen and reloaded it; recent repeaters said \"in 0 minutes\".",
     ),

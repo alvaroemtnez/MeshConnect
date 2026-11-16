@@ -14,8 +14,8 @@ class ChatActionsWiringTest {
     fun `the card offers edit, select and a red delete, and asks before deleting`() {
         assertTrue(chats.contains("ChatMenuRow(R.drawable.ic_select, stringResource(R.string.conv_select))"))
         assertTrue(chats.contains("ChatMenuRow(R.drawable.ic_delete, stringResource(R.string.delete), destructive = true)"))
-        // A channel edits as in Settings.
-        assertTrue(chats.contains("if (row.isChannel) editChannel = row.key.toIntOrNull() else nicknameFor = row"))
+        // A channel edits as in Settings; a person or room opens its card (Rename is the nickname).
+        assertTrue(chats.contains("if (row.isChannel) editChannel = row.key.toIntOrNull() else vm.openCardRequest.value = row.key"))
         assertTrue(chats.contains("ChannelEditSheet(vm, ch, onDismiss = { editChannel = null })"))
         // Nothing deletes without the dialog, and the dialog says when channels leave the radio.
         assertTrue(chats.contains("vm.deleteChats(rows)"))

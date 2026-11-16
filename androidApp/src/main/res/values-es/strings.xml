@@ -106,6 +106,7 @@
     <string name="widget_compact_label">MeshConnect compacto</string>
     <string name="widget_open_to_read">Abre la app para leerlo</string>
     <string name="setup_connected_to">Conectado a %1$s.</string>
+    <string name="svc_connected_battery">Conectado a %1$s. Batería: %2$d%%.</string>
     <string name="setup_node_name">Nombre del nodo</string>
     <string name="setup_radio_current">Ahora en %1$s.</string>
     <string name="setup_pick_preset">Elegir un perfil regional…</string>
@@ -1177,10 +1178,6 @@
     <string name="chats_archived_count">Archivados · %1$d</string>
     <string name="chats_pin">Fijar arriba</string>
     <string name="chats_unpin">Desfijar</string>
-    <string name="chats_nickname_menu">Apodo privado…</string>
-    <string name="chats_nickname_title">Apodo privado</string>
-    <string name="chats_nickname_body">Se muestra solo en este teléfono, en lugar de «%1$s». No se envía nada a la radio ni a la malla.</string>
-    <string name="chats_nickname">Apodo</string>
     <string name="save">Guardar</string>
     <string name="nav_chats">Chats</string>
     <string name="nav_nodes">Nodos</string>
@@ -1406,7 +1403,17 @@
     <string name="simple_scan_sub">El código de una persona o de un grupo que te enseñen.</string>
     <string name="simple_newchat_none">Aún no hay nadie a quien escribir. Escanea el código QR de alguien o crea un grupo.</string>
     <string name="cd_group">Grupo</string>
+    <string name="set_room_auto_sign_in">Entrar en las salas automáticamente</string>
+    <string name="set_room_auto_sign_in_hint">Con la contraseña guardada de cada sala, una vez al conectar la radio y al abrir una sala. Un intercambio breve por sala; nada periódico.</string>
+    <string name="conv_delete_one_title">¿Eliminar este mensaje?</string>
+    <string name="ch_remove_title">¿Eliminar %1$s?</string>
+    <string name="ch_remove_body">El canal se va de esta radio y sus mensajes dejan de llegar. Para volver a unirte necesitas su clave o su código QR.</string>
+    <string name="simple_remove_group_body">Sales del grupo y sus mensajes dejan de llegar. Para volver a entrar, alguien del grupo te tiene que enseñar su código QR.</string>
+    <string name="block_confirm_title">¿Bloquear a %1$s?</string>
+    <string name="block_confirm_body">Sus mensajes se descartan en este teléfono, sin notificación. Puedes desbloquearlos en Ajustes → Remitentes bloqueados.</string>
+    <string name="node_rename_local_hint">Solo en este teléfono. Conserva el nombre que eligió, y los demás siguen viendo ese.</string>
     <string name="simple_refuse_node">Ese código es de un %1$s. El modo sencillo solo añade personas, grupos y salas: desactívalo en Ajustes → Apariencia y avisos para añadirlo.</string>
+    <string name="simple_refuse_radio">Ese código cambia los ajustes de la radio. El modo sencillo no lo hace: desactívalo en Ajustes → Apariencia y avisos para usarlo.</string>
     <string name="simple_refuse_channel">Ese código es de un canal público. El modo sencillo solo se une a grupos: desactívalo en Ajustes → Apariencia y avisos para unirte.</string>
     <string name="addback_title">Pide a %1$s que te añada</string>
     <string name="addback_body">%1$s no recibirá tus mensajes hasta que también te añada como contacto. Lo más fácil es que escanee tu código QR.</string>

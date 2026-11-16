@@ -74,7 +74,7 @@ object NewChatList {
         val channelKind: ChannelKind? = null,
         /** Epoch seconds the contact was last heard; 0 for channels and never. */
         val heard: Long = 0,
-        /** The radio's favourite flag. People and rooms only: channels have no such flag. */
+        /** The radio's favourite flag for people and rooms; the app's own for channels. */
         val favourite: Boolean = false,
     ) {
         val isChannel: Boolean get() = kind == MessageRepository.KIND_CHANNEL
@@ -86,13 +86,17 @@ object NewChatList {
         channels: List<ChannelEntity>,
         kinds: Map<Int, ChannelKind>,
         query: String = "",
+        /** Nicknames by key: a renamed contact is listed, sorted and found by it. */
+        nicknames: Map<String, String> = emptyMap(),
+        /** Channel slots marked favourite on this radio (app-only). */
+        favouriteChannels: Set<Int> = emptySet(),
     ): List<Entry> {
         val people = contacts
             // Only people and rooms take messages; a repeater's thread is its console.
             .filter { it.type == Codes.ADV_TYPE_CHAT || it.type == Codes.ADV_TYPE_ROOM }
             .map {
                 Entry(
-                    title = it.name.ifBlank { it.keyHex.take(12) },
+                    title = (nicknames[it.keyHex] ?: it.name).ifBlank { it.keyHex.take(12) },
                     kind = MessageRepository.KIND_DM,
                     key = it.keyHex,
                     contactType = it.type,
@@ -110,6 +114,7 @@ object NewChatList {
                     kind = MessageRepository.KIND_CHANNEL,
                     key = it.idx.toString(),
                     channelKind = kinds[it.idx],
+                    favourite = it.idx in favouriteChannels,
                 )
             }
         val q = query.trim()

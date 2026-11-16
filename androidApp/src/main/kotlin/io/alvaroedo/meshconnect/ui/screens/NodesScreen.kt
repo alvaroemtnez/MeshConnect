@@ -115,6 +115,7 @@ import java.util.Date
 fun NodesScreen(vm: MeshCoreViewModel, nav: NavController) {
     val openAdmin = rememberAdminOpener(vm, nav)
     val contacts by vm.dbContacts.collectAsState()
+    val nicknames by vm.nicknames.collectAsState()
     var detail by remember { mutableStateOf<ContactEntity?>(null) }
     // A room being signed into on the way to its conversation.
     var roomSignIn by remember { mutableStateOf<ContactEntity?>(null) }
@@ -425,6 +426,7 @@ fun NodesScreen(vm: MeshCoreViewModel, nav: NavController) {
                         // might want from it. Manage, Room and Message are one tap on the card.
                         ContactRow(
                             c = c,
+                            nickname = nicknames[c.keyHex],
                             distance = distanceOf(c.latitude, c.longitude),
                             reach = reachShort(reach[c.keyHex]?.state),
                             onClick = { detail = c },
@@ -908,6 +910,7 @@ internal fun typeLabel(type: Int): String = when (type) {
 @Composable
 private fun ContactRow(
     c: ContactEntity,
+    nickname: String? = null,
     distance: String? = null,
     reach: String? = null,
     onClick: () -> Unit,
@@ -931,7 +934,8 @@ private fun ContactRow(
         Column(Modifier.weight(1f)) {
             Text(
                 (if (c.flags and Codes.CONTACT_FLAG_FAVORITE != 0) "★ " else "") +
-                    c.name.ifBlank { c.keyHex.take(12) },
+                    // Your nickname for them, if you gave one (Rename on their card).
+                    (nickname ?: c.name).ifBlank { c.keyHex.take(12) },
                 style = MaterialTheme.typography.titleMedium.copy(fontSize = 17.sp),
                 maxLines = 1,
                 overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
@@ -1144,6 +1148,7 @@ fun ContactDetailSheet(
     var renameOpen by remember { mutableStateOf(false) }
     var routingOpen by remember { mutableStateOf(false) }
     var removeConfirm by remember { mutableStateOf(false) }
+    var blockConfirm by remember { mutableStateOf(false) }
     var shareQrOpen by remember { mutableStateOf(false) }
     var updateModeOpen by remember { mutableStateOf(false) }
     var updateModeNote by remember { mutableStateOf<String?>(null) }
@@ -1177,21 +1182,7 @@ fun ContactDetailSheet(
                     size = 56.dp,
                 )
                 Spacer(Modifier.size(16.dp))
-                Column(Modifier.weight(1f)) {
-                    Text(
-                        contact.name.ifBlank { stringResource(R.string.node_unnamed) },
-                        style = MaterialTheme.typography.headlineSmall,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                    Text(
-                        SharedText.kind(androidx.compose.ui.platform.LocalResources.current, contact.type) +
-                            // Our radio's clock, not the node's claim — see LastHeard.
-                            (if (LastHeard.seconds(contact) > 0) " · " + relativeAge(LastHeard.seconds(contact)) else ""),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
+                Column(Modifier.weight(1f)) { ContactHeaderText(vm, contact) }
             }
 
             // ---- What you came to do, one tap each.
@@ -1361,7 +1352,7 @@ fun ContactDetailSheet(
                     R.drawable.ic_block,
                     stringResource(if (blocked) R.string.node_unblock else R.string.node_block),
                     destructive = !blocked,
-                ) { vm.setBlocked(contact.keyHex, !blocked) }
+                ) { if (blocked) vm.setBlocked(contact.keyHex, false) else blockConfirm = true }
             }
             SheetActionRow(R.drawable.ic_delete, stringResource(R.string.node_remove), destructive = true) {
                 removeConfirm = true
@@ -1432,44 +1423,11 @@ fun ContactDetailSheet(
         RoutingSheet(vm, contact, onDismiss = { routingOpen = false })
     }
 
-    if (renameOpen) {
-        var name by remember { mutableStateOf(contact.name) }
-        AlertDialog(
-            onDismissRequest = { renameOpen = false },
-            title = { Text(stringResource(R.string.node_rename_title)) },
-            text = {
-                FormField(value = name, onValueChange = { name = it }, singleLine = true)
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    vm.renameContact(contact, name.trim())
-                    renameOpen = false
-                    onDismiss()
-                }) { Text(stringResource(R.string.save)) }
-            },
-            dismissButton = {
-                TextButton(onClick = { renameOpen = false }) { Text(stringResource(R.string.cancel)) }
-            },
-        )
-    }
-
-    if (removeConfirm) {
-        AlertDialog(
-            onDismissRequest = { removeConfirm = false },
-            title = { Text(stringResource(R.string.node_remove_title)) },
-            text = { Text(stringResource(R.string.node_remove_body, contact.name.ifBlank { contact.keyHex.take(12) })) },
-            confirmButton = {
-                TextButton(onClick = {
-                    vm.removeContact(contact.keyHex)
-                    removeConfirm = false
-                    onDismiss()
-                }) { Text(stringResource(R.string.node_remove_confirm), color = MaterialTheme.colorScheme.error) }
-            },
-            dismissButton = {
-                TextButton(onClick = { removeConfirm = false }) { Text(stringResource(R.string.cancel)) }
-            },
-        )
-    }
+    // Rename is a nickname on this phone (ContactRenameDialog); the radio's record is
+    // overwritten by the contact's next advert, so renaming it there never stuck.
+    if (renameOpen) ContactRenameDialog(vm, contact, onDismiss = { renameOpen = false })
+    if (blockConfirm) ContactBlockConfirm(vm, contact, onDismiss = { blockConfirm = false })
+    if (removeConfirm) ContactRemoveConfirm(vm, contact, onDismiss = { removeConfirm = false }, onRemoved = onDismiss)
 }
 
 /** One label/value line in the contact sheet. */

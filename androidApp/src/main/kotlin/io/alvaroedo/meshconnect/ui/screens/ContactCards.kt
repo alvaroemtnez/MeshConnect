@@ -56,6 +56,7 @@ fun SimpleContactSheet(vm: MeshCoreViewModel, contact: ContactEntity, onDismiss:
     val contact = vm.dbContacts.collectAsState().value.firstOrNull { it.keyHex == contact.keyHex } ?: contact
     var renameOpen by remember { mutableStateOf(false) }
     var removeConfirm by remember { mutableStateOf(false) }
+    var blockConfirm by remember { mutableStateOf(false) }
     var shareQrOpen by remember { mutableStateOf(false) }
 
     ModalBottomSheet(onDismissRequest = onDismiss) {
@@ -79,20 +80,7 @@ fun SimpleContactSheet(vm: MeshCoreViewModel, contact: ContactEntity, onDismiss:
                     size = 56.dp,
                 )
                 Spacer(Modifier.size(16.dp))
-                Column(Modifier.weight(1f)) {
-                    Text(
-                        contact.name.ifBlank { stringResource(R.string.node_unnamed) },
-                        style = MaterialTheme.typography.headlineSmall,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                    Text(
-                        SharedText.kind(androidx.compose.ui.platform.LocalResources.current, contact.type) +
-                            (if (LastHeard.seconds(contact) > 0) " · " + relativeAge(LastHeard.seconds(contact)) else ""),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
+                Column(Modifier.weight(1f)) { ContactHeaderText(vm, contact) }
                 IconButton(onClick = {
                     favPending = !isFav
                     vm.setFavourite(contact.keyHex, !isFav)
@@ -118,7 +106,7 @@ fun SimpleContactSheet(vm: MeshCoreViewModel, contact: ContactEntity, onDismiss:
                     R.drawable.ic_block,
                     stringResource(if (blocked) R.string.node_unblock else R.string.node_block),
                     destructive = !blocked,
-                ) { vm.setBlocked(contact.keyHex, !blocked) }
+                ) { if (blocked) vm.setBlocked(contact.keyHex, false) else blockConfirm = true }
             }
             SheetActionRow(R.drawable.ic_delete, stringResource(R.string.node_remove), destructive = true) {
                 removeConfirm = true
@@ -128,41 +116,9 @@ fun SimpleContactSheet(vm: MeshCoreViewModel, contact: ContactEntity, onDismiss:
 
     if (shareQrOpen) ContactQrDialog(vm, contact, onDismiss = { shareQrOpen = false })
 
-    if (renameOpen) {
-        var name by remember { mutableStateOf(contact.name) }
-        AlertDialog(
-            onDismissRequest = { renameOpen = false },
-            title = { Text(stringResource(R.string.node_rename_title)) },
-            text = { FormField(value = name, onValueChange = { name = it }, singleLine = true) },
-            confirmButton = {
-                TextButton(onClick = {
-                    vm.renameContact(contact, name.trim())
-                    renameOpen = false
-                }) { Text(stringResource(R.string.save)) }
-            },
-            dismissButton = {
-                TextButton(onClick = { renameOpen = false }) { Text(stringResource(R.string.cancel)) }
-            },
-        )
-    }
-
-    if (removeConfirm) {
-        AlertDialog(
-            onDismissRequest = { removeConfirm = false },
-            title = { Text(stringResource(R.string.node_remove_title)) },
-            text = { Text(stringResource(R.string.node_remove_body, contact.name.ifBlank { contact.keyHex.take(12) })) },
-            confirmButton = {
-                TextButton(onClick = {
-                    vm.removeContact(contact.keyHex)
-                    removeConfirm = false
-                    onDismiss()
-                }) { Text(stringResource(R.string.node_remove_confirm), color = MaterialTheme.colorScheme.error) }
-            },
-            dismissButton = {
-                TextButton(onClick = { removeConfirm = false }) { Text(stringResource(R.string.cancel)) }
-            },
-        )
-    }
+    if (renameOpen) ContactRenameDialog(vm, contact, onDismiss = { renameOpen = false })
+    if (blockConfirm) ContactBlockConfirm(vm, contact, onDismiss = { blockConfirm = false })
+    if (removeConfirm) ContactRemoveConfirm(vm, contact, onDismiss = { removeConfirm = false }, onRemoved = onDismiss)
 }
 
 /**
@@ -236,4 +192,94 @@ fun NodeCardHost(vm: MeshCoreViewModel, nav: NavController) {
     }
     contact ?: return
     ContactCard(vm, nav, contact, openAdmin, onDismiss = { vm.openCardRequest.value = null })
+}
+
+/**
+ * The card's header lines (both cards): the name to call them by, and under it what they are
+ * and when they were last heard — or, when you renamed them, the name they chose themselves,
+ * in place of the kind (2026-11-16).
+ */
+@Composable
+internal fun ContactHeaderText(vm: MeshCoreViewModel, contact: ContactEntity) {
+    val nickname = vm.nicknames.collectAsState().value[contact.keyHex]
+    Text(
+        (nickname ?: contact.name).ifBlank { stringResource(R.string.node_unnamed) },
+        style = MaterialTheme.typography.headlineSmall,
+        maxLines = 2,
+        overflow = TextOverflow.Ellipsis,
+    )
+    val what = if (nickname != null && contact.name.isNotBlank()) {
+        contact.name
+    } else {
+        SharedText.kind(androidx.compose.ui.platform.LocalResources.current, contact.type)
+    }
+    Text(
+        // Our radio's clock, not the node's claim — see LastHeard.
+        what + (if (LastHeard.seconds(contact) > 0) " · " + relativeAge(LastHeard.seconds(contact)) else ""),
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+}
+
+/**
+ * Rename, as a nickname on this phone (both cards). Blank, or their own name, clears it.
+ * Never written to the radio: the next advert would put their own name back.
+ */
+@Composable
+internal fun ContactRenameDialog(vm: MeshCoreViewModel, contact: ContactEntity, onDismiss: () -> Unit) {
+    var name by remember { mutableStateOf(vm.nicknameFor(contact.keyHex) ?: contact.name) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.node_rename_title)) },
+        text = {
+            Column {
+                FormField(value = name, onValueChange = { name = it }, singleLine = true)
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    stringResource(R.string.node_rename_local_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = {
+                val typed = name.trim()
+                vm.setNickname(contact.keyHex, typed.takeIf { it.isNotEmpty() && it != contact.name })
+                onDismiss()
+            }) { Text(stringResource(R.string.save)) }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
+    )
+}
+
+/** Blocking asks first (both cards); unblocking does not, since it loses nothing. */
+@Composable
+internal fun ContactBlockConfirm(vm: MeshCoreViewModel, contact: ContactEntity, onDismiss: () -> Unit) {
+    ConfirmDestructive(
+        title = stringResource(R.string.block_confirm_title, vm.displayName(contact).ifBlank { contact.keyHex.take(8) }),
+        body = stringResource(R.string.block_confirm_body),
+        confirmLabel = stringResource(R.string.node_block),
+        onConfirm = {
+            vm.setBlocked(contact.keyHex, true)
+            onDismiss()
+        },
+        onDismiss = onDismiss,
+    )
+}
+
+/** Removing a contact from the radio asks first (both cards). */
+@Composable
+internal fun ContactRemoveConfirm(vm: MeshCoreViewModel, contact: ContactEntity, onDismiss: () -> Unit, onRemoved: () -> Unit) {
+    ConfirmDestructive(
+        title = stringResource(R.string.node_remove_title),
+        body = stringResource(R.string.node_remove_body, vm.displayName(contact).ifBlank { contact.keyHex.take(12) }),
+        confirmLabel = stringResource(R.string.node_remove_confirm),
+        onConfirm = {
+            vm.removeContact(contact.keyHex)
+            onDismiss()
+            onRemoved()
+        },
+        onDismiss = onDismiss,
+    )
 }

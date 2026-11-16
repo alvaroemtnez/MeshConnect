@@ -54,6 +54,19 @@ Brings in MeshCore Hardened 0.10.16, 0.10.17 and 0.11.0.
   hear you", and Show QR code, Rename, Block and Remove; a conversation's ⋮ opens it. New chat
   lists Favourites first, then a section per letter, with search on top. Nodes ⋮ has Scan QR
   code. Simple mode's long-press in Chats no longer offers a private nickname.
+- **Rename is yours.** Renaming someone on their card gives them a name on this phone only,
+  shown in Chats, the conversation, New chat and Nodes; the card shows the name they chose
+  underneath. Renaming them on the radio did not stick: their next advert put their own name
+  back. Holding a chat now offers their card, which replaces "Private nickname".
+- **Rooms sign in on their own.** With a saved password, once when the radio connects and
+  when you open the room, one attempt each and nothing on a timer. A switch in Settings →
+  Connection turns it off.
+- **Favourite groups**, per radio, with the star on the group's card: they head New chat.
+- **Everything destructive asks first,** with a red button: removing a group or a contact,
+  blocking, deleting one message as well as several, clearing a chat.
+- The ongoing notification says the radio's battery. The battery icon turns red at 15% and
+  blinks at 10%. Simple mode refuses radio-settings codes, and no longer shows the Public
+  channel for a moment when the app starts.
 - **Settings → Advanced.** Map tiles, the diagnostics log and the channel datagram tool moved
   here from Appearance and alerts. New chat's "Message a contact" is now "Existing contact,
   group or room", one alphabetical list of all three. Disconnect is red, and About shows the

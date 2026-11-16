@@ -71,7 +71,6 @@ fun ChatsScreen(vm: MeshCoreViewModel, nav: NavController, archivedView: Boolean
     val listRevision by vm.prefs.threadListRevision.collectAsState()
     val pinned = remember(listRevision) { vm.prefs.pinnedThreads }
     val archivedKeys = remember(listRevision) { vm.prefs.archivedThreads }
-    var nicknameFor by remember { mutableStateOf<ConversationRow?>(null) }
     var editChannel by remember { mutableStateOf<Int?>(null) }
     // Multi-select, by thread key; null when off.
     var selection by remember { mutableStateOf<Set<String>?>(null) }
@@ -202,7 +201,9 @@ fun ChatsScreen(vm: MeshCoreViewModel, nav: NavController, archivedView: Boolean
                         onEdit = if (simple) {
                             null
                         } else {
-                            { if (row.isChannel) editChannel = row.key.toIntOrNull() else nicknameFor = row }
+                            // A person's or a room's card, where Rename sets the nickname that
+                            // used to have its own entry here (2026-11-16).
+                            { if (row.isChannel) editChannel = row.key.toIntOrNull() else vm.openCardRequest.value = row.key }
                         },
                         onSelect = { selection = setOf(k) },
                         onToggleSelected = { toggle(k) },
@@ -290,18 +291,6 @@ fun ChatsScreen(vm: MeshCoreViewModel, nav: NavController, archivedView: Boolean
             dismissButton = {
                 androidx.compose.material3.TextButton(onClick = { confirmDelete = null }) { Text(stringResource(R.string.cancel)) }
             },
-        )
-    }
-
-    nicknameFor?.let { row ->
-        NicknameDialog(
-            current = vm.nicknameFor(row.key).orEmpty(),
-            subject = row.title,
-            onSave = { name ->
-                vm.setNickname(row.key, name)
-                nicknameFor = null
-            },
-            onDismiss = { nicknameFor = null },
         )
     }
 }
@@ -442,8 +431,8 @@ private fun ConversationRowItem(
             // private nickname to edit.
             if (onEdit != null) {
                 ChatMenuRow(
-                    R.drawable.ic_edit,
-                    stringResource(if (row.isChannel) R.string.conv_channel_settings else R.string.chats_nickname_menu),
+                    if (row.isChannel) R.drawable.ic_edit else R.drawable.ic_person,
+                    stringResource(if (row.isChannel) R.string.conv_channel_settings else R.string.conv_contact_details),
                 ) { menuOpen = false; onEdit() }
             }
             ChatMenuRow(R.drawable.ic_select, stringResource(R.string.conv_select)) { menuOpen = false; onSelect() }
@@ -478,47 +467,6 @@ private fun SectionHeader(title: String) {
         style = MaterialTheme.typography.labelMedium,
         color = MaterialTheme.colorScheme.primary,
         modifier = Modifier.padding(start = 16.dp, top = 12.dp, bottom = 4.dp),
-    )
-}
-
-/**
- * Local-only rename. Distinct from the contact Rename action, which
- * rewrites the record on the radio and is visible to the mesh; this
- * never leaves the phone.
- */
-@Composable
-private fun NicknameDialog(
-    current: String,
-    subject: String,
-    onSave: (String?) -> Unit,
-    onDismiss: () -> Unit,
-) {
-    var text by remember { mutableStateOf(current) }
-    androidx.compose.material3.AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.chats_nickname_title)) },
-        text = {
-            Column {
-                Text(
-                    stringResource(R.string.chats_nickname_body, subject),
-                    style = MaterialTheme.typography.bodySmall,
-                )
-                FormField(
-                    value = text,
-                    onValueChange = { text = it },
-                    label = { Text(stringResource(R.string.chats_nickname)) },
-                    singleLine = true,
-                )
-            }
-        },
-        confirmButton = {
-            androidx.compose.material3.TextButton(onClick = {
-                onSave(text.trim().ifBlank { null })
-            }) { Text(stringResource(R.string.save)) }
-        },
-        dismissButton = {
-            androidx.compose.material3.TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
-        },
     )
 }
 

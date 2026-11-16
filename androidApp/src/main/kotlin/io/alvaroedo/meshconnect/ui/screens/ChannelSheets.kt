@@ -230,6 +230,8 @@ private fun ExistingThreads(
         channels = vm.dbChannels.collectAsState().value,
         kinds = vm.channelKinds.collectAsState().value,
         query = query,
+        nicknames = vm.nicknames.collectAsState().value,
+        favouriteChannels = vm.favouriteChannels.collectAsState().value,
     )
     MeshTextField(
         value = query,
@@ -451,6 +453,7 @@ fun ChannelEditSheet(vm: MeshCoreViewModel, channel: ChannelEntity, onDismiss: (
     var pskLoaded by remember { mutableStateOf(false) }
     var shareConfirm by remember { mutableStateOf(false) }
     var shareQr by remember { mutableStateOf(false) }
+    var removeConfirm by remember { mutableStateOf(false) }
 
     LaunchedEffect(channel.idx) {
         vm.channelPskHex(channel)?.let { pskHex = it }
@@ -508,6 +511,15 @@ fun ChannelEditSheet(vm: MeshCoreViewModel, channel: ChannelEntity, onDismiss: (
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
+                // Favourite: on this phone, for this radio (the channel record has no flag).
+                val fav = channel.idx in vm.favouriteChannels.collectAsState().value
+                androidx.compose.material3.IconButton(onClick = { vm.setChannelFavourite(channel.idx, !fav) }) {
+                    Icon(
+                        painterResource(if (fav) R.drawable.ic_star_filled else R.drawable.ic_star),
+                        stringResource(R.string.node_qa_favourite),
+                        tint = if (fav) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
             FormField(
                 value = name,
@@ -556,11 +568,26 @@ fun ChannelEditSheet(vm: MeshCoreViewModel, channel: ChannelEntity, onDismiss: (
                     if (pskLoaded && pskHex.isNotBlank()) shareConfirm = true
                 }
                 SheetActionRow(R.drawable.ic_delete, stringResource(if (simple) R.string.simple_remove_group else R.string.ch_remove), destructive = true) {
-                    vm.deleteChannel(channel.idx)
-                    onDismiss()
+                    removeConfirm = true
                 }
             }
         }
+    }
+
+    if (removeConfirm) {
+        val label = channel.name.ifBlank { stringResource(R.string.ch_numbered, channel.idx) }
+        val simpleMode = io.alvaroedo.meshconnect.ui.model.SimpleMode.isSimple(LocalAppMode.current)
+        ConfirmDestructive(
+            title = stringResource(R.string.ch_remove_title, label),
+            body = stringResource(if (simpleMode) R.string.simple_remove_group_body else R.string.ch_remove_body),
+            confirmLabel = stringResource(R.string.node_remove_confirm),
+            onConfirm = {
+                removeConfirm = false
+                vm.deleteChannel(channel.idx)
+                onDismiss()
+            },
+            onDismiss = { removeConfirm = false },
+        )
     }
 
     // Sharing a channel hands over its key, and the key IS the channel.

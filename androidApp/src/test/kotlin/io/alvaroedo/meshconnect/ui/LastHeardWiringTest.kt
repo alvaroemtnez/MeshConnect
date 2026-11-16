@@ -63,7 +63,8 @@ class LastHeardWiringTest {
         )
         assertTrue(
             "the contact sheet no longer shows when it was heard",
-            nodes.contains("relativeAge(LastHeard.seconds(contact))"),
+            // Both cards' header (ContactHeaderText) lives with the simple card.
+            File(screens, "ContactCards.kt").readText().contains("relativeAge(LastHeard.seconds(contact))"),
         )
         assertTrue(
             // The map opens the same sheet as the list (2026-11-10).

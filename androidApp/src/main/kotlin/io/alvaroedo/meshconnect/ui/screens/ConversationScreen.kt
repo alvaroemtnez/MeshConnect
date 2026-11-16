@@ -150,6 +150,8 @@ fun ConversationScreen(
     // A room needs a session to work at all — see roomAccessNotice.
     val roomSession = vm.adminSessions.collectAsState().value[peerKey] ?: AdminSession.None
     var roomSignIn by remember { mutableStateOf(false) }
+    // Opened unsigned: sign in with the saved password, quietly (RoomAutoSignIn).
+    LaunchedEffect(peerKey, isRoom) { if (isRoom) vm.signInToRoomIfSaved(peerKey) }
 
     val title = if (isChannel) {
         val idx = peerKey.toIntOrNull()
@@ -158,7 +160,9 @@ fun ConversationScreen(
         channels.firstOrNull { it.idx == idx }?.name?.ifBlank { null }
             ?: stringResource(R.string.ch_numbered, idx ?: 0)
     } else {
-        contacts.firstOrNull { it.keyHex == peerKey }?.name?.ifBlank { null }
+        // Your nickname for them first, as in the Chats list (Rename on their card).
+        vm.nicknames.collectAsState().value[peerKey]
+            ?: contacts.firstOrNull { it.keyHex == peerKey }?.name?.ifBlank { null }
             ?: peerKey.take(12)
     }
 
@@ -327,12 +331,8 @@ fun ConversationScreen(
                         selection = null
                     }) { Icon(painterResource(R.drawable.ic_content_copy), stringResource(R.string.copy)) }
                     SelectionDeleteAction {
-                        if (picked.size == 1) {
-                            vm.deleteMessage(picked.single())
-                            selection = null
-                        } else {
-                            confirmDeleteMany = picked
-                        }
+                        // One or many, it asks first (ConfirmDestructive).
+                        confirmDeleteMany = picked
                     }
                 }
             } else AppTopBar(
@@ -439,7 +439,7 @@ fun ConversationScreen(
                     showSignal = signalDetail,
                     canInfo = technical,
                     onRoute = { routeOf = m },
-                    onDelete = { vm.deleteMessage(m.id) },
+                    onDelete = { confirmDeleteMany = setOf(m.id) },
                     onResend = { vm.resendMessage(m.id) },
                     onHttpLink = { pendingUrl = it },
                     onMeshcoreLink = { vm.importContactUri(it, io.alvaroedo.meshconnect.ui.model.ScanOrigin.Chats) },
@@ -682,37 +682,33 @@ fun ConversationScreen(
     }
 
     confirmDeleteMany?.let { ids ->
-        AlertDialog(
-            onDismissRequest = { confirmDeleteMany = null },
-            title = { Text(stringResource(R.string.conv_delete_many_title, ids.size)) },
-            text = { Text(stringResource(R.string.conv_delete_many_body)) },
-            confirmButton = {
-                TextButton(onClick = {
-                    ids.forEach { vm.deleteMessage(it) }
-                    confirmDeleteMany = null
-                    selection = null
-                }) { Text(stringResource(R.string.delete), color = MaterialTheme.colorScheme.error) }
+        ConfirmDestructive(
+            title = if (ids.size == 1) {
+                stringResource(R.string.conv_delete_one_title)
+            } else {
+                stringResource(R.string.conv_delete_many_title, ids.size)
             },
-            dismissButton = {
-                TextButton(onClick = { confirmDeleteMany = null }) { Text(stringResource(R.string.cancel)) }
+            body = stringResource(R.string.conv_delete_many_body),
+            confirmLabel = stringResource(R.string.delete),
+            onConfirm = {
+                ids.forEach { vm.deleteMessage(it) }
+                confirmDeleteMany = null
+                selection = null
             },
+            onDismiss = { confirmDeleteMany = null },
         )
     }
 
     if (clearConfirm) {
-        AlertDialog(
-            onDismissRequest = { clearConfirm = false },
-            title = { Text(stringResource(R.string.conv_clear_title)) },
-            text = { Text(stringResource(R.string.conv_clear_body)) },
-            confirmButton = {
-                TextButton(onClick = {
-                    vm.clearThread(kind, peerKey)
-                    clearConfirm = false
-                }) { Text(stringResource(R.string.clear), color = MaterialTheme.colorScheme.error) }
+        ConfirmDestructive(
+            title = stringResource(R.string.conv_clear_title),
+            body = stringResource(R.string.conv_clear_body),
+            confirmLabel = stringResource(R.string.clear),
+            onConfirm = {
+                vm.clearThread(kind, peerKey)
+                clearConfirm = false
             },
-            dismissButton = {
-                TextButton(onClick = { clearConfirm = false }) { Text(stringResource(R.string.cancel)) }
-            },
+            onDismiss = { clearConfirm = false },
         )
     }
 

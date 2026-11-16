@@ -200,7 +200,11 @@ class MeshCoreService : Service() {
             }
         }
         scope.launch {
-            engine.state.collect { updateNotification(it) }
+            // With the battery: the ongoing notification is where most people see it
+            // (2026-11-16). Only a change of state or of whole percent redraws it.
+            combine(engine.state, engine.battery) { st, b ->
+                st to b?.let { io.github.thatsfguy.meshcore.presentation.BatteryLevel.percent(it.batteryMillivolts) }
+            }.distinctUntilChanged().collect { (st, pct) -> updateNotification(st, pct) }
         }
         scope.launch {
             engine.events.collect { ev ->
@@ -809,10 +813,14 @@ class MeshCoreService : Service() {
         }
     }
 
-    private fun updateNotification(state: EngineState) {
+    private fun updateNotification(state: EngineState, batteryPercent: Int? = null) {
         val label = _connectionLabel.value
         val text = when (state) {
-            EngineState.Ready -> getString(R.string.setup_connected_to, label ?: "")
+            EngineState.Ready -> if (batteryPercent != null) {
+                getString(R.string.svc_connected_battery, label ?: "", batteryPercent)
+            } else {
+                getString(R.string.setup_connected_to, label ?: "")
+            }
             EngineState.Handshaking -> getString(R.string.status_handshake)
             EngineState.Connecting -> if (label != null) getString(R.string.svc_reconnecting, label) else getString(R.string.status_connecting)
             EngineState.Detached -> getString(R.string.hub_not_connected)

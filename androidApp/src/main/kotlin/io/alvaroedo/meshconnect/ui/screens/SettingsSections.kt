@@ -115,6 +115,12 @@ internal fun ConnectionSection(vm: MeshCoreViewModel, onAddNode: () -> Unit) {
         vm.prefs.roamSavedRadios = it
     }
     HintText(stringResource(R.string.set_roam_hint))
+    var roomSignIn by remember { mutableStateOf(vm.prefs.roomAutoSignIn) }
+    SettingRow(stringResource(R.string.set_room_auto_sign_in), roomSignIn) {
+        roomSignIn = it
+        vm.prefs.roomAutoSignIn = it
+    }
+    HintText(stringResource(R.string.set_room_auto_sign_in_hint))
     var startAtBoot by remember { mutableStateOf(vm.prefs.startAtBoot) }
     SettingRow(stringResource(R.string.set_start_at_boot), startAtBoot) {
         startAtBoot = it
