@@ -407,6 +407,9 @@ class MessageRepository(
                         ReactionOutcome.NotAReaction -> Unit
                     }
                 }
+                val now = System.currentTimeMillis()
+                // A sender clock in the future is placed at our receive time (MessageClock).
+                val placed = MessageClock.place(event.timestamp, now)
                 val inserted = db.messages().insert(
                     MessageEntity(
                         selfKey = self,
@@ -416,8 +419,9 @@ class MessageRepository(
                         // sender name (the thread IS the sender).
                         senderName = event.roomAuthorLabel,
                         text = storedText,
-                        timestamp = event.timestamp,
-                        receivedAt = System.currentTimeMillis(),
+                        timestamp = placed.first,
+                        claimedTimestamp = placed.second,
+                        receivedAt = now,
                         outgoing = false,
                         status = MessageStatus.Delivered.ordinal,
                         ackHash = null,
@@ -524,6 +528,8 @@ class MessageRepository(
                     ReactionOutcome.Consumed -> return
                     ReactionOutcome.NotAReaction -> Unit
                 }
+                val now = System.currentTimeMillis()
+                val placed = MessageClock.place(event.timestamp, now)
                 val inserted = db.messages().insert(
                     MessageEntity(
                         selfKey = self,
@@ -531,8 +537,9 @@ class MessageRepository(
                         peerKey = event.channelIndex.toString(),
                         senderName = event.senderName,
                         text = event.text,
-                        timestamp = event.timestamp,
-                        receivedAt = System.currentTimeMillis(),
+                        timestamp = placed.first,
+                        claimedTimestamp = placed.second,
+                        receivedAt = now,
                         outgoing = false,
                         status = MessageStatus.Delivered.ordinal,
                         ackHash = null,
@@ -718,7 +725,7 @@ class MessageRepository(
         // this class's: both are pure, hostile-input facing, and iOS
         // needs the same answers. Here we only map rows to them and back.
         val candidates = recent.map {
-            ReactionRouting.Candidate(it.id, it.timestamp, it.senderName, it.text, it.outgoing)
+            ReactionRouting.Candidate(it.id, it.senderTimestamp, it.senderName, it.text, it.outgoing)
         }
         val isChannel = kind == KIND_CHANNEL
         val hit = if (ours != null) {
@@ -753,7 +760,7 @@ class MessageRepository(
     ) {
         if (!ReactionRouting.shouldNotify(
                 ReactionRouting.Candidate(
-                    applied.target.id, applied.target.timestamp,
+                    applied.target.id, applied.target.senderTimestamp,
                     applied.target.senderName, applied.target.text, applied.target.outgoing,
                 ),
             )
@@ -796,7 +803,7 @@ class MessageRepository(
     /** The wire text for reacting to [target], or null if unencodable. */
     fun reactionWireText(target: MessageEntity, emoji: String, isChannel: Boolean): String? {
         val hashSender = if (isChannel) target.senderName.orEmpty() else null
-        val hash = Reactions.targetHash(target.timestamp, hashSender, target.text)
+        val hash = Reactions.targetHash(target.senderTimestamp, hashSender, target.text)
         return Reactions.encode(hash, emoji)
     }
 

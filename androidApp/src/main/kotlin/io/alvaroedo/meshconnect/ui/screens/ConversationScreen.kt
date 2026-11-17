@@ -1769,7 +1769,7 @@ private fun MessageInfoSheet(
             TileRow {
                 InfoTile(
                     stringResource(R.string.info_reaction_id),
-                    Reactions.targetHash(m.timestamp, if (isChannel) m.senderName.orEmpty() else null, m.text),
+                    Reactions.targetHash(m.senderTimestamp, if (isChannel) m.senderName.orEmpty() else null, m.text),
                     Modifier.weight(1f).fillMaxHeight(),
                     mono = true,
                 )
@@ -2027,6 +2027,18 @@ private fun MessageFooter(m: MessageEntity, showSignal: Boolean = true) {
     val style = MaterialTheme.typography.labelSmall
     Row(verticalAlignment = Alignment.CenterVertically) {
         Text(DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(m.timestamp * 1000)), style = style, color = ink)
+        // Shown at when we received it, because the sender's clock claimed the future
+        // (MessageClock). Said, so the sender's owner can find out their clock is wrong.
+        m.claimedTimestamp?.let { claim ->
+            Spacer(Modifier.width(4.dp))
+            Icon(painterResource(R.drawable.ic_schedule), null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(12.dp))
+            Spacer(Modifier.width(2.dp))
+            Text(
+                stringResource(R.string.msg_clock_claim, DateFormat.getDateInstance(DateFormat.SHORT).format(Date(claim * 1000))),
+                style = style,
+                color = MaterialTheme.colorScheme.error,
+            )
+        }
         if (m.outgoing) {
             val (icon, label, tint) = when (m.status) {
                 MessageStatus.Delivered.ordinal -> Triple(R.drawable.ic_done_all, R.string.conv_delivered, MaterialTheme.colorScheme.primary)

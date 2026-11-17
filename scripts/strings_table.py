@@ -499,6 +499,7 @@ S = {
 "set_saved_nodes": ('Saved radios', 'Radios guardadas', 'Ràdios guardades'),
 "set_connect": ('Connect', 'Conectar', 'Connectar'),
 "set_log_empty": ('The log is empty. Secrets (passwords, keys, PSKs) are removed before lines land here.', 'El registro está vacío. Los secretos (contraseñas, claves, PSK) se eliminan antes de que lleguen aquí.', "El registre està buit. Els secrets (contrasenyes, claus, PSK) s'eliminen abans que arriben ací."),
+"msg_clock_claim": ("their clock: %1$s", "su reloj: %1$s", "el seu rellotge: %1$s"),
 "diag_open": ("Open the log (%1$d lines)", "Abrir el registro (%1$d líneas)", "Obrir el registre (%1$d línies)"),
 "diag_count": ("%1$d lines, oldest first", "%1$d líneas, las más antiguas primero", "%1$d línies, les més antigues primer"),
 "diag_share": ("Share", "Compartir", "Compartir"),

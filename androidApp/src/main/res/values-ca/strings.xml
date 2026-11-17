@@ -404,6 +404,7 @@
     <string name="set_saved_nodes">Ràdios guardades</string>
     <string name="set_connect">Connectar</string>
     <string name="set_log_empty">El registre està buit. Els secrets (contrasenyes, claus, PSK) s\'eliminen abans que arriben ací.</string>
+    <string name="msg_clock_claim">el seu rellotge: %1$s</string>
     <string name="diag_open">Obrir el registre (%1$d línies)</string>
     <string name="diag_count">%1$d línies, les més antigues primer</string>
     <string name="diag_share">Compartir</string>

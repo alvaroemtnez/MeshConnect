@@ -407,6 +407,7 @@
     <string name="set_saved_nodes">Saved radios</string>
     <string name="set_connect">Connect</string>
     <string name="set_log_empty">The log is empty. Secrets (passwords, keys, PSKs) are removed before lines land here.</string>
+    <string name="msg_clock_claim">their clock: %1$s</string>
     <string name="diag_open">Open the log (%1$d lines)</string>
     <string name="diag_count">%1$d lines, oldest first</string>
     <string name="diag_share">Share</string>

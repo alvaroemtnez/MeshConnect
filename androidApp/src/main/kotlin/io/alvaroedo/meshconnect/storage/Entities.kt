@@ -62,6 +62,13 @@ data class MessageEntity(
      */
     val reactionsJson: String? = null,
     /**
+     * What the sender's clock claimed, when it was too far in the future to show
+     * ([MessageClock]); [timestamp] is then our receive time. Null when the claim was
+     * believable and [timestamp] is the claim itself. Kept because reactions identify a
+     * message by a hash of the sender's own timestamp.
+     */
+    val claimedTimestamp: Long? = null,
+    /**
      * Repeaters that relayed this message to us — 0 meaning we heard
      * the sender with nothing in between.
      *
@@ -113,7 +120,34 @@ data class MessageEntity(
      * message; the info sheet says how many arrived.
      */
     val copies: Int = 1,
-)
+) {
+    /** The sender's own timestamp, what reactions hash: the claim, even when not shown. */
+    val senderTimestamp: Long get() = claimedTimestamp ?: timestamp
+}
+
+/**
+ * Where a received message goes in time (2026-11-17).
+ *
+ * The companion hands over the SENDER's timestamp and nothing else (companion_radio
+ * MyMesh.cpp, onChannelMessageRecv / onMessageRecv): no receive time, no sanity check. A
+ * node with a wrong clock put a Public post in 2075, where it stayed at the bottom of the
+ * thread and kept the channel first in Chats.
+ *
+ * A claim more than [FUTURE_TOLERANCE_SEC] ahead of when we got it cannot be true, so the
+ * message is placed at our receive time and the claim kept beside it. A claim in the past
+ * is left alone: a message that waited in the radio's queue while the phone was away is
+ * rightly older than when we read it, and that cannot be told apart from a slow clock.
+ */
+object MessageClock {
+    /** Ordinary drift between two clocks; past this, a future time is wrong. */
+    const val FUTURE_TOLERANCE_SEC = 10L * 60
+
+    /** (timestamp to store, claim to keep or null). */
+    fun place(claimedSec: Long, receivedAtMs: Long): Pair<Long, Long?> {
+        val received = receivedAtMs / 1000
+        return if (claimedSec > received + FUTURE_TOLERANCE_SEC) received to claimedSec else claimedSec to null
+    }
+}
 
 enum class MessageStatus { Pending, Sent, Delivered, Failed }
 

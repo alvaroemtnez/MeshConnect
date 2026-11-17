@@ -16,7 +16,7 @@ import java.io.File
         MessageEntity::class, ContactEntity::class, ChannelEntity::class,
         PathHistoryEntity::class, DiscoveredEntity::class, NeighbourEntity::class,
     ],
-    version = 20,
+    version = 21,
     exportSchema = true,
 )
 abstract class MeshCoreDatabase : RoomDatabase() {
@@ -336,6 +336,21 @@ abstract class MeshCoreDatabase : RoomDatabase() {
         }
 
         /**
+         * v21 keeps a sender's impossible future timestamp aside (MessageClock), and moves
+         * the rows already stored with one — a Public post dated 2075, seen 2026-11-17 — to
+         * when they were received. Received rows only: our own are stamped by this phone.
+         */
+        private val MIGRATION_20_21 = object : Migration(20, 21) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `messages` ADD COLUMN `claimedTimestamp` INTEGER")
+                db.execSQL(
+                    "UPDATE `messages` SET `claimedTimestamp` = `timestamp`, `timestamp` = `receivedAt` / 1000 " +
+                        "WHERE `outgoing` = 0 AND `timestamp` > `receivedAt` / 1000 + ${MessageClock.FUTURE_TOLERANCE_SEC}",
+                )
+            }
+        }
+
+        /**
          * Open the database, encrypted with [passphrase] when one is
          * available (see [DatabaseKey]). A pre-existing PLAINTEXT
          * database is converted in place first, so turning encryption on
@@ -382,7 +397,7 @@ abstract class MeshCoreDatabase : RoomDatabase() {
                         MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8,
                         MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14,
                         MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17,
-                        MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20,
+                        MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21,
                     )
 
             if (key == null) {
