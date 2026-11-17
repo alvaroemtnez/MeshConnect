@@ -10,6 +10,7 @@ import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
+import kotlin.test.assertFalse
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
@@ -445,5 +446,62 @@ class ReconnectSupervisorTest {
             )
         }
         assertEquals(ReconnectSupervisor.MAX_BACKOFF_MS, ReconnectSupervisor.backoffMs(Int.MAX_VALUE))
+    }
+
+    // ------------------------------------------------------------------
+    // Handing the link to the firmware update (2026-11-17).
+    // ------------------------------------------------------------------
+
+    @Test
+    fun handingOverKeepsTheLinkUpAndTheLoopIsGoneBeforeItReturns() = runTest {
+        // The jump is written on this link right after the hand-over. stop() tore it down
+        // from the loop's own coroutine, racing the jump onto a closed GATT that never
+        // answered: the update hung, and the radio was never asked.
+        val h = Harness(this)
+        val link = FakeTransport(FakeTransport.Outcome.Holds)
+        h.script = { link }
+        h.supervisor.start()
+        runCurrent()
+        assertEquals(TransportState.Connected, link.state.value)
+
+        h.supervisor.handOver()
+
+        assertFalse(h.supervisor.running, "the loop must be gone when handOver returns")
+        assertEquals(0, link.disconnectCalls, "the handed-over link must not be dropped")
+        assertEquals(TransportState.Connected, link.state.value)
+        // And it stays the caller's: nothing reconnects or rebuilds behind it.
+        advanceTimeBy(5 * 60_000L)
+        runCurrent()
+        assertEquals(1, h.built.size)
+    }
+
+    @Test
+    fun stoppingStillDropsTheLink() = runTest {
+        // Positive control: stop() is unchanged, so a plain disconnect still disconnects.
+        val h = Harness(this)
+        val link = FakeTransport(FakeTransport.Outcome.Holds)
+        h.script = { link }
+        h.supervisor.start()
+        runCurrent()
+        h.supervisor.stop()
+        runCurrent()
+        assertEquals(1, link.disconnectCalls)
+    }
+
+    @Test
+    fun theSupervisorCanBeStartedAgainAfterAHandOver() = runTest {
+        val h = Harness(this)
+        h.script = { FakeTransport(FakeTransport.Outcome.Holds) }
+        h.supervisor.start()
+        runCurrent()
+        h.supervisor.handOver()
+        h.supervisor.start()
+        runCurrent()
+        assertTrue(h.supervisor.running)
+        assertEquals(2, h.built.size)
+        // The second loop's own stop drops its link as usual.
+        h.supervisor.stop()
+        runCurrent()
+        assertEquals(1, h.attached.last().disconnectCalls)
     }
 }

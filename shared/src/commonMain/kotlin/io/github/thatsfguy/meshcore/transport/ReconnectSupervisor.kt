@@ -2,6 +2,7 @@ package io.github.thatsfguy.meshcore.transport
 
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.delay
@@ -86,6 +87,32 @@ class ReconnectSupervisor(
         job = null
     }
 
+    /**
+     * Stop looking after the link WITHOUT dropping it, and return once the loop is gone.
+     *
+     * For handing a live link to someone else — the firmware update, which writes the
+     * bootloader jump on it. [stop] tears the link down as the loop unwinds, from the loop's
+     * own coroutine and so concurrently with whatever the caller does next: the jump was
+     * being written to a GATT that was closed under it (no callback ever comes for that), and
+     * the update hung at "asking the node to enter its bootloader" with the radio never
+     * having been asked (MeshConnect, RAK 4631, 2026-11-17). Whoever takes the link over
+     * also takes over disconnecting it.
+     */
+    suspend fun handOver() {
+        val running = job ?: return
+        keepLinkOnStop = true
+        try {
+            running.cancelAndJoin()
+        } finally {
+            keepLinkOnStop = false
+            if (job === running) job = null
+        }
+    }
+
+    /** Set by [handOver] for the one cancellation it causes. */
+    @kotlin.concurrent.Volatile
+    private var keepLinkOnStop = false
+
     private suspend fun run() {
         var failures = 0
         while (true) {
@@ -121,7 +148,7 @@ class ReconnectSupervisor(
                 if (dead != null) log("Write failed on a link that said it was up: ${dead.message}")
                 throw LinkDownException()
             } catch (t: CancellationException) {
-                withContext(NonCancellable) { runCatching { transport.disconnect() } }
+                if (!keepLinkOnStop) withContext(NonCancellable) { runCatching { transport.disconnect() } }
                 throw t
             } catch (t: Throwable) {
                 if (t !is LinkDownException) onError(t.message)

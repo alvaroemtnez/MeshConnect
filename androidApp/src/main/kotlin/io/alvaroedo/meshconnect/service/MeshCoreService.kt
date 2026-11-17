@@ -721,7 +721,10 @@ class MeshCoreService : Service() {
      */
     suspend fun <T> withRadioHandedOver(block: suspend (UpdateHandover) -> T): T {
         val memory = currentMemory
-        supervisor?.stop()
+        // Handed over, not stopped: stop() drops the link as the loop unwinds, on its own
+        // coroutine, and that raced the jump below onto a closed GATT (ReconnectSupervisor
+        // .handOver). From here this function owns the link and disconnects it itself.
+        supervisor?.handOver()
         supervisor = null
         _firmwareUpdateRunning.value = true
         diagnostics.log("Firmware", "Radio handed over for a firmware update")

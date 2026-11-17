@@ -207,33 +207,60 @@ class BleTransport(
         val control = service.getCharacteristic(DFU_APP_CONTROL_UUID)
             ?: throw IllegalStateException("The radio's DFU service has no control point.")
 
+        // Every step is logged and bounded. With neither, a callback that never came left the
+        // update parked at "asking the node to enter its bootloader" for as long as the screen
+        // stayed open, and the log ended there with nothing to say which step it was
+        // (2026-11-17).
+        log("DFU jump: subscribing to the control point")
         if (!g.setCharacteristicNotification(control, true)) {
             throw IllegalStateException("Could not subscribe to the radio's DFU control point.")
         }
         val cccd = control.getDescriptor(CCCD_UUID)
             ?: throw IllegalStateException("The radio's DFU control point has no CCCD.")
         cccd.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
-        pending.await<Unit>(PendingGattOps.Slot.Descriptor) {
-            if (!g.writeDescriptor(cccd)) {
-                throw IllegalStateException("Could not subscribe to the DFU control point.")
+        withTimeoutOrNull(JUMP_STEP_TIMEOUT_MS) {
+            pending.await<Unit>(PendingGattOps.Slot.Descriptor) {
+                if (!g.writeDescriptor(cccd)) {
+                    throw IllegalStateException("Could not subscribe to the DFU control point.")
+                }
             }
+            true
+        } ?: run {
+            log("DFU jump: no answer to the subscription in ${JUMP_STEP_TIMEOUT_MS / 1000}s")
+            throw IllegalStateException(
+                "The radio did not answer the update request (no reply in ${JUMP_STEP_TIMEOUT_MS / 1000}s). " +
+                    "It has not been changed.",
+            )
         }
+        log("DFU jump: subscribed; writing the jump")
 
         // The radio cannot answer this write: handling it disables the
         // SoftDevice and jumps to the bootloader, so the link dies
         // first. A failure here is the expected shape of success, and
-        // the caller proves it by finding the bootloader afterwards.
-        runCatching {
-            writeLock.withLock {
-                pending.await<Unit>(PendingGattOps.Slot.CharacteristicWrite) {
-                    control.writeType = BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
-                    control.value = LegacyDfu.ENTER_BOOTLOADER
-                    if (!g.writeCharacteristic(control)) {
-                        throw IllegalStateException("The update request could not be sent.")
+        // the caller proves it by finding the bootloader afterwards —
+        // which is also why a timeout here carries on rather than fails.
+        val outcome = runCatching {
+            withTimeoutOrNull(JUMP_STEP_TIMEOUT_MS) {
+                writeLock.withLock {
+                    pending.await<Unit>(PendingGattOps.Slot.CharacteristicWrite) {
+                        control.writeType = BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
+                        control.value = LegacyDfu.ENTER_BOOTLOADER
+                        if (!g.writeCharacteristic(control)) {
+                            throw IllegalStateException("The update request could not be sent.")
+                        }
                     }
                 }
+                true
             }
-        }.onFailure { if (it is io.github.thatsfguy.meshcore.firmware.StaleBondException) throw it }
+        }
+        outcome.exceptionOrNull()?.let { if (it is io.github.thatsfguy.meshcore.firmware.StaleBondException) throw it }
+        log(
+            when {
+                outcome.isFailure -> "DFU jump: write ended with ${outcome.exceptionOrNull()?.message}; looking for the bootloader"
+                outcome.getOrNull() == null -> "DFU jump: no answer to the write in ${JUMP_STEP_TIMEOUT_MS / 1000}s; looking for the bootloader"
+                else -> "DFU jump: written; the radio is restarting"
+            },
+        )
     }
 
     override suspend fun connect() {
@@ -425,6 +452,9 @@ class BleTransport(
          * backstop for the case where it never reports one.
          */
         const val DIRECT_CONNECT_TIMEOUT_MS = 40_000L
+
+        /** Each step of the firmware-update jump; a GATT step answers in well under a second. */
+        const val JUMP_STEP_TIMEOUT_MS = 10_000L
 
         /**
          * How long a background (autoConnect=true) attempt is left armed

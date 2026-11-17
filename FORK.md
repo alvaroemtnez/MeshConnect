@@ -158,3 +158,10 @@ Delete `gh-pr-<N>` (locally and on Forgejo) once it is merged.
 - `LinkMeter` (last hop of flooded RX-log packets as the "repeaters heard directly" signal).
 - Their `RawPacketTest` labels route type 1 "direct"; it is `ROUTE_TYPE_FLOOD` (`Packet.h:15`).
   The parser is right; only the comment is wrong.
+- **A bug fix:** the connected radio's firmware jump raced `ReconnectSupervisor.stop()`, which
+  disconnects the link from the loop's own coroutine as it unwinds. The jump was written to a
+  GATT closed under it, no callback came, and the update hung at "asking the node to enter its
+  bootloader" with the radio never asked (RAK 4631, OTAFIX, companion v1.18, 2026-11-17).
+  `ReconnectSupervisor.handOver()` stops the loop without dropping the link; the jump's GATT
+  steps in `BleTransport.requestBootloaderReboot` are now bounded and logged. Tests in
+  `ReconnectSupervisorTest`.
