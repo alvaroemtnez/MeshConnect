@@ -16,27 +16,36 @@ import org.junit.Test
 class WidgetLayoutTest {
 
     private fun cells(cols: Int, rows: Int) = WidgetLayout.plan(cols * 78f, rows * 98f)
-    private fun card(wide: Boolean, lines: Int, nearby: Int) = Plan(false, false, wide, lines, nearby)
+    private fun card(wide: Boolean, messages: Int, lines: Int, nearby: Int) =
+        Plan(false, false, wide, messages, lines, nearby)
 
+    /**
+     * 1.4 (asked for on the beta, 2026-11-17): at most three repeaters, a block at the
+     * bottom only as tall as its rows, and the messages above it, more than one when they fit.
+     */
     @Test
-    fun `every grid size draws the reviewed frame`() {
-        assertEquals(card(wide = false, lines = 5, nearby = 0), cells(2, 2))
-        assertEquals(card(wide = true, lines = 3, nearby = 1), cells(3, 2))
-        assertEquals(card(wide = true, lines = 3, nearby = 1), cells(4, 2))
-        assertEquals(card(wide = false, lines = 3, nearby = 4), cells(2, 3))
-        assertEquals(card(wide = true, lines = 2, nearby = 6), cells(3, 3))
-        assertEquals(card(wide = true, lines = 2, nearby = 6), cells(4, 3))
-        assertEquals(card(wide = false, lines = 6, nearby = 6), cells(2, 4))
-        assertEquals(card(wide = true, lines = 6, nearby = 6), cells(4, 4))
+    fun `every grid size draws the planned frame`() {
+        assertEquals(card(wide = false, messages = 1, lines = 5, nearby = 0), cells(2, 2))
+        assertEquals(card(wide = false, messages = 1, lines = 4, nearby = 3), cells(2, 3))
+        assertEquals(card(wide = false, messages = 3, lines = 2, nearby = 3), cells(2, 4))
+        assertEquals(card(wide = true, messages = 1, lines = 3, nearby = 1), cells(3, 2))
+        assertEquals(card(wide = true, messages = 2, lines = 2, nearby = 3), cells(3, 3))
+        assertEquals(card(wide = true, messages = 3, lines = 3, nearby = 3), cells(4, 4))
     }
 
     @Test
-    fun `wide sizes put the message beside the status from the first line`() {
-        // 1.0 drew a 3×2 with the message beside the battery and empty space above it.
+    fun `never more than three repeaters`() {
+        for (h in 140..900 step 7) {
+            assertTrue(WidgetLayout.plan(312f, h.toFloat()).nearbyRows <= 3)
+        }
+    }
+
+    @Test
+    fun `wide sizes put a message beside the status from the first line`() {
         for (cols in 3..4) for (rows in 2..4) {
             val p = cells(cols, rows)
             assertTrue(p.wide)
-            assertTrue("$cols×$rows has a message", p.messageLines >= 2)
+            assertTrue("$cols×$rows has a message", p.messages >= 1 && p.messageLines >= 2)
         }
     }
 
@@ -45,11 +54,11 @@ class WidgetLayoutTest {
         for (w in listOf(156f, 234f, 312f)) {
             var last = WidgetLayout.plan(w, WidgetLayout.CARD_MIN_HEIGHT)
             var h = WidgetLayout.CARD_MIN_HEIGHT + 1
-            while (h <= 450f) {
+            while (h <= 600f) {
                 val p = WidgetLayout.plan(w, h)
                 assertTrue("nearby at $w×$h", p.nearbyRows >= last.nearbyRows)
-                // The message may give a line back to the first nearby row, never more.
-                assertTrue("message at $w×$h", p.messageLines >= last.messageLines - 1 || last.nearbyRows < p.nearbyRows)
+                // A message may give way to a new repeater row (the repeaters come first), never otherwise.
+                assertTrue("messages at $w×$h", p.messages >= last.messages || p.nearbyRows > last.nearbyRows)
                 last = p
                 h += 1f
             }
@@ -57,48 +66,51 @@ class WidgetLayoutTest {
     }
 
     @Test
-    fun `the spare height is used, not left as a band at the bottom`() {
-        // What the blocks take must come within one message line of the height.
-        for (cols in 2..4) for (rows in 2..4) {
-            val w = cols * 78f
-            val h = rows * 98f
+    fun `the spare height goes to the messages, not a band`() {
+        for (w in listOf(156f, 234f, 312f)) for (hi in 160..600 step 3) {
+            val h = hi.toFloat()
             val p = WidgetLayout.plan(w, h)
-            if (p.messageLines == WidgetLayout.MAX_MESSAGE_LINES || p.nearbyRows == WidgetLayout.MAX_NEARBY) continue
+            if (p.messages == 0 || p.messageLines == WidgetLayout.MAX_MESSAGE_LINES) continue
             with(WidgetLayout) {
-                var used = 2 * PAD + HEAD + GAP
-                used += if (p.wide) maxOf(STATUS_TWO_LINES, MESSAGE_HEAD + p.messageLines * MESSAGE_LINE)
-                else STATUS_ONE_LINE + (if (p.messageLines > 0) GAP + MESSAGE_HEAD + p.messageLines * MESSAGE_LINE else 0f)
-                if (p.nearbyRows > 0) used += GAP + NEARBY_HEAD + p.nearbyRows * NEARBY_ROW
-                assertTrue("$cols×$rows leaves ${h - used} dp", h - used in 0f..MESSAGE_LINE)
+                var space = h - 2 * PAD - HEAD - GAP - (if (p.wide) 0f else STATUS_ONE_LINE + GAP)
+                if (p.nearbyRows > 0) space -= GAP + NEARBY_HEAD + p.nearbyRows * NEARBY_ROW
+                val spare = space - messagesHeight(p.messages, p.messageLines)
+                assertTrue("$w×$h overflows by ${-spare}", spare >= 0f)
+                // Less than one more line for each message shown.
+                assertTrue("$w×$h leaves $spare dp", spare < p.messages * MESSAGE_LINE)
             }
         }
     }
 
-    /** Reported from a phone: no messages, two repeaters heard, a blank band below. */
     @Test
     fun `the plan follows what there is to show`() {
-        // No message, two repeaters, 4×3: the card lists two, not six.
-        val p = WidgetLayout.plan(4 * 78f, 3 * 98f, hasMessage = false, nearbyAvailable = 2)
-        assertEquals(0, p.messageLines)
+        // No message, two repeaters, 4×3: the card lists two, not three.
+        val p = WidgetLayout.plan(4 * 78f, 3 * 98f, messagesAvailable = 0, nearbyAvailable = 2)
+        assertEquals(0, p.messages)
         assertEquals(2, p.nearbyRows)
-        // A message and two repeaters: the height the card doesn't need grows the message.
-        val withMessage = WidgetLayout.plan(4 * 78f, 3 * 98f, hasMessage = true, nearbyAvailable = 2)
-        assertEquals(2, withMessage.nearbyRows)
-        assertEquals(WidgetLayout.MAX_MESSAGE_LINES, withMessage.messageLines)
-        // Stacked and no message: no height for it at all; the repeaters get it.
-        val narrow = WidgetLayout.plan(2 * 78f, 2 * 98f, hasMessage = false, nearbyAvailable = 6)
-        assertEquals(0, narrow.messageLines)
-        assertTrue(narrow.nearbyRows >= 2)
+        // One chat with a message: it grows into the height, rather than leaving it blank.
+        val one = WidgetLayout.plan(4 * 78f, 4 * 98f, messagesAvailable = 1, nearbyAvailable = 1)
+        assertEquals(1, one.messages)
+        assertEquals(WidgetLayout.MAX_MESSAGE_LINES, one.messageLines)
         // None heard still takes one row, for "none heard".
         assertEquals(1, WidgetLayout.plan(2 * 78f, 3 * 98f, nearbyAvailable = 0).nearbyRows)
     }
 
     @Test
-    fun `the last block takes the remaining height`() {
+    fun `the messages take the remaining height and the repeaters sit at the bottom`() {
         val src = File("src/main/kotlin/io/alvaroedo/meshconnect/widget/MeshWidget.kt").readText()
-        assertTrue(src.contains("Nearby(s, ink, muted, stale, plan.nearbyRows, GlanceModifier.defaultWeight())"))
-        assertTrue(src.contains("hasMessage = s.lastFrom != null"))
+        assertTrue(src.contains("Nearby(s, ink, muted, stale, plan.nearbyRows)\n"))
+        assertTrue(src.contains("messagesAvailable = s.messages.size"))
         assertTrue(src.contains("nearbyAvailable = if (stale) 0 else s.nearby.size"))
+    }
+
+    @Test
+    fun `signal comes before battery, as in the top bar`() {
+        val src = File("src/main/kotlin/io/alvaroedo/meshconnect/widget/MeshWidget.kt").readText()
+        val pairs = Regex("""(Repeater|Battery)\(s, ink[^)]*\)""").findAll(src).map { it.groupValues[1] }.toList()
+        // Three places draw both: the wide column, the stacked line, the row widget.
+        assertEquals(listOf("Repeater", "Battery", "Repeater", "Battery", "Repeater", "Battery"), pairs)
+        assertTrue("Simple mode hides the hash again", src.contains("s.repeaterHash?.takeIf { s.showHash }"))
     }
 
     @Test

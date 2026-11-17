@@ -362,7 +362,7 @@ class MeshCoreService : Service() {
             .distinctUntilChanged()
             .flatMapLatest { key ->
                 if (key.isEmpty()) {
-                    flowOf(Triple(0, null as String?, null as io.alvaroedo.meshconnect.storage.MessageEntity?))
+                    flowOf(Triple(0, emptyList<Pair<String, io.alvaroedo.meshconnect.storage.MessageEntity>>(), true))
                 } else {
                     combine(
                         combine(db.contacts().all(key), db.channels().all(key), db.messages().latestPerThread(key)) { cs, chs, latest ->
@@ -382,18 +382,23 @@ class MeshCoreService : Service() {
                         }
                         // The Chats list's rule, not a sum of every row (ChatThreads).
                         val unread = io.alvaroedo.meshconnect.ui.model.ChatThreads.unreadTotal(latest, cs, chs, mode, kinds)
-                        val last = io.alvaroedo.meshconnect.ui.model.ChatThreads
+                        // Each chat's latest received message, newest first: the widget shows
+                        // as many as fit (WidgetLayout), not only the very last one.
+                        val recent = io.alvaroedo.meshconnect.ui.model.ChatThreads
                             .chatLatest(latest, cs.associateBy { it.keyHex }, mode, kinds)
-                            .filter { !it.outgoing }.maxByOrNull { it.timestamp }
-                        val from = last?.let { m ->
-                            if (m.kind == MessageRepository.KIND_CHANNEL) {
+                            .filter { !it.outgoing }
+                            .sortedByDescending { it.timestamp }
+                            .take(io.alvaroedo.meshconnect.widget.WidgetSnapshot.MAX_MESSAGES)
+                        val lines = recent.map { m ->
+                            val from = if (m.kind == MessageRepository.KIND_CHANNEL) {
                                 val ch = chs.firstOrNull { it.idx == m.peerKey.toIntOrNull() }?.name?.ifBlank { null }
                                 listOfNotNull(ch, m.senderName?.ifBlank { null }).joinToString(" · ").ifBlank { null }
                             } else {
-                                cs.firstOrNull { it.keyHex == m.peerKey }?.name?.ifBlank { null } ?: m.peerKey.take(8)
-                            }
+                                cs.firstOrNull { it.keyHex == m.peerKey }?.name?.ifBlank { null }
+                            } ?: m.peerKey.take(8)
+                            from to m
                         }
-                        Triple(unread, from, last)
+                        Triple(unread, lines, !io.alvaroedo.meshconnect.ui.model.SimpleMode.isSimple(mode))
                     }
                 }
             }
@@ -416,7 +421,7 @@ class MeshCoreService : Service() {
                 val now = System.currentTimeMillis()
                 val fresh = LinkMeter.fresh(reps, now)
                 val best = fresh.firstOrNull()
-                val (unread, from, last) = box
+                val (unread, recent, showHash) = box
                 io.alvaroedo.meshconnect.widget.WidgetSnapshot(
                     status = when (state) {
                         EngineState.Ready -> io.alvaroedo.meshconnect.widget.WidgetSnapshot.Status.Connected
@@ -430,17 +435,20 @@ class MeshCoreService : Service() {
                     repeaterHash = best?.prefixHex,
                     repeaterSnr = best?.snr,
                     unread = unread,
-                    lastFrom = from,
-                    lastText = last?.let {
-                        self?.let { me ->
-                            io.alvaroedo.meshconnect.ui.model.DmRequestText.lineFor(
-                                resources, it.text, it.senderName, it.outgoing, me.name, me.publicKeyHex,
-                            )
-                        }
-                            ?: io.alvaroedo.meshconnect.ui.model.RichPreview.of(this@MeshCoreService, it.text)
-                            ?: io.github.thatsfguy.meshcore.protocol.Quoting.previewBody(it.text).take(120)
+                    messages = recent.map { (from, it) ->
+                        io.alvaroedo.meshconnect.widget.WidgetSnapshot.Message(
+                            from = from,
+                            text = self?.let { me ->
+                                io.alvaroedo.meshconnect.ui.model.DmRequestText.lineFor(
+                                    resources, it.text, it.senderName, it.outgoing, me.name, me.publicKeyHex,
+                                )
+                            }
+                                ?: io.alvaroedo.meshconnect.ui.model.RichPreview.of(this@MeshCoreService, it.text)
+                                ?: io.github.thatsfguy.meshcore.protocol.Quoting.previewBody(it.text).take(120),
+                            atMs = it.timestamp * 1000,
+                        )
                     },
-                    lastAtMs = (last?.timestamp ?: 0L) * 1000,
+                    showHash = showHash,
                     updatedAtMs = now,
                     nearby = fresh.take(io.alvaroedo.meshconnect.widget.WidgetSnapshot.MAX_NEARBY).map { r ->
                         io.alvaroedo.meshconnect.widget.WidgetSnapshot.Nearby(

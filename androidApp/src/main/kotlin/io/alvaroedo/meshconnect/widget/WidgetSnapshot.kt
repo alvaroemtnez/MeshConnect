@@ -22,14 +22,21 @@ data class WidgetSnapshot(
     val repeaterHash: String? = null,
     val repeaterSnr: Double? = null,
     val unread: Int = 0,
-    val lastFrom: String? = null,
-    val lastText: String? = null,
-    val lastAtMs: Long = 0,
+    /**
+     * The latest received message of each chat, newest first, as many as the widget may
+     * show ([MAX_MESSAGES]). Only who and when are saved; the text lives in memory.
+     */
+    val messages: List<Message> = emptyList(),
     val updatedAtMs: Long = 0,
     /** Repeaters heard directly, strongest first (largest widget size). */
     val nearby: List<Nearby> = emptyList(),
+    /** False in Simple mode, which shows no hashes: the signal line is bars only. */
+    val showHash: Boolean = true,
 ) {
     enum class Status { Offline, Connecting, Connected }
+
+    /** One chat's latest message. [text] only while the app runs, never saved. */
+    data class Message(val from: String, val text: String?, val atMs: Long)
 
     /** One directly-heard repeater. [name] only on a unique match (LinkMeter.nameFor). */
     data class Nearby(val hash: String, val name: String?, val snr: Double, val bars: Int)
@@ -47,9 +54,9 @@ data class WidgetSnapshot(
             .putString("rep", repeaterHash)
             .putFloat("snr", repeaterSnr?.toFloat() ?: Float.NaN)
             .putInt("unread", unread)
-            .putString("from", lastFrom)
-            // The body is deliberately not written to disk (see above).
-            .putLong("at", lastAtMs)
+            // The bodies are deliberately not written to disk (see above).
+            .putString("messages", encodeMessages(messages))
+            .putBoolean("showHash", showHash)
             .putLong("updated", updatedAtMs)
             // Public adverts, not messages: fine to keep for a redraw.
             .putString("nearby", encodeNearby(nearby))
@@ -61,7 +68,24 @@ data class WidgetSnapshot(
         const val STALE_MS = 10L * 60 * 1000
 
         /** The most the largest widget lists (WidgetLayout.MAX_NEARBY). */
-        const val MAX_NEARBY = 6
+        const val MAX_NEARBY = 3
+
+        /** The most messages the widget shows (WidgetLayout.MAX_MESSAGES). */
+        const val MAX_MESSAGES = 4
+
+        /** Who and when, one per line; the text is never written (see the class). */
+        fun encodeMessages(list: List<Message>): String =
+            list.take(MAX_MESSAGES).joinToString("\n") { m ->
+                m.from.replace(Regex("[\t\r\n]"), " ") + "\t" + m.atMs
+            }
+
+        /** Lenient, like [decodeNearby]. */
+        fun decodeMessages(text: String?): List<Message> =
+            text.orEmpty().lineSequence().mapNotNull { line ->
+                val f = line.split('\t')
+                if (f.size != 2 || f[0].isBlank()) return@mapNotNull null
+                Message(f[0], null, f[1].toLongOrNull() ?: 0L)
+            }.take(MAX_MESSAGES).toList()
 
         /**
          * One repeater per line, tab-separated. A name is advert text, so
@@ -94,11 +118,10 @@ data class WidgetSnapshot(
             repeaterHash = p.getString("rep", null),
             repeaterSnr = p.getFloat("snr", Float.NaN).takeUnless { it.isNaN() }?.toDouble(),
             unread = p.getInt("unread", 0).coerceAtLeast(0),
-            lastFrom = p.getString("from", null),
-            lastText = null,
-            lastAtMs = p.getLong("at", 0),
+            messages = decodeMessages(p.getString("messages", null)),
             updatedAtMs = p.getLong("updated", 0),
             nearby = decodeNearby(p.getString("nearby", null)),
+            showHash = p.getBoolean("showHash", true),
         )
     }
 }

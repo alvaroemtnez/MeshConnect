@@ -35,11 +35,12 @@ class WidgetRowTest {
     }
 
     @Test
-    fun `the row is the header, then battery and the repeater while connected`() {
+    fun `the row is the header, then the repeater and battery while connected`() {
         assertTrue(row.contains("HeaderLine(s, link, ink, nameSp, textSp, icon)"))
         val second = row.substringAfter("HeaderLine(")
         val gate = second.indexOf("if (WidgetStatus.showsGauges(link))")
-        assertTrue(gate in 0 until second.indexOf("Battery(") && second.indexOf("Battery(") < second.indexOf("Repeater("))
+        // The top bar's order (2026-11-17): signal, then battery.
+        assertTrue(gate in 0 until second.indexOf("Repeater(") && second.indexOf("Repeater(") < second.indexOf("Battery("))
         assertTrue("otherwise the state in words", second.substringAfter("} else {").trimStart().startsWith("LinkWords(link"))
         // The hash is not gated on width.
         assertFalse(row.contains("if (wide) Repeater"))

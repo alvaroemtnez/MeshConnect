@@ -135,7 +135,7 @@ private fun Content(s: WidgetSnapshot) {
     val plan = WidgetLayout.plan(
         size.width.value,
         size.height.value,
-        hasMessage = s.lastFrom != null,
+        messagesAvailable = s.messages.size,
         nearbyAvailable = if (stale) 0 else s.nearby.size,
     )
     val muted = GlanceTheme.colors.onSurfaceVariant
@@ -148,10 +148,9 @@ private fun Content(s: WidgetSnapshot) {
         return
     }
 
-    // The blocks and their heights are WidgetLayout's; keep the two in step. The last
-    // block takes the remaining height (defaultWeight), so whatever the plan could not use
-    // is inside it, never a blank band under it.
-    val nearbyLast = plan.nearbyRows > 0
+    // The blocks and their heights are WidgetLayout's; keep the two in step. The messages
+    // take the remaining height (defaultWeight), so whatever the plan could not use is
+    // inside them; the repeaters sit at the bottom at their own height.
     Box(
         GlanceModifier.fillMaxSize()
             .background(GlanceTheme.colors.widgetBackground)
@@ -171,43 +170,39 @@ private fun Content(s: WidgetSnapshot) {
             if (plan.wide) {
                 // A narrow status column, the message taking the rest of the width. Holding
                 // the state in words it is a little wider, so two lines fit every language.
-                Row(
-                    GlanceModifier.fillMaxWidth().let { if (nearbyLast) it else it.defaultWeight() },
-                    verticalAlignment = Alignment.Top,
-                ) {
+                Row(GlanceModifier.fillMaxWidth().defaultWeight(), verticalAlignment = Alignment.Top) {
                     val statusWidth = if (gauges) WidgetLayout.STATUS_WIDTH else WidgetLayout.STATUS_WIDTH_WORDS
                     Column(GlanceModifier.width(statusWidth.dp)) {
                         if (gauges) {
-                            Row(GlanceModifier.height(20.dp), verticalAlignment = Alignment.CenterVertically) { Battery(s, ink) }
+                            // The top bar's order: signal, then battery.
                             Row(GlanceModifier.height(20.dp), verticalAlignment = Alignment.CenterVertically) { Repeater(s, ink) }
+                            Row(GlanceModifier.height(20.dp), verticalAlignment = Alignment.CenterVertically) { Battery(s, ink) }
                         } else {
                             LinkWords(link, textSp = 13, maxLines = 2)
                         }
                     }
                     Spacer(GlanceModifier.width(12.dp))
-                    Column(GlanceModifier.defaultWeight()) { Latest(s, ink, muted, now, plan.messageLines) }
+                    Column(GlanceModifier.defaultWeight()) { Messages(s, ink, muted, now, plan.messages, plan.messageLines) }
                 }
             } else {
                 // Battery and signal on one line, so the height goes to the content.
                 Row(GlanceModifier.height(WidgetLayout.STATUS_ONE_LINE.dp), verticalAlignment = Alignment.CenterVertically) {
                     if (gauges) {
-                        Battery(s, ink)
-                        Spacer(GlanceModifier.width(12.dp))
                         Repeater(s, ink)
+                        Spacer(GlanceModifier.width(12.dp))
+                        Battery(s, ink)
                     } else {
                         LinkWords(link, textSp = 13, maxLines = 1)
                     }
                 }
-                if (plan.messageLines > 0) {
-                    Spacer(GlanceModifier.height(WidgetLayout.GAP.dp))
-                    Column(GlanceModifier.fillMaxWidth().let { if (nearbyLast) it else it.defaultWeight() }) {
-                        Latest(s, ink, muted, now, plan.messageLines)
-                    }
+                Spacer(GlanceModifier.height(WidgetLayout.GAP.dp))
+                Column(GlanceModifier.fillMaxWidth().defaultWeight()) {
+                    if (plan.messages > 0) Messages(s, ink, muted, now, plan.messages, plan.messageLines)
                 }
             }
-            if (nearbyLast) {
+            if (plan.nearbyRows > 0) {
                 Spacer(GlanceModifier.height(WidgetLayout.GAP.dp))
-                Nearby(s, ink, muted, stale, plan.nearbyRows, GlanceModifier.defaultWeight())
+                Nearby(s, ink, muted, stale, plan.nearbyRows)
             }
         }
     }
@@ -257,43 +252,50 @@ private fun androidx.glance.layout.RowScope.HeaderLine(
 private fun Battery(s: WidgetSnapshot, ink: ColorProvider, icon: androidx.compose.ui.unit.Dp = 18.dp, textSp: Int = 13) =
     BatteryGauge(s, ink, icon, textSp)
 
-/** The repeater heard best: signal bars and its hash. No SNR — the bars are the SNR. */
+/**
+ * The repeater heard best: signal bars and its hash. No SNR — the bars are the SNR. No hash
+ * in Simple mode, which shows none anywhere.
+ */
 @Composable
 private fun Repeater(s: WidgetSnapshot, ink: ColorProvider, icon: androidx.compose.ui.unit.Dp = 18.dp, textSp: Int = 13) {
     SignalGauge(s.signalBars, ink, icon)
-    s.repeaterHash?.let {
+    s.repeaterHash?.takeIf { s.showHash }?.let {
         Text(" " + it.uppercase(), maxLines = 1, style = TextStyle(color = ink, fontSize = textSp.sp))
     }
 }
 
+/** Each chat's latest message, newest first: who, how long ago, and [lines] of text. */
 @Composable
-private fun Latest(s: WidgetSnapshot, ink: ColorProvider, muted: ColorProvider, now: Long, lines: Int) {
+private fun Messages(s: WidgetSnapshot, ink: ColorProvider, muted: ColorProvider, now: Long, count: Int, lines: Int) {
     val context = LocalContext.current
-    if (s.lastFrom == null) {
+    if (s.messages.isEmpty() || count == 0) {
         Text(context.getString(R.string.widget_no_messages), style = TextStyle(color = muted, fontSize = 12.sp))
         return
     }
-    Row(GlanceModifier.fillMaxWidth().height(WidgetLayout.MESSAGE_HEAD.dp), verticalAlignment = Alignment.CenterVertically) {
-        Text(
-            s.lastFrom,
-            maxLines = 1,
-            modifier = GlanceModifier.defaultWeight(),
-            style = TextStyle(color = ink, fontSize = 13.sp, fontWeight = FontWeight.Medium),
-        )
-        if (s.lastAtMs > 0) {
+    for ((i, m) in s.messages.take(count).withIndex()) {
+        if (i > 0) Spacer(GlanceModifier.height(WidgetLayout.MESSAGE_GAP.dp))
+        Row(GlanceModifier.fillMaxWidth().height(WidgetLayout.MESSAGE_HEAD.dp), verticalAlignment = Alignment.CenterVertically) {
             Text(
-                " " + io.alvaroedo.meshconnect.ui.model.Ago.of(context, s.lastAtMs, now),
+                m.from,
                 maxLines = 1,
-                style = TextStyle(color = muted, fontSize = 11.sp),
+                modifier = GlanceModifier.defaultWeight(),
+                style = TextStyle(color = ink, fontSize = 13.sp, fontWeight = FontWeight.Medium),
             )
+            if (m.atMs > 0) {
+                Text(
+                    " " + io.alvaroedo.meshconnect.ui.model.Ago.of(context, m.atMs, now),
+                    maxLines = 1,
+                    style = TextStyle(color = muted, fontSize = 11.sp),
+                )
+            }
         }
+        Text(
+            // Only while the app is running; never stored (WidgetSnapshot).
+            m.text ?: context.getString(R.string.widget_open_to_read),
+            maxLines = lines,
+            style = TextStyle(color = muted, fontSize = 12.sp),
+        )
     }
-    Text(
-        // Only while the app is running; never stored (WidgetSnapshot).
-        s.lastText ?: context.getString(R.string.widget_open_to_read),
-        maxLines = lines,
-        style = TextStyle(color = muted, fontSize = 12.sp),
-    )
 }
 
 /** The launcher mark on the theme's primary, as in the card's header. */
@@ -351,9 +353,9 @@ private fun RowContent(
                 Spacer(GlanceModifier.height(if (large) 4.dp else 2.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     if (WidgetStatus.showsGauges(link)) {
-                        Battery(s, ink, icon, textSp)
-                        Spacer(GlanceModifier.width(10.dp))
                         Repeater(s, ink, icon, textSp)
+                        Spacer(GlanceModifier.width(10.dp))
+                        Battery(s, ink, icon, textSp)
                     } else {
                         LinkWords(link, textSp, maxLines = 1)
                     }

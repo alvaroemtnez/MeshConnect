@@ -91,4 +91,20 @@ class WidgetNearbyTest {
         val receiver = widget.substringAfter("class MeshWidgetCompactReceiver")
         assertTrue(receiver.contains("glanceAppWidget: GlanceAppWidget = MeshWidget()"))
     }
+
+    @Test
+    fun `saved messages keep who and when, never the text`() {
+        val list = listOf(
+            WidgetSnapshot.Message("Ana\tB", "secret", 1000),
+            WidgetSnapshot.Message("#public · Joan", "also secret", 900),
+        )
+        val encoded = WidgetSnapshot.encodeMessages(list)
+        assertTrue(!encoded.contains("secret"))
+        val back = WidgetSnapshot.decodeMessages(encoded)
+        assertEquals(listOf("Ana B", "#public · Joan"), back.map { it.from })
+        assertEquals(listOf(1000L, 900L), back.map { it.atMs })
+        assertTrue(back.all { it.text == null })
+        // Hostile input is dropped, not a crash in the launcher.
+        assertEquals(emptyList<WidgetSnapshot.Message>(), WidgetSnapshot.decodeMessages("\t\t\n\nx"))
+    }
 }
