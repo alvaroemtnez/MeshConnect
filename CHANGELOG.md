@@ -110,6 +110,38 @@ Brings in MeshCore Hardened 0.10.16, 0.10.17 and 0.11.0.
   in a loop when the system restarted it in the background. It now stops quietly and starts
   again the next time you open it.
 
+- **Firmware updates, simpler.** Settings → Firmware is one screen that asks which node: this
+  radio, or another node in update mode (and what it runs). Back now steps back through the
+  version and board lists instead of leaving the screen, and the last Flash button is red. On
+  a repeater's card, "Recover or update firmware" is "Firmware update", offering Flash
+  firmware or Leave update mode.
+- **Fixed: updating the connected radio hung** at "Asking the radio to restart in update mode"
+  and the radio never restarted: the app closed the Bluetooth link at the same moment it sent
+  the request. It now keeps the link for the update, and each step gives up after 10 seconds
+  instead of waiting forever.
+- **Diagnostics log you can send.** It opens full screen, oldest first and following new lines,
+  from Settings → Advanced and from the firmware screen, with Share, Save as a file, Copy and
+  Clear. Times read `2026-11-17T20:13:05.123+01:00` instead of Unix seconds, and it keeps 2000
+  lines.
+- **Telemetry.** "Battery telemetry" is "Device telemetry": battery and chip temperature, and
+  without it the radio answers no telemetry request or connection check at all. Location is
+  only ever sent from a live GPS fix. On a contact, the switches are greyed out when the
+  global setting is Nobody or Everyone, with one short line saying so.
+- **Heard repeaters.** One repeater heard at different hash widths (AB, ABCD, ABCDEF) is one
+  row, unless another repeater shares the short hash. Repeaters you have not added are named
+  from their adverts.
+- **Widget.** Up to three repeaters, at the bottom; the latest message of several chats above
+  them; signal before battery, as in the top bar; no repeater hash in Simple mode.
+- **DM requests say when they are accepted.** Accepting opens the chat with "You accepted…";
+  the person who asked gets "… accepted your chat request" in that chat and a notification. An
+  unconfirmed name in a request is a red warning.
+- **Messages from a clock in the future.** A received message dated more than ten minutes
+  ahead is placed when it arrived, with "their clock: …" in red beside the time. Messages
+  already stored with such a date move too.
+- **Saved radios** in Settings look like the top bar's radio switcher, with a red bin to delete
+  one, and the connected radio no longer offers Connect. A channel's favourite star is a round
+  button, as on a node's card. Settings fields are no longer hidden behind the keyboard.
+
 ## 1.2.1
 
 - **New chat opens the chat.** Adding someone from the New chat button (by scanning their code
