@@ -26,6 +26,7 @@ import io.github.thatsfguy.meshcore.platform.AndroidDfuGattClient
 import io.github.thatsfguy.meshcore.platform.AndroidDfuScanner
 import io.github.thatsfguy.meshcore.crypto.CryptoProvider
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -127,6 +128,35 @@ sealed class FirmwareUi {
 val FirmwareUi.isOver: Boolean
     get() = this is FirmwareUi.Finished || this is FirmwareUi.Failed
 
+/**
+ * Where Back goes from each step of the firmware screen.
+ *
+ * Every step used to be one screen as far as navigation knew, so Back from
+ * a version list left the screen altogether — and the list was still
+ * there on the way back in. Pure so the order is pinned by tests.
+ */
+object FirmwareSteps {
+    /**
+     * The step before [current], or null when Back should leave the
+     * screen: at the start, and while a transfer is running (leaving does
+     * not stop it, and stepping "back" from it would hide that it is
+     * still writing to a node).
+     */
+    fun previous(
+        current: FirmwareUi,
+        versions: FirmwareUi.ChoosingVersion?,
+        builds: FirmwareUi.Choosing?,
+    ): FirmwareUi? = when (current) {
+        is FirmwareUi.Idle, is FirmwareUi.Running -> null
+        is FirmwareUi.Checking -> versions ?: FirmwareUi.Idle()
+        is FirmwareUi.ChoosingVersion -> FirmwareUi.Idle()
+        is FirmwareUi.Choosing -> versions ?: FirmwareUi.Idle()
+        is FirmwareUi.Downloading, is FirmwareUi.Confirm, is FirmwareUi.WeakSignal ->
+            builds ?: versions ?: FirmwareUi.Idle()
+        is FirmwareUi.Finished, is FirmwareUi.Failed -> FirmwareUi.Idle()
+    }
+}
+
 /** Which node an update is aimed at. */
 enum class FirmwareTargetKind {
     /** The radio this app is connected to; we write the jump over the link we hold. */
@@ -175,18 +205,61 @@ class FirmwareUpdateController(
     private val downloader by lazy { FirmwareDownloader(AndroidHttpFetcher(), crypto) }
 
     /**
+     * The list or download in flight, so stepping back can stop it. Left
+     * running, it finished after the user had backed out and put the
+     * screen they had just left back up.
+     */
+    private var pending: Job? = null
+
+    /** The pickers already shown, so Back can return to them. */
+    private var lastVersions: FirmwareUi.ChoosingVersion? = null
+    private var lastBuilds: FirmwareUi.Choosing? = null
+
+    /**
      * [otaAddress] is the address a node reported in its own reply to
      * `start ota`. It removes the guesswork when more than one node
      * nearby is advertising for an update.
+     *
+     * A different target drops whatever the previous one had reached.
+     * The state is one per app, and a version list picked for the radio
+     * in the user's pocket showed up on the screen for a node in update
+     * mode (and the other way round) — with Back then leaving the screen
+     * instead of the list. A transfer that is running is never dropped.
      */
     fun aimAt(kind: FirmwareTargetKind, otaAddress: String? = null) {
+        val changed = kind != target || otaAddress != this.otaAddress
         target = kind
         this.otaAddress = otaAddress
+        if (changed && _state.value !is FirmwareUi.Running) reset()
     }
 
     fun reset() {
+        pending?.cancel()
+        pending = null
         allowWeakSignal = false
+        lastVersions = null
+        lastBuilds = null
         _state.value = FirmwareUi.Idle()
+    }
+
+    /**
+     * One step back, for the system Back gesture: builds → versions →
+     * start. A finished, failed or abandoned attempt goes back to the
+     * start. Returns false when there is nothing to step back from, so
+     * the caller lets Back leave the screen.
+     */
+    fun back(): Boolean {
+        val previous = FirmwareSteps.previous(_state.value, lastVersions, lastBuilds) ?: return false
+        pending?.cancel()
+        pending = null
+        if (previous is FirmwareUi.Idle) {
+            reset()
+        } else {
+            if (previous is FirmwareUi.ChoosingVersion) lastBuilds = null
+            allowWeakSignal = false
+            _state.value = previous
+        }
+        return true
     }
 
     /**
@@ -221,7 +294,8 @@ class FirmwareUpdateController(
         this.boardName = boardName
         this.role = role
         _state.value = FirmwareUi.Checking
-        scope.launch {
+        pending?.cancel()
+        pending = scope.launch {
             try {
                 val versions = downloader.listVersions(role)
                 if (role == FirmwareRole.Companion) {
@@ -235,7 +309,9 @@ class FirmwareUpdateController(
                     return@launch
                 }
                 _state.value = FirmwareUi.ChoosingVersion(versions, currentVersion, boardName)
+                    .also { lastVersions = it }
             } catch (e: Exception) {
+                if (e is kotlinx.coroutines.CancellationException) throw e
                 // Reading the list is not the update, and saying "update
                 // failed — check your connection" for a list that could
                 // not be read blames the wrong thing. Nothing has been
@@ -261,7 +337,8 @@ class FirmwareUpdateController(
     fun chooseVersion(version: FirmwareVersion, board: String? = null) {
         board?.let { boardName = it }
         _state.value = FirmwareUi.Checking
-        scope.launch {
+        pending?.cancel()
+        pending = scope.launch {
             try {
                 val release = downloader.loadRelease(version)
                 // A radio reached over BLE must stay reachable over BLE:
@@ -288,8 +365,9 @@ class FirmwareUpdateController(
                     others = assets.filterNot { it in suggested }.sortedBy { it.name },
                     boardName = boardName,
                     version = release.version,
-                )
+                ).also { lastBuilds = it }
             } catch (e: Exception) {
+                if (e is kotlinx.coroutines.CancellationException) throw e
                 _state.value = FirmwareUi.Failed(
                     e.message ?: context.getString(R.string.fwc_release_failed),
                     context.getString(R.string.fwc_nothing_sent),
@@ -312,10 +390,12 @@ class FirmwareUpdateController(
             onBoardChosen?.invoke(asset.boardPrefix)
         }
         _state.value = FirmwareUi.Downloading(asset.name)
-        scope.launch {
+        pending?.cancel()
+        pending = scope.launch {
             try {
                 openPackage(downloader.download(asset))
             } catch (e: Exception) {
+                if (e is kotlinx.coroutines.CancellationException) throw e
                 _state.value = FirmwareUi.Failed(e.message ?: context.getString(R.string.fwc_download_failed), null)
             }
         }
@@ -323,10 +403,16 @@ class FirmwareUpdateController(
 
     /** A `.zip` the user picked off their own device. */
     fun useLocalPackage(bytes: ByteArray, name: String) {
-        scope.launch {
+        // A file opened from storage is a fresh start: Back from its
+        // confirmation goes to the start, not to a list it never came from.
+        lastVersions = null
+        lastBuilds = null
+        pending?.cancel()
+        pending = scope.launch {
             try {
                 openPackage(downloader.describeLocal(bytes, name))
             } catch (e: Exception) {
+                if (e is kotlinx.coroutines.CancellationException) throw e
                 _state.value = FirmwareUi.Failed(e.message ?: context.getString(R.string.fwc_file_unusable), null)
             }
         }

@@ -454,7 +454,7 @@ private fun AppShell(
             composable("settings/policies") { SettingsPoliciesScreen(vm, nav) }
             composable("settings/autoadd") { SettingsAutoAddScreen(vm, nav) }
             composable("settings/customvars") { SettingsCustomVarsScreen(vm, nav) }
-            composable("settings/firmware") { FirmwareScreen(vm, nav) }
+            composable("settings/firmware") { FirmwareScreen(vm, nav, chooseTarget = true) }
             // The repeater path reaches the same screen with a different
             // target: that node is already in update mode, so nothing
             // here may reboot the phone's own radio.

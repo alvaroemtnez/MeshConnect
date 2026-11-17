@@ -2,7 +2,16 @@ package io.alvaroedo.meshconnect.ui.screens
 
 import io.alvaroedo.meshconnect.R
 import androidx.compose.ui.res.stringResource
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.res.painterResource
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import io.alvaroedo.meshconnect.ui.FirmwareSteps
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -97,11 +106,39 @@ fun FirmwareScreen(
      * board.
      */
     nodeKey: String? = null,
+    /**
+     * Settings' entry: one screen that asks which node, instead of a
+     * button into a second copy of itself. The two copies shared one
+     * state, so a list picked on one turned up on the other and Back
+     * left whichever screen it was on. From a node's own card or hub the
+     * target is fixed and this is false.
+     */
+    chooseTarget: Boolean = false,
 ) {
     val context = LocalContext.current
     val state by vm.firmware.state.collectAsState()
     val deviceInfo by vm.deviceInfo.collectAsState()
     val capable = vm.firmwareUpdatesSupported()
+    // A radio without the update service can still be the phone's way to
+    // a node that has one, so that is where the screen opens.
+    var pickedTarget by rememberSaveable {
+        mutableStateOf(if (chooseTarget && !capable) FirmwareTargetKind.NodeInUpdateMode else target)
+    }
+    var pickedRole by rememberSaveable { mutableStateOf(if (chooseTarget) FirmwareRole.Repeater else role) }
+    @Suppress("NAME_SHADOWING")
+    val target = if (chooseTarget) pickedTarget else target
+    @Suppress("NAME_SHADOWING")
+    val role = if (chooseTarget && target == FirmwareTargetKind.ConnectedRadio) {
+        FirmwareRole.Companion
+    } else if (chooseTarget) {
+        pickedRole
+    } else {
+        role
+    }
+    // Back walks the steps (builds → versions → start) before it leaves.
+    BackHandler(enabled = FirmwareSteps.previous(state, null, null) != null) {
+        if (!vm.firmware.back()) nav.popBackStack()
+    }
 
     // A remote node's identity comes from its own console replies and
     // may land after this screen opens, so it is read live rather than
@@ -179,6 +216,9 @@ fun FirmwareScreen(
                     vm = vm,
                     target = target,
                     role = role,
+                    chooseTarget = chooseTarget,
+                    onTarget = { pickedTarget = it },
+                    onRole = { pickedRole = it },
                     capable = capable,
                     identity = if (target == FirmwareTargetKind.ConnectedRadio) {
                         deviceIdentityLine(deviceInfo)
@@ -193,7 +233,6 @@ fun FirmwareScreen(
                     },
                     message = current.message,
                     onPickFile = { openFile.launch(arrayOf("application/zip", "*/*")) },
-                    onFlashOtherNode = { nav.navigate("firmware/node") },
                 )
 
                 FirmwareUi.Checking -> SectionSpinner(stringResource(R.string.fw_reading_list))
@@ -316,85 +355,99 @@ private fun IdlePanel(
     vm: MeshCoreViewModel,
     target: FirmwareTargetKind,
     role: FirmwareRole,
+    chooseTarget: Boolean,
+    onTarget: (FirmwareTargetKind) -> Unit,
+    onRole: (FirmwareRole) -> Unit,
     capable: Boolean,
     identity: String?,
     boardName: String?,
     currentVersion: String?,
     message: String?,
     onPickFile: () -> Unit,
-    onFlashOtherNode: () -> Unit,
 ) {
-    identity?.let {
-        Text(it, style = MaterialTheme.typography.titleMedium)
-        Spacer(Modifier.height(8.dp))
+    // Which node, first. A node already in update mode is off the mesh,
+    // so it is found by scanning and needs no session or contact record:
+    // it belongs here, not only on its own hub, which cannot reach it.
+    if (chooseTarget) {
+        ChoiceChips(
+            options = listOf(stringResource(R.string.fw_target_this), stringResource(R.string.fw_target_other)),
+            selected = if (target == FirmwareTargetKind.ConnectedRadio) 0 else 1,
+        ) { onTarget(if (it == 0) FirmwareTargetKind.ConnectedRadio else FirmwareTargetKind.NodeInUpdateMode) }
+        Spacer(Modifier.height(16.dp))
+    }
+
+    if (target == FirmwareTargetKind.ConnectedRadio) {
+        identity?.let {
+            Text(it, style = MaterialTheme.typography.titleMedium)
+            Spacer(Modifier.height(8.dp))
+        }
+        if (!capable) {
+            Text(stringResource(R.string.fw_no_ota), style = MaterialTheme.typography.titleSmall)
+            HintText(stringResource(R.string.fw_no_ota_hint))
+            Spacer(Modifier.height(8.dp))
+            ExpandableHint(stringResource(R.string.fw_what_ota)) {
+                DetailText(stringResource(R.string.fw_what_ota_detail))
+            }
+            return
+        }
+    } else {
+        if (chooseTarget) {
+            // Which release series: the board cannot be asked while it is
+            // in update mode, and a repeater build on a companion's board
+            // turns it into a repeater.
+            Text(stringResource(R.string.fw_other_runs), style = MaterialTheme.typography.labelLarge)
+            Spacer(Modifier.height(4.dp))
+            val roles = listOf(FirmwareRole.Repeater, FirmwareRole.RoomServer, FirmwareRole.Companion)
+            ChoiceChips(
+                options = listOf(
+                    stringResource(R.string.kind_repeater),
+                    stringResource(R.string.kind_room),
+                    stringResource(R.string.fw_role_companion),
+                ),
+                selected = roles.indexOf(role).coerceAtLeast(0),
+            ) { onRole(roles[it]) }
+            Spacer(Modifier.height(8.dp))
+        } else {
+            identity?.let {
+                Text(it, style = MaterialTheme.typography.titleMedium)
+                Spacer(Modifier.height(8.dp))
+            }
+        }
+        HintText(stringResource(R.string.fw_bt_range))
+        ExpandableHint(stringResource(R.string.fw_what_happens)) {
+            DetailText(stringResource(R.string.fw_what_happens_detail))
+        }
     }
     message?.let {
+        Spacer(Modifier.height(8.dp))
         HintText(it)
-        Spacer(Modifier.height(8.dp))
     }
-
-    if (target == FirmwareTargetKind.ConnectedRadio && !capable) {
-        Text(
-            stringResource(R.string.fw_no_ota),
-            style = MaterialTheme.typography.titleSmall,
-        )
-        HintText(stringResource(R.string.fw_no_ota_hint))
-        Spacer(Modifier.height(8.dp))
-        // Not a dead end. The radio in your hand having no DFU service
-        // says nothing about the node you are standing next to, and
-        // reaching that node needs no mesh, no admin session and no
-        // contact record — only Bluetooth range.
-        FilledTonalButton(onClick = onFlashOtherNode) {
-            Text(stringResource(R.string.fw_flash_other))
-        }
-        Spacer(Modifier.height(8.dp))
-        ExpandableHint(stringResource(R.string.fw_what_ota)) {
-            DetailText(
-                stringResource(R.string.fw_what_ota_detail),
-            )
-        }
-        return
-    }
-
-    if (target == FirmwareTargetKind.NodeInUpdateMode) {
-        HintText(stringResource(R.string.fw_bt_range))
-        Spacer(Modifier.height(8.dp))
-        ExpandableHint(stringResource(R.string.fw_what_happens)) {
-            DetailText(
-                stringResource(R.string.fw_what_happens_detail),
-            )
-        }
-        Spacer(Modifier.height(8.dp))
-    }
-
     ExpandableHint(stringResource(R.string.fw_unreachable)) {
-        DetailText(
-            stringResource(R.string.fw_unreachable_detail),
-        )
+        DetailText(stringResource(R.string.fw_unreachable_detail))
     }
 
-    Spacer(Modifier.height(8.dp))
-    ButtonFlowRow {
-        Button(onClick = {
+    Spacer(Modifier.height(16.dp))
+    // The two ways in, once each: from the release list, or a file.
+    Button(
+        onClick = {
             vm.firmware.checkForFirmware(
                 boardName = boardName,
                 role = role,
                 currentVersion = currentVersion,
             )
-        }) { Text(stringResource(R.string.fw_check)) }
-        FilledTonalButton(onClick = onPickFile) { Text(stringResource(R.string.fw_open_zip)) }
+        },
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Icon(painterResource(R.drawable.ic_download), null, Modifier.size(ButtonDefaults.IconSize))
+        Spacer(Modifier.width(ButtonDefaults.IconSpacing))
+        Text(stringResource(R.string.fw_check))
     }
     HintText(stringResource(R.string.fw_check_hint))
-    if (target == FirmwareTargetKind.ConnectedRadio) {
-        Spacer(Modifier.height(8.dp))
-        // A node already in update mode is off the mesh, so there is no
-        // admin session to reach it through and possibly no contact
-        // record either. It is found by scanning, which needs none of
-        // that — so this must not be reachable only from the node's own
-        // hub, which is precisely where it cannot be reached.
-        FilledTonalButton(onClick = onFlashOtherNode) {
-            Text(stringResource(R.string.fw_another))
-        }
+    Spacer(Modifier.height(8.dp))
+    OutlinedButton(onClick = onPickFile, modifier = Modifier.fillMaxWidth()) {
+        Icon(painterResource(R.drawable.ic_archive), null, Modifier.size(ButtonDefaults.IconSize))
+        Spacer(Modifier.width(ButtonDefaults.IconSpacing))
+        Text(stringResource(R.string.fw_open_zip))
     }
 }
 
@@ -547,11 +600,23 @@ private fun ConfirmPanel(
                     (boardName?.let { stringResource(R.string.fw_writes_board, state.source.sourceDescription, it) } ?: stringResource(R.string.fw_writes, state.source.sourceDescription)) + "\n\n" + stringResource(R.string.fw_keep_close),
                 )
             },
+            // The last step before the node is rebooted and erased, so it
+            // looks like one: a filled button, in the error colour.
             confirmButton = {
-                TextButton(onClick = {
-                    confirming = false
-                    onFlash()
-                }) { Text(stringResource(R.string.fw_flash)) }
+                Button(
+                    onClick = {
+                        confirming = false
+                        onFlash()
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error,
+                        contentColor = MaterialTheme.colorScheme.onError,
+                    ),
+                ) {
+                    Icon(painterResource(R.drawable.ic_update), null, Modifier.size(ButtonDefaults.IconSize))
+                    Spacer(Modifier.width(ButtonDefaults.IconSpacing))
+                    Text(stringResource(R.string.fw_flash))
+                }
             },
             dismissButton = {
                 TextButton(onClick = { confirming = false }) { Text(stringResource(R.string.cancel)) }

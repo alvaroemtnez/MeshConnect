@@ -1371,51 +1371,65 @@ fun ContactDetailSheet(
     if (updateModeOpen) {
         val otaAddress = contact.otaAddress
         val res = androidx.compose.ui.platform.LocalResources.current
+        // Two things can be done to a node in (or headed for) update mode,
+        // and they are offered as two choices that say what they do. They
+        // were three text buttons in a row — "Restart it", "Flash it…",
+        // "Close" — under the word "Recover", which said neither.
         AlertDialog(
             onDismissRequest = { if (!updateModeBusy) updateModeOpen = false },
-            title = { Text(stringResource(R.string.recover_title, contact.name.ifBlank { contact.keyHex.take(8) })) },
+            icon = { Icon(painterResource(R.drawable.ic_update), null) },
+            title = { Text(stringResource(R.string.recover_title, vm.displayName(contact))) },
             text = {
-                Column {
-                    Text(
-                        (
-                            if (otaAddress != null) {
-                                stringResource(R.string.recover_known, otaAddress)
-                            } else {
-                                stringResource(R.string.recover_unknown)
-                            }
-                        ) + "\n\n" + stringResource(R.string.recover_body),
-                    )
-                    updateModeNote?.let {
-                        Spacer(Modifier.height(8.dp))
-                        Text(it, style = MaterialTheme.typography.bodySmall)
+                Column(Modifier.verticalScroll(rememberScrollState())) {
+                    UpdateChoice(
+                        icon = R.drawable.ic_download,
+                        title = stringResource(R.string.recover_flash_title),
+                        subtitle = stringResource(R.string.recover_flash_sub),
+                        primary = true,
+                        enabled = !updateModeBusy,
+                    ) {
+                        updateModeOpen = false
+                        onFlashFirmware()
                     }
-                }
-            },
-            confirmButton = {
-                TextButton(
-                    enabled = !updateModeBusy,
-                    onClick = {
+                    Spacer(Modifier.height(8.dp))
+                    UpdateChoice(
+                        icon = R.drawable.ic_restart,
+                        title = stringResource(
+                            if (updateModeBusy) R.string.recover_working else R.string.recover_restart_title,
+                        ),
+                        subtitle = stringResource(R.string.recover_restart_sub),
+                        primary = false,
+                        enabled = !updateModeBusy,
+                    ) {
                         updateModeBusy = true
                         updateModeNote = res.getString(R.string.recover_looking)
                         vm.exitUpdateMode(contact.keyHex) { result ->
                             updateModeNote = result
                             updateModeBusy = false
                         }
-                    },
-                ) { Text(stringResource(if (updateModeBusy) R.string.recover_working else R.string.recover_restart)) }
-            },
-            dismissButton = {
-                Row {
-                    TextButton(
-                        enabled = !updateModeBusy,
-                        onClick = {
-                            updateModeOpen = false
-                            onFlashFirmware()
-                        },
-                    ) { Text(stringResource(R.string.recover_flash)) }
-                    TextButton(enabled = !updateModeBusy, onClick = { updateModeOpen = false }) {
-                        Text(stringResource(R.string.close))
                     }
+                    updateModeNote?.let {
+                        Spacer(Modifier.height(8.dp))
+                        Text(it, style = MaterialTheme.typography.bodySmall)
+                    }
+                    Spacer(Modifier.height(12.dp))
+                    Text(
+                        if (otaAddress != null) {
+                            stringResource(R.string.recover_known, otaAddress)
+                        } else {
+                            stringResource(R.string.recover_unknown)
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    ExpandableHint(stringResource(R.string.recover_which)) {
+                        DetailText(stringResource(R.string.recover_body))
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(enabled = !updateModeBusy, onClick = { updateModeOpen = false }) {
+                    Text(stringResource(R.string.close))
                 }
             },
         )
@@ -1826,5 +1840,39 @@ internal fun showOnMap(vm: MeshCoreViewModel, nav: NavController, keyHex: String
         popUpTo(nav.graph.startDestinationId) { saveState = true }
         launchSingleTop = true
         restoreState = true
+    }
+}
+
+/**
+ * One choice in a dialog that offers more than yes or no: an icon, what it
+ * does, and a line on what that means. The primary one is filled.
+ */
+@Composable
+private fun UpdateChoice(
+    @DrawableRes icon: Int,
+    title: String,
+    subtitle: String,
+    primary: Boolean,
+    enabled: Boolean,
+    onClick: () -> Unit,
+) {
+    val container = if (primary) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHighest
+    val content = if (primary) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
+    androidx.compose.material3.Surface(
+        onClick = onClick,
+        enabled = enabled,
+        shape = MaterialTheme.shapes.large,
+        color = container,
+        contentColor = content,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+            Icon(painterResource(icon), null, Modifier.size(24.dp))
+            Spacer(Modifier.size(16.dp))
+            Column(Modifier.weight(1f)) {
+                Text(title, style = MaterialTheme.typography.titleSmall)
+                Text(subtitle, style = MaterialTheme.typography.bodySmall)
+            }
+        }
     }
 }
