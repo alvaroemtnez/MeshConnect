@@ -199,8 +199,19 @@ fun FirmwareScreen(
         onDispose { vm.firmware.leftScreen() }
     }
 
+    // The log is what a failed update is diagnosed from, so it opens from here, live.
+    var logOpen by remember { mutableStateOf(false) }
+    if (logOpen) DiagnosticsLogDialog(vm, onDismiss = { logOpen = false })
+    val logLabel = stringResource(R.string.set_diag_log)
     Scaffold(
-        topBar = { AppTopBar(title = stringResource(R.string.hub_firmware), vm = vm, nav = nav, menuActions = emptyList()) },
+        topBar = {
+            AppTopBar(
+                title = stringResource(R.string.hub_firmware),
+                vm = vm,
+                nav = nav,
+                menuActions = listOf(MenuAction(logLabel, icon = R.drawable.ic_bug_report) { logOpen = true }),
+            )
+        },
     ) { padding ->
         Column(
             Modifier
@@ -342,6 +353,12 @@ fun FirmwareScreen(
                             Button(onClick = { vm.firmware.flash() }) { Text(stringResource(R.string.ota_try_again)) }
                         }
                         FilledTonalButton(onClick = { vm.firmware.reset() }) { Text(stringResource(R.string.back)) }
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    TextButton(onClick = { logOpen = true }) {
+                        Icon(painterResource(R.drawable.ic_bug_report), null, Modifier.size(ButtonDefaults.IconSize))
+                        Spacer(Modifier.width(ButtonDefaults.IconSpacing))
+                        Text(stringResource(R.string.diag_view_for_failure))
                     }
                 }
             }

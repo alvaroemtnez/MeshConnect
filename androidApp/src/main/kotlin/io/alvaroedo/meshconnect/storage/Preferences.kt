@@ -982,7 +982,7 @@ class DiagnosticsLog(private val prefs: Preferences) {
     fun log(tag: String, message: String) {
         if (!prefs.diagnosticsEnabled) return
         val redacted = redact(message)
-        val line = "${System.currentTimeMillis() / 1000} [$tag] $redacted"
+        val line = formatLine(System.currentTimeMillis(), tag, redacted)
         buffer.addLast(line)
         while (buffer.size > MAX_LINES) buffer.removeFirst()
         _lines.value = buffer.toList()
@@ -1003,8 +1003,38 @@ class DiagnosticsLog(private val prefs: Preferences) {
         _lines.value = emptyList()
     }
 
+    /**
+     * The whole log as one text, oldest first, under a short header saying what wrote it:
+     * what Share and Save hand over (2026-11-17: the log could only be read on screen, which
+     * is no use for a failed firmware update someone else has to look at).
+     */
+    fun export(header: String): String = buildString {
+        append(header.trimEnd()).append('\n').append('\n')
+        for (line in lines.value) append(line).append('\n')
+    }
+
     companion object {
-        private const val MAX_LINES = 500
+        /**
+         * Lines kept, in memory only. 2000 rather than 500: one firmware update logs a few
+         * hundred lines on its own (sampled progress, scans, retries), and the context it
+         * fails in must still be there afterwards.
+         */
+        const val MAX_LINES = 2000
+
+        /**
+         * ISO 8601 local time with milliseconds and the UTC offset,
+         * `2026-11-17T20:13:05.123+01:00`: readable as it stands, sorts as text, and parses
+         * back exactly (OffsetDateTime.parse). It was Unix seconds, which neither a person
+         * nor a sub-second BLE timeline can use.
+         */
+        private val STAMP = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
+
+        fun formatLine(
+            epochMs: Long,
+            tag: String,
+            message: String,
+            zone: java.time.ZoneId = java.time.ZoneId.systemDefault(),
+        ): String = STAMP.format(java.time.Instant.ofEpochMilli(epochMs).atZone(zone)) + " [$tag] $message"
 
         private val PRV_KEY = Regex("""(set\s+prv\.key\s+)\S+""", RegexOption.IGNORE_CASE)
         private val PASSWORD_CLI = Regex("""(password\s+)\S+""", RegexOption.IGNORE_CASE)

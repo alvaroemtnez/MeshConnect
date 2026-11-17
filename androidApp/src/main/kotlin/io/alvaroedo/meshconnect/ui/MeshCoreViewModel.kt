@@ -452,6 +452,26 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
         it?.diagnostics?.lines ?: flowOf(emptyList())
     }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
+    fun clearDiagnostics() {
+        _service.value?.diagnostics?.clear()
+    }
+
+    /**
+     * The log as a file's text: a header naming the app, its version and Android's, then
+     * every line. No device model or radio identity: the log gets attached to issues.
+     */
+    fun diagnosticsExport(): String {
+        val log = _service.value?.diagnostics ?: return ""
+        val header = listOf(
+            "MeshConnect ${io.alvaroedo.meshconnect.BuildConfig.VERSION_NAME} diagnostics log",
+            "Android ${android.os.Build.VERSION.RELEASE} (API ${android.os.Build.VERSION.SDK_INT})",
+            "Exported " + io.alvaroedo.meshconnect.storage.DiagnosticsLog.formatLine(System.currentTimeMillis(), "", "")
+                .substringBefore(" ["),
+            "${log.lines.value.size} lines, oldest first; secrets are removed as lines are written.",
+        ).joinToString("\n")
+        return log.export(header)
+    }
+
     /** Login results etc. surfaced as one-shot UI messages. */
     val transientMessage = MutableStateFlow<String?>(null)
 

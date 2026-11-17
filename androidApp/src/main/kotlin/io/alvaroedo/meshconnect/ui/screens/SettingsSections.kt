@@ -961,9 +961,16 @@ internal fun DiagnosticsSection(vm: MeshCoreViewModel) {
         vm.prefs.diagnosticsEnabled = it
     }
     HintText(stringResource(R.string.set_diag_redacted))
-    if (diagnostics) {
-        DiagnosticsViewer(vm)
+    // The log opens full screen (DiagnosticsLogDialog), where it can be shared, saved and
+    // cleared; the inline box only showed it.
+    var open by remember { mutableStateOf(false) }
+    val count = vm.diagnosticsLines.collectAsState().value.size
+    FilledTonalButton(onClick = { open = true }) {
+        Icon(painterResource(R.drawable.ic_bug_report), null, Modifier.size(18.dp))
+        Spacer(Modifier.width(8.dp))
+        Text(stringResource(R.string.diag_open, count))
     }
+    if (open) DiagnosticsLogDialog(vm, onDismiss = { open = false })
 }
 
 /**
@@ -1112,30 +1119,6 @@ internal fun SavedNodesList(vm: MeshCoreViewModel) {
                     }
                 },
             ) { vm.connectSaved(node) }
-        }
-    }
-}
-
-@Composable
-internal fun DiagnosticsViewer(vm: MeshCoreViewModel) {
-    val lines by vm.diagnosticsLines.collectAsState()
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .heightIn(max = 240.dp)
-            .padding(top = 4.dp),
-    ) {
-        if (lines.isEmpty()) {
-            HintText(stringResource(R.string.set_log_empty))
-        }
-        LazyColumn {
-            items(lines.size) { i ->
-                Text(
-                    lines[lines.size - 1 - i],
-                    style = MaterialTheme.typography.bodySmall,
-                    fontFamily = FontFamily.Monospace,
-                )
-            }
         }
     }
 }
