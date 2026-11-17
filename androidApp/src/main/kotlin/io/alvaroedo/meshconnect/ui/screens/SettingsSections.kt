@@ -24,6 +24,9 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.ui.res.painterResource
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -1061,42 +1064,54 @@ internal fun ChannelDatagramTool(vm: MeshCoreViewModel) {
 // Shared pieces (also used by AddNodeSheet)
 // ----------------------------------------------------------------------
 
+/**
+ * Saved radios, as the quick switch in the top bar's radio card draws them (2026-11-17):
+ * tap one to connect, the connected one marked and not tappable, a red bin to delete it.
+ * Every row offered "Connect" before, the connected radio's too.
+ */
 @Composable
 internal fun SavedNodesList(vm: MeshCoreViewModel) {
     var refresh by remember { mutableIntStateOf(0) }
-    val nodes = remember(refresh) { vm.prefs.savedNodes() }
+    val engineState by vm.engineState.collectAsState()
+    val nodes = remember(refresh, engineState) { vm.prefs.savedNodes() }
+    val currentKey = remember(refresh, engineState) { vm.prefs.reconnectKey() }
     if (nodes.isEmpty()) return
     Column {
         Text(
             stringResource(R.string.set_saved_nodes),
             style = MaterialTheme.typography.labelLarge,
-            modifier = Modifier.padding(top = 8.dp),
+            modifier = Modifier.padding(top = 8.dp, bottom = 4.dp),
         )
         for (node in nodes) {
-            Row(
-                Modifier.fillMaxWidth().padding(vertical = 2.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Column(Modifier.weight(1f)) {
-                    Text(node.name ?: node.address, style = MaterialTheme.typography.bodyMedium)
-                    Text(
-                        "${node.kind.uppercase()} · ${node.address}${node.port?.let { ":$it" } ?: ""}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-                FilledTonalButton(onClick = { vm.connectSaved(node) }) { Text(stringResource(R.string.set_connect)) }
-                // "Remove", not "Forget". Android's Bluetooth settings has
-                // a "Forget device" that drops the PAIRING; this only drops
-                // the app's list entry. Sharing the word sent someone
-                // looking for the first one to this button, and their new
-                // BLE PIN went untested because the bond was still in place.
-                Spacer(Modifier.width(4.dp))
-                TextButton(onClick = {
-                    vm.forgetNode(node)
-                    refresh++
-                }) { Text(stringResource(R.string.node_remove_confirm), color = MaterialTheme.colorScheme.error) }
-            }
+            val isCurrent = node.key == currentKey &&
+                engineState == io.github.thatsfguy.meshcore.engine.EngineState.Ready
+            PickerRow(
+                icon = transportIcon(node.kind),
+                title = node.name ?: node.address,
+                subtitle = if (isCurrent) {
+                    stringResource(R.string.picker_connected)
+                } else {
+                    node.address + (node.port?.let { ":$it" } ?: "")
+                },
+                highlighted = isCurrent,
+                // A USB radio is reached by plugging it in, not from a list.
+                enabled = !isCurrent && node.kind != io.github.thatsfguy.meshcore.transport.ConnectionMemory.KIND_USB,
+                trailing = {
+                    // "Remove", not "Forget": Android's Bluetooth settings has a "Forget
+                    // device" that drops the PAIRING; this only drops the app's list entry.
+                    // Sharing the word sent someone looking for the first one here.
+                    IconButton(onClick = {
+                        vm.forgetNode(node)
+                        refresh++
+                    }) {
+                        Icon(
+                            painterResource(R.drawable.ic_delete),
+                            stringResource(R.string.node_remove_confirm),
+                            tint = MaterialTheme.colorScheme.error,
+                        )
+                    }
+                },
+            ) { vm.connectSaved(node) }
         }
     }
 }

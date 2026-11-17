@@ -248,7 +248,7 @@ fun RadioPickerSheet(vm: MeshCoreViewModel, onDismiss: () -> Unit) {
 }
 
 @DrawableRes
-private fun transportIcon(kind: String): Int = when (kind) {
+internal fun transportIcon(kind: String): Int = when (kind) {
     ConnectionMemory.KIND_TCP -> R.drawable.ic_lan
     ConnectionMemory.KIND_USB -> R.drawable.ic_usb
     else -> R.drawable.ic_bluetooth
@@ -264,13 +264,18 @@ private fun PickerHeader(text: String) {
     )
 }
 
+/**
+ * One radio: its transport in a circle, name and address, a check when it is the one
+ * connected. [trailing] adds a control at the end (Settings' delete).
+ */
 @Composable
-private fun PickerRow(
+internal fun PickerRow(
     @DrawableRes icon: Int,
     title: String,
     subtitle: String,
     highlighted: Boolean = false,
     enabled: Boolean = true,
+    trailing: (@Composable () -> Unit)? = null,
     onClick: () -> Unit,
 ) {
     Row(
@@ -298,6 +303,7 @@ private fun PickerRow(
         if (highlighted) {
             Icon(painterResource(R.drawable.ic_check), null, tint = MaterialTheme.colorScheme.primary)
         }
+        trailing?.invoke()
     }
     Spacer(Modifier.height(4.dp))
 }

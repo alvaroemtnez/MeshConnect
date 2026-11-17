@@ -82,15 +82,13 @@ fun SimpleContactSheet(vm: MeshCoreViewModel, contact: ContactEntity, onDismiss:
                 )
                 Spacer(Modifier.size(16.dp))
                 Column(Modifier.weight(1f)) { ContactHeaderText(vm, contact) }
-                IconButton(onClick = {
+                CircleAction(
+                    if (isFav) R.drawable.ic_star_filled else R.drawable.ic_star,
+                    stringResource(R.string.node_qa_favourite),
+                    on = isFav,
+                ) {
                     favPending = !isFav
                     vm.setFavourite(contact.keyHex, !isFav)
-                }) {
-                    Icon(
-                        painterResource(if (isFav) R.drawable.ic_star_filled else R.drawable.ic_star),
-                        stringResource(R.string.node_qa_favourite),
-                        tint = if (isFav) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
                 }
             }
 

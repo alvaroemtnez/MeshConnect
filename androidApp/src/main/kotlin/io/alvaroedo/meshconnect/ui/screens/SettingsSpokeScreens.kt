@@ -1,5 +1,8 @@
 package io.alvaroedo.meshconnect.ui.screens
 
+import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.imePadding
+
 import androidx.compose.ui.res.stringResource
 import io.alvaroedo.meshconnect.R
 import androidx.compose.foundation.layout.Column
@@ -52,7 +55,12 @@ private fun SettingsSpoke(
             AppTopBar(title = title, vm = vm, nav = nav, menuActions = menuActions)
         },
     ) { padding ->
+        // Edge to edge, the window is not resized for the keyboard: without imePadding a
+        // field near the bottom (the datagram tool's, seen 2026-11-17) opened under it
+        // and the page could not scroll it into view.
         val base = Modifier.fillMaxSize().padding(padding)
+            .consumeWindowInsets(padding)
+            .imePadding()
         Column(
             if (scroll) {
                 base.verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)

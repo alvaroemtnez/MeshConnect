@@ -513,13 +513,12 @@ fun ChannelEditSheet(vm: MeshCoreViewModel, channel: ChannelEntity, onDismiss: (
                 }
                 // Favourite: on this phone, for this radio (the channel record has no flag).
                 val fav = channel.idx in vm.favouriteChannels.collectAsState().value
-                androidx.compose.material3.IconButton(onClick = { vm.setChannelFavourite(channel.idx, !fav) }) {
-                    Icon(
-                        painterResource(if (fav) R.drawable.ic_star_filled else R.drawable.ic_star),
-                        stringResource(R.string.node_qa_favourite),
-                        tint = if (fav) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
+                // A filled circle, as on a node's card, not a bare star.
+                CircleAction(
+                    if (fav) R.drawable.ic_star_filled else R.drawable.ic_star,
+                    stringResource(R.string.node_qa_favourite),
+                    on = fav,
+                ) { vm.setChannelFavourite(channel.idx, !fav) }
             }
             FormField(
                 value = name,

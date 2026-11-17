@@ -71,6 +71,33 @@ internal fun androidx.compose.foundation.layout.RowScope.QuickAction(
     }
 }
 
+/**
+ * A quick action's circle on its own, without the label: a header's favourite, beside the
+ * name. Same colours as [QuickAction], so a star looks the same on every card.
+ */
+@Composable
+internal fun CircleAction(
+    @DrawableRes icon: Int,
+    description: String,
+    on: Boolean = false,
+    onClick: () -> Unit,
+) {
+    Surface(
+        onClick = onClick,
+        shape = CircleShape,
+        color = if (on) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondaryContainer,
+        modifier = Modifier.size(48.dp),
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Icon(
+                painterResource(icon),
+                description,
+                tint = if (on) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSecondaryContainer,
+            )
+        }
+    }
+}
+
 /** One fact: a small label over its value, on a tinted rounded tile. */
 @Composable
 internal fun InfoTile(
