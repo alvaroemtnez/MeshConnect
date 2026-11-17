@@ -274,7 +274,7 @@ class MeshCoreService : Service() {
             postMessageNotification(kind, peerKey, senderName, text)
         }
         repository.dmOutstanding = { prefs.dmRequestsOutstanding }
-        repository.onDmAccepted = { name, keyHex ->
+        repository.onDmAccepted = { name, keyHex, wireText ->
             scope.launch {
                 val key = io.github.thatsfguy.meshcore.util.hexToBytesOrNull(keyHex) ?: return@launch
                 val added = runCatching {
@@ -284,6 +284,9 @@ class MeshCoreService : Service() {
                 if (added) {
                     prefs.dmRequestsOutstanding = prefs.dmRequestsOutstanding
                         .answered(name, System.currentTimeMillis() / 1000)
+                    // Said where it matters: a line in their chat, which puts it in Chats,
+                    // and a notification. Until 1.4 the add happened and nothing said so.
+                    repository.noteDmAccept(keyHex, name, wireText, outgoing = false)
                 }
             }
         }
@@ -440,7 +443,7 @@ class MeshCoreService : Service() {
                             from = from,
                             text = self?.let { me ->
                                 io.alvaroedo.meshconnect.ui.model.DmRequestText.lineFor(
-                                    resources, it.text, it.senderName, it.outgoing, me.name, me.publicKeyHex,
+                                    resources, it.text, it.senderName ?: from, it.outgoing, me.name, me.publicKeyHex,
                                 )
                             }
                                 ?: io.alvaroedo.meshconnect.ui.model.RichPreview.of(this@MeshCoreService, it.text)
@@ -1024,17 +1027,14 @@ class MeshCoreService : Service() {
         val notice = MessageNotice.forMessage(text)
         // A shared contact, channel or place reads as what it is.
         // A direct-message request reads as what it is, not as its wire text with a key.
-        val card = (
-            if (isChannel) {
-                engine.selfInfo.value?.let { me ->
-                    io.alvaroedo.meshconnect.ui.model.DmRequestText.lineFor(
-                        resources, text, senderName, outgoing = false, myName = me.name, myKeyHex = me.publicKeyHex,
-                    )
-                }
-            } else {
-                null
-            }
-            ) ?: io.alvaroedo.meshconnect.ui.model.RichPreview.of(this, text)
+        // In a direct thread too: an accepted request is written there as its wire text
+        // (MessageRepository.noteDmAccept), and its sender is the thread's title.
+        val card = engine.selfInfo.value?.let { me ->
+            io.alvaroedo.meshconnect.ui.model.DmRequestText.lineFor(
+                resources, text, if (isChannel) senderName else title,
+                outgoing = false, myName = me.name, myKeyHex = me.publicKeyHex,
+            )
+        } ?: io.alvaroedo.meshconnect.ui.model.RichPreview.of(this, text)
         val notification = NotificationCompat.Builder(this, MSG_CHANNEL)
             .setSmallIcon(R.drawable.ic_stat_message)
             .setContentTitle(title)

@@ -1375,8 +1375,8 @@ S = {
 "dm_req_you_asked": ("You asked %1$s to message privately.", "Has pedido a %1$s hablar en privado.", "Has demanat a %1$s parlar en privat."),
 "dm_req_asked_you": ("%1$s wants to message you privately.", "%1$s quiere hablar contigo en privado.", "%1$s vol parlar amb tu en privat."),
 "dm_req_other": ("%1$s asked %2$s to message privately.", "%1$s ha pedido a %2$s hablar en privado.", "%1$s ha demanat a %2$s parlar en privat."),
-"dm_acc_you": ("You accepted %1$s's request to message privately.", "Has aceptado la petición de %1$s de hablar en privado.", "Has acceptat la petició de %1$s de parlar en privat."),
-"dm_acc_yours": ("%1$s accepted your request. You can message each other directly.", "%1$s ha aceptado tu petición. Ya podéis escribiros directamente.", "%1$s ha acceptat la teua petició. Ja podeu escriure-vos directament."),
+"dm_acc_you": ("You accepted %1$s's chat request.", "Has aceptado la petición de chat de %1$s.", "Has acceptat la petició de xat de %1$s."),
+"dm_acc_yours": ("%1$s accepted your chat request. You can message each other now.", "%1$s ha aceptado tu petición de chat. Ya podéis escribiros.", "%1$s ha acceptat la teua petició de xat. Ja podeu escriure-vos."),
 "dm_acc_other": ("%1$s accepted %2$s's request to message privately.", "%1$s ha aceptado la petición de %2$s de hablar en privado.", "%1$s ha acceptat la petició de %2$s de parlar en privat."),
 "dm_message_privately": ("Message privately", "Hablar en privado", "Parlar en privat"),
 "dm_ask_title": ("Message %1$s privately?", "¿Hablar en privado con %1$s?", "Parlar en privat amb %1$s?"),
@@ -1389,7 +1389,6 @@ S = {
 "vm_dm_asked": ("Asked %1$s. You can message them once they accept.", "Petición enviada a %1$s. Podrás escribirle cuando acepte.", "Petició enviada a %1$s. Podràs escriure-li quan accepte."),
 "vm_dm_cant_answer": ("Can't answer a request from that name", "No se puede responder a una petición de ese nombre", "No es pot respondre a una petició d'aquest nom"),
 "vm_dm_add_failed": ("Couldn't add %1$s. Is the radio's contact list full?", "No se ha podido añadir a %1$s. ¿Está llena la lista de contactos de la radio?", "No s'ha pogut afegir %1$s. Està plena la llista de contactes de la ràdio?"),
-"vm_dm_accepted": ("Added %1$s. You can message each other directly.", "%1$s añadido. Ya podéis escribiros directamente.", "%1$s afegit. Ja podeu escriure-vos directament."),
 # Can I talk to them? (Reachability, upstream 0.11.0)
 "reach_label": ("Can you talk to them?", "¿Os podéis comunicar?", "Vos podeu comunicar?"),
 "reach_nothing_known": ("Nothing known yet, either way.", "Aún no se sabe nada, en ningún sentido.", "Encara no se sap res, en cap sentit."),

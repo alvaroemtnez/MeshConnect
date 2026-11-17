@@ -382,7 +382,9 @@ fun ConversationScreen(
             ) { m ->
                 // A direct-message request or reply (DmRequest) reads as a quiet line, not a
                 // bubble with a hex key in it; a request addressed to us carries the buttons.
-                val dm = if (isChannel) remember(m.text) { DmRequest.parse(m.text) } else null
+                // In a direct thread only the accepted line is ever written (noteDmAccept).
+                val dm = remember(m.text) { DmRequest.parse(m.text) }
+                    ?.takeIf { isChannel || it is DmRequest.Parsed.Accept }
                 if (dm != null) {
                     val myKey = selfInfo?.publicKeyHex.orEmpty()
                     val askedMe = if (m.outgoing) {
@@ -395,10 +397,11 @@ fun ConversationScreen(
                     }
                     DmRequestLine(
                         line = io.alvaroedo.meshconnect.ui.model.DmRequestText.describe(
-                            androidx.compose.ui.platform.LocalResources.current, dm, m.senderName, m.outgoing, selfName, myKey,
+                            androidx.compose.ui.platform.LocalResources.current, dm,
+                            if (isChannel) m.senderName else title, m.outgoing, selfName, myKey,
                         ),
                         keyPrefix = askedMe?.requesterKeyHex?.take(DmRequest.PREFIX_HEX),
-                        onAccept = askedMe?.let { a ->
+                        onAccept = askedMe?.takeIf { isChannel }?.let { a ->
                             { peerKey.toIntOrNull()?.let { vm.acceptDmRequest(it, a.requesterName, a.requesterKeyHex) } }
                         },
                         onDecline = askedMe?.let { a -> { vm.declineDmRequest(a.requesterKeyHex) } },

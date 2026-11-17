@@ -1232,8 +1232,8 @@
     <string name="dm_req_you_asked">Has pedido a %1$s hablar en privado.</string>
     <string name="dm_req_asked_you">%1$s quiere hablar contigo en privado.</string>
     <string name="dm_req_other">%1$s ha pedido a %2$s hablar en privado.</string>
-    <string name="dm_acc_you">Has aceptado la petición de %1$s de hablar en privado.</string>
-    <string name="dm_acc_yours">%1$s ha aceptado tu petición. Ya podéis escribiros directamente.</string>
+    <string name="dm_acc_you">Has aceptado la petición de chat de %1$s.</string>
+    <string name="dm_acc_yours">%1$s ha aceptado tu petición de chat. Ya podéis escribiros.</string>
     <string name="dm_acc_other">%1$s ha aceptado la petición de %2$s de hablar en privado.</string>
     <string name="dm_message_privately">Hablar en privado</string>
     <string name="dm_ask_title">¿Hablar en privado con %1$s?</string>
@@ -1246,7 +1246,6 @@
     <string name="vm_dm_asked">Petición enviada a %1$s. Podrás escribirle cuando acepte.</string>
     <string name="vm_dm_cant_answer">No se puede responder a una petición de ese nombre</string>
     <string name="vm_dm_add_failed">No se ha podido añadir a %1$s. ¿Está llena la lista de contactos de la radio?</string>
-    <string name="vm_dm_accepted">%1$s añadido. Ya podéis escribiros directamente.</string>
     <string name="reach_label">¿Os podéis comunicar?</string>
     <string name="reach_nothing_known">Aún no se sabe nada, en ningún sentido.</string>
     <string name="reach_two_way">Bidireccional</string>

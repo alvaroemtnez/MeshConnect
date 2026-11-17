@@ -1235,8 +1235,8 @@
     <string name="dm_req_you_asked">You asked %1$s to message privately.</string>
     <string name="dm_req_asked_you">%1$s wants to message you privately.</string>
     <string name="dm_req_other">%1$s asked %2$s to message privately.</string>
-    <string name="dm_acc_you">You accepted %1$s\'s request to message privately.</string>
-    <string name="dm_acc_yours">%1$s accepted your request. You can message each other directly.</string>
+    <string name="dm_acc_you">You accepted %1$s\'s chat request.</string>
+    <string name="dm_acc_yours">%1$s accepted your chat request. You can message each other now.</string>
     <string name="dm_acc_other">%1$s accepted %2$s\'s request to message privately.</string>
     <string name="dm_message_privately">Message privately</string>
     <string name="dm_ask_title">Message %1$s privately?</string>
@@ -1249,7 +1249,6 @@
     <string name="vm_dm_asked">Asked %1$s. You can message them once they accept.</string>
     <string name="vm_dm_cant_answer">Can\'t answer a request from that name</string>
     <string name="vm_dm_add_failed">Couldn\'t add %1$s. Is the radio\'s contact list full?</string>
-    <string name="vm_dm_accepted">Added %1$s. You can message each other directly.</string>
     <string name="reach_label">Can you talk to them?</string>
     <string name="reach_nothing_known">Nothing known yet, either way.</string>
     <string name="reach_two_way">Two-way</string>

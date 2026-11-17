@@ -1232,8 +1232,8 @@
     <string name="dm_req_you_asked">Has demanat a %1$s parlar en privat.</string>
     <string name="dm_req_asked_you">%1$s vol parlar amb tu en privat.</string>
     <string name="dm_req_other">%1$s ha demanat a %2$s parlar en privat.</string>
-    <string name="dm_acc_you">Has acceptat la petició de %1$s de parlar en privat.</string>
-    <string name="dm_acc_yours">%1$s ha acceptat la teua petició. Ja podeu escriure-vos directament.</string>
+    <string name="dm_acc_you">Has acceptat la petició de xat de %1$s.</string>
+    <string name="dm_acc_yours">%1$s ha acceptat la teua petició de xat. Ja podeu escriure-vos.</string>
     <string name="dm_acc_other">%1$s ha acceptat la petició de %2$s de parlar en privat.</string>
     <string name="dm_message_privately">Parlar en privat</string>
     <string name="dm_ask_title">Parlar en privat amb %1$s?</string>
@@ -1246,7 +1246,6 @@
     <string name="vm_dm_asked">Petició enviada a %1$s. Podràs escriure-li quan accepte.</string>
     <string name="vm_dm_cant_answer">No es pot respondre a una petició d\'aquest nom</string>
     <string name="vm_dm_add_failed">No s\'ha pogut afegir %1$s. Està plena la llista de contactes de la ràdio?</string>
-    <string name="vm_dm_accepted">%1$s afegit. Ja podeu escriure-vos directament.</string>
     <string name="reach_label">Vos podeu comunicar?</string>
     <string name="reach_nothing_known">Encara no se sap res, en cap sentit.</string>
     <string name="reach_two_way">Bidireccional</string>

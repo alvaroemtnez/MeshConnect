@@ -45,9 +45,9 @@ class DmRequestTextTest {
     @Test
     fun `an accept reads from each side`() {
         val en = res("en")
-        assertEquals("You accepted Alice's request to message privately.", DmRequestText.lineFor(en, accept, "Bob", true, "Bob", bob))
+        assertEquals("You accepted Alice's chat request.", DmRequestText.lineFor(en, accept, "Bob", true, "Bob", bob))
         assertEquals(
-            "Bob accepted your request. You can message each other directly.",
+            "Bob accepted your chat request. You can message each other now.",
             DmRequestText.lineFor(en, accept, "Bob", false, "Alice", alice),
         )
         assertEquals(

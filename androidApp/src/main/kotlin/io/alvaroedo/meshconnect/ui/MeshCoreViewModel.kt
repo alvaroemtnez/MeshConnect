@@ -1091,7 +1091,10 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
     private fun dmRequestLine(m: io.alvaroedo.meshconnect.storage.MessageEntity): String? {
         val me = selfInfo.value ?: return null
         return io.alvaroedo.meshconnect.ui.model.DmRequestText.lineFor(
-            getApplication<android.app.Application>().resources, m.text, m.senderName, m.outgoing, me.name, me.publicKeyHex,
+            getApplication<android.app.Application>().resources, m.text,
+            // A direct row has no sender name: it is the thread's contact.
+            m.senderName ?: dbContacts.value.firstOrNull { it.keyHex == m.peerKey }?.let { displayName(it) },
+            m.outgoing, me.name, me.publicKeyHex,
         )
     }
 
@@ -2066,9 +2069,13 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
                 transientMessage.value = str(R.string.vm_dm_add_failed, requesterName.trim())
                 return@launch
             }
-            sendChannelMessage(channelIndex, reply)
             markDmRequestHandled(requesterKeyHex)
-            transientMessage.value = str(R.string.vm_dm_accepted, requesterName.trim())
+            // Into their chat, not just the contact list (asked for on the beta,
+            // 2026-11-17): the line says what happened, and the chat opens. The add above
+            // reads back one contact, never the whole list, so this is not kept waiting.
+            runCatching { svc.repository.noteDmAccept(requesterKeyHex, requesterName.trim(), reply, outgoing = true) }
+            openThreadRequest.value = MessageRepository.KIND_DM to requesterKeyHex.lowercase()
+            sendChannelMessage(channelIndex, reply)
         }
     }
 

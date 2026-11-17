@@ -143,11 +143,33 @@ fun InternalDmRequestPrompt(vm: MeshCoreViewModel) {
             Column {
                 Text(stringResource(R.string.dmreq_incoming_body))
                 Spacer(Modifier.height(8.dp))
-                Text(
-                    stringResource(if (confirmed) R.string.dmreq_confirmed else R.string.dmreq_unconfirmed),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                if (confirmed) {
+                    Text(
+                        stringResource(R.string.dmreq_confirmed),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                } else {
+                    // A warning, and it should look like one: the name may be anyone's.
+                    androidx.compose.material3.Surface(
+                        color = MaterialTheme.colorScheme.errorContainer,
+                        contentColor = MaterialTheme.colorScheme.onErrorContainer,
+                        shape = MaterialTheme.shapes.medium,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.Top) {
+                            Icon(
+                                painterResource(R.drawable.ic_warning),
+                                null,
+                                Modifier.size(20.dp),
+                                tint = MaterialTheme.colorScheme.error,
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text(stringResource(R.string.dmreq_unconfirmed), style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                    Spacer(Modifier.height(4.dp))
+                }
                 Text(
                     stringResource(R.string.dm_key_starts, request.keyHex.take(DmRequest.PREFIX_HEX)),
                     style = MaterialTheme.typography.bodySmall,
