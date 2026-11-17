@@ -35,6 +35,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import io.github.thatsfguy.meshcore.protocol.Codes
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
@@ -108,6 +109,17 @@ class MeshCoreService : Service() {
     private val _directRepeaters = MutableStateFlow<List<LinkMeter.DirectRepeater>>(emptyList())
     val directRepeaters: StateFlow<List<LinkMeter.DirectRepeater>> = _directRepeaters
 
+    private val _heardInfra = MutableStateFlow<Map<String, String>>(emptyMap())
+
+    /** Repeaters and rooms heard but not added, key to advertised name. */
+    val heardInfra: StateFlow<Map<String, String>> = _heardInfra
+
+    /** Every repeater and room key we know of, contacts and heard alike. */
+    private fun knownInfraKeys(): Collection<String> =
+        engine.contacts.value.values
+            .filter { it.type == Codes.ADV_TYPE_REPEATER || it.type == Codes.ADV_TYPE_ROOM }
+            .map { it.publicKeyHex } + _heardInfra.value.keys
+
     private var supervisor: ReconnectSupervisor? = null
     private var currentMemory: ConnectionMemory? = null
     private var usbDeviceName: String? = null
@@ -162,6 +174,17 @@ class MeshCoreService : Service() {
         }
         val db = MeshCoreDatabase.get(this, dbKey)
         repository = MessageRepository(db, secrets, scope)
+        // Repeaters and rooms heard advertising but not added: they name a heard
+        // repeater (LinkMeter.nameFor) and decide whether a short hash is one node.
+        scope.launch {
+            engine.selfInfo.map { it?.publicKeyHex.orEmpty() }.distinctUntilChanged()
+                .flatMapLatest { key -> if (key.isEmpty()) flowOf(emptyList()) else db.discovered().all(key) }
+                .collect { rows ->
+                    _heardInfra.value = rows
+                        .filter { it.type == Codes.ADV_TYPE_REPEATER || it.type == Codes.ADV_TYPE_ROOM }
+                        .associate { it.keyHex.lowercase() to it.name }
+                }
+        }
         publishWidget(db)
         repository.start(engine)
         // The block/filter sets are read on every inbound message, so
@@ -211,7 +234,7 @@ class MeshCoreService : Service() {
                 if (ev is DeviceEvent.LogRxData) {
                     _directRepeaters.value = LinkMeter.record(
                         _directRepeaters.value, ev.packet, ev.snr, ev.rssi, System.currentTimeMillis(),
-                        width = engine.deviceInfo.value?.pathHashByteWidth,
+                        knownKeys = knownInfraKeys(),
                     )
                 }
             }
@@ -382,10 +405,10 @@ class MeshCoreService : Service() {
                 combine(engine.state, engine.selfInfo, engine.battery, engine.plaintextLink) { st, me, b, pl ->
                     WidgetCore(st, me, b, pl)
                 },
-                combine(directRepeaters, engine.contacts) { r, c -> r to c },
+                combine(directRepeaters, engine.contacts, heardInfra) { r, c, h -> Triple(r, c, h) },
                 inbox,
                 tick,
-            ) { core, (reps, contacts), box, _ ->
+            ) { core, (reps, contacts, heard), box, _ ->
                 val state = core.state
                 val self = core.self
                 val batt = core.battery
@@ -422,7 +445,7 @@ class MeshCoreService : Service() {
                     nearby = fresh.take(io.alvaroedo.meshconnect.widget.WidgetSnapshot.MAX_NEARBY).map { r ->
                         io.alvaroedo.meshconnect.widget.WidgetSnapshot.Nearby(
                             hash = r.prefixHex,
-                            name = LinkMeter.nameFor(r.prefixHex, contacts.values),
+                            name = LinkMeter.nameFor(r.prefixHex, contacts.values, heard),
                             // Rounded so a 0.25 dB wobble does not redraw the home screen.
                             snr = kotlin.math.round(r.snr),
                             bars = LinkMeter.bars(r.snr, self?.sf),

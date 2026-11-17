@@ -427,6 +427,11 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
     }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     /** Repeaters our radio hears directly (top-bar signal meter). */
+    /** Repeaters and rooms heard but not added, key to name (LinkMeter.nameFor). */
+    val heardInfra: StateFlow<Map<String, String>> =
+        _service.flatMapLatest { it?.heardInfra ?: flowOf(emptyMap()) }
+            .stateIn(viewModelScope, SharingStarted.Eagerly, emptyMap())
+
     val directRepeaters: StateFlow<List<io.alvaroedo.meshconnect.ui.model.LinkMeter.DirectRepeater>> =
         _service.flatMapLatest { it?.directRepeaters ?: flowOf(emptyList()) }
             .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())

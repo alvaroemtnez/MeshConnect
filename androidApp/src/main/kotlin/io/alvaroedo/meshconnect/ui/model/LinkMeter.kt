@@ -57,36 +57,99 @@ object LinkMeter {
         rssi: Int,
         nowMs: Long,
         /**
-         * Our radio's hop-hash width (DEVICE_INFO.pathHashByteWidth), or null if unknown.
-         * A packet's path width is chosen by whoever sent it, so the same repeater arrives
-         * as 2 bytes from one sender and 3 from another: it showed as `85A7` and `85A709`
-         * and took two rows. Longer hashes are cut to our width; narrower ones are kept as
-         * they are, because a 1-byte hash may belong to several repeaters and must not be
-         * merged into one.
+         * Public keys of the repeaters and rooms this radio knows of (contacts and heard
+         * adverts). They decide whether a short hash is one node or several: see [fold].
          */
-        width: Int? = null,
+        knownKeys: Collection<String> = emptyList(),
     ): List<DirectRepeater> {
         val packet = RawPacket.parse(rawPacket) ?: return current
-        val full = lastHop(packet) ?: return current
-        val prefix = width?.takeIf { it in 1..4 }?.let { full.take(it * 2) } ?: full
-        val old = current.firstOrNull { it.prefixHex == prefix }
-        val updated = DirectRepeater(prefix, snr, rssi, nowMs, (old?.packets ?: 0) + 1)
-        return (listOf(updated) + current.filter { it.prefixHex != prefix })
+        val hop = lastHop(packet) ?: return current
+        return fold(current, hop, snr, rssi, nowMs, knownKeys)
+    }
+
+    /**
+     * One reading of [hop] folded into [current], one row per repeater.
+     *
+     * A path's hash width is chosen by whoever SENT the packet (their path hash mode), not
+     * by the repeater that relayed it: each relay appends its hash at the packet's width. So
+     * one repeater arrives as `AB` from a 1-byte sender, `ABCD` from a 2-byte one and
+     * `ABCDEF` from a 3-byte one, and took three rows (reported 2026-11-17).
+     *
+     * A row is the widest hash seen for a repeater. A reading or row with a narrower hash
+     * joins the wider row it is the start of, but only when that is exactly one row AND no
+     * other known repeater starts with that hash too: a 1-byte hash routinely belongs to
+     * several nodes, and merging it into one of them would credit someone else's signal.
+     * When it is ambiguous it keeps a row of its own, showing the short hash, which is the
+     * honest answer. The newest reading always sets the row's SNR and RSSI.
+     */
+    fun fold(
+        current: List<DirectRepeater>,
+        hop: String,
+        snr: Double,
+        rssi: Int,
+        nowMs: Long,
+        knownKeys: Collection<String> = emptyList(),
+    ): List<DirectRepeater> {
+        val prefix = hop.lowercase()
+        val known = knownKeys.map { it.lowercase() }
+        // Where the reading goes: its own row, or the one wider row it uniquely extends.
+        val target = current.firstOrNull { it.prefixHex == prefix }?.prefixHex
+            ?: uniqueWider(prefix, current.map { it.prefixHex }, known)
+            ?: prefix
+        val old = current.firstOrNull { it.prefixHex == target }
+        val updated = DirectRepeater(target, snr, rssi, nowMs, (old?.packets ?: 0) + 1)
+        val list = listOf(updated) + current.filter { it.prefixHex != target }
+        return absorbNarrower(list, known)
             .sortedByDescending { it.lastHeardMs }
             .take(MAX_ENTRIES)
+    }
+
+    /** The one row strictly wider than [prefix] that starts with it, if [prefix] names one node. */
+    private fun uniqueWider(prefix: String, rows: List<String>, known: List<String>): String? {
+        val wider = rows.filter { it.length > prefix.length && it.startsWith(prefix) }
+        // Rows that are themselves a prefix of one another are the same candidate.
+        val widest = wider.filter { w -> wider.none { o -> o.length > w.length && o.startsWith(w) } }
+        val only = widest.singleOrNull() ?: return null
+        val others = known.count { it.startsWith(prefix) && !it.startsWith(only) }
+        return only.takeIf { others == 0 }
+    }
+
+    /** Merge every row that uniquely extends into a wider one; newest reading wins. */
+    private fun absorbNarrower(rows: List<DirectRepeater>, known: List<String>): List<DirectRepeater> {
+        var out = rows
+        // Narrowest first, so AB → ABCD → ABCDEF settles in one pass.
+        for (row in rows.sortedBy { it.prefixHex.length }) {
+            val into = uniqueWider(row.prefixHex, out.map { it.prefixHex }, known) ?: continue
+            val wide = out.first { it.prefixHex == into }
+            val newest = if (row.lastHeardMs > wide.lastHeardMs) row else wide
+            val merged = DirectRepeater(into, newest.snr, newest.rssi, newest.lastHeardMs, row.packets + wide.packets)
+            out = out.filter { it.prefixHex != row.prefixHex && it.prefixHex != into } + merged
+        }
+        return out
     }
 
     /**
      * The name of the repeater behind a hop hash, only on a unique match
      * among repeaters and rooms: a short hash can belong to several nodes,
      * and guessing would name the wrong one.
+     *
+     * [heard] are nodes heard advertising but not added (key to name): a
+     * repeater's advert names it whether or not it is a contact, and Simple
+     * mode shows no hashes, so a heard repeater with no name was a blank.
      */
-    fun nameFor(prefixHex: String, contacts: Collection<io.github.thatsfguy.meshcore.model.Contact>): String? =
-        contacts.filter {
-            (it.type == io.github.thatsfguy.meshcore.protocol.Codes.ADV_TYPE_REPEATER ||
-                it.type == io.github.thatsfguy.meshcore.protocol.Codes.ADV_TYPE_ROOM) &&
-                it.publicKeyHex.startsWith(prefixHex, ignoreCase = true)
-        }.singleOrNull()?.name?.ifBlank { null }
+    fun nameFor(
+        prefixHex: String,
+        contacts: Collection<io.github.thatsfguy.meshcore.model.Contact>,
+        heard: Map<String, String> = emptyMap(),
+    ): String? {
+        val infra = contacts.filter {
+            it.type == io.github.thatsfguy.meshcore.protocol.Codes.ADV_TYPE_REPEATER ||
+                it.type == io.github.thatsfguy.meshcore.protocol.Codes.ADV_TYPE_ROOM
+        }.associate { it.publicKeyHex.lowercase() to it.name }
+        val all = heard.mapKeys { it.key.lowercase() } + infra
+        return all.filterKeys { it.startsWith(prefixHex.lowercase()) }
+            .values.singleOrNull()?.ifBlank { null }
+    }
 
     /** Repeaters heard within [STALE_MS], strongest first. */
     fun fresh(all: List<DirectRepeater>, nowMs: Long): List<DirectRepeater> =

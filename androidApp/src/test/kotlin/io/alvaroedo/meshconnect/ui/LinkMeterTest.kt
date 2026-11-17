@@ -126,23 +126,65 @@ class LinkMeterTest {
     }
 
     @Test
-    fun `one repeater heard at two widths is one entry, at our radio's width`() {
+    fun `one repeater heard at two widths is one entry, the widest hash`() {
         // Same last relay c985a7 sent by a 3-byte sender, then c985 by a 2-byte one.
         val threeByte = byteArrayOf(header(1), 0x81.toByte()) + hex("c985a7") + hex("00")
-        var s = LinkMeter.record(emptyList(), threeByte, 1.0, -90, 0, width = 2)
-        assertEquals("c985", s.single().prefixHex)
-        s = LinkMeter.record(s, capturedFlood, 2.0, -80, 10, width = 2)
+        var s = LinkMeter.record(emptyList(), threeByte, 1.0, -90, 0)
+        assertEquals("c985a7", s.single().prefixHex)
+        s = LinkMeter.record(s, capturedFlood, 2.0, -80, 10)
         assertEquals(1, s.size)
+        assertEquals("c985a7", s[0].prefixHex)
         assertEquals(2, s[0].packets)
-        // Positive control: without our width the two arrive as distinct hashes.
-        val raw = LinkMeter.record(LinkMeter.record(emptyList(), threeByte, 1.0, -90, 0), capturedFlood, 2.0, -80, 10)
-        assertEquals(setOf("c985a7", "c985"), raw.map { it.prefixHex }.toSet())
+        // The newest reading is the one shown.
+        assertEquals(2.0, s[0].snr, 0.0)
     }
 
     @Test
-    fun `a narrower hash is never widened or merged`() {
-        val oneByte = byteArrayOf(header(1), 0x04) + hex("b389c985") + hex("00")
-        val s = LinkMeter.record(LinkMeter.record(emptyList(), capturedFlood, 1.0, -90, 0, width = 2), oneByte, 1.0, -90, 5, width = 2)
-        assertEquals(setOf("c985", "85"), s.map { it.prefixHex }.toSet())
+    fun `AB, ABCD and ABCDEF are one repeater, whichever arrives first`() {
+        // Reported on the beta (2026-11-17): one row per width.
+        val narrowFirst = LinkMeter.fold(
+            LinkMeter.fold(LinkMeter.fold(emptyList(), "ab", 1.0, -90, 0), "abcd", 2.0, -85, 10),
+            "abcdef", 3.0, -80, 20,
+        )
+        val wideFirst = LinkMeter.fold(
+            LinkMeter.fold(LinkMeter.fold(emptyList(), "abcdef", 3.0, -80, 0), "abcd", 2.0, -85, 10),
+            "ab", 1.0, -90, 20,
+        )
+        for (s in listOf(narrowFirst, wideFirst)) {
+            assertEquals(1, s.size)
+            assertEquals("abcdef", s[0].prefixHex)
+            assertEquals(3, s[0].packets)
+            assertEquals(20L, s[0].lastHeardMs)
+        }
+        assertEquals(1.0, wideFirst[0].snr, 0.0)
+    }
+
+    @Test
+    fun `a short hash two heard repeaters share stays its own row`() {
+        // Two repeaters starting c9: a 1-byte c9 could be either, so it is credited to neither.
+        var s = LinkMeter.fold(emptyList(), "c985", 1.0, -90, 0)
+        s = LinkMeter.fold(s, "c9aa", 1.0, -90, 5)
+        s = LinkMeter.fold(s, "c9", 5.0, -70, 10)
+        assertEquals(setOf("c985", "c9aa", "c9"), s.map { it.prefixHex }.toSet())
+    }
+
+    @Test
+    fun `a short hash another known repeater shares stays its own row`() {
+        // Only c985 heard this session, but a contact c9ff… exists: c9 may be it.
+        var s = LinkMeter.fold(emptyList(), "c985", 1.0, -90, 0, knownKeys = listOf("C9FF00", "C98511"))
+        s = LinkMeter.fold(s, "c9", 5.0, -70, 10, knownKeys = listOf("C9FF00", "C98511"))
+        assertEquals(setOf("c985", "c9"), s.map { it.prefixHex }.toSet())
+        // Positive control: the known key that IS this repeater does not block it.
+        var t = LinkMeter.fold(emptyList(), "c985", 1.0, -90, 0, knownKeys = listOf("C98511"))
+        t = LinkMeter.fold(t, "c9", 5.0, -70, 10, knownKeys = listOf("C98511"))
+        assertEquals(listOf("c985"), t.map { it.prefixHex })
+    }
+
+    @Test
+    fun `a heard repeater is named from its advert, not only from contacts`() {
+        val heard = mapOf("C985A7FF" to "Hilltop")
+        assertEquals("Hilltop", LinkMeter.nameFor("c985", emptyList(), heard))
+        // Two candidates: no name rather than a guess.
+        assertEquals(null, LinkMeter.nameFor("c9", emptyList(), heard + ("C9AA00" to "Other")))
     }
 }

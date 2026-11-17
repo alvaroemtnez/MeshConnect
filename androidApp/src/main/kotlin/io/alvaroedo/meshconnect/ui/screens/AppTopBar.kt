@@ -513,6 +513,7 @@ private fun LinkSheet(vm: MeshCoreViewModel, onDismiss: () -> Unit) {
     val battery by vm.battery.collectAsStateWithLifecycle()
     val label by vm.connectionLabel.collectAsStateWithLifecycle()
     val repeaters by vm.directRepeaters.collectAsStateWithLifecycle()
+    val heardInfra by vm.heardInfra.collectAsStateWithLifecycle()
     val contacts by vm.liveContacts.collectAsStateWithLifecycle()
     val now = rememberNow()
     val rows = ListItemDefaults.colors(containerColor = Color.Transparent)
@@ -623,7 +624,7 @@ private fun LinkSheet(vm: MeshCoreViewModel, onDismiss: () -> Unit) {
                 )
             }
             for (r in fresh) {
-                val name = LinkMeter.nameFor(r.prefixHex, contacts.values)
+                val name = LinkMeter.nameFor(r.prefixHex, contacts.values, heardInfra)
                     ?: stringResource(R.string.link_unknown_repeater)
                 ListItem(
                     headlineContent = { Text(name, maxLines = 1, overflow = TextOverflow.Ellipsis) },
@@ -685,6 +686,7 @@ private fun SimpleLinkSheet(vm: MeshCoreViewModel, onDismiss: () -> Unit) {
     val battery by vm.battery.collectAsStateWithLifecycle()
     val label by vm.connectionLabel.collectAsStateWithLifecycle()
     val repeaters by vm.directRepeaters.collectAsStateWithLifecycle()
+    val heardInfra by vm.heardInfra.collectAsStateWithLifecycle()
     val contacts by vm.liveContacts.collectAsStateWithLifecycle()
     val plaintext by vm.plaintextLink.collectAsStateWithLifecycle()
     val now = rememberNow()
@@ -751,7 +753,7 @@ private fun SimpleLinkSheet(vm: MeshCoreViewModel, onDismiss: () -> Unit) {
         }
         // The repeaters heard directly: bars, name, and how long ago, nothing else.
         for (r in LinkMeter.fresh(repeaters, now)) {
-            val name = LinkMeter.nameFor(r.prefixHex, contacts.values)
+            val name = LinkMeter.nameFor(r.prefixHex, contacts.values, heardInfra)
                 ?: stringResource(R.string.link_unknown_repeater)
             Row(
                 Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 10.dp),
