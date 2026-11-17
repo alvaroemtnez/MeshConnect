@@ -606,8 +606,14 @@ internal fun PoliciesSection(vm: MeshCoreViewModel) {
     val teleOptions = listOf(stringResource(R.string.pol_tele_deny), stringResource(R.string.pol_tele_flags), stringResource(R.string.pol_tele_all))
     Text(stringResource(R.string.perm_battery), style = MaterialTheme.typography.bodySmall)
     ChoiceChips(teleOptions, teleBase) { apply(base = it) }
+    // The firmware answers nothing at all without this one
+    // (companion_radio/MyMesh.cpp, onContactRequest): it gates the others.
+    HintText(stringResource(R.string.perm_device_hint))
     Text(stringResource(R.string.perm_location), style = MaterialTheme.typography.bodySmall)
     ChoiceChips(teleOptions, teleLoc) { apply(loc = it) }
+    // Sent only from a live GPS (EnvironmentSensorManager, `gps_active`),
+    // never the position typed into Identity.
+    HintText(stringResource(R.string.perm_location_hint))
     Text(stringResource(R.string.perm_environment), style = MaterialTheme.typography.bodySmall)
     ChoiceChips(teleOptions, teleEnv) { apply(env = it) }
 

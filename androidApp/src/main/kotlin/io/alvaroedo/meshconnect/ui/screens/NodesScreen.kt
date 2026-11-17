@@ -1693,17 +1693,21 @@ private fun ContactPermissions(
         Triple(stringResource(R.string.perm_environment), Codes.CONTACT_FLAG_TELE_ENV, 4),
     )) {
         val globalMode = (modes shr shift) and 0x03
-        SettingRow(label, flags and flag != 0) {
+        // 0 = nobody, 1 = per contact, 2 = everyone. Only "per contact"
+        // lets this switch decide, so otherwise it is shown greyed out —
+        // still holding its own value, which comes back into force if the
+        // policy returns to per contact — with one red line saying why.
+        val decides = globalMode == 1
+        SettingRow(label, flags and flag != 0, enabled = decides) {
             vm.setContactTelemetryFlag(contact.keyHex, flag, it)
         }
-        // 0 = Deny everyone, 1 = per-contact flags, 2 = allow all.
-        HintText(
-            when (globalMode) {
-                1 -> stringResource(R.string.perm_policy_flags)
-                2 -> stringResource(R.string.perm_policy_all)
-                else -> stringResource(R.string.perm_policy_deny)
-            },
-        )
+        if (!decides) {
+            Text(
+                stringResource(if (globalMode == 2) R.string.perm_policy_all else R.string.perm_policy_deny),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
+            )
+        }
     }
 
     var muted by remember(contact.keyHex) {

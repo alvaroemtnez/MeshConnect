@@ -463,12 +463,13 @@
     <string name="qr_failed">La radio no ha devuelto el contacto. ¿Está conectada?</string>
     <string name="qr_loading">Preguntando a la radio…</string>
     <string name="perm_intro">Qué parte de TU telemetría puede leer este contacto. También puedes silenciar sus notificaciones aquí: eso es local y nunca sale de este teléfono.</string>
-    <string name="perm_battery">Telemetría de batería</string>
+    <string name="perm_battery">Telemetría del dispositivo</string>
     <string name="perm_location">Telemetría de ubicación</string>
     <string name="perm_environment">Telemetría ambiental</string>
-    <string name="perm_policy_flags">La política global es «Por contacto»: decide este interruptor.</string>
-    <string name="perm_policy_all">La política global es «Todos»: todos pueden leerlo, diga lo que diga el interruptor.</string>
-    <string name="perm_policy_deny">La política global es «Nadie»: nadie puede leerlo, con o sin interruptor.</string>
+    <string name="perm_device_hint">Batería y temperatura del chip. También decide si la radio responde: sin ella, los demás no reciben respuesta a la telemetría ni a «Comprobar si te oye».</string>
+    <string name="perm_location_hint">Solo se envía cuando la radio tiene posición GPS, nunca la posición puesta a mano.</string>
+    <string name="perm_policy_all">Todos pueden leerlo (fijado en Ajustes).</string>
+    <string name="perm_policy_deny">Nadie puede leerlo (fijado en Ajustes).</string>
     <string name="discover_title">Repetidores cercanos</string>
     <string name="discover_listening">Esperando respuestas…</string>
     <string name="conv_link_body">Esto se abre en el navegador y sale de la malla. El sitio, elegido por quien lo envió y no por ti, verá tu dirección IP real y tu red.\n\n%1$s</string>
