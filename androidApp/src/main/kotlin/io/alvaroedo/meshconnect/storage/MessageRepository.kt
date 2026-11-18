@@ -126,16 +126,17 @@ class MessageRepository(
      */
     @Volatile var dmOutstanding: () -> io.github.thatsfguy.meshcore.presentation.DmRequest.Outstanding =
         { io.github.thatsfguy.meshcore.presentation.DmRequest.Outstanding.NONE }
-    @Volatile var onDmAccepted: ((accepterName: String, accepterKeyHex: String, wireText: String) -> Unit)? = null
+    @Volatile var onDmAccepted: ((accepterName: String, accepterKeyHex: String, wireText: String, messageKey: String) -> Unit)? = null
 
     /**
      * An answered direct-message request, as a line in that person's direct thread: it reads
      * as "You accepted…" on our side and "… accepted your chat request" on theirs
      * (DmRequestText), and it is what brings the chat into Chats. [wireText] is the reply as
-     * it went out on the channel. Written once: the reply arrives twice (sync and RX log),
-     * and the content key bounces the second.
+     * it went out on the channel. [occasion] names this accept: the reply arrives twice (sync
+     * and RX log) under one channel content key, and the second copy is bounced by it; a later
+     * accept of the same person (they asked again, 2026-11-18) has its own and is written.
      */
-    suspend fun noteDmAccept(peerKeyHex: String, peerName: String, wireText: String, outgoing: Boolean) {
+    suspend fun noteDmAccept(peerKeyHex: String, peerName: String, wireText: String, outgoing: Boolean, occasion: String) {
         val self = selfKey.ifEmpty { return }
         val peer = peerKeyHex.lowercase()
         val now = System.currentTimeMillis()
@@ -151,7 +152,7 @@ class MessageRepository(
                 outgoing = outgoing,
                 status = MessageStatus.Delivered.ordinal,
                 ackHash = null,
-                contentKey = (if (outgoing) "dm-accepted:" else "dm-accept:") + peer,
+                contentKey = (if (outgoing) "dm-accepted:" else "dm-accept:") + peer + ":" + occasion,
                 snr = null,
             ),
         )
@@ -500,7 +501,7 @@ class MessageRepository(
                         System.currentTimeMillis() / 1000,
                     )
                     if (action is io.github.thatsfguy.meshcore.presentation.DmRequest.Action.TheyAccepted) {
-                        onDmAccepted?.invoke(action.accepterName, action.accepterKeyHex, event.text)
+                        onDmAccepted?.invoke(action.accepterName, action.accepterKeyHex, event.text, event.contentKey)
                     }
                 }
                 val channelKey = event.channelIndex.toString()

@@ -114,34 +114,53 @@ fun AskToBeAddedDialog(vm: MeshCoreViewModel, name: String, shownName: String = 
 }
 
 /**
- * A request that came on #mcn-internal, which shows nowhere else (InternalChannel). Hosted at
- * the app root, one at a time, oldest first. Accept adds them and answers; Decline answers
- * nothing; Later leaves it for the next time the app opens.
+ * A request to us, on #mcn-internal or any other channel (DmRequestInbox). Hosted at the app
+ * root, one at a time, oldest first, except that the one whose notification was tapped comes
+ * first. Accept adds them and answers on the channel it came on; Decline answers nothing; Not
+ * now leaves it until the app is next started, or its notification is tapped.
+ *
+ * Before 1.3.1 only #mcn-internal's showed here, and a group's request was only a line with
+ * buttons inside the group.
  *
  * The name in a request is typed text; only the key is theirs. When our radio holds, or has
  * heard a signed advert from, that key under that name, the prompt says so; otherwise it says
  * to check with them, and shows the start of the key to compare.
  */
 @Composable
-fun InternalDmRequestPrompt(vm: MeshCoreViewModel) {
-    val pending by vm.internalDmRequests.collectAsState()
-    var later by remember { mutableStateOf(emptySet<String>()) }
-    val request = pending.firstOrNull { it.keyHex !in later } ?: return
+fun DmRequestPrompt(vm: MeshCoreViewModel) {
+    val pending by vm.dmRequests.collectAsState()
+    val later by vm.dmRequestsLater.collectAsState()
+    val focus by vm.dmRequestFocus.collectAsState()
+    val request = pending.firstOrNull { focus != null && it.keyHex.equals(focus, ignoreCase = true) }
+        ?: pending.firstOrNull { it.laterKey !in later }
+        ?: return
     val contacts by vm.dbContacts.collectAsState()
     val heard by vm.discovered.collectAsState()
+    val channels by vm.dbChannels.collectAsState()
     val confirmed = InternalChannel.nameConfirmed(
         request.keyHex,
         request.name,
         contacts.map { it.keyHex to it.name } + heard.map { it.keyHex to it.name },
     )
+    // Where it was asked, when that is a channel the user knows; #mcn-internal is not in
+    // dbChannels and says nothing.
+    val via = channels.firstOrNull { it.idx == request.channelIndex }?.name?.ifBlank { null }
     val name = request.name.ifBlank { stringResource(R.string.dm_someone) }
     AlertDialog(
-        onDismissRequest = { later = later + request.keyHex },
+        onDismissRequest = { vm.putOffDmRequest(request) },
         icon = { Icon(painterResource(R.drawable.ic_chat), null) },
         title = { Text(stringResource(R.string.dmreq_incoming_title, name)) },
         text = {
             Column {
                 Text(stringResource(R.string.dmreq_incoming_body))
+                via?.let {
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        stringResource(R.string.dmreq_asked_on, it),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
                 Spacer(Modifier.height(8.dp))
                 if (confirmed) {
                     Text(
@@ -179,11 +198,11 @@ fun InternalDmRequestPrompt(vm: MeshCoreViewModel) {
             }
         },
         confirmButton = {
-            Button(onClick = { vm.acceptInternalDmRequest(request) }) { Text(stringResource(R.string.dm_accept)) }
+            Button(onClick = { vm.acceptPendingDmRequest(request) }) { Text(stringResource(R.string.dm_accept)) }
         },
         dismissButton = {
             Row {
-                TextButton(onClick = { later = later + request.keyHex }) { Text(stringResource(R.string.onb_later)) }
+                TextButton(onClick = { vm.putOffDmRequest(request) }) { Text(stringResource(R.string.onb_later)) }
                 TextButton(onClick = { vm.declineDmRequest(request.keyHex) }) { Text(stringResource(R.string.dm_decline)) }
             }
         },

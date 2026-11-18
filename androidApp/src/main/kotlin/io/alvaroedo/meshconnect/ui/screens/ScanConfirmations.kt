@@ -170,8 +170,8 @@ fun ScanConfirmations(vm: MeshCoreViewModel) {
     if (showOwnQr) SelfQrDialog(vm, onDismiss = { showOwnQr = false })
     askFor?.let { AskToBeAddedDialog(vm, it, onDismiss = { askFor = null }) }
 
-    // Someone asked us on #mcn-internal, which shows nowhere else.
-    InternalDmRequestPrompt(vm)
+    // Someone asked us for a private conversation, on #mcn-internal or any other channel.
+    DmRequestPrompt(vm)
 
     // A scanned settings code. This dialog is the whole safety story:
     // nothing about the code is authenticated, and applying it decides

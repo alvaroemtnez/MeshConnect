@@ -208,11 +208,12 @@ fun MapScreen(vm: MeshCoreViewModel, nav: NavController) {
                     val end = link.endpoint ?: continue
                     val midLat = (origin.latitude + end.latitude!!) / 2
                     val midLon = (origin.longitude + end.longitude!!) / 2
+                    val chip = io.alvaroedo.meshconnect.ui.model.SharedText.neighbourChip(androidx.compose.ui.platform.LocalResources.current, link)
                     add(
                         MapMarker(
                             id = "chip|${end.keyHex}", lat = midLat, lon = midLon,
-                            imageKey = "chip|${link.mapLabel}|${link.quality.argb}",
-                            bitmap = { NodeMarkers.buildChip(context, link.mapLabel, link.quality.argb).bitmap },
+                            imageKey = "chip|$chip|${link.quality.argb}",
+                            bitmap = { NodeMarkers.buildChip(context, chip, link.quality.argb).bitmap },
                             centred = true, tappable = false,
                         ),
                     )

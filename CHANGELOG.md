@@ -11,6 +11,29 @@ MeshConnect is a fork of [MeshCore Hardened](https://github.com/thatSFguy/meshco
 Its history up to the fork point (0.10.15) is in
 [docs/upstream/CHANGELOG-MeshCoreHardened.md](docs/upstream/CHANGELOG-MeshCoreHardened.md).
 
+## 1.3.1
+
+Fixes for 1.3.0.
+
+- **DM requests come up again.** A request you had once accepted or declined was remembered
+  by the asker alone, for every radio and for good, so a later request from them (say, after
+  removing them) only buzzed the phone: no prompt, and tapping the notification did nothing.
+  An answer now covers the requests that had arrived when you gave it, on that radio; anything
+  they send later asks again. Not now puts off that request, not the person.
+- **Requests on any channel get the prompt.** A request in a group (or any channel) comes up
+  like one on #mcn-internal, says where it was asked, and Accept answers there. Its
+  notification opens the prompt; if you have answered since, it opens their chat or says so,
+  and if it was for another of your radios it says which. Answering clears the notification.
+  A request is addressed to you, so a muted channel does not silence it; blocking the asker
+  does.
+- Accepting the same person a second time writes its line and notifies again.
+- Saved radios list the connected one first, then the most recently used; the no-radio
+  screen's three are the latest, not the oldest.
+- Settings → Advanced (and Appearance and alerts) no longer stretch their card to the bottom
+  of the screen.
+- Signal bands on the ping and trace screens, the map's neighbour links and their list, and
+  neighbours' heard-ago are in your language.
+
 ## 1.3.0
 
 Brings in MeshCore Hardened 0.10.16, 0.10.17 and 0.11.0.

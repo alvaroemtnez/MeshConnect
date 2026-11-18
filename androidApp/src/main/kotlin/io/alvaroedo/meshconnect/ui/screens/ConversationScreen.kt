@@ -260,7 +260,7 @@ fun ConversationScreen(
     val appMode by vm.prefs.appModeFlow.collectAsState()
     val technical = io.github.thatsfguy.meshcore.presentation.AppModes.showsTechnicalActions(appMode)
     val signalDetail = io.github.thatsfguy.meshcore.presentation.AppModes.showsSignalDetail(appMode)
-    val dmHandled by vm.dmRequestsHandled.collectAsState()
+    val dmAnswers by vm.dmRequestAnswers.collectAsState()
     // The name a "Message privately" request is about to be sent to, awaiting confirmation.
     var askDmOf by remember(peerKey) { mutableStateOf<String?>(null) }
     askDmOf?.let { name ->
@@ -393,7 +393,7 @@ fun ConversationScreen(
                         (
                             DmRequest.decide(dm, m.senderName, selfName, myKey, DmRequest.Outstanding.NONE, 0)
                                 as? DmRequest.Action.AskedMe
-                            )?.takeIf { it.requesterKeyHex !in dmHandled }
+                            )?.takeIf { !dmAnswers.isAnswered(myKey, it.requesterKeyHex, m.receivedAt) }
                     }
                     DmRequestLine(
                         line = io.alvaroedo.meshconnect.ui.model.DmRequestText.describe(

@@ -38,6 +38,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import io.alvaroedo.meshconnect.R
+import io.alvaroedo.meshconnect.ui.model.SharedText
 import io.alvaroedo.meshconnect.platform.NodeMarkers
 import io.alvaroedo.meshconnect.storage.ContactEntity
 import io.alvaroedo.meshconnect.ui.MeshCoreViewModel
@@ -199,7 +200,7 @@ fun TraceScreen(vm: MeshCoreViewModel, nav: NavController, keyHex: String) {
                             },
                             supportingContent = {
                                 Text(
-                                    LinkQuality.of(leg.snr).label + " · " +
+                                    SharedText.linkQuality(androidx.compose.ui.platform.LocalResources.current, LinkQuality.of(leg.snr)) + " · " +
                                         String.format(Locale.ROOT, "%.2f dB", leg.snr),
                                     fontFamily = MonoFontFamily,
                                 )

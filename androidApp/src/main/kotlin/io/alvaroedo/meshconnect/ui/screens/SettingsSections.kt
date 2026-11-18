@@ -1080,8 +1080,10 @@ internal fun ChannelDatagramTool(vm: MeshCoreViewModel) {
 internal fun SavedNodesList(vm: MeshCoreViewModel) {
     var refresh by remember { mutableIntStateOf(0) }
     val engineState by vm.engineState.collectAsState()
-    val nodes = remember(refresh, engineState) { vm.prefs.savedNodes() }
     val currentKey = remember(refresh, engineState) { vm.prefs.reconnectKey() }
+    val nodes = remember(refresh, engineState) {
+        io.alvaroedo.meshconnect.ui.model.SavedRadioOrder.forDisplay(vm.prefs.savedNodes(), currentKey)
+    }
     if (nodes.isEmpty()) return
     Column {
         Text(

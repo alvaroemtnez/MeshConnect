@@ -274,7 +274,7 @@ class MeshCoreService : Service() {
             postMessageNotification(kind, peerKey, senderName, text)
         }
         repository.dmOutstanding = { prefs.dmRequestsOutstanding }
-        repository.onDmAccepted = { name, keyHex, wireText ->
+        repository.onDmAccepted = { name, keyHex, wireText, messageKey ->
             scope.launch {
                 val key = io.github.thatsfguy.meshcore.util.hexToBytesOrNull(keyHex) ?: return@launch
                 val added = runCatching {
@@ -286,7 +286,7 @@ class MeshCoreService : Service() {
                         .answered(name, System.currentTimeMillis() / 1000)
                     // Said where it matters: a line in their chat, which puts it in Chats,
                     // and a notification. Until 1.4 the add happened and nothing said so.
-                    repository.noteDmAccept(keyHex, name, wireText, outgoing = false)
+                    repository.noteDmAccept(keyHex, name, wireText, outgoing = false, occasion = messageKey)
                 }
             }
         }
@@ -896,10 +896,17 @@ class MeshCoreService : Service() {
         }.map { it.index }.toSet()
 
     /**
-     * "Marta wants to message you privately", for a request addressed to us on #mcn-internal.
-     * Opens the app, where the prompt waits (ScanConfirmations). Null when it is not one.
+     * "Marta wants to message you privately", for a request addressed to us on any channel
+     * (DmRequestInbox). Tapping it brings up the prompt for that request (MainActivity →
+     * MeshCoreViewModel.openDmRequestFromNotification), so it carries who asked, which radio
+     * was asked and when. Null when the message is not such a request.
+     *
+     * Its own notification, not the channel's: on #mcn-internal there is no thread to open,
+     * and in a group the thread is not where the answer is wanted (1.3.0 opened the group, or
+     * nothing). A request is addressed to you, so a channel's mute and the channel switch do
+     * not silence it; blocking the asker does.
      */
-    private fun postInternalRequestNotification(senderName: String?, text: String): Unit? {
+    private fun postDmRequestNotification(senderName: String?, text: String): Unit? {
         val parsed = io.github.thatsfguy.meshcore.presentation.DmRequest.parse(text)
             as? io.github.thatsfguy.meshcore.presentation.DmRequest.Parsed.Request ?: return null
         val me = engine.selfInfo.value ?: return null
@@ -907,9 +914,20 @@ class MeshCoreService : Service() {
             parsed, senderName, me.name, me.publicKeyHex,
             io.github.thatsfguy.meshcore.presentation.DmRequest.Outstanding.NONE, 0,
         ) as? io.github.thatsfguy.meshcore.presentation.DmRequest.Action.AskedMe ?: return null
+        if (prefs.isKeyBlocked(asked.requesterKeyHex)) {
+            diagnostics.log("Inbox", "not notifying: DM request from a blocked key")
+            return Unit
+        }
+        val id = dmRequestNotificationId(asked.requesterKeyHex)
+        val postedAt = System.currentTimeMillis()
         val intent = PendingIntent.getActivity(
-            this, DMREQ_NOTIF_BASE,
-            Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP),
+            this, id,
+            Intent(this, MainActivity::class.java)
+                .putExtra(MainActivity.EXTRA_DM_REQUEST_FROM, asked.requesterKeyHex.lowercase())
+                .putExtra(MainActivity.EXTRA_DM_REQUEST_TO, me.publicKeyHex.lowercase())
+                .putExtra(MainActivity.EXTRA_DM_REQUEST_RADIO, me.name)
+                .putExtra(MainActivity.EXTRA_DM_REQUEST_AT, postedAt)
+                .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP),
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
         val line = getString(R.string.dmreq_incoming_title, asked.requesterName.ifBlank { asked.requesterKeyHex.take(8) })
@@ -919,11 +937,28 @@ class MeshCoreService : Service() {
             .setContentText(line)
             .setContentIntent(intent)
             .setAutoCancel(true)
+            .setWhen(postedAt)
             .setCategory(NotificationCompat.CATEGORY_MESSAGE)
+            // Who asked stays off the lock screen, like a message's text.
+            .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
+            .setPublicVersion(
+                NotificationCompat.Builder(this, MSG_CHANNEL)
+                    .setSmallIcon(R.drawable.ic_stat_message)
+                    .setContentTitle(getString(R.string.app_name_full))
+                    .setContentText(getString(R.string.svc_new_message))
+                    .setContentIntent(intent)
+                    .setAutoCancel(true)
+                    .build(),
+            )
             .build()
-        (getSystemService(NOTIFICATION_SERVICE) as NotificationManager)
-            .notify(DMREQ_NOTIF_BASE + 1 + asked.requesterKeyHex.hashCode().and(0xFFF), notification)
+        (getSystemService(NOTIFICATION_SERVICE) as NotificationManager).notify(id, notification)
         return Unit
+    }
+
+    /** Drop a request's notification: it was answered in the app. */
+    fun clearDmRequestNotification(requesterKeyHex: String) {
+        (getSystemService(NOTIFICATION_SERVICE) as NotificationManager)
+            .cancel(dmRequestNotificationId(requesterKeyHex))
     }
 
     /** Each channel slot's kind, from the key the radio holds (ChannelKinds). */
@@ -959,10 +994,11 @@ class MeshCoreService : Service() {
         }
 
         val isChannel = kind == MessageRepository.KIND_CHANNEL
-        // #mcn-internal (InternalChannel) is not a conversation: only a request to us there
-        // notifies, as itself; anything else on it is silent.
+        // A request to us, on any channel, notifies as itself (postDmRequestNotification).
+        if (isChannel && postDmRequestNotification(senderName, text) != null) return
+        // #mcn-internal (InternalChannel) is not a conversation: anything else on it is silent.
         if (isChannel && peerKey.toIntOrNull()?.let { it in internalSlots() } == true) {
-            return postInternalRequestNotification(senderName, text) ?: skip("#mcn-internal traffic")
+            return skip("#mcn-internal traffic")
         }
         // Three levels, narrowest last: the per-kind switch, then the
         // per-thread mute. Muted threads still count unread — silence is
@@ -1106,6 +1142,10 @@ class MeshCoreService : Service() {
          * app cancel it again when the thread is opened. Post and cancel
          * MUST agree, so neither computes it independently.
          */
+        /** One per asker, so a second request from them replaces the first. */
+        fun dmRequestNotificationId(requesterKeyHex: String): Int =
+            DMREQ_NOTIF_BASE + 1 + requesterKeyHex.lowercase().hashCode().and(0xFFF)
+
         fun messageNotificationId(kind: String, peerKey: String): Int =
             MSG_NOTIF_BASE + Inbox.threadKey(kind, peerKey).hashCode().and(0xFFFF)
 

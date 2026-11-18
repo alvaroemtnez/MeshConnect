@@ -149,6 +149,22 @@ S = {
 "trace_width_unsupported": ("This mesh uses 3-byte hop hashes, which a trace can't carry (only 1, 2 or 4), so it can't be pinged or traced.", "Esta malla usa hashes de salto de 3 bytes, que una traza no puede llevar (solo 1, 2 o 4), así que no se puede hacer ping ni trazar.", "Aquesta malla usa hashes de salt de 3 bytes, que una traça no pot portar (només 1, 2 o 4), així que no es pot fer ping ni traçar."),
 "trace_unknown": ("This node isn't on the radio's contact list.", "Este nodo no está en la lista de contactos de la radio.", "Aquest node no està en la llista de contactes de la ràdio."),
 "trace_done": ("Round trip %1$s s · %2$d hops", "Ida y vuelta %1$s s · %2$d saltos", "Anada i tornada %1$s s · %2$d salts"),
+# Signal bands (shared/ LinkQuality), on the ping and trace screens and the map's neighbour links
+"link_strong": ("Strong", "Fuerte", "Fort"),
+"link_good": ("Good", "Buena", "Bo"),
+"link_fair": ("Fair", "Regular", "Regular"),
+"link_weak": ("Weak", "Débil", "Feble"),
+"link_marginal": ("Marginal", "Al límite", "Al límit"),
+# Why a neighbour has no line on the map (shared/ UndrawableLink)
+"link_unknown_node": ("not a known node", "nodo desconocido", "node desconegut"),
+"link_ambiguous": ("prefix matches more than one node", "el prefijo coincide con más de un nodo", "el prefix coincidix amb més d'un node"),
+"link_no_position": ("no position", "sin posición", "sense posició"),
+# A neighbour's heard-ago, by the repeater's clock (shared/ Neighbours.heardAgoLabel)
+"nb_ago_s": ("%1$ds ago", "hace %1$d s", "fa %1$d s"),
+"nb_ago_m": ("%1$dm ago", "hace %1$d min", "fa %1$d min"),
+"nb_ago_h": ("%1$dh ago", "hace %1$d h", "fa %1$d h"),
+"nb_ago_d": ("%1$dd ago", "hace %1$d d", "fa %1$d d"),
+"nb_clock_skew": ("clock skew", "reloj desfasado", "rellotge desfasat"),
 
 # Widget
 "widget_description": ("Your radio at a glance: connection, battery, signal and new messages.", "Tu radio de un vistazo: conexión, batería, señal y mensajes nuevos.", "La teua ràdio d'un colp d'ull: connexió, bateria, senyal i missatges nous."),
@@ -1646,6 +1662,12 @@ S = {
 "dmreq_incoming_body": ("Accepting adds them to your radio and lets their app know, so you can write to each other.", "Al aceptar se añade a tu radio y se avisa a su app, así podréis escribiros.", "En acceptar s'afig a la teua ràdio i s'avisa la seua aplicació, així podreu escriure-vos."),
 "dmreq_confirmed": ("Their radio announces this name with this key.", "Su radio anuncia este nombre con esta clave.", "La seua ràdio anuncia aquest nom amb aquesta clau."),
 "dmreq_unconfirmed": ("Anyone can type any name, and this one isn't confirmed by their radio yet. If you weren't expecting it, check with them first.", "Cualquiera puede escribir cualquier nombre, y su radio aún no ha confirmado este. Si no te lo esperabas, compruébalo antes con esa persona.", "Qualsevol pot escriure qualsevol nom, i la seua ràdio encara no ha confirmat aquest. Si no t'ho esperaves, comprova-ho abans amb eixa persona."),
+"dmreq_asked_on": ("Asked in %1$s", "Pedido en %1$s", "Demanat en %1$s"),
+"dmreq_tap_connect": ("Connect to the radio to answer this request.", "Conecta la radio para responder a esta petición.", "Connecta la ràdio per a respondre a aquesta petició."),
+"dmreq_tap_answered": ("You already answered this request.", "Ya has respondido a esta petición.", "Ja has respost a aquesta petició."),
+"dmreq_tap_other_radio": ("This request was for %1$s. Connect to that radio to answer it.", "Esta petición era para %1$s. Conecta esa radio para responderla.", "Aquesta petició era per a %1$s. Connecta eixa ràdio per a respondre-la."),
+"dmreq_tap_other_radio_unnamed": ("This request was for another of your radios. Connect to it to answer.", "Esta petición era para otra de tus radios. Conéctala para responderla.", "Aquesta petició era per a una altra de les teues ràdios. Connecta-la per a respondre-la."),
+"dmreq_tap_gone": ("This request is no longer waiting.", "Esta petición ya no está pendiente.", "Aquesta petició ja no està pendent."),
 "addback_ask": ("Ask over the mesh", "Pedirlo por la malla", "Demanar-ho per la malla"),
 "addback_body_ask": ("%1$s won't receive your messages until they add you as a contact too. Let them scan your QR code, or ask over the mesh.", "%1$s no recibirá tus mensajes hasta que también te añada como contacto. Deja que escanee tu código QR, o pídeselo por la malla.", "%1$s no rebrà els teus missatges fins que també t'afegisca com a contacte. Deixa que escanege el teu codi QR, o demana-li-ho per la malla."),
 "vm_internal_no_slot": ("Couldn't add MeshConnect's channel: the radio has no free channel slot. Requests to message privately can't come or go until one is free.", "No se ha podido añadir el canal de MeshConnect: la radio no tiene ningún hueco de canal libre. Las peticiones para hablar en privado no pueden ir ni venir hasta que haya uno.", "No s'ha pogut afegir el canal de MeshConnect: la ràdio no té cap espai de canal lliure. Les peticions per a parlar en privat no poden anar ni vindre fins que n'hi haja un."),

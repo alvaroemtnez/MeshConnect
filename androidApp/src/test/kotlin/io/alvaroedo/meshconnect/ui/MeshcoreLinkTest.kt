@@ -34,7 +34,7 @@ class MeshcoreLinkTest {
         // The held link opens when the radio is ready, at most once (LinkInbox.onReady).
         assertTrue(vm.contains("if (state == EngineState.Ready) linkInbox.onReady()?.let { importScannedCode(it, ScanOrigin.Chats) }"))
         // Both a cold start and a running app's new intent deliver it.
-        assertTrue(shell.contains("if (savedInstanceState == null) openLink.value = linkFrom(intent)"))
+        assertTrue(shell.substringAfter("if (savedInstanceState == null) {").substringBefore("}").contains("openLink.value = linkFrom(intent)"))
         assertTrue(shell.contains("linkFrom(intent)?.let { openLink.value = it }"))
     }
 

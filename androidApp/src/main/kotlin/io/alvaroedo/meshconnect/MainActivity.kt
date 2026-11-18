@@ -111,6 +111,9 @@ class MainActivity : ComponentActivity() {
     /** A meshcore:// link the app was opened with, until the shell imports it. */
     private val openLink = MutableStateFlow<String?>(null)
 
+    /** A direct-message request whose notification was tapped, until the shell hands it on. */
+    private val openDmRequest = MutableStateFlow<DmRequestTap?>(null)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         // Transparent system bars; the app's top bar and bottom navigation
@@ -133,7 +136,12 @@ class MainActivity : ComponentActivity() {
         // MapLibre needs its singleton before any MapView exists.
         io.alvaroedo.meshconnect.ui.map.MapStyles.init(this)
         openThread.value = threadFrom(intent)
-        if (savedInstanceState == null) openLink.value = linkFrom(intent)
+        if (savedInstanceState == null) {
+            openLink.value = linkFrom(intent)
+            // Not on a re-creation (rotation): the same tap again would bring back a prompt
+            // put off or answered since.
+            openDmRequest.value = dmRequestFrom(intent)
+        }
         setContent {
             val vm: MeshCoreViewModel = viewModel()
             val theme by vm.prefs.themeFlow.collectAsStateWithLifecycle()
@@ -144,7 +152,7 @@ class MainActivity : ComponentActivity() {
                     else -> androidx.compose.foundation.isSystemInDarkTheme()
                 },
             ) {
-                AppShell(vm, openThread, openLink)
+                AppShell(vm, openThread, openLink, openDmRequest)
             }
         }
     }
@@ -156,6 +164,17 @@ class MainActivity : ComponentActivity() {
         setIntent(intent)
         openThread.value = threadFrom(intent)
         linkFrom(intent)?.let { openLink.value = it }
+        dmRequestFrom(intent)?.let { openDmRequest.value = it }
+    }
+
+    private fun dmRequestFrom(intent: Intent?): DmRequestTap? {
+        val from = intent?.getStringExtra(EXTRA_DM_REQUEST_FROM)?.takeIf { it.isNotBlank() } ?: return null
+        return DmRequestTap(
+            requesterKeyHex = from,
+            selfKeyHex = intent.getStringExtra(EXTRA_DM_REQUEST_TO)?.takeIf { it.isNotBlank() },
+            radioName = intent.getStringExtra(EXTRA_DM_REQUEST_RADIO),
+            postedAtMs = intent.getLongExtra(EXTRA_DM_REQUEST_AT, System.currentTimeMillis()),
+        )
     }
 
     private fun linkFrom(intent: Intent?): String? =
@@ -171,8 +190,22 @@ class MainActivity : ComponentActivity() {
     companion object {
         const val EXTRA_THREAD_KIND = "thread_kind"
         const val EXTRA_THREAD_PEER = "thread_peer"
+
+        /** A direct-message request's notification (MeshCoreService.postDmRequestNotification). */
+        const val EXTRA_DM_REQUEST_FROM = "dm_request_from"
+        const val EXTRA_DM_REQUEST_TO = "dm_request_to"
+        const val EXTRA_DM_REQUEST_RADIO = "dm_request_radio"
+        const val EXTRA_DM_REQUEST_AT = "dm_request_at"
     }
 }
+
+/** What a request's notification carries: who asked, which radio, and when it was posted. */
+private data class DmRequestTap(
+    val requesterKeyHex: String,
+    val selfKeyHex: String?,
+    val radioName: String?,
+    val postedAtMs: Long,
+)
 
 private const val SLIDE_MS = 250
 private const val TAB_FADE_MS = 120
@@ -215,9 +248,18 @@ private fun AppShell(
     vm: MeshCoreViewModel,
     openThread: MutableStateFlow<Pair<String, String>?>,
     openLink: MutableStateFlow<String?> = MutableStateFlow(null),
+    openDmRequest: MutableStateFlow<DmRequestTap?> = MutableStateFlow(null),
 ) {
     val nav = rememberNavController()
     val snackbar = remember { SnackbarHostState() }
+
+    // A request's notification: its prompt, or what became of it (ScanConfirmations hosts it).
+    val pendingDmRequest by openDmRequest.collectAsStateWithLifecycle()
+    LaunchedEffect(pendingDmRequest) {
+        val tap = pendingDmRequest ?: return@LaunchedEffect
+        vm.openDmRequestFromNotification(tap.requesterKeyHex, tap.selfKeyHex, tap.radioName, tap.postedAtMs)
+        openDmRequest.value = null
+    }
 
     // Tapping a notification lands on the conversation it was about.
     // popUpTo("chats") so Back leaves you in the app on the message

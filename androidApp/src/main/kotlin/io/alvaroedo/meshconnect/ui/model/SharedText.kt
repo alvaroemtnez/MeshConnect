@@ -136,5 +136,47 @@ object SharedText {
         },
     )
 
+    /** LinkQuality.label: the signal band, on the ping and trace screens and the map. */
+    fun linkQuality(res: Resources, q: io.github.thatsfguy.meshcore.presentation.LinkQuality): String = res.getString(
+        when (q) {
+            io.github.thatsfguy.meshcore.presentation.LinkQuality.Strong -> R.string.link_strong
+            io.github.thatsfguy.meshcore.presentation.LinkQuality.Good -> R.string.link_good
+            io.github.thatsfguy.meshcore.presentation.LinkQuality.Fair -> R.string.link_fair
+            io.github.thatsfguy.meshcore.presentation.LinkQuality.Weak -> R.string.link_weak
+            io.github.thatsfguy.meshcore.presentation.LinkQuality.Marginal -> R.string.link_marginal
+        },
+    )
+
+    /** UndrawableLink.reason */
+    fun undrawable(res: Resources, u: io.github.thatsfguy.meshcore.presentation.UndrawableLink): String = res.getString(
+        when (u) {
+            io.github.thatsfguy.meshcore.presentation.UndrawableLink.Unknown -> R.string.link_unknown_node
+            io.github.thatsfguy.meshcore.presentation.UndrawableLink.Ambiguous -> R.string.link_ambiguous
+            io.github.thatsfguy.meshcore.presentation.UndrawableLink.NoPosition -> R.string.link_no_position
+        },
+    )
+
+    /** Neighbours.heardAgoLabel: same thresholds, same units. */
+    fun heardAgo(res: Resources, secondsAgo: Long): String = when {
+        secondsAgo < 0 -> res.getString(R.string.nb_clock_skew)
+        secondsAgo < 60 -> res.getString(R.string.nb_ago_s, secondsAgo.toInt())
+        secondsAgo < 3_600 -> res.getString(R.string.nb_ago_m, (secondsAgo / 60).toInt())
+        secondsAgo < 86_400 -> res.getString(R.string.nb_ago_h, (secondsAgo / 3_600).toInt())
+        else -> res.getString(R.string.nb_ago_d, (secondsAgo / 86_400).toInt())
+    }
+
+    /** NeighbourLink.mapLabel: "Fair · -4.2 dB", the chip on the line. */
+    fun neighbourChip(res: Resources, link: io.github.thatsfguy.meshcore.presentation.NeighbourLink): String =
+        "${linkQuality(res, link.quality)} · ${link.snrLabel}"
+
+    /** NeighbourLink.summary, plus why it has no line: "Fair · -4.2 dB · 12m ago · no position". */
+    fun neighbourSummary(res: Resources, link: io.github.thatsfguy.meshcore.presentation.NeighbourLink): String =
+        listOfNotNull(
+            linkQuality(res, link.quality),
+            link.snrLabel,
+            heardAgo(res, link.secondsAgo),
+            link.undrawable?.let { undrawable(res, it) },
+        ).joinToString(" · ")
+
     private fun snr(v: Double) = String.format(Locale.ROOT, "%.1f dB", v)
 }

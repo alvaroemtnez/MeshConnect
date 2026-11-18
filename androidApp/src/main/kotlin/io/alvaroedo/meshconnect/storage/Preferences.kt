@@ -230,12 +230,41 @@ class Preferences(context: Context) {
         }
 
     /**
-     * Requests to us that have been answered (accepted or declined), by the requester's
-     * key, so the buttons do not come back on the next visit.
+     * When each request to us was last answered (accepted or declined), per radio and asker
+     * (ui/model/DmRequestInbox.Answers): a request that arrived before the answer is done, a
+     * later one asks again. 1.3.0 kept a set of askers for every radio and for good
+     * ("dm_requests_handled"); it is read once as answered now, on every radio, and dropped.
      */
-    var dmRequestsHandled: Set<String>
-        get() = prefs.getStringSet("dm_requests_handled", emptySet()) ?: emptySet()
-        set(v) { prefs.edit().putStringSet("dm_requests_handled", v.take(BlockList.MAX_ENTRIES).toSet()).apply() }
+    var dmRequestAnswers: io.alvaroedo.meshconnect.ui.model.DmRequestInbox.Answers
+        get() {
+            val legacy = prefs.getStringSet("dm_requests_handled", null)
+            if (legacy != null) {
+                val now = System.currentTimeMillis()
+                val migrated = io.alvaroedo.meshconnect.ui.model.DmRequestInbox.Answers(
+                    readDmAnswers().toMap() +
+                        io.alvaroedo.meshconnect.ui.model.DmRequestInbox.Answers.fromLegacy(legacy, now).toMap(),
+                )
+                writeDmAnswers(migrated, now)
+                prefs.edit().remove("dm_requests_handled").apply()
+                return migrated
+            }
+            return readDmAnswers()
+        }
+        set(v) = writeDmAnswers(v, System.currentTimeMillis())
+
+    private fun readDmAnswers() = io.alvaroedo.meshconnect.ui.model.DmRequestInbox.Answers(
+        (prefs.getStringSet("dm_request_answers", emptySet()) ?: emptySet()).mapNotNull { e ->
+            val cut = e.lastIndexOf('|')
+            if (cut <= 0) return@mapNotNull null
+            e.substring(cut + 1).toLongOrNull()?.let { e.substring(0, cut) to it }
+        }.toMap(),
+    )
+
+    private fun writeDmAnswers(v: io.alvaroedo.meshconnect.ui.model.DmRequestInbox.Answers, nowMs: Long) {
+        val enc = v.live(nowMs).entries.sortedByDescending { it.value }
+            .take(BlockList.MAX_ENTRIES).map { "${it.key}|${it.value}" }.toSet()
+        prefs.edit().putStringSet("dm_request_answers", enc).apply()
+    }
 
     /** The "far away, heard only" fold on the Nodes list. Folded by default. */
     var nodesFarCollapsed: Boolean

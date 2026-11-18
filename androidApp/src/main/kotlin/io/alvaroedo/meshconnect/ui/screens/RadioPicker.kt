@@ -69,8 +69,10 @@ fun RadioPicker(
     val engineState by vm.engineState.collectAsState()
     val label by vm.connectionLabel.collectAsState()
     var refresh by remember { mutableIntStateOf(0) }
-    val saved = remember(refresh, engineState) { vm.prefs.savedNodes() }
     val currentKey = remember(engineState, refresh) { vm.prefs.reconnectKey() }
+    val saved = remember(refresh, engineState) {
+        io.alvaroedo.meshconnect.ui.model.SavedRadioOrder.forDisplay(vm.prefs.savedNodes(), currentKey)
+    }
 
     var granted by remember { mutableStateOf(BlePermissions.allGranted(context)) }
     val permissions = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
@@ -350,7 +352,11 @@ fun NoRadioState(vm: MeshCoreViewModel, modifier: Modifier = Modifier) {
             androidx.compose.material3.Button(onClick = { picker = true }) {
                 Text(stringResource(R.string.onb_start))
             }
-            val saved = remember { vm.prefs.savedNodes().filter { it.kind != ConnectionMemory.KIND_USB } }
+            // The three used most recently (SavedRadioOrder), not the three used longest ago.
+            val saved = remember {
+                io.alvaroedo.meshconnect.ui.model.SavedRadioOrder.forDisplay(vm.prefs.savedNodes(), vm.prefs.reconnectKey())
+                    .filter { it.kind != ConnectionMemory.KIND_USB }
+            }
             if (saved.isNotEmpty()) {
                 Spacer(Modifier.height(20.dp))
                 Column(Modifier.fillMaxWidth()) {

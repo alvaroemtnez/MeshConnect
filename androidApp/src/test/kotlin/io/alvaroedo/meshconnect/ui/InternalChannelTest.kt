@@ -1,10 +1,8 @@
 package io.alvaroedo.meshconnect.ui
 
-import io.alvaroedo.meshconnect.storage.MessageEntity
 import io.alvaroedo.meshconnect.ui.model.InternalChannel
 import io.github.thatsfguy.meshcore.platform.androidCryptoProvider
 import io.github.thatsfguy.meshcore.presentation.ChannelSetup
-import io.github.thatsfguy.meshcore.presentation.DmRequest
 import io.github.thatsfguy.meshcore.protocol.ChannelCrypto
 import java.io.File
 import org.junit.Assert.assertArrayEquals
@@ -38,29 +36,7 @@ class InternalChannelTest {
         assertEquals(null, InternalChannel.slotFor((0 until 8).toSet(), 8))
     }
 
-    private fun msg(sender: String, text: String, ts: Long, outgoing: Boolean = false) = MessageEntity(
-        selfKey = me, kind = "ch", peerKey = "39", senderName = sender, text = text, timestamp = ts,
-        receivedAt = ts, outgoing = outgoing, status = 0, ackHash = null, contentKey = null, snr = null,
-    )
-
-    @Test
-    fun `requests to us surface once per asker, newest kept, oldest asker first`() {
-        val messages = listOf(
-            msg("Pau", DmRequest.request("Ana", pau)!!, now - 50),
-            msg("Marta", DmRequest.request("Ana", marta)!!, now - 100),
-            msg("Marta", DmRequest.request("ana", marta)!!, now - 10),
-            // Not to us, our own, too old, and not a request at all: none of them surface.
-            msg("Joan", DmRequest.request("Bea", pau)!!, now - 5),
-            msg("Ana", DmRequest.request("Ana", me)!!, now - 5, outgoing = true),
-            msg("Old", DmRequest.request("Ana", "cc".repeat(32))!!, now - DmRequest.Outstanding.LIFETIME_SEC - 1),
-            msg("Marta", "hello", now - 1),
-        )
-        val pending = InternalChannel.pending(messages, "Ana", me, handled = emptySet(), nowSec = now)
-        assertEquals(listOf(pau, marta), pending.map { it.keyHex })
-        assertEquals(now - 10, pending.last().atSeconds)
-        // Answered ones go.
-        assertEquals(listOf(marta), InternalChannel.pending(messages, "Ana", me, setOf(pau), now).map { it.keyHex })
-    }
+    // Which requests surface, on this channel or any other: DmRequestInboxTest.
 
     @Test
     fun `a name is confirmed only by the same key under the same name`() {

@@ -174,7 +174,7 @@ private fun NeighbourRow(link: NeighbourLink) {
                 // Why a line is missing belongs on the row it is missing
                 // from, not in a footnote: a prefix that matches two
                 // nodes is a different problem from one with no fix.
-                link.undrawable?.let { "${link.summary} · ${it.reason}" } ?: link.summary,
+                io.alvaroedo.meshconnect.ui.model.SharedText.neighbourSummary(androidx.compose.ui.platform.LocalResources.current, link),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

@@ -51,6 +51,22 @@ interface MessageDao {
     fun thread(selfKey: String, kind: String, peerKey: String): Flow<List<MessageEntity>>
 
     /**
+     * Received channel messages since [sinceSec] that may be direct-message requests (their
+     * tag, `mch:r:`), on every channel: what DmRequestInbox reads the waiting ones from.
+     */
+    @Query(
+        "SELECT * FROM messages WHERE selfKey = :selfKey AND kind = 'ch' AND outgoing = 0 " +
+            "AND timestamp >= :sinceSec AND text LIKE '%mch:r:%' ORDER BY timestamp ASC, receivedAt ASC",
+    )
+    fun channelDmRequests(selfKey: String, sinceSec: Long): Flow<List<MessageEntity>>
+
+    @Query(
+        "SELECT * FROM messages WHERE selfKey = :selfKey AND kind = 'ch' AND outgoing = 0 " +
+            "AND timestamp >= :sinceSec AND text LIKE '%mch:r:%' ORDER BY timestamp ASC, receivedAt ASC",
+    )
+    suspend fun channelDmRequestsNow(selfKey: String, sinceSec: Long): List<MessageEntity>
+
+    /**
      * The admin console: CLI traffic ONLY, in the order it happened
      * here.
      *

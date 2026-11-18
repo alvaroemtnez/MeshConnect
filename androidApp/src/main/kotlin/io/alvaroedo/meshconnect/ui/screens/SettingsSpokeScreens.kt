@@ -47,7 +47,6 @@ private fun SettingsSpoke(
     vm: MeshCoreViewModel,
     nav: NavController,
     menuActions: List<MenuAction> = emptyList(),
-    scroll: Boolean = true,
     content: @Composable () -> Unit,
 ) {
     Scaffold(
@@ -61,13 +60,11 @@ private fun SettingsSpoke(
         val base = Modifier.fillMaxSize().padding(padding)
             .consumeWindowInsets(padding)
             .imePadding()
-        Column(
-            if (scroll) {
-                base.verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)
-            } else {
-                base.padding(horizontal = 16.dp)
-            },
-        ) {
+        // The page scrolls, and the card is as tall as what is in it. App and Advanced used to
+        // scroll inside the card instead, with a fillMaxSize column that stretched the card to
+        // the bottom of the screen: a short spoke (Advanced, once the diagnostics log moved
+        // to its own screen) showed a tall empty card (seen 2026-11-18).
+        Column(base.verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)) {
             Spacer(Modifier.height(8.dp))
             // Every spoke sits in the same rounded card as the hub's groups, with one
             // spacing rhythm, so the screens read as one app rather than one per author.
@@ -240,12 +237,8 @@ fun SettingsBlockingScreen(vm: MeshCoreViewModel, nav: NavController) {
  */
 @Composable
 fun SettingsAppScreen(vm: MeshCoreViewModel, nav: NavController) {
-    SettingsSpoke(stringResource(R.string.hub_app), vm, nav, scroll = false) {
-        Column(
-            Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState()),
-        ) {
+    SettingsSpoke(stringResource(R.string.hub_app), vm, nav) {
+        Column {
             SettingsGroupHeader(stringResource(R.string.set_appearance))
             SimpleModeSwitch(vm)
             Spacer(Modifier.height(12.dp))
@@ -267,12 +260,8 @@ fun SettingsAppScreen(vm: MeshCoreViewModel, nav: NavController) {
  */
 @Composable
 fun SettingsAdvancedScreen(vm: MeshCoreViewModel, nav: NavController) {
-    SettingsSpoke(stringResource(R.string.hub_advanced), vm, nav, scroll = false) {
-        Column(
-            Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState()),
-        ) {
+    SettingsSpoke(stringResource(R.string.hub_advanced), vm, nav) {
+        Column {
             SettingsGroupHeader(stringResource(R.string.set_network))
             MapTilesSection(vm)
             SettingsGroupHeader(stringResource(R.string.set_diagnostics))

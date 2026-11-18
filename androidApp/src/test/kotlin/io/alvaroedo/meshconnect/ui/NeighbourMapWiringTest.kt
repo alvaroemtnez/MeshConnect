@@ -158,7 +158,8 @@ class NeighbourMapWiringTest {
         // their head and look away from the line they are reading.
         assertTrue(
             "the chip on the line carries only the number",
-            map.contains("NodeMarkers.buildChip(context, link.mapLabel"),
+            // In the user's language since 2026-11-18 (SharedText.neighbourChip).
+            map.contains("SharedText.neighbourChip(") && map.contains("NodeMarkers.buildChip(context, chip, link.quality.argb)"),
         )
         assertTrue("a colour key is back on the map", !map.contains("LinkLegend"))
     }
@@ -218,7 +219,9 @@ class NeighbourMapWiringTest {
         )
         assertTrue(
             "the sheet does not say why a row is missing from the map",
-            sheet.contains("link.undrawable?.let"),
+            sheet.contains("SharedText.neighbourSummary(") &&
+                java.io.File("src/main/kotlin/io/alvaroedo/meshconnect/ui/model/SharedText.kt").readText()
+                    .contains("link.undrawable?.let { undrawable(res, it) }"),
         )
     }
 

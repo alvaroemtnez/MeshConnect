@@ -454,8 +454,7 @@ private fun NeighboursSection(vm: MeshCoreViewModel, keyHex: String) {
                         modifier = Modifier.weight(1f),
                     )
                     Text(
-                        io.github.thatsfguy.meshcore.protocol.Neighbours
-                            .heardAgoLabel(n.heardSecondsAgo),
+                        io.alvaroedo.meshconnect.ui.model.SharedText.heardAgo(androidx.compose.ui.platform.LocalResources.current, n.heardSecondsAgo),
                         style = MaterialTheme.typography.bodySmall,
                         modifier = Modifier.padding(end = 8.dp),
                     )

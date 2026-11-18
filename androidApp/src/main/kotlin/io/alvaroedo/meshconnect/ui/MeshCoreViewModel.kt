@@ -49,6 +49,7 @@ import io.github.thatsfguy.meshcore.protocol.CliIds
 import io.github.thatsfguy.meshcore.protocol.IdentityKeygen
 import io.github.thatsfguy.meshcore.protocol.ChannelCrypto
 import io.github.thatsfguy.meshcore.protocol.Codes
+import io.github.thatsfguy.meshcore.protocol.BlockList
 import io.github.thatsfguy.meshcore.protocol.NodeRole
 import io.github.thatsfguy.meshcore.protocol.ConfigBackup
 import io.github.thatsfguy.meshcore.protocol.NodeDiscovery
@@ -73,6 +74,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.transformLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -2038,12 +2040,15 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
 
     private fun nowSec() = System.currentTimeMillis() / 1000
 
-    private val dmHandledRevision = MutableStateFlow(0)
+    private val dmAnswersRevision = MutableStateFlow(0)
 
-    /** Requesters whose request to us was accepted or declined: no buttons for them. */
-    val dmRequestsHandled: StateFlow<Set<String>> = dmHandledRevision
-        .map { prefs.dmRequestsHandled }
-        .stateIn(viewModelScope, SharingStarted.Eagerly, prefs.dmRequestsHandled)
+    /**
+     * When each request to us was answered, per radio (DmRequestInbox.Answers): a request that
+     * arrived before its answer has no buttons and no prompt; a later one asks again.
+     */
+    val dmRequestAnswers: StateFlow<io.alvaroedo.meshconnect.ui.model.DmRequestInbox.Answers> = dmAnswersRevision
+        .map { prefs.dmRequestAnswers }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, prefs.dmRequestAnswers)
 
     val selfKeyHex: StateFlow<String> get() = selfKey
 
@@ -2070,9 +2075,15 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
         transientMessage.value = str(R.string.vm_dm_asked, targetName.trim())
     }
 
+    /** Askers whose acceptance is under way: a second tap must not add and answer twice. */
+    private val acceptingDm = java.util.Collections.synchronizedSet(mutableSetOf<String>())
+
     /** Accept a request: add them on our radio, then post the reply that adds us on theirs. */
     fun acceptDmRequest(channelIndex: Int, requesterName: String, requesterKeyHex: String) {
-        val svc = _service.value ?: return
+        val svc = _service.value ?: run {
+            transientMessage.value = str(R.string.dmreq_tap_connect)
+            return
+        }
         val me = selfInfo.value ?: return
         val key = hexToBytesOrNull(requesterKeyHex) ?: return
         val reply = io.github.thatsfguy.meshcore.presentation.DmRequest
@@ -2081,25 +2092,39 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
             transientMessage.value = str(R.string.vm_dm_cant_answer)
             return
         }
+        val asker = requesterKeyHex.lowercase()
+        if (!acceptingDm.add(asker)) return
         viewModelScope.launch {
-            val added = runCatching {
-                svc.engine.addContactFromCard(key, requesterName.trim(), Codes.ADV_TYPE_CHAT)
-            }.getOrDefault(false)
-            if (!added) {
-                transientMessage.value = str(R.string.vm_dm_add_failed, requesterName.trim())
-                return@launch
+            try {
+                val added = runCatching {
+                    svc.engine.addContactFromCard(key, requesterName.trim(), Codes.ADV_TYPE_CHAT)
+                }.getOrDefault(false)
+                if (!added) {
+                    transientMessage.value = str(R.string.vm_dm_add_failed, requesterName.trim())
+                    return@launch
+                }
+                markDmRequestHandled(requesterKeyHex)
+                // Into their chat, not just the contact list (asked for on the beta,
+                // 2026-11-17): the line says what happened, and the chat opens. The add above
+                // reads back one contact, never the whole list, so this is not kept waiting.
+                runCatching {
+                    svc.repository.noteDmAccept(
+                        requesterKeyHex, requesterName.trim(), reply, outgoing = true,
+                        occasion = System.currentTimeMillis().toString(),
+                    )
+                }
+                openThreadRequest.value = MessageRepository.KIND_DM to asker
+                sendChannelMessage(channelIndex, reply)
+            } finally {
+                acceptingDm.remove(asker)
             }
-            markDmRequestHandled(requesterKeyHex)
-            // Into their chat, not just the contact list (asked for on the beta,
-            // 2026-11-17): the line says what happened, and the chat opens. The add above
-            // reads back one contact, never the whole list, so this is not kept waiting.
-            runCatching { svc.repository.noteDmAccept(requesterKeyHex, requesterName.trim(), reply, outgoing = true) }
-            openThreadRequest.value = MessageRepository.KIND_DM to requesterKeyHex.lowercase()
-            sendChannelMessage(channelIndex, reply)
         }
     }
 
-    /** Decline: nothing is posted; the buttons just go away for good. */
+    /**
+     * Decline: nothing is posted, and the prompt and buttons go. Not for good: if they ask
+     * again later, that request asks again (DmRequestInbox.Answers); block them to stop it.
+     */
     fun declineDmRequest(requesterKeyHex: String) {
         markDmRequestHandled(requesterKeyHex)
     }
@@ -2162,31 +2187,107 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
         askToMessagePrivately(slot, advertisedName)
     }
 
-    /** Requests to us that came on `#mcn-internal`, unanswered, oldest first. */
-    val internalDmRequests: StateFlow<List<io.alvaroedo.meshconnect.ui.model.InternalChannel.Pending>> =
-        combine(selfKey, internalSlots) { key, slots -> key to slots.minOrNull() }
-            .flatMapLatest { (key, slot) ->
-                if (key.isEmpty() || slot == null) {
-                    flowOf(emptyList())
-                } else {
-                    combine(db.messages().thread(key, MessageRepository.KIND_CHANNEL, slot.toString()), dmRequestsHandled, selfInfo) { msgs, handled, me ->
-                        io.alvaroedo.meshconnect.ui.model.InternalChannel.pending(
-                            msgs, me?.name, key, handled, System.currentTimeMillis() / 1000,
-                        )
-                    }
-                }
+    /**
+     * Requests to us waiting for an answer, on any channel of the connected radio, oldest
+     * first (DmRequestInbox). #mcn-internal's show nowhere else; a group's also show as a line
+     * with buttons in that group.
+     */
+    val dmRequests: StateFlow<List<io.alvaroedo.meshconnect.ui.model.DmRequestInbox.Pending>> =
+        selfKey.flatMapLatest { key ->
+            if (key.isEmpty()) {
+                flowOf(emptyList())
+            } else {
+                combine(
+                    db.messages().channelDmRequests(key, nowSec() - io.github.thatsfguy.meshcore.presentation.DmRequest.Outstanding.LIFETIME_SEC),
+                    dmRequestAnswers,
+                    selfInfo,
+                ) { msgs, answers, me -> pendingDmRequests(msgs, answers, me?.name, key) }
             }
-            .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+        }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
-    /** Accept one from `#mcn-internal`: add them, and answer on the same channel. */
-    fun acceptInternalDmRequest(request: io.alvaroedo.meshconnect.ui.model.InternalChannel.Pending) {
-        val slot = internalSlots.value.minOrNull() ?: return
-        acceptDmRequest(slot, request.name, request.keyHex)
+    private fun pendingDmRequests(
+        msgs: List<io.alvaroedo.meshconnect.storage.MessageEntity>,
+        answers: io.alvaroedo.meshconnect.ui.model.DmRequestInbox.Answers,
+        myName: String?,
+        myKey: String,
+    ): List<io.alvaroedo.meshconnect.ui.model.DmRequestInbox.Pending> {
+        val blocked = prefs.blockedKeys
+        return io.alvaroedo.meshconnect.ui.model.DmRequestInbox.pending(
+            msgs, myName, myKey, answers,
+            isBlocked = { BlockList.isBlockedSender(it, blocked) },
+            nowSec = nowSec(),
+        )
     }
 
+    /** Requests put off with "Not now" (Pending.laterKey), until the app is next started. */
+    val dmRequestsLater = MutableStateFlow<Set<String>>(emptySet())
+
+    /** The asker whose request the prompt shows first: one whose notification was tapped. */
+    val dmRequestFocus = MutableStateFlow<String?>(null)
+
+    fun putOffDmRequest(request: io.alvaroedo.meshconnect.ui.model.DmRequestInbox.Pending) {
+        dmRequestsLater.value = dmRequestsLater.value + request.laterKey
+        if (dmRequestFocus.value.equals(request.keyHex, ignoreCase = true)) dmRequestFocus.value = null
+    }
+
+    /** Accept one from the prompt: add them, and answer on the channel it came on. */
+    fun acceptPendingDmRequest(request: io.alvaroedo.meshconnect.ui.model.DmRequestInbox.Pending) {
+        acceptDmRequest(request.channelIndex, request.name, request.keyHex)
+    }
+
+    /**
+     * A request's notification was tapped (MainActivity): bring its prompt up if it is still
+     * waiting, or say what became of it. The notification names the radio it was for; the
+     * phone may have moved to another since, or be still connecting after a cold start.
+     */
+    fun openDmRequestFromNotification(requesterKeyHex: String, forSelfKeyHex: String?, radioName: String?, postedAtMs: Long) {
+        viewModelScope.launch {
+            val me = kotlinx.coroutines.withTimeoutOrNull(15_000) { selfInfo.first { it != null } }
+            if (me == null) {
+                transientMessage.value = str(R.string.dmreq_tap_connect)
+                return@launch
+            }
+            val key = me.publicKeyHex.lowercase()
+            val answers = prefs.dmRequestAnswers
+            val pending = pendingDmRequests(
+                db.messages().channelDmRequestsNow(key, nowSec() - io.github.thatsfguy.meshcore.presentation.DmRequest.Outstanding.LIFETIME_SEC),
+                answers, me.name, key,
+            )
+            val isContact = db.contacts().allOnce(key).any { it.keyHex.equals(requesterKeyHex, ignoreCase = true) }
+            when (
+                val tap = io.alvaroedo.meshconnect.ui.model.DmRequestInbox.tap(
+                    requesterKeyHex, forSelfKeyHex, radioName, key, pending, answers, isContact, postedAtMs,
+                )
+            ) {
+                is io.alvaroedo.meshconnect.ui.model.DmRequestInbox.Tap.Show -> {
+                    dmRequestsLater.value = dmRequestsLater.value - tap.request.laterKey
+                    dmRequestFocus.value = tap.request.keyHex
+                }
+                is io.alvaroedo.meshconnect.ui.model.DmRequestInbox.Tap.OpenChat ->
+                    openThreadRequest.value = MessageRepository.KIND_DM to tap.keyHex
+                io.alvaroedo.meshconnect.ui.model.DmRequestInbox.Tap.Answered ->
+                    transientMessage.value = str(R.string.dmreq_tap_answered)
+                is io.alvaroedo.meshconnect.ui.model.DmRequestInbox.Tap.OtherRadio ->
+                    transientMessage.value = tap.radioName?.ifBlank { null }
+                        ?.let { str(R.string.dmreq_tap_other_radio, it) }
+                        ?: str(R.string.dmreq_tap_other_radio_unnamed)
+                io.alvaroedo.meshconnect.ui.model.DmRequestInbox.Tap.Gone ->
+                    transientMessage.value = str(R.string.dmreq_tap_gone)
+            }
+        }
+    }
+
+    /**
+     * Answered: every request from them that has arrived on this radio is done, the prompt and
+     * the buttons go, and so does the notification, which would otherwise offer an answer
+     * already given.
+     */
     private fun markDmRequestHandled(requesterKeyHex: String) {
-        prefs.dmRequestsHandled = prefs.dmRequestsHandled + requesterKeyHex.lowercase()
-        dmHandledRevision.value++
+        val self = selfKey.value.ifEmpty { return }
+        prefs.dmRequestAnswers = prefs.dmRequestAnswers.answered(self, requesterKeyHex, System.currentTimeMillis())
+        dmAnswersRevision.value++
+        if (dmRequestFocus.value.equals(requesterKeyHex, ignoreCase = true)) dmRequestFocus.value = null
+        _service.value?.clearDmRequestNotification(requesterKeyHex)
     }
 
     fun dismissContactCard() {
@@ -3627,6 +3728,8 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
         }
         _service.value?.refreshBlockLists()
         blockRevision.value++
+        // A waiting request from them goes (or comes back): DmRequestInbox reads the block list.
+        dmAnswersRevision.value++
         transientMessage.value = if (blocked) {
             str(R.string.vm_blocked)
         } else {

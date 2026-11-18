@@ -288,6 +288,13 @@ private fun AboutGroup(title: String) {
  * fork is in docs/upstream/CHANGELOG-MeshCoreHardened.md.
  */
 private val CHANGELOG: List<Pair<String, List<String>>> = listOf(
+    "1.3.1" to listOf(
+        "DM requests come up again after one was answered, and their notification opens the prompt (or the chat, if answered since).",
+        "Requests on any channel get the prompt, saying where they were asked; Accept answers there.",
+        "Saved radios: the connected one first, then the most recent.",
+        "Settings → Advanced no longer shows a tall empty card.",
+        "Signal bands on the ping, trace and map screens are translated.",
+    ),
     "1.3.0" to listOf(
         "MeshCore Hardened 0.10.16 to 0.11.0 brought in.",
         "Simple mode: contacts, groups and rooms, added by link or QR; switch it on in Appearance and alerts. It only hides.",
