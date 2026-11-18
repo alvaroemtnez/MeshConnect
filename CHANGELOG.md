@@ -26,7 +26,12 @@ Fixes for 1.3.0.
   and if it was for another of your radios it says which. Answering clears the notification.
   A request is addressed to you, so a muted channel does not silence it; blocking the asker
   does.
+- **Chat requests in Chats.** While requests are waiting, a row at the top of Chats opens
+  them as a list (newest first, with where and when, and a warning when the name is not
+  confirmed); tap one for its prompt. It is where a request put off with Not now comes back.
 - Accepting the same person a second time writes its line and notifies again.
+- In Chats, a direct chat's "You accepted…" / "… accepted your chat request" line reads as
+  words, not as its wire text.
 - Saved radios list the connected one first, then the most recently used; the no-radio
   screen's three are the latest, not the oldest.
 - Settings → Advanced (and Appearance and alerts) no longer stretch their card to the bottom

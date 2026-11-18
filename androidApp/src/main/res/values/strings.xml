@@ -1458,6 +1458,11 @@
     <string name="dmreq_tap_other_radio">This request was for %1$s. Connect to that radio to answer it.</string>
     <string name="dmreq_tap_other_radio_unnamed">This request was for another of your radios. Connect to it to answer.</string>
     <string name="dmreq_tap_gone">This request is no longer waiting.</string>
+    <string name="dmreq_list_title">Chat requests</string>
+    <string name="dmreq_list_row_hint">People asking to message you privately</string>
+    <string name="dmreq_list_hint">Tap one to see who it is and answer. Each waits a week.</string>
+    <string name="dmreq_list_via">In %1$s · %2$s</string>
+    <string name="dmreq_list_unconfirmed">Name not confirmed</string>
     <string name="addback_ask">Ask over the mesh</string>
     <string name="addback_body_ask">%1$s won\'t receive your messages until they add you as a contact too. Let them scan your QR code, or ask over the mesh.</string>
     <string name="vm_internal_no_slot">Couldn\'t add MeshConnect\'s channel: the radio has no free channel slot. Requests to message privately can\'t come or go until one is free.</string>

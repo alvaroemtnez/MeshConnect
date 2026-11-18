@@ -67,6 +67,9 @@ fun ChatsScreen(vm: MeshCoreViewModel, nav: NavController, archivedView: Boolean
     var query by rememberSaveable { mutableStateOf("") }
     var searching by rememberSaveable { mutableStateOf(false) }
     var showSelfQr by remember { mutableStateOf(false) }
+    // Direct-message requests waiting for an answer (DmRequestList).
+    val dmRequests by vm.dmRequests.collectAsState()
+    var showDmRequests by remember { mutableStateOf(false) }
     val scanPrompt = stringResource(R.string.scan_prompt)
     val listRevision by vm.prefs.threadListRevision.collectAsState()
     val pinned = remember(listRevision) { vm.prefs.pinnedThreads }
@@ -153,10 +156,13 @@ fun ChatsScreen(vm: MeshCoreViewModel, nav: NavController, archivedView: Boolean
         if (conversations.isEmpty() && engineState != EngineState.Ready) {
             NoRadioState(vm, Modifier.fillMaxSize().padding(padding))
         } else if (conversations.isEmpty()) {
-            EmptyHint(
-                modifier = Modifier.padding(padding),
-                text = stringResource(R.string.chats_empty),
-            )
+            // A first request can come before any chat: the row still shows.
+            Column(Modifier.padding(padding)) {
+                if (!archivedView && dmRequests.isNotEmpty()) {
+                    DmRequestsRow(dmRequests.size) { showDmRequests = true }
+                }
+                EmptyHint(text = stringResource(R.string.chats_empty))
+            }
         } else {
             val filtered = conversations.filter { row ->
                 query.isBlank() ||
@@ -215,6 +221,10 @@ fun ChatsScreen(vm: MeshCoreViewModel, nav: NavController, archivedView: Boolean
 
             Column(Modifier.fillMaxSize().padding(padding)) {
                 LazyColumn(Modifier.fillMaxSize()) {
+                    // Requests waiting for an answer (DmRequestList), above everything.
+                    if (!archivedView && dmRequests.isNotEmpty()) {
+                        item("dm_requests") { DmRequestsRow(dmRequests.size) { showDmRequests = true } }
+                    }
                     if (pinnedRows.isNotEmpty()) {
                         item("pinned_header") { SectionHeader(stringResource(R.string.chats_pinned)) }
                         items(pinnedRows, key = { "p|${it.kind}|${it.key}" }) { row -> rowItem(row, true) }
@@ -242,6 +252,9 @@ fun ChatsScreen(vm: MeshCoreViewModel, nav: NavController, archivedView: Boolean
 
     if (showSelfQr) {
         SelfQrDialog(vm, onDismiss = { showSelfQr = false })
+    }
+    if (showDmRequests) {
+        DmRequestListSheet(vm, onDismiss = { showDmRequests = false })
     }
     if (showChannelSheet) {
         ChannelAddSheet(

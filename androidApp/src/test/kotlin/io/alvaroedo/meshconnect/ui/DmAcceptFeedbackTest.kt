@@ -64,3 +64,14 @@ class DmAcceptFeedbackTest {
         assertTrue(warning.contains("R.drawable.ic_warning"))
     }
 }
+
+/** The accepted line reads as words in Chats too, not as its wire text (found 2026-11-18). */
+class DmAcceptChatRowTest {
+    @Test
+    fun `a direct row previews an accept as its line`() {
+        val vm = File("src/main/kotlin/io/alvaroedo/meshconnect/ui/MeshCoreViewModel.kt").readText()
+        val direct = vm.substringAfter("val c = contactByKey[m.peerKey]").substringBefore("timestamp = m.timestamp,")
+        assertTrue("the DM row previews raw wire text", direct.contains("dmRequestLine(it, fallbackName = title)"))
+        assertTrue("a DM request (never written there) would read as one", direct.contains("DmRequest.Parsed.Accept"))
+    }
+}

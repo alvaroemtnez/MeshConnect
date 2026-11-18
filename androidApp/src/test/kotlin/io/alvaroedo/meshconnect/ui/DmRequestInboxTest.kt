@@ -247,3 +247,29 @@ class DmRequestLaterTest {
             .contains("dmRequestsLater.value = dmRequestsLater.value + request.laterKey"))
     }
 }
+
+/** Requests waiting are listed at the top of Chats, and answered through the prompt (2026-11-18). */
+class DmRequestListWiringTest {
+    private fun src(path: String) = File("src/main/kotlin/io/alvaroedo/meshconnect/$path").readText()
+
+    @Test
+    fun `Chats shows the row while requests wait, first, and also with no chats yet`() {
+        val chats = src("ui/screens/ChatsScreen.kt")
+        val list = chats.substringAfter("LazyColumn(Modifier.fillMaxSize()) {")
+        assertTrue(list.indexOf("item(\"dm_requests\")") in 0 until list.indexOf("pinned_header"))
+        val empty = chats.substringAfter("} else if (conversations.isEmpty()) {").substringBefore("} else {")
+        assertTrue("a first request before any chat has nowhere to show", empty.contains("DmRequestsRow("))
+        assertTrue(chats.contains("!archivedView && dmRequests.isNotEmpty()"))
+        assertTrue(chats.contains("DmRequestListSheet(vm, onDismiss = { showDmRequests = false })"))
+    }
+
+    @Test
+    fun `a listed request opens its prompt, put off or not, rather than being answered from the list`() {
+        val sheet = src("ui/screens/DmRequestList.kt").substringAfter("fun DmRequestListSheet(")
+        assertTrue(sheet.contains("vm.showDmRequest(request)"))
+        assertFalse("answering skips the name check", sheet.contains("acceptPendingDmRequest") || sheet.contains("declineDmRequest"))
+        val show = src("ui/MeshCoreViewModel.kt").substringAfter("fun showDmRequest(").substringBefore("\n    }\n")
+        assertTrue(show.contains("dmRequestsLater.value - request.laterKey"))
+        assertTrue(show.contains("dmRequestFocus.value = request.keyHex"))
+    }
+}

@@ -1455,6 +1455,11 @@
     <string name="dmreq_tap_other_radio">Aquesta petició era per a %1$s. Connecta eixa ràdio per a respondre-la.</string>
     <string name="dmreq_tap_other_radio_unnamed">Aquesta petició era per a una altra de les teues ràdios. Connecta-la per a respondre-la.</string>
     <string name="dmreq_tap_gone">Aquesta petició ja no està pendent.</string>
+    <string name="dmreq_list_title">Peticions de xat</string>
+    <string name="dmreq_list_row_hint">Gent que demana parlar amb tu en privat</string>
+    <string name="dmreq_list_hint">Toca\'n una per a veure qui és i respondre. Cada una espera una setmana.</string>
+    <string name="dmreq_list_via">En %1$s · %2$s</string>
+    <string name="dmreq_list_unconfirmed">Nom sense confirmar</string>
     <string name="addback_ask">Demanar-ho per la malla</string>
     <string name="addback_body_ask">%1$s no rebrà els teus missatges fins que també t\'afegisca com a contacte. Deixa que escanege el teu codi QR, o demana-li-ho per la malla.</string>
     <string name="vm_internal_no_slot">No s\'ha pogut afegir el canal de MeshConnect: la ràdio no té cap espai de canal lliure. Les peticions per a parlar en privat no poden anar ni vindre fins que n\'hi haja un.</string>

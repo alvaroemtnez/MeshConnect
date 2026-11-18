@@ -864,13 +864,20 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
                 if (!io.alvaroedo.meshconnect.ui.model.ChatThreads.isChatPeer(c)) {
                     continue
                 }
+                val title = prefs.nicknameFor(m.peerKey)
+                    ?: c?.name?.ifBlank { null }
+                    ?: m.peerKey.take(12)
                 rows.add(
                     ConversationRow(
                         kind = m.kind, key = m.peerKey,
-                        title = prefs.nicknameFor(m.peerKey)
-                            ?: c?.name?.ifBlank { null }
-                            ?: m.peerKey.take(12),
-                        subtitle = previewOf(m),
+                        title = title,
+                        // The accepted line (noteDmAccept) is stored as its wire text; in 1.3.0
+                        // the thread read it as words and this row showed the wire text. Only
+                        // an accept, as in the thread: a request is never written to a DM.
+                        subtitle = m.takeIf {
+                            io.github.thatsfguy.meshcore.presentation.DmRequest.parse(it.text) is
+                                io.github.thatsfguy.meshcore.presentation.DmRequest.Parsed.Accept
+                        }?.let { dmRequestLine(it, fallbackName = title) } ?: previewOf(m),
                         timestamp = m.timestamp,
                         unread = c?.unread ?: 0,
                         isChannel = false,
@@ -1110,12 +1117,12 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
      * found its target is still a message row, so render it the way the
      * thread does rather than leaking "r:1a2b:00" into the list.
      */
-    private fun dmRequestLine(m: io.alvaroedo.meshconnect.storage.MessageEntity): String? {
+    private fun dmRequestLine(m: io.alvaroedo.meshconnect.storage.MessageEntity, fallbackName: String? = null): String? {
         val me = selfInfo.value ?: return null
         return io.alvaroedo.meshconnect.ui.model.DmRequestText.lineFor(
             getApplication<android.app.Application>().resources, m.text,
-            // A direct row has no sender name: it is the thread's contact.
-            m.senderName ?: dbContacts.value.firstOrNull { it.keyHex == m.peerKey }?.let { displayName(it) },
+            // A direct row has no sender name: it is the thread's contact, or its title.
+            m.senderName ?: dbContacts.value.firstOrNull { it.keyHex == m.peerKey }?.let { displayName(it) } ?: fallbackName,
             m.outgoing, me.name, me.publicKeyHex,
         )
     }
@@ -2228,6 +2235,12 @@ class MeshCoreViewModel(app: Application) : AndroidViewModel(app) {
     fun putOffDmRequest(request: io.alvaroedo.meshconnect.ui.model.DmRequestInbox.Pending) {
         dmRequestsLater.value = dmRequestsLater.value + request.laterKey
         if (dmRequestFocus.value.equals(request.keyHex, ignoreCase = true)) dmRequestFocus.value = null
+    }
+
+    /** Bring up [request]'s prompt, put off or not (the Chats requests list). */
+    fun showDmRequest(request: io.alvaroedo.meshconnect.ui.model.DmRequestInbox.Pending) {
+        dmRequestsLater.value = dmRequestsLater.value - request.laterKey
+        dmRequestFocus.value = request.keyHex
     }
 
     /** Accept one from the prompt: add them, and answer on the channel it came on. */

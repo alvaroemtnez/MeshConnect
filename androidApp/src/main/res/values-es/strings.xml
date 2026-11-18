@@ -1455,6 +1455,11 @@
     <string name="dmreq_tap_other_radio">Esta petición era para %1$s. Conecta esa radio para responderla.</string>
     <string name="dmreq_tap_other_radio_unnamed">Esta petición era para otra de tus radios. Conéctala para responderla.</string>
     <string name="dmreq_tap_gone">Esta petición ya no está pendiente.</string>
+    <string name="dmreq_list_title">Peticiones de chat</string>
+    <string name="dmreq_list_row_hint">Gente que pide hablar contigo en privado</string>
+    <string name="dmreq_list_hint">Toca una para ver quién es y responder. Cada una espera una semana.</string>
+    <string name="dmreq_list_via">En %1$s · %2$s</string>
+    <string name="dmreq_list_unconfirmed">Nombre sin confirmar</string>
     <string name="addback_ask">Pedirlo por la malla</string>
     <string name="addback_body_ask">%1$s no recibirá tus mensajes hasta que también te añada como contacto. Deja que escanee tu código QR, o pídeselo por la malla.</string>
     <string name="vm_internal_no_slot">No se ha podido añadir el canal de MeshConnect: la radio no tiene ningún hueco de canal libre. Las peticiones para hablar en privado no pueden ir ni venir hasta que haya uno.</string>

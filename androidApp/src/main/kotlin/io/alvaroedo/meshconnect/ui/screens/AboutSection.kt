@@ -291,6 +291,8 @@ private val CHANGELOG: List<Pair<String, List<String>>> = listOf(
     "1.3.1" to listOf(
         "DM requests come up again after one was answered, and their notification opens the prompt (or the chat, if answered since).",
         "Requests on any channel get the prompt, saying where they were asked; Accept answers there.",
+        "Chat requests waiting are listed at the top of Chats; one tap opens each.",
+        "A chat's accepted-request line reads as words in Chats, not as its wire text.",
         "Saved radios: the connected one first, then the most recent.",
         "Settings → Advanced no longer shows a tall empty card.",
         "Signal bands on the ping, trace and map screens are translated.",
